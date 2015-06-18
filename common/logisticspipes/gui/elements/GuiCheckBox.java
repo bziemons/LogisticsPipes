@@ -1,7 +1,6 @@
-package logisticspipes.utils.gui;
+package logisticspipes.gui.elements;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.ResourceLocation;
 

@@ -12,7 +12,7 @@ import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.block.AddItemToTrackPacket;
 import logisticspipes.network.packets.block.RequestAmountTaskSubGui;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.utils.gui.GuiCheckBox;
+import logisticspipes.gui.elements.GuiCheckBox;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.IItemSearch;
 import logisticspipes.utils.gui.ItemDisplay;

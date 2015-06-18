@@ -5,7 +5,7 @@ import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.block.SaveSecurityPlayerPacket;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.security.SecuritySettings;
-import logisticspipes.utils.gui.GuiCheckBox;
+import logisticspipes.gui.elements.GuiCheckBox;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.gui.SubGuiScreen;

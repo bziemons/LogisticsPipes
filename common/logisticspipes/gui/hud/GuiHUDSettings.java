@@ -7,7 +7,7 @@ import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.hud.HUDSettingsPacket;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.DummyContainer;
-import logisticspipes.utils.gui.GuiCheckBox;
+import logisticspipes.gui.elements.GuiCheckBox;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
 

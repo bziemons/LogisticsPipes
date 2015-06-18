@@ -3,7 +3,7 @@ package logisticspipes.gui;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.config.PlayerConfig;
 import logisticspipes.utils.gui.DummyContainer;
-import logisticspipes.utils.gui.GuiCheckBox;
+import logisticspipes.gui.elements.GuiCheckBox;
 import logisticspipes.utils.gui.LogisticsBaseTabGuiScreen;
 import logisticspipes.utils.gui.SearchBar;
 import logisticspipes.utils.string.StringUtils;
