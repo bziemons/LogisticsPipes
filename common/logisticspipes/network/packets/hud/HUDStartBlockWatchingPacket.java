@@ -2,7 +2,7 @@ package logisticspipes.network.packets.hud;
 
 import logisticspipes.interfaces.IBlockWatchingHandler;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -16,7 +16,7 @@ public class HUDStartBlockWatchingPacket extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new HUDStartBlockWatchingPacket(getId());
 	}
 

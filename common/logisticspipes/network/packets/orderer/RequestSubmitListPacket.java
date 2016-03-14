@@ -1,7 +1,7 @@
 package logisticspipes.network.packets.orderer;
 
 import logisticspipes.network.abstractpackets.InventoryModuleCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeBlockRequestTable;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
@@ -19,7 +19,7 @@ public class RequestSubmitListPacket extends InventoryModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new RequestSubmitListPacket(getId());
 	}
 

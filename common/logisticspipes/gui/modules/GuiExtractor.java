@@ -11,10 +11,10 @@ package logisticspipes.gui.modules;
 import java.io.IOException;
 import java.util.Locale;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.modules.abstractmodules.LogisticsSneakyDirectionModule;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.module.ExtractorModuleDirectionPacket;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.DummyContainer;
 
 import net.minecraft.client.gui.GuiButton;
@@ -66,7 +66,8 @@ public class GuiExtractor extends ModuleBaseGui {
 	protected void actionPerformed(GuiButton guibutton) throws IOException {
 		_directionReceiver.setSneakyDirection(guibutton.id == 6 ? null : EnumFacing.getFront(guibutton.id));
 
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(ExtractorModuleDirectionPacket.class).setDirection(_directionReceiver.getSneakyDirection()).setModulePos(_directionReceiver));
+		LPChannel.sendPacketToServer(PacketHandler.getPacket(ExtractorModuleDirectionPacket.class).setDirection(_directionReceiver.getSneakyDirection())
+				.setModulePos(_directionReceiver));
 
 		refreshButtons();
 		super.actionPerformed(guibutton);

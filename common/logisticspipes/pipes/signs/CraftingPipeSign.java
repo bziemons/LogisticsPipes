@@ -15,8 +15,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
-import logisticspipes.network.PacketHandler;
-import logisticspipes.network.abstractpackets.ModernPacket;
+import logisticspipes.network.abstractpackets.AbstractPacket;
 import logisticspipes.network.packets.cpipe.CPipeSatelliteImportBack;
 import logisticspipes.pipes.PipeItemsCraftingLogistics;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
@@ -45,7 +44,7 @@ public class CraftingPipeSign implements IPipeSign {
 	public void writeToNBT(NBTTagCompound tag) {}
 
 	@Override
-	public ModernPacket getPacket() {
+	public AbstractPacket getPacket() {
 		PipeItemsCraftingLogistics cpipe = (PipeItemsCraftingLogistics) pipe;
 		return PacketHandler.getPacket(CPipeSatelliteImportBack.class).setInventory(cpipe.getDummyInventory()).setType(ModulePositionType.IN_PIPE).setPosX(cpipe.getX()).setPosY(cpipe.getY()).setPosZ(cpipe.getZ());
 	}

@@ -5,12 +5,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeSet;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.basic.CoreRoutedPipe;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -51,11 +51,11 @@ public class RequestAmountTaskSubGui extends CoordinatesPacket {
 			_allItems.add(item.makeStack(1));
 		}
 
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(AmountTaskSubGui.class).setIdentSet(_allItems), player);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(AmountTaskSubGui.class).setIdentSet(_allItems), player);
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new RequestAmountTaskSubGui(getId());
 	}
 }

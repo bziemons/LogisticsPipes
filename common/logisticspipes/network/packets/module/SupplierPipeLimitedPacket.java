@@ -40,7 +40,7 @@ public class SupplierPipeLimitedPacket extends ModuleCoordinatesPacket {
 		if (MainProxy.isClient(player.world)) {
 			refresh();
 		} else {
-			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(SupplierPipeLimitedPacket.class).setLimited(isLimited()).setPacketPos(this), player);
+			LPChannel.sendPacketToPlayer(PacketHandler.getPacket(SupplierPipeLimitedPacket.class).setLimited(isLimited()).setPacketPos(this), player);
 		}
 	}
 
@@ -52,7 +52,7 @@ public class SupplierPipeLimitedPacket extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new SupplierPipeLimitedPacket(getId());
 	}
 

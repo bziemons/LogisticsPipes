@@ -2,7 +2,7 @@ package logisticspipes.network.packets.modules;
 
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.network.abstractpackets.Integer2CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeLogisticsChassi;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
@@ -19,7 +19,7 @@ public class CrafterDefault extends Integer2CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new CrafterDefault(getId());
 	}
 

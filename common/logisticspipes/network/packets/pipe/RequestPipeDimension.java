@@ -2,7 +2,7 @@ package logisticspipes.network.packets.pipe;
 
 import logisticspipes.gui.orderer.GuiOrderer;
 import logisticspipes.network.abstractpackets.IntegerPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -18,7 +18,7 @@ public class RequestPipeDimension extends IntegerPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new RequestPipeDimension(getId());
 	}
 

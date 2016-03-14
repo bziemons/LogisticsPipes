@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeLogisticsChassi;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 
@@ -34,7 +34,7 @@ public class ChassiOrientationPacket extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new ChassiOrientationPacket(getId());
 	}
 }

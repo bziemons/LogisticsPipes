@@ -1,7 +1,7 @@
 package logisticspipes.network.packets.pipe;
 
 import logisticspipes.network.abstractpackets.InventoryModuleCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeLogisticsChassi;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 
@@ -17,7 +17,7 @@ public class ChassiePipeModuleContent extends InventoryModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new ChassiePipeModuleContent(getId());
 	}
 

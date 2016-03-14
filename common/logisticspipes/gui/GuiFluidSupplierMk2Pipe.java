@@ -6,13 +6,13 @@
 
 package logisticspipes.gui;
 
-import logisticspipes.network.PacketHandler;
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.network.packets.pipe.FluidSupplierAmount;
 import logisticspipes.network.packets.pipe.FluidSupplierMinMode;
 import logisticspipes.network.packets.pipe.FluidSupplierMode;
 import logisticspipes.pipes.PipeFluidSupplierMk2;
 import logisticspipes.pipes.PipeFluidSupplierMk2.MinMode;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
@@ -43,7 +43,8 @@ public class GuiFluidSupplierMk2Pipe extends LogisticsBaseGuiScreen {
 		this.logic = logic;
 		xSize = 184;
 		ySize = 176;
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(FluidSupplierAmount.class).setInteger(0).setPosX(this.logic.getX()).setPosY(this.logic.getY()).setPosZ(this.logic.getZ()));
+		LPChannel.sendPacketToServer(PacketHandler.getPacket(FluidSupplierAmount.class).setInteger(0).setPosX(this.logic.getX()).setPosY(this.logic.getY())
+				.setPosZ(this.logic.getZ()));
 	}
 
 	@Override
@@ -92,7 +93,9 @@ public class GuiFluidSupplierMk2Pipe extends LogisticsBaseGuiScreen {
 		if (guibutton.id == 0) {
 			logic.setRequestingPartials(!logic.isRequestingPartials());
 			((GuiButton) buttonList.get(0)).displayString = logic.isRequestingPartials() ? StringUtils.translate(GuiFluidSupplierMk2Pipe.PREFIX + "Yes") : StringUtils.translate(GuiFluidSupplierMk2Pipe.PREFIX + "No");
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(FluidSupplierMode.class).setInteger((logic.isRequestingPartials() ? 1 : 0)).setPosX(logic.getX()).setPosY(logic.getY()).setPosZ(logic.getZ()));
+			LPChannel.sendPacketToServer(
+					PacketHandler.getPacket(FluidSupplierMode.class).setInteger((logic.isRequestingPartials() ? 1 : 0)).setPosX(logic.getX())
+							.setPosY(logic.getY()).setPosZ(logic.getZ()));
 		} else if (guibutton.id == 1) {
 			int index = logic.getMinMode().ordinal() + 1;
 			if (index >= MinMode.values().length) {
@@ -100,14 +103,17 @@ public class GuiFluidSupplierMk2Pipe extends LogisticsBaseGuiScreen {
 			}
 			logic.setMinMode(MinMode.values()[index]);
 			((GuiButton) buttonList.get(1)).displayString = StringUtils.translate(GuiFluidSupplierMk2Pipe.PREFIX + logic.getMinMode().name());
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(FluidSupplierMinMode.class).setInteger(logic.getMinMode().ordinal()).setPosX(logic.getX()).setPosY(logic.getY()).setPosZ(logic.getZ()));
+			LPChannel.sendPacketToServer(
+					PacketHandler.getPacket(FluidSupplierMinMode.class).setInteger(logic.getMinMode().ordinal()).setPosX(logic.getX()).setPosY(logic.getY())
+							.setPosZ(logic.getZ()));
 		} else if ((guibutton.id % 10 == 0 || guibutton.id % 10 == 1) && guibutton.id / 10 < 5 && guibutton.id / 10 > 0) {
 			int change = 1;
 			if (guibutton.id % 10 == 1) {
 				change = -1;
 			}
 			change *= Math.pow(10, guibutton.id / 10 - 1);
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(FluidSupplierAmount.class).setInteger(change).setPosX(logic.getX()).setPosY(logic.getY()).setPosZ(logic.getZ()));
+			LPChannel.sendPacketToServer(
+					PacketHandler.getPacket(FluidSupplierAmount.class).setInteger(change).setPosX(logic.getX()).setPosY(logic.getY()).setPosZ(logic.getZ()));
 		} else {
 			super.actionPerformed(guibutton);
 		}

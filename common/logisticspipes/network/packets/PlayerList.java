@@ -5,7 +5,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.fml.client.FMLClientHandler;
 
 import logisticspipes.interfaces.PlayerListReciver;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.network.abstractpackets.StringListPacket;
 
 import logisticspipes.utils.StaticResolve;
@@ -18,7 +18,7 @@ public class PlayerList extends StringListPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new PlayerList(getId());
 	}
 

@@ -3,11 +3,11 @@ package logisticspipes.renderer;
 import java.lang.reflect.Field;
 import java.util.List;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.LPConstants;
 import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.pipe.SlotFinderNumberPacket;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.SimpleGraphics;
 
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -132,8 +132,10 @@ public class LogisticsGuiOverrenderer {
 					GL11.glEnable(GL11.GL_LIGHTING);
 					GL11.glEnable(GL11.GL_DEPTH_TEST);
 					if (clicked) {
-						MainProxy.sendPacketToServer(PacketHandler.getPacket(SlotFinderNumberPacket.class).setInventorySlot(slot.slotNumber).setSlot(this.slot).setPipePosX(pipePosX).setPipePosY(pipePosY).setPipePosZ(pipePosZ).setType(positionType).setPositionInt(positionInt).setPosX(targetPosX).setPosY(targetPosY)
-								.setPosZ(targetPosZ));
+						LPChannel.sendPacketToServer(
+								PacketHandler.getPacket(SlotFinderNumberPacket.class).setInventorySlot(slot.slotNumber).setSlot(this.slot).setPipePosX(pipePosX)
+										.setPipePosY(pipePosY).setPipePosZ(pipePosZ).setType(positionType).setPositionInt(positionInt).setPosX(targetPosX)
+										.setPosY(targetPosY).setPosZ(targetPosZ));
 						clicked = false;
 						FMLClientHandler.instance().getClient().player.closeScreen();
 						isOverlaySlotActive = false;

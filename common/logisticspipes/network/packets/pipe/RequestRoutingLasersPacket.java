@@ -11,18 +11,16 @@ import java.util.Map.Entry;
 
 import logisticspipes.LPConstants;
 import logisticspipes.config.Configs;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.basic.CoreRoutedPipe;
-import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.IRouter;
 import logisticspipes.routing.LaserData;
 import logisticspipes.routing.PipeRoutingConnectionType;
 import logisticspipes.routing.pathfinder.PathFinder;
 
+import network.rs485.logisticspipes.network.LPChannel;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.IntegerCoordinates;
 
@@ -105,7 +103,7 @@ public class RequestRoutingLasersPacket extends CoordinatesPacket {
 				});
 			}
 			lasers = compressLasers(lasers);
-			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingLaserPacket.class).setLasers(lasers), player);
+			LPChannel.sendPacketToPlayer(PacketHandler.getPacket(RoutingLaserPacket.class).setLasers(lasers), player);
 		}
 	}
 
@@ -231,7 +229,7 @@ public class RequestRoutingLasersPacket extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new RequestRoutingLasersPacket(getId());
 	}
 }

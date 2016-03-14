@@ -2,7 +2,7 @@ package logisticspipes.network.packets.block;
 
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -16,7 +16,7 @@ public class SecurityRemoveCCIdPacket extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new SecurityRemoveCCIdPacket(getId());
 	}
 

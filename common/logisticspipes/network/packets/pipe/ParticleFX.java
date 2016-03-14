@@ -12,7 +12,7 @@ import lombok.Setter;
 
 import logisticspipes.interfaces.ISpawnParticles.ParticleCount;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipefxhandlers.Particles;
 import logisticspipes.pipefxhandlers.PipeFXRenderHandler;
 import network.rs485.logisticspipes.util.LPDataInput;
@@ -33,7 +33,7 @@ public class ParticleFX extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new ParticleFX(getId());
 	}
 

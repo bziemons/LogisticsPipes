@@ -14,13 +14,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.config.Configs;
 import logisticspipes.gui.popup.GuiRequestPopup;
 import logisticspipes.interfaces.ISpecialItemRenderer;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.orderer.RequestComponentPacket;
 import logisticspipes.network.packets.orderer.RequestSubmitPacket;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.request.resources.IResource;
 import logisticspipes.utils.Color;
 import logisticspipes.utils.gui.DummyContainer;
@@ -209,7 +209,8 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 	@Override
 	protected void actionPerformed(GuiButton guibutton) throws IOException {
 		if (guibutton.id == 0 && itemDisplay.getSelectedItem() != null) {
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(RequestSubmitPacket.class).setDimension(dimension).setStack(itemDisplay.getSelectedItem().getItem().makeStack(itemDisplay.getRequestCount())).setPosX(xCoord).setPosY(yCoord).setPosZ(zCoord));
+			LPChannel.sendPacketToServer(PacketHandler.getPacket(RequestSubmitPacket.class).setDimension(dimension)
+					.setStack(itemDisplay.getSelectedItem().getItem().makeStack(itemDisplay.getRequestCount())).setPosX(xCoord).setPosY(yCoord).setPosZ(zCoord));
 			refreshItems();
 		} else if (guibutton.id == 1) {
 			itemDisplay.nextPage();
@@ -234,7 +235,8 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 			Configs.DISPLAY_POPUP = button.change();
 			Configs.savePopupState();
 		} else if (guibutton.id == 13 && itemDisplay.getSelectedItem() != null) {
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(RequestComponentPacket.class).setDimension(dimension).setStack(itemDisplay.getSelectedItem().getItem().makeStack(itemDisplay.getRequestCount())).setPosX(xCoord).setPosY(yCoord).setPosZ(zCoord));
+			LPChannel.sendPacketToServer(PacketHandler.getPacket(RequestComponentPacket.class).setDimension(dimension)
+					.setStack(itemDisplay.getSelectedItem().getItem().makeStack(itemDisplay.getRequestCount())).setPosX(xCoord).setPosY(yCoord).setPosZ(zCoord));
 		} else if (guibutton.id == 20) {
 			itemDisplay.cycle();
 		}

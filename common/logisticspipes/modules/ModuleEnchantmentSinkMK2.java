@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.gui.hud.modules.HUDSimpleFilterModule;
 import logisticspipes.interfaces.IClientInformationProvider;
 import logisticspipes.interfaces.IHUDModuleHandler;
@@ -13,7 +15,6 @@ import logisticspipes.interfaces.IModuleInventoryReceive;
 import logisticspipes.interfaces.IModuleWatchReciver;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.modules.abstractmodules.LogisticsSimpleFilterModule;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.hud.HUDStartModuleWatchingPacket;
 import logisticspipes.network.packets.hud.HUDStopModuleWatchingPacket;
 import logisticspipes.network.packets.module.ModuleInventory;
@@ -104,18 +105,20 @@ public class ModuleEnchantmentSinkMK2 extends LogisticsSimpleFilterModule implem
 
 	@Override
 	public void startHUDWatching() {
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(HUDStartModuleWatchingPacket.class).setModulePos(this));
+		LPChannel.sendPacketToServer(PacketHandler.getPacket(HUDStartModuleWatchingPacket.class).setModulePos(this));
 	}
 
 	@Override
 	public void stopHUDWatching() {
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(HUDStopModuleWatchingPacket.class).setModulePos(this));
+		LPChannel.sendPacketToServer(PacketHandler.getPacket(HUDStopModuleWatchingPacket.class).setModulePos(this));
 	}
 
 	@Override
 	public void startWatching(EntityPlayer player) {
 		localModeWatchers.add(player);
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(_filterInventory)).setModulePos(this), player);
+		LPChannel.sendPacketToPlayer(
+				PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(_filterInventory)).setModulePos(this),
+				player);
 	}
 
 	@Override
@@ -126,7 +129,9 @@ public class ModuleEnchantmentSinkMK2 extends LogisticsSimpleFilterModule implem
 	@Override
 	public void InventoryChanged(IInventory inventory) {
 		if (MainProxy.isServer(_world.getWorld())) {
-			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(inventory)).setModulePos(this), localModeWatchers);
+			LPChannel.sendToPlayerList(
+					PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(inventory)).setModulePos(this),
+					localModeWatchers);
 		}
 	}
 

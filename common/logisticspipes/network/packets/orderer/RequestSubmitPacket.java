@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.orderer;
 
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.network.abstractpackets.RequestPacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
@@ -19,7 +19,7 @@ public class RequestSubmitPacket extends RequestPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new RequestSubmitPacket(getId());
 	}
 

@@ -23,7 +23,7 @@ public abstract class RequestPacket extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new RequestSubmitPacket(getId());
 	}
 

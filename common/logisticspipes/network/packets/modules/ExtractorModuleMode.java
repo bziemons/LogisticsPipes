@@ -4,7 +4,7 @@ import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.modules.abstractmodules.LogisticsSneakyDirectionModule;
 import logisticspipes.network.abstractpackets.DirectionModuleCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 
 import logisticspipes.utils.StaticResolve;
 
@@ -16,7 +16,7 @@ public class ExtractorModuleMode extends DirectionModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new ExtractorModuleMode(getId());
 	}
 

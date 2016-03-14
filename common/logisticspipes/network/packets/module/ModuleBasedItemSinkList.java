@@ -27,7 +27,7 @@ public class ModuleBasedItemSinkList extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new ModuleBasedItemSinkList(getId());
 	}
 

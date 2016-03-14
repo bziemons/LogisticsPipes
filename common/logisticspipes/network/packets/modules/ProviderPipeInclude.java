@@ -2,7 +2,7 @@ package logisticspipes.network.packets.modules;
 
 import logisticspipes.gui.GuiProviderPipe;
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeItemsProviderLogistics;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 
@@ -20,7 +20,7 @@ public class ProviderPipeInclude extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new ProviderPipeInclude(getId());
 	}
 

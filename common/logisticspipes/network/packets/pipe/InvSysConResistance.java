@@ -3,7 +3,7 @@ package logisticspipes.network.packets.pipe;
 import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeItemsInvSysConnector;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
@@ -18,7 +18,7 @@ public class InvSysConResistance extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new InvSysConResistance(getId());
 	}
 

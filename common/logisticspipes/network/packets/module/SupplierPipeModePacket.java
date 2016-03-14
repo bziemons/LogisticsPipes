@@ -1,13 +1,13 @@
 package logisticspipes.network.packets.module;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.modules.ModuleActiveSupplier;
 import logisticspipes.modules.ModuleActiveSupplier.PatternMode;
 import logisticspipes.modules.ModuleActiveSupplier.SupplyMode;
-import logisticspipes.network.PacketHandler;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
 import logisticspipes.network.packets.modules.SupplierPipeMode;
-import logisticspipes.proxy.MainProxy;
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -21,7 +21,7 @@ public class SupplierPipeModePacket extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new SupplierPipeModePacket(getId());
 	}
 
@@ -45,6 +45,7 @@ public class SupplierPipeModePacket extends ModuleCoordinatesPacket {
 			}
 			module.setSupplyMode(SupplyMode.values()[mode]);
 		}
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(SupplierPipeMode.class).setHasPatternUpgrade(module.hasPatternUpgrade()).setInteger(mode).setPacketPos(this), player);
+		LPChannel.sendPacketToPlayer(
+				PacketHandler.getPacket(SupplierPipeMode.class).setHasPatternUpgrade(module.hasPatternUpgrade()).setInteger(mode).setPacketPos(this), player);
 	}
 }

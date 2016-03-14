@@ -18,7 +18,6 @@ import logisticspipes.interfaces.ISpecialInsertion;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.proxy.interfaces.ICraftingRecipeProvider;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
@@ -104,7 +103,7 @@ public class SlotFinderOpenGuiPacket extends ModuleCoordinatesPacket {
 				if (SimpleServiceLocator.enderStorageProxy.isEnderChestBlock(block)) {
 					SimpleServiceLocator.enderStorageProxy.openEnderChest(player.world, xCoord, yCoord, zCoord, player);
 					//@formatter:off
-					MainProxy.sendPacketToPlayer(PacketHandler.getPacket(SlotFinderActivatePacket.class)
+					LPChannel.sendPacketToPlayer(PacketHandler.getPacket(SlotFinderActivatePacket.class)
 							.setTagetPosX(xCoord).setTagetPosY(yCoord).setTagetPosZ(zCoord).setSlot(getSlot()).setPacketPos(this), player);
 					//@formatter:on
 				}
@@ -112,7 +111,7 @@ public class SlotFinderOpenGuiPacket extends ModuleCoordinatesPacket {
 				if (block != null) {
 					if (block.onBlockActivated(player.world, pos.getBlockPos(), pos.getBlockState(player.world), player, EnumHand.MAIN_HAND, EnumFacing.UP, 0, 0, 0)) {
 						//@formatter:off
-						MainProxy.sendPacketToPlayer(PacketHandler.getPacket(SlotFinderActivatePacket.class)
+						LPChannel.sendPacketToPlayer(PacketHandler.getPacket(SlotFinderActivatePacket.class)
 								.setTagetPosX(xCoord).setTagetPosY(yCoord).setTagetPosZ(zCoord).setSlot(getSlot()).setPacketPos(this), player);
 						//@formatter:on
 						break;
@@ -125,7 +124,7 @@ public class SlotFinderOpenGuiPacket extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new SlotFinderOpenGuiPacket(getId());
 	}
 

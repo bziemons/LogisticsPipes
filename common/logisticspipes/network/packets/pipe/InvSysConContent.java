@@ -2,7 +2,7 @@ package logisticspipes.network.packets.pipe;
 
 import logisticspipes.gui.GuiInvSysConnector;
 import logisticspipes.network.abstractpackets.InventoryModuleCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -18,7 +18,7 @@ public class InvSysConContent extends InventoryModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new InvSysConContent(getId());
 	}
 

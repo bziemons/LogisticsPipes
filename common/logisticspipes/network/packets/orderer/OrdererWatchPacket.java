@@ -7,7 +7,7 @@ import lombok.Setter;
 
 import logisticspipes.interfaces.IRequestWatcher;
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.request.resources.IResource;
 import logisticspipes.request.resources.ResourceNetwork;
@@ -55,7 +55,7 @@ public class OrdererWatchPacket extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new OrdererWatchPacket(getId());
 	}
 

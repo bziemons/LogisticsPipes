@@ -1,11 +1,11 @@
 package logisticspipes.network.packets.module;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.modules.ModuleProvider;
-import logisticspipes.network.PacketHandler;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
 import logisticspipes.network.packets.modules.ProviderModuleInclude;
-import logisticspipes.proxy.MainProxy;
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -19,7 +19,7 @@ public class ProviderModuleIncludePacket extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new ProviderModuleIncludePacket(getId());
 	}
 
@@ -30,6 +30,6 @@ public class ProviderModuleIncludePacket extends ModuleCoordinatesPacket {
 			return;
 		}
 		module.setFilterExcluded(!module.isExcludeFilter());
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(ProviderModuleInclude.class).setFlag(module.isExcludeFilter()).setModulePos(module), player);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(ProviderModuleInclude.class).setFlag(module.isExcludeFilter()).setModulePos(module), player);
 	}
 }

@@ -16,10 +16,11 @@ import java.util.List;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.interfaces.IChangeListener;
 import logisticspipes.interfaces.ILPPositionProvider;
 import logisticspipes.logisticspipes.IRoutedItem;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.pipe.PipeManagerContentPacket;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.routing.order.IOrderInfoProvider.ResourceType;
@@ -178,7 +179,7 @@ public abstract class LogisticsOrderManager<T extends LogisticsOrder, I> impleme
 
 	public void startWatching(EntityPlayer player) {
 		watchingPlayers.add(player);
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(PipeManagerContentPacket.class).setManager(this).setLPPos(pos.getLPPosition()), player);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(PipeManagerContentPacket.class).setManager(this).setLPPos(pos.getLPPosition()), player);
 	}
 
 	public void stopWatching(EntityPlayer player) {
@@ -196,7 +197,7 @@ public abstract class LogisticsOrderManager<T extends LogisticsOrder, I> impleme
 		//if(!oldOrders.equals(_orders)) {
 		//	oldOrders.clear();
 		//	oldOrders.addAll(_orders);
-		MainProxy.sendToPlayerList(PacketHandler.getPacket(PipeManagerContentPacket.class).setManager(this).setLPPos(pos.getLPPosition()), watchingPlayers);
+		LPChannel.sendToPlayerList(PacketHandler.getPacket(PipeManagerContentPacket.class).setManager(this).setLPPos(pos.getLPPosition()), watchingPlayers);
 		//}
 	}
 

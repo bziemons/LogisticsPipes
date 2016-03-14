@@ -3,7 +3,7 @@ package logisticspipes.network.packets.pipe;
 import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeFluidSupplierMk2;
 import logisticspipes.pipes.PipeFluidSupplierMk2.MinMode;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
@@ -18,7 +18,7 @@ public class FluidSupplierMinMode extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new FluidSupplierMinMode(getId());
 	}
 

@@ -6,13 +6,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
 import logisticspipes.blocks.stats.TrackingTask;
 import logisticspipes.config.Configs;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.block.AddItemToTrackPacket;
 import logisticspipes.network.packets.block.RequestAmountTaskSubGui;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.GuiCheckBox;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.IItemSearch;
@@ -101,7 +101,8 @@ public class GuiAddTracking extends SubGuiScreen implements IItemSearch {
 			if (found) {
 				setSubGui(new GuiMessagePopup(StringUtils.translate(PREFIX + "alreadytracked")));
 			} else {
-				MainProxy.sendPacketToServer(PacketHandler.getPacket(AddItemToTrackPacket.class).setItem(itemDisplay.getSelectedItem().getItem()).setTilePos(tile));
+				LPChannel.sendPacketToServer(
+						PacketHandler.getPacket(AddItemToTrackPacket.class).setItem(itemDisplay.getSelectedItem().getItem()).setTilePos(tile));
 				TrackingTask task = new TrackingTask();
 				task.item = itemDisplay.getSelectedItem().getItem();
 				tile.tasks.add(task);
@@ -125,7 +126,7 @@ public class GuiAddTracking extends SubGuiScreen implements IItemSearch {
 	}
 
 	private void refreshItems() {
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(RequestAmountTaskSubGui.class).setTilePos(tile));
+		LPChannel.sendPacketToServer(PacketHandler.getPacket(RequestAmountTaskSubGui.class).setTilePos(tile));
 	}
 
 	@Override

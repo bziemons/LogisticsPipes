@@ -3,13 +3,13 @@ package logisticspipes.network.packets.block;
 import java.util.ArrayList;
 import java.util.List;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeItemsCraftingLogistics;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.routing.ExitRoute;
 import logisticspipes.utils.item.ItemIdentifierStack;
 
@@ -44,11 +44,11 @@ public class RequestRunningCraftingTasks extends CoordinatesPacket {
 				items.addAll(content);
 			}
 		}
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RunningCraftingTasks.class).setIdentList(items), player);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(RunningCraftingTasks.class).setIdentList(items), player);
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new RequestRunningCraftingTasks(getId());
 	}
 }

@@ -1,7 +1,7 @@
 package logisticspipes.network.packets.routingdebug;
 
 import logisticspipes.network.abstractpackets.IntegerPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.routing.debug.DebugController;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -21,7 +21,7 @@ public class RoutingUpdateUntrace extends IntegerPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new RoutingUpdateUntrace(getId());
 	}
 }

@@ -3,7 +3,7 @@ package logisticspipes.network.packets.gui;
 import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.network.guis.pipe.ChassiGuiProvider;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
@@ -29,7 +29,7 @@ public class GuiOpenChassie extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new GuiOpenChassie(getId());
 	}
 }

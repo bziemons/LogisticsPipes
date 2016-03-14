@@ -47,7 +47,7 @@ public class SlotFinderNumberPacket extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new SlotFinderNumberPacket(getId());
 	}
 

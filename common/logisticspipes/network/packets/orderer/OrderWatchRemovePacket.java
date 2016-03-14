@@ -2,7 +2,7 @@ package logisticspipes.network.packets.orderer;
 
 import logisticspipes.interfaces.IRequestWatcher;
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -25,7 +25,7 @@ public class OrderWatchRemovePacket extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new OrderWatchRemovePacket(getId());
 	}
 

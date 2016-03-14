@@ -2,7 +2,7 @@ package logisticspipes.pipes.basic;
 
 import logisticspipes.interfaces.routing.IFilter;
 import logisticspipes.network.PacketHandler;
-import logisticspipes.network.abstractpackets.ModernPacket;
+import logisticspipes.network.abstractpackets.AbstractPacket;
 import logisticspipes.network.packets.multiblock.MultiBlockCoordinatesPacket;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
@@ -198,7 +198,7 @@ public class LogisticsTileGenericSubMultiBlock extends TileEntity implements ISu
 		PacketHandler.queueAndRemovePacketFromNBT(packet.getNbtCompound());
 	}
 
-	public ModernPacket getLPDescriptionPacket() {
+	public AbstractPacket getLPDescriptionPacket() {
 		MultiBlockCoordinatesPacket packet = PacketHandler.getPacket(MultiBlockCoordinatesPacket.class);
 		packet.setTilePos(this);
 		packet.setTargetPos(mainPipePos);

@@ -8,7 +8,7 @@ import lombok.Setter;
 
 import logisticspipes.blocks.crafting.LogisticsCraftingTableTileEntity;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeBlockRequestTable;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.utils.item.ItemIdentifier;
@@ -41,7 +41,7 @@ public class CraftingSetType extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new CraftingSetType(getId());
 	}
 

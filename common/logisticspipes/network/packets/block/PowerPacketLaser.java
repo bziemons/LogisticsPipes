@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
@@ -73,7 +73,7 @@ public class PowerPacketLaser extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new PowerPacketLaser(getId());
 	}
 }

@@ -3,7 +3,7 @@ package logisticspipes.network.packets.orderer;
 import logisticspipes.gui.orderer.GuiOrderer;
 import logisticspipes.gui.orderer.GuiRequestTable;
 import logisticspipes.network.abstractpackets.InventoryModuleCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -19,7 +19,7 @@ public class OrdererContent extends InventoryModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new OrdererContent(getId());
 	}
 

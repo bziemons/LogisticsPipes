@@ -3,7 +3,7 @@ package logisticspipes.network.packets.module;
 import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.modules.ModuleOreDictItemSink;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.network.abstractpackets.NBTModuleCoordinatesPacket;
 import logisticspipes.proxy.MainProxy;
 
@@ -17,7 +17,7 @@ public class OreDictItemSinkList extends NBTModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new OreDictItemSinkList(getId());
 	}
 

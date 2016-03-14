@@ -1,7 +1,7 @@
 package logisticspipes.network.packets.block;
 
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.network.abstractpackets.NBTCoordinatesPacket;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -16,7 +16,7 @@ public class SaveSecurityPlayerPacket extends NBTCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new SaveSecurityPlayerPacket(getId());
 	}
 

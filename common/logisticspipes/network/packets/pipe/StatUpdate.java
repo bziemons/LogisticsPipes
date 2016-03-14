@@ -7,7 +7,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import lombok.Setter;
 
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.routing.ExitRoute;
@@ -34,7 +34,7 @@ public class StatUpdate extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new StatUpdate(getId());
 	}
 

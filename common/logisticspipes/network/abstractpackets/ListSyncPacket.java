@@ -39,7 +39,4 @@ public abstract class ListSyncPacket<E> extends CoordinatesPacket implements IWr
 		super.readData(input);
 		list = input.readArrayList(this);
 	}
-
-	@Override
-	public abstract ListSyncPacket<E> template();
 }

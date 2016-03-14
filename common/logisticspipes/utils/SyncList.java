@@ -6,8 +6,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.network.abstractpackets.ListSyncPacket;
-import logisticspipes.proxy.MainProxy;
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -49,9 +50,9 @@ public class SyncList<E> implements List<E> {
 		if (dirty) {
 			dirty = false;
 			if (watcherList != null) {
-				MainProxy.sendToPlayerList(packetType.template().setList(list), watcherList);
+				LPChannel.sendToPlayerList(packetType.template().setList(list), watcherList);
 			} else {
-				MainProxy.sendPacketToAllWatchingChunk(x, z, dim, packetType.template().setList(list));
+				LPChannel.sendPacketToAllWatchingChunk(x, z, dim, packetType.template().setList(list));
 			}
 		}
 	}
@@ -62,9 +63,9 @@ public class SyncList<E> implements List<E> {
 		this.x = x;
 		this.z = z;
 		if (watcherList != null) {
-			MainProxy.sendToPlayerList(packetType.template().setList(list), watcherList);
+			LPChannel.sendToPlayerList(packetType.template().setList(list), watcherList);
 		} else {
-			MainProxy.sendPacketToAllWatchingChunk(x, z, dim, packetType.template().setList(list));
+			LPChannel.sendPacketToAllWatchingChunk(x, z, dim, packetType.template().setList(list));
 		}
 	}
 
@@ -73,7 +74,7 @@ public class SyncList<E> implements List<E> {
 			watcherList = new PlayerCollectionList();
 		}
 		if (packetType != null) {
-			MainProxy.sendPacketToPlayer(packetType.template().setList(list), player);
+			LPChannel.sendPacketToPlayer(packetType.template().setList(list), player);
 		}
 		watcherList.add(player);
 	}

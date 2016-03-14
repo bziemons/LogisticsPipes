@@ -51,7 +51,6 @@ import logisticspipes.request.resources.IResource;
 import logisticspipes.request.resources.ItemResource;
 import logisticspipes.routing.pathfinder.PathFinder;
 import logisticspipes.ticks.LPTickHandler;
-import logisticspipes.ticks.RoutingTableUpdateThread;
 import logisticspipes.utils.CacheHolder;
 import logisticspipes.utils.OneList;
 import logisticspipes.utils.StackTraceUtil;

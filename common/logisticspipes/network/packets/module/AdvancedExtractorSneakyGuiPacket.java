@@ -3,7 +3,7 @@ package logisticspipes.network.packets.module;
 import logisticspipes.modules.ModuleAdvancedExtractor;
 import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
 import logisticspipes.network.NewGuiHandler;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
 import logisticspipes.network.guis.module.inhand.ExtractorModuleInHand;
 import logisticspipes.network.guis.module.inpipe.ExtractorModuleSlot;
@@ -23,7 +23,7 @@ public class AdvancedExtractorSneakyGuiPacket extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new AdvancedExtractorSneakyGuiPacket(getId());
 	}
 

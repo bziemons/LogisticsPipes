@@ -6,6 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.gui.hud.modules.HUDStringBasedItemSink;
 import logisticspipes.interfaces.IClientInformationProvider;
 import logisticspipes.interfaces.IHUDModuleHandler;
@@ -15,7 +17,6 @@ import logisticspipes.interfaces.IStringBasedModule;
 import logisticspipes.modules.abstractmodules.LogisticsGuiModule;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.network.NewGuiHandler;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider;
 import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
 import logisticspipes.network.guis.module.inhand.StringBasedItemSinkModuleGuiInHand;
@@ -120,12 +121,12 @@ public class ModuleModBasedItemSink extends LogisticsGuiModule implements IStrin
 
 	@Override
 	public void startHUDWatching() {
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(HUDStartModuleWatchingPacket.class).setModulePos(this));
+		LPChannel.sendPacketToServer(PacketHandler.getPacket(HUDStartModuleWatchingPacket.class).setModulePos(this));
 	}
 
 	@Override
 	public void stopHUDWatching() {
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(HUDStopModuleWatchingPacket.class).setModulePos(this));
+		LPChannel.sendPacketToServer(PacketHandler.getPacket(HUDStopModuleWatchingPacket.class).setModulePos(this));
 	}
 
 	@Override
@@ -133,7 +134,7 @@ public class ModuleModBasedItemSink extends LogisticsGuiModule implements IStrin
 		localModeWatchers.add(player);
 		NBTTagCompound nbt = new NBTTagCompound();
 		writeToNBT(nbt);
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this), player);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this), player);
 	}
 
 	@Override
@@ -146,11 +147,11 @@ public class ModuleModBasedItemSink extends LogisticsGuiModule implements IStrin
 		if (MainProxy.isServer(_world.getWorld())) {
 			NBTTagCompound nbt = new NBTTagCompound();
 			writeToNBT(nbt);
-			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this), localModeWatchers);
+			LPChannel.sendToPlayerList(PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this), localModeWatchers);
 		} else {
 			NBTTagCompound nbt = new NBTTagCompound();
 			writeToNBT(nbt);
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this));
+			LPChannel.sendPacketToServer(PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this));
 		}
 	}
 

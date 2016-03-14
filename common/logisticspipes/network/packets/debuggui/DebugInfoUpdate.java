@@ -22,7 +22,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Accessors(chain = true)
-public class DebugInfoUpdate extends ModernPacket {
+public class DebugInfoUpdate extends AbstractPacket {
 
 	@Getter
 	@Setter
@@ -75,7 +75,7 @@ public class DebugInfoUpdate extends ModernPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new DebugInfoUpdate(getId());
 	}
 

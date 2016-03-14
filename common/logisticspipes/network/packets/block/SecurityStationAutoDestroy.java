@@ -9,7 +9,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.gui.GuiSecurityStation;
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.proxy.MainProxy;
 
 import logisticspipes.utils.StaticResolve;
@@ -22,7 +22,7 @@ public class SecurityStationAutoDestroy extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new SecurityStationAutoDestroy(getId());
 	}
 

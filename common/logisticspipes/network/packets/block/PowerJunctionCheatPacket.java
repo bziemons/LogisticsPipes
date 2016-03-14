@@ -3,7 +3,7 @@ package logisticspipes.network.packets.block;
 import logisticspipes.LPConstants;
 import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -17,7 +17,7 @@ public class PowerJunctionCheatPacket extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new PowerJunctionCheatPacket(getId());
 	}
 

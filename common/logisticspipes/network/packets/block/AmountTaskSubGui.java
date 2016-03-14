@@ -2,7 +2,7 @@ package logisticspipes.network.packets.block;
 
 import logisticspipes.gui.GuiStatistics;
 import logisticspipes.network.abstractpackets.InventoryModuleCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -25,7 +25,7 @@ public class AmountTaskSubGui extends InventoryModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new AmountTaskSubGui(getId());
 	}
 }

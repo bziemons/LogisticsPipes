@@ -54,7 +54,7 @@ public class MultiBlockCoordinatesPacket extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new MultiBlockCoordinatesPacket(getId());
 	}
 }

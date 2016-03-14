@@ -34,7 +34,7 @@ public class CCBasedQuickSortSinkSize extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new CCBasedQuickSortSinkSize(getId());
 	}
 

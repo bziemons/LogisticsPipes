@@ -8,7 +8,7 @@ import lombok.Setter;
 import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
 import logisticspipes.blocks.stats.TrackingTask;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.utils.item.ItemIdentifier;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
@@ -56,7 +56,7 @@ public class AddItemToTrackPacket extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new AddItemToTrackPacket(getId());
 	}
 }

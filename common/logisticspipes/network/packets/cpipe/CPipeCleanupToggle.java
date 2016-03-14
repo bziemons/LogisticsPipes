@@ -1,10 +1,10 @@
 package logisticspipes.network.packets.cpipe;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.modules.ModuleCrafter;
-import logisticspipes.network.PacketHandler;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
-import logisticspipes.proxy.MainProxy;
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -18,7 +18,7 @@ public class CPipeCleanupToggle extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new CPipeCleanupToggle(getId());
 	}
 
@@ -29,6 +29,6 @@ public class CPipeCleanupToggle extends ModuleCoordinatesPacket {
 			return;
 		}
 		module.toogleCleaupMode();
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(CPipeCleanupStatus.class).setMode(module.cleanupModeIsExclude).setPacketPos(this), player);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(CPipeCleanupStatus.class).setMode(module.cleanupModeIsExclude).setPacketPos(this), player);
 	}
 }

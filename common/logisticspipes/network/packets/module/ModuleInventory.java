@@ -4,7 +4,7 @@ import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.interfaces.IModuleInventoryReceive;
 import logisticspipes.network.abstractpackets.InventoryModuleCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 
 import logisticspipes.utils.StaticResolve;
 
@@ -16,7 +16,7 @@ public class ModuleInventory extends InventoryModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new ModuleInventory(getId());
 	}
 

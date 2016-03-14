@@ -2,7 +2,7 @@ package logisticspipes.network.packets.orderer;
 
 import logisticspipes.LPItems;
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeBlockRequestTable;
 import logisticspipes.pipes.PipeItemsRequestLogisticsMk2;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
@@ -22,7 +22,7 @@ public class DiskMacroRequestPacket extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new DiskMacroRequestPacket(getId());
 	}
 

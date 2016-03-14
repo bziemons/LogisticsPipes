@@ -2,7 +2,7 @@ package logisticspipes.network.packets.orderer;
 
 import logisticspipes.interfaces.IOrderManagerContentReceiver;
 import logisticspipes.network.abstractpackets.InventoryModuleCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -17,7 +17,7 @@ public class OrdererManagerContent extends InventoryModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new OrdererManagerContent(getId());
 	}
 

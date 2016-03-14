@@ -6,10 +6,10 @@
 
 package logisticspipes.gui;
 
-import logisticspipes.network.PacketHandler;
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.network.packets.pipe.FluidSupplierMode;
 import logisticspipes.pipes.PipeItemsFluidSupplier;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
 import logisticspipes.utils.string.StringUtils;
@@ -81,7 +81,9 @@ public class GuiFluidSupplierPipe extends LogisticsBaseGuiScreen {
 		if (guibutton.id == 0) {
 			logic.setRequestingPartials(!logic.isRequestingPartials());
 			((GuiButton) buttonList.get(0)).displayString = logic.isRequestingPartials() ? StringUtils.translate(GuiFluidSupplierPipe.PREFIX + "Yes") : StringUtils.translate(GuiFluidSupplierPipe.PREFIX + "No");
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(FluidSupplierMode.class).setInteger((logic.isRequestingPartials() ? 1 : 0)).setPosX(logic.getX()).setPosY(logic.getY()).setPosZ(logic.getZ()));
+			LPChannel.sendPacketToServer(
+					PacketHandler.getPacket(FluidSupplierMode.class).setInteger((logic.isRequestingPartials() ? 1 : 0)).setPosX(logic.getX())
+							.setPosY(logic.getY()).setPosZ(logic.getZ()));
 		}
 		super.actionPerformed(guibutton);
 

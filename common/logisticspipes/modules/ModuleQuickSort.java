@@ -5,16 +5,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.modules.abstractmodules.LogisticsGuiModule;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider;
 import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
 import logisticspipes.network.packets.modules.QuickSortState;
 import logisticspipes.pipefxhandlers.Particles;
 import logisticspipes.pipes.basic.CoreRoutedPipe.ItemSendMode;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.specialinventoryhandler.SpecialInventoryHandler;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.SinkReply;
@@ -262,7 +262,9 @@ public class ModuleQuickSort extends LogisticsGuiModule {
 	}
 
 	private void sendPacketTo(EntityPlayer player) {
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(QuickSortState.class).setInteger2(lastPosSend).setInteger(getPositionInt()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()), player);
+		LPChannel.sendPacketToPlayer(
+				PacketHandler.getPacket(QuickSortState.class).setInteger2(lastPosSend).setInteger(getPositionInt()).setPosX(getX()).setPosY(getY())
+						.setPosZ(getZ()), player);
 	}
 
 	@Override

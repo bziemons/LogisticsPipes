@@ -7,7 +7,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import logisticspipes.gui.GuiSecurityStation;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.network.abstractpackets.NBTCoordinatesPacket;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.security.SecuritySettings;
@@ -22,7 +22,7 @@ public class SecurityStationOpenPlayer extends NBTCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new SecurityStationOpenPlayer(getId());
 	}
 

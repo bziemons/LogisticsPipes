@@ -2,7 +2,7 @@ package logisticspipes.network.packets.modules;
 
 import logisticspipes.modules.ModuleAdvancedExtractor;
 import logisticspipes.network.abstractpackets.BooleanModuleCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -16,7 +16,7 @@ public class AdvancedExtractorInclude extends BooleanModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new AdvancedExtractorInclude(getId());
 	}
 

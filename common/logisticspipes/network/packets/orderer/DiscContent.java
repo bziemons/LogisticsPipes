@@ -2,7 +2,7 @@ package logisticspipes.network.packets.orderer;
 
 import logisticspipes.LPItems;
 import logisticspipes.network.abstractpackets.ItemPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeBlockRequestTable;
 import logisticspipes.pipes.PipeItemsRequestLogisticsMk2;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
@@ -20,7 +20,7 @@ public class DiscContent extends ItemPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new DiscContent(getId());
 	}
 

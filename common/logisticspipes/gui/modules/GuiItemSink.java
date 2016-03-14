@@ -8,11 +8,11 @@
 
 package logisticspipes.gui.modules;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.modules.ModuleItemSink;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.module.ItemSinkDefaultPacket;
 import logisticspipes.network.packets.module.ItemSinkImportPacket;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.GuiStringHandlerButton;
@@ -68,10 +68,11 @@ public class GuiItemSink extends ModuleBaseGui {
 		switch (guibutton.id) {
 			case 0:
 				_itemSink.setDefaultRoute(!_itemSink.isDefaultRoute());
-				MainProxy.sendPacketToServer(PacketHandler.getPacket(ItemSinkDefaultPacket.class).setDefault(_itemSink.isDefaultRoute()).setModulePos(_itemSink));
+				LPChannel
+						.sendPacketToServer(PacketHandler.getPacket(ItemSinkDefaultPacket.class).setDefault(_itemSink.isDefaultRoute()).setModulePos(_itemSink));
 				break;
 			case 1:
-				MainProxy.sendPacketToServer(PacketHandler.getPacket(ItemSinkImportPacket.class).setModulePos(_itemSink));
+				LPChannel.sendPacketToServer(PacketHandler.getPacket(ItemSinkImportPacket.class).setModulePos(_itemSink));
 				break;
 		}
 

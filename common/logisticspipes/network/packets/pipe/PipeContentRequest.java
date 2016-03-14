@@ -2,10 +2,10 @@ package logisticspipes.network.packets.pipe;
 
 import java.lang.ref.WeakReference;
 
-import logisticspipes.network.PacketHandler;
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.network.abstractpackets.IntegerPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
-import logisticspipes.proxy.MainProxy;
+
 import logisticspipes.transport.LPTravelingItem;
 import logisticspipes.transport.LPTravelingItem.LPTravelingItemServer;
 
@@ -28,12 +28,13 @@ public class PipeContentRequest extends IntegerPacket {
 			item = ref.get();
 		}
 		if (item != null) {
-			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(PipeContentPacket.class).setItem(item.getItemIdentifierStack()).setTravelId(item.getId()), player);
+			LPChannel.sendPacketToPlayer(PacketHandler.getPacket(PipeContentPacket.class).setItem(item.getItemIdentifierStack()).setTravelId(item.getId()),
+					player);
 		}
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new PipeContentRequest(getId());
 	}
 }

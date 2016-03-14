@@ -4,7 +4,7 @@ import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.network.abstractpackets.InventoryModuleCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 
 import logisticspipes.utils.StaticResolve;
 
@@ -16,7 +16,7 @@ public class CPipeSatelliteImportBack extends InventoryModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new CPipeSatelliteImportBack(getId());
 	}
 

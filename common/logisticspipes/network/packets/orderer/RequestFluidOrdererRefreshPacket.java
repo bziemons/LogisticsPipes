@@ -1,7 +1,7 @@
 package logisticspipes.network.packets.orderer;
 
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
@@ -19,7 +19,7 @@ public class RequestFluidOrdererRefreshPacket extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new RequestFluidOrdererRefreshPacket(getId());
 	}
 

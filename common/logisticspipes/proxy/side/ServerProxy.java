@@ -8,7 +8,6 @@ import logisticspipes.interfaces.ILogisticsItem;
 import logisticspipes.items.ItemLogisticsPipe;
 import logisticspipes.items.LogisticsSolidBlockItem;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.UpdateName;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;

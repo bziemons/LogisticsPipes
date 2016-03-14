@@ -4,7 +4,7 @@ import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.network.abstractpackets.Integer2ModuleCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.proxy.MainProxy;
 
 import logisticspipes.utils.StaticResolve;
@@ -17,7 +17,7 @@ public class FluidCraftingAmount extends Integer2ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new FluidCraftingAmount(getId());
 	}
 

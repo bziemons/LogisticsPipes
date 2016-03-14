@@ -6,10 +6,8 @@ import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.routing.IFilter;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.network.GuiIDs;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.pipe.FireWallFlag;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.request.resources.IResource;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
@@ -17,6 +15,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 
+import network.rs485.logisticspipes.network.LPChannel;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 import logisticspipes.utils.tuples.Pair;
@@ -47,7 +46,8 @@ public class PipeItemsFirewall extends CoreRoutedPipe {
 	@Override
 	public void onWrenchClicked(EntityPlayer entityplayer) {
 		entityplayer.openGui(LogisticsPipes.instance, GuiIDs.GUI_FIREWALL, getWorld(), getX(), getY(), getZ());
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()), entityplayer);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()),
+				entityplayer);
 	}
 
 	@Override
@@ -154,7 +154,7 @@ public class PipeItemsFirewall extends CoreRoutedPipe {
 
 	public void setBlockProvider(boolean blockProvider) {
 		this.blockProvider = blockProvider;
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()));
+		LPChannel.sendPacketToServer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()));
 	}
 
 	public boolean isBlockCrafer() {
@@ -163,7 +163,7 @@ public class PipeItemsFirewall extends CoreRoutedPipe {
 
 	public void setBlockCrafer(boolean blockCrafer) {
 		this.blockCrafer = blockCrafer;
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()));
+		LPChannel.sendPacketToServer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()));
 	}
 
 	public boolean isBlockSorting() {
@@ -172,7 +172,7 @@ public class PipeItemsFirewall extends CoreRoutedPipe {
 
 	public void setBlockSorting(boolean blockSorting) {
 		this.blockSorting = blockSorting;
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()));
+		LPChannel.sendPacketToServer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()));
 	}
 
 	public boolean isBlockPower() {
@@ -181,7 +181,7 @@ public class PipeItemsFirewall extends CoreRoutedPipe {
 
 	public void setBlockPower(boolean blockPower) {
 		this.blockPower = blockPower;
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()));
+		LPChannel.sendPacketToServer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()));
 	}
 
 	public boolean isBlocking() {
@@ -190,7 +190,7 @@ public class PipeItemsFirewall extends CoreRoutedPipe {
 
 	public void setBlocking(boolean isBlocking) {
 		this.isBlocking = isBlocking;
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()));
+		LPChannel.sendPacketToServer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()));
 	}
 
 	private BitSet getFlags() {

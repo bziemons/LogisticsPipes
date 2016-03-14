@@ -2,10 +2,10 @@ package logisticspipes.gui;
 
 import java.util.Arrays;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.blocks.crafting.LogisticsCraftingTableTileEntity;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.block.CraftingCycleRecipe;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.request.resources.DictResource;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.GuiGraphics;
@@ -109,7 +109,7 @@ public class GuiLogisticsCraftingTable extends LogisticsBaseGuiScreen {
 	@Override
 	protected void actionPerformed(GuiButton button) {
 		if (button.id == 0 || button.id == 1) {
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(CraftingCycleRecipe.class).setDown(button.id == 1).setTilePos(_crafter));
+			LPChannel.sendPacketToServer(PacketHandler.getPacket(CraftingCycleRecipe.class).setDown(button.id == 1).setTilePos(_crafter));
 		}
 	}
 

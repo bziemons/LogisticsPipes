@@ -15,7 +15,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Accessors(chain = true)
-public class DebugSetVarContent extends ModernPacket {
+public class DebugSetVarContent extends AbstractPacket {
 
 	@Getter
 	@Setter
@@ -58,7 +58,7 @@ public class DebugSetVarContent extends ModernPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new DebugSetVarContent(getId());
 	}
 

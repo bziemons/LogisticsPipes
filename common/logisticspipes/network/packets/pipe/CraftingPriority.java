@@ -2,7 +2,7 @@ package logisticspipes.network.packets.pipe;
 
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.network.abstractpackets.IntegerModuleCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -16,7 +16,7 @@ public class CraftingPriority extends IntegerModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new CraftingPriority(getId());
 	}
 

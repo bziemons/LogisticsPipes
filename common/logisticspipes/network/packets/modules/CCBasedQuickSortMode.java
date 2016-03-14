@@ -34,7 +34,7 @@ public class CCBasedQuickSortMode extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new CCBasedQuickSortMode(getId());
 	}
 

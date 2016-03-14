@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import network.rs485.logisticspipes.util.LPDataInput;
@@ -40,7 +40,7 @@ public class PipeManagerWatchingPacket extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new PipeManagerWatchingPacket(getId());
 	}
 

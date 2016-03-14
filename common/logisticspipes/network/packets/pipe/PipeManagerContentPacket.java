@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.routing.order.ClientSideOrderInfo;
@@ -45,7 +45,7 @@ public class PipeManagerContentPacket extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new PipeManagerContentPacket(getId());
 	}
 

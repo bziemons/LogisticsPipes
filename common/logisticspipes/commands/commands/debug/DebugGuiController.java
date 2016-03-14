@@ -162,7 +162,7 @@ public class DebugGuiController {
 		public void passData(byte[] packet) {
 			MainProxy.sendPacketToServer(PacketHandler.getPacket(DebugDataPacket.class).setPayload(packet).setIdentifier(identification));
 		}
-
+#
 		@Override
 		public void closeCon() {
 			clientList.set(identification, null);

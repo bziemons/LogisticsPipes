@@ -81,7 +81,7 @@ public class ItemSinkFuzzy extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new ItemSinkFuzzy(getId());
 	}
 

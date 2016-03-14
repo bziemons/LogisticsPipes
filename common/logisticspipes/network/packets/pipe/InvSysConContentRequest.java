@@ -1,11 +1,11 @@
 package logisticspipes.network.packets.pipe;
 
-import logisticspipes.network.PacketHandler;
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeItemsInvSysConnector;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
-import logisticspipes.proxy.MainProxy;
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -19,7 +19,7 @@ public class InvSysConContentRequest extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new InvSysConContentRequest(getId());
 	}
 
@@ -30,7 +30,8 @@ public class InvSysConContentRequest extends CoordinatesPacket {
 			return;
 		}
 		if (pipe.pipe instanceof PipeItemsInvSysConnector) {
-			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(InvSysConContent.class).setIdentSet(((PipeItemsInvSysConnector) pipe.pipe).getExpectedItems()), player);
+			LPChannel.sendPacketToPlayer(PacketHandler.getPacket(InvSysConContent.class).setIdentSet(((PipeItemsInvSysConnector) pipe.pipe).getExpectedItems()),
+					player);
 		}
 	}
 }

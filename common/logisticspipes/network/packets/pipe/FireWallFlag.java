@@ -3,7 +3,7 @@ package logisticspipes.network.packets.pipe;
 import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.network.abstractpackets.BitSetCoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.PipeItemsFirewall;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 
@@ -17,7 +17,7 @@ public class FireWallFlag extends BitSetCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new FireWallFlag(getId());
 	}
 

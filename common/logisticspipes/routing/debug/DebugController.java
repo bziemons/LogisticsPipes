@@ -11,10 +11,11 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.commands.chathelper.LPChatListener;
 import logisticspipes.interfaces.IRoutingDebugAdapter;
 import logisticspipes.interfaces.routing.IFilter;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.gui.OpenChatGui;
 import logisticspipes.network.packets.routingdebug.RoutingUpdateCanidatePipe;
 import logisticspipes.network.packets.routingdebug.RoutingUpdateClearClient;
@@ -24,7 +25,6 @@ import logisticspipes.network.packets.routingdebug.RoutingUpdateDebugFilters;
 import logisticspipes.network.packets.routingdebug.RoutingUpdateDoneDebug;
 import logisticspipes.network.packets.routingdebug.RoutingUpdateInitDebug;
 import logisticspipes.network.packets.routingdebug.RoutingUpdateSourcePipe;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.IRouter;
@@ -83,7 +83,8 @@ public class DebugController implements IRoutingDebugAdapter {
 							e.printStackTrace();
 						}
 					}
-					MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (EntityPlayer) sender);
+
+					LPChannel.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (EntityPlayer) sender);
 					if (oldThread != null) {
 						oldThread.stop();
 					}
@@ -119,11 +120,12 @@ public class DebugController implements IRoutingDebugAdapter {
 			sender.sendMessage(new TextComponentString(reson));
 			LPChatListener.addTask(() -> {
 				state = DebugWaitState.CONTINUE;
-				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (EntityPlayer) sender);
+				LPChannel.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (EntityPlayer) sender);
 				return true;
 			}, sender);
 			return null;
 		});
+
 		boolean exist = false;
 		while (state == DebugWaitState.LOOP) {
 			if (LPChatListener.existTaskFor(sender.getDisplayName().getUnformattedText())) {
@@ -147,7 +149,7 @@ public class DebugController implements IRoutingDebugAdapter {
 		this.closedSet = closedSet;
 		this.filterList = filterList;
 		ExitRoute[] e = candidatesCost.toArray(new ExitRoute[] {});
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDebugCanidateList.class).setMsg(e), (EntityPlayer) sender);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDebugCanidateList.class).setMsg(e), (EntityPlayer) sender);
 		wait("Start?", true);
 	}
 
@@ -159,8 +161,8 @@ public class DebugController implements IRoutingDebugAdapter {
 		}
 		pipeHandled = false;
 		prevNode = lowestCostNode;
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateClearClient.class), (EntityPlayer) sender);
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateSourcePipe.class).setExitRoute(lowestCostNode), (EntityPlayer) sender);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateClearClient.class), (EntityPlayer) sender);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateSourcePipe.class).setExitRoute(lowestCostNode), (EntityPlayer) sender);
 	}
 
 	@Override
@@ -174,7 +176,8 @@ public class DebugController implements IRoutingDebugAdapter {
 			if (set != null) {
 				IRouter router = SimpleServiceLocator.routerManager.getRouter(i);
 				if (router != null) {
-					MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDebugClosedSet.class).setPos(router.getLPPosition()).setSet(set), (EntityPlayer) sender);
+					LPChannel.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDebugClosedSet.class).setPos(router.getLPPosition()).setSet(set),
+							(EntityPlayer) sender);
 				}
 			}
 		}
@@ -183,7 +186,8 @@ public class DebugController implements IRoutingDebugAdapter {
 			if (filters != null) {
 				IRouter router = SimpleServiceLocator.routerManager.getRouter(i);
 				if (router != null) {
-					MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDebugFilters.class).setPos(router.getLPPosition()).setFilters(filters), (EntityPlayer) sender);
+					LPChannel.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDebugFilters.class).setPos(router.getLPPosition()).setFilters(filters),
+							(EntityPlayer) sender);
 				}
 			}
 		}
@@ -195,7 +199,7 @@ public class DebugController implements IRoutingDebugAdapter {
 			list.addAll(Arrays.asList(e));
 			e = list.toArray(new ExitRoute[] {});
 		}
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDebugCanidateList.class).setMsg(e), (EntityPlayer) sender);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDebugCanidateList.class).setMsg(e), (EntityPlayer) sender);
 		if (prevNode == null || prevNode.debug.isTraced) {
 			//Display Information On Client Side
 
@@ -208,7 +212,7 @@ public class DebugController implements IRoutingDebugAdapter {
 	public void newCanidate(ExitRoute next) {
 		next.debug.index = cachedRoutes.size();
 		cachedRoutes.add(new WeakReference<>(next));
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateCanidatePipe.class).setExitRoute(next), (EntityPlayer) sender);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateCanidatePipe.class).setExitRoute(next), (EntityPlayer) sender);
 	}
 
 	@Override
@@ -224,15 +228,15 @@ public class DebugController implements IRoutingDebugAdapter {
 	@Override
 	public void done() {
 		sendMsg("Update Done");
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateClearClient.class), (EntityPlayer) sender);
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDoneDebug.class), (EntityPlayer) sender);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateClearClient.class), (EntityPlayer) sender);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDoneDebug.class), (EntityPlayer) sender);
 		cachedRoutes.clear();
 	}
 
 	@Override
 	public void init() {
 		sendMsg("Initialising variables");
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateInitDebug.class), (EntityPlayer) sender);
+		LPChannel.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateInitDebug.class), (EntityPlayer) sender);
 	}
 
 	@Override

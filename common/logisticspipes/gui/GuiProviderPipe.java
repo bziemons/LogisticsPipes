@@ -8,11 +8,11 @@
 
 package logisticspipes.gui;
 
-import logisticspipes.network.PacketHandler;
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.network.packets.module.ProviderPipeIncludePacket;
 import logisticspipes.network.packets.module.ProviderPipeNextModePacket;
 import logisticspipes.pipes.PipeItemsProviderLogistics;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
 import logisticspipes.utils.string.StringUtils;
@@ -67,10 +67,12 @@ public class GuiProviderPipe extends LogisticsBaseGuiScreen {
 		if (guibutton.id == 0) {
 			logic.setFilterExcluded(!logic.isExcludeFilter());
 			((GuiButton) buttonList.get(0)).displayString = logic.isExcludeFilter() ? StringUtils.translate(GuiProviderPipe.PREFIX + "Exclude") : StringUtils.translate(GuiProviderPipe.PREFIX + "Include");
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(ProviderPipeIncludePacket.class).setPosX(logic.getX()).setPosY(logic.getY()).setPosZ(logic.getZ()));
+			LPChannel.sendPacketToServer(
+					PacketHandler.getPacket(ProviderPipeIncludePacket.class).setPosX(logic.getX()).setPosY(logic.getY()).setPosZ(logic.getZ()));
 		} else if (guibutton.id == 1) {
 			logic.nextExtractionMode();
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(ProviderPipeNextModePacket.class).setPosX(logic.getX()).setPosY(logic.getY()).setPosZ(logic.getZ()));
+			LPChannel.sendPacketToServer(
+					PacketHandler.getPacket(ProviderPipeNextModePacket.class).setPosX(logic.getX()).setPosY(logic.getY()).setPosZ(logic.getZ()));
 		}
 		super.actionPerformed(guibutton);
 	}

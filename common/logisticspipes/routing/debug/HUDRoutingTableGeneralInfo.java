@@ -1,11 +1,11 @@
 package logisticspipes.routing.debug;
 
+import network.rs485.logisticspipes.network.LPChannel;
+
 import logisticspipes.gui.hud.BasicHUDGui;
 import logisticspipes.interfaces.IHUDConfig;
 import logisticspipes.interfaces.IHeadUpDisplayRenderer;
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.routingdebug.RoutingUpdateUntrace;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.PipeRoutingConnectionType;
 import logisticspipes.routing.debug.ClientViewController.DebugInformation;
@@ -59,7 +59,7 @@ public class HUDRoutingTableGeneralInfo extends BasicHUDGui implements IHeadUpDi
 
 			@Override
 			public void clicked() {
-				MainProxy.sendPacketToServer(PacketHandler.getPacket(RoutingUpdateUntrace.class).setInteger(index));
+				LPChannel.sendPacketToServer(PacketHandler.getPacket(RoutingUpdateUntrace.class).setInteger(index));
 				display = false;
 			}
 

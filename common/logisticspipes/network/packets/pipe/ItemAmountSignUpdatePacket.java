@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.network.abstractpackets.Integer2CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.pipes.signs.IPipeSign;
@@ -64,7 +64,7 @@ public class ItemAmountSignUpdatePacket extends Integer2CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new ItemAmountSignUpdatePacket(getId());
 	}
 }

@@ -1,7 +1,7 @@
 package logisticspipes.network.packets.pipe;
 
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -30,7 +30,7 @@ public class PipeDebugResponse extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new PipeDebugResponse(getId());
 	}
 }

@@ -3,7 +3,7 @@ package logisticspipes.network.packets.block;
 import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.network.abstractpackets.StringCoordinatesPacket;
 
 import logisticspipes.utils.StaticResolve;
@@ -16,7 +16,7 @@ public class SecurityStationOpenPlayerRequest extends StringCoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new SecurityStationOpenPlayerRequest(getId());
 	}
 

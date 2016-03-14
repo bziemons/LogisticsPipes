@@ -3,7 +3,7 @@ package logisticspipes.network.packets.block;
 import logisticspipes.logic.interfaces.ILogicControllerTile;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
-import logisticspipes.network.abstractpackets.ModernPacket;
+
 import logisticspipes.network.guis.logic.LogicControllerGuiProvider;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -28,7 +28,7 @@ public class LogicControllerPacket extends CoordinatesPacket {
 	}
 
 	@Override
-	public ModernPacket template() {
+	public AbstractPacket template() {
 		return new LogicControllerPacket(getId());
 	}
 }
