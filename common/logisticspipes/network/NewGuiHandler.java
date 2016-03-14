@@ -10,10 +10,14 @@ import java.util.List;
 import java.util.Map;
 
 import logisticspipes.LogisticsPipes;
+import logisticspipes.gui.Gui;
+import logisticspipes.gui.GuiSession;
+import logisticspipes.gui.LPGuiScreen;
 import logisticspipes.network.abstractguis.GuiProvider;
 import logisticspipes.network.packets.gui.GUIPacket;
 import logisticspipes.proxy.MainProxy;
 
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -93,15 +97,20 @@ public class NewGuiHandler {
 		int guiID = packet.getGuiID();
 		GuiProvider provider = NewGuiHandler.guilist.get(guiID).template();
 		provider.readData(new LPDataInputStream(packet.getGuiData()));
-		GuiContainer screen;
+		GuiScreen screen;
 		try {
+			/*
 			screen = (GuiContainer) provider.getClientGui(player);
+			*/
+			Gui gui = new Gui();
+			gui.guiSession = new GuiSession(packet);
+			screen = new LPGuiScreen(gui);
 		} catch (Exception e) {
 			LogisticsPipes.log.error(packet.getClass().getName());
 			LogisticsPipes.log.error(packet.toString());
 			throw new RuntimeException(e);
 		}
-		screen.inventorySlots.windowId = packet.getWindowID();
+		//screen.inventorySlots.windowId = packet.getWindowID();
 		FMLCommonHandler.instance().showGuiScreen(screen);
 	}
 }
