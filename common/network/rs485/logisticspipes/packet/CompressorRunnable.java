@@ -37,11 +37,13 @@
 
 package network.rs485.logisticspipes.packet;
 
+import net.minecraft.entity.player.EntityPlayer;
+
 import logisticspipes.network.abstractpackets.ModernPacket;
 
 public interface CompressorRunnable extends Runnable {
 
-	void appendPacket(ModernPacket packet);
+	void appendPacket(ModernPacket packet, EntityPlayer client);
 
 	void setPause(boolean pause);
 

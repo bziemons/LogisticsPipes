@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import net.minecraft.entity.player.EntityPlayer;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -99,7 +100,7 @@ public class ClientCompressorRunnable implements CompressorRunnable {
 	}
 
 	@Override
-	public void appendPacket(ModernPacket packet) {
+	public void appendPacket(ModernPacket packet, EntityPlayer ignored) {
 		if (syncBuffer == null) {
 			throw new IllegalStateException("Synchronized buffer not initialized");
 		}
