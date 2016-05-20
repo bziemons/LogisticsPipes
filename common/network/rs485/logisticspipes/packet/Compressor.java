@@ -39,44 +39,23 @@ package network.rs485.logisticspipes.packet;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
 
-import logisticspipes.network.abstractpackets.ModernPacket;
-import logisticspipes.network.packets.BufferTransfer;
-import network.rs485.logisticspipes.util.LPDataIOWrapper;
 import network.rs485.logisticspipes.util.SynchronizedByteBuf;
 
-final class CompressorUtil {
+public abstract class Compressor {
 
-	static final int MAX_BUFFER_SIZE = 1024 * 1024;
-	static final int MAX_CHUNK_SIZE = 32 * 1024;
+	private static final int MAX_BUFFER_SIZE = 1024 * 1024;
+	private static final int MAX_CHUNK_SIZE = 32 * 1024;
+	protected final ReentrantLock lock = new ReentrantLock();
+	protected final Condition newDataCondition = lock.newCondition();
+	protected boolean newData = false;
+	protected SynchronizedByteBuf syncBuffer;
 
-	private CompressorUtil() { }
-
-	static void addPacketToBuffer(SynchronizedByteBuf syncBuffer, ModernPacket packet) {
-		syncBuffer.writerAccess(buffer -> {
-			int packetLengthIndex = buffer.writerIndex();
-			buffer.writeInt(0);
-
-			LPDataIOWrapper.writeData(buffer, output -> {
-				output.writeShort(packet.getId());
-				output.writeInt(packet.getDebugId());
-				packet.writeData(output);
-			});
-
-			int afterPacketIndex = buffer.writerIndex();
-			buffer.writerIndex(packetLengthIndex);
-			buffer.writeInt(afterPacketIndex - packetLengthIndex - Integer.BYTES);
-			buffer.writerIndex(afterPacketIndex);
-		});
-	}
-
-	static void addPacketToBuffer(SynchronizedByteBuf syncBuffer, BufferTransfer packet) {
-		syncBuffer.writerAccess(buffer -> buffer.writeBytes(packet.getContent()));
-	}
-
-	static void compressAndProvide(SynchronizedByteBuf syncBuffer, Consumer<byte[]> compressedArrayConsumer) throws IOException {
+	void compressAndProvide(Consumer<byte[]> compressedArrayConsumer) throws IOException {
 		boolean more;
 		do {
 			ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -85,5 +64,28 @@ final class CompressorUtil {
 			}
 			compressedArrayConsumer.accept(byteArrayOutputStream.toByteArray());
 		} while (more);
+	}
+
+	protected void testBufferInitialized() {
+		if (syncBuffer == null) {
+			throw new IllegalStateException("Synchronized buffer not initialized");
+		}
+	}
+
+	protected void signalNewData() {
+		lock.lock();
+		try {
+			newData = true;
+			newDataCondition.signal();
+		} finally {
+			lock.unlock();
+		}
+	}
+
+	public void clear() {
+		if (syncBuffer != null) {
+			syncBuffer.release();
+		}
+		syncBuffer = new SynchronizedByteBuf(MAX_CHUNK_SIZE, MAX_BUFFER_SIZE);
 	}
 }

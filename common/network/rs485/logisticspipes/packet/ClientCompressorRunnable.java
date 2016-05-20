@@ -39,7 +39,6 @@ package network.rs485.logisticspipes.packet;
 
 import java.io.IOException;
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 import net.minecraft.entity.player.EntityPlayer;
 import cpw.mods.fml.relauncher.Side;
@@ -49,18 +48,12 @@ import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.packets.BufferTransfer;
 import logisticspipes.proxy.MainProxy;
-import network.rs485.logisticspipes.util.SynchronizedByteBuf;
+import network.rs485.logisticspipes.util.LPDataIOWrapper;
 
 @SideOnly(Side.CLIENT)
-public class ClientCompressorRunnable implements CompressorRunnable {
-
-	private final ReentrantLock lock = new ReentrantLock();
-	private final Condition newPacketCondition = lock.newCondition();
+public class ClientCompressorRunnable extends Compressor implements CompressorRunnable {
 	private final Condition pauseCondition = lock.newCondition();
-	private boolean newPacket = false;
 	private boolean pause = false;
-
-	private SynchronizedByteBuf syncBuffer;
 
 	@Override
 	public void run() {
@@ -72,10 +65,10 @@ public class ClientCompressorRunnable implements CompressorRunnable {
 				lock.lock();
 				try {
 					while (pause) pauseCondition.await();
-					while (!newPacket) newPacketCondition.await();
+					while (!newData) newDataCondition.await();
 					while (pause) pauseCondition.await();
 
-					newPacket = false;
+					newData = false;
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 					return;
@@ -84,7 +77,7 @@ public class ClientCompressorRunnable implements CompressorRunnable {
 				}
 
 				try {
-					CompressorUtil.compressAndProvide(syncBuffer, compressedData -> {
+					compressAndProvide(compressedData -> {
 						compressedPacket.setContent(compressedData);
 						MainProxy.sendPacketToServer(compressedPacket);
 					});
@@ -100,23 +93,6 @@ public class ClientCompressorRunnable implements CompressorRunnable {
 	}
 
 	@Override
-	public void appendPacket(ModernPacket packet, EntityPlayer ignored) {
-		if (syncBuffer == null) {
-			throw new IllegalStateException("Synchronized buffer not initialized");
-		}
-
-		CompressorUtil.addPacketToBuffer(syncBuffer, packet);
-
-		lock.lock();
-		try {
-			newPacket = true;
-			newPacketCondition.signal();
-		} finally {
-			lock.unlock();
-		}
-	}
-
-	@Override
 	public void setPause(boolean pause) {
 		lock.lock();
 		try {
@@ -128,10 +104,23 @@ public class ClientCompressorRunnable implements CompressorRunnable {
 	}
 
 	@Override
-	public void clear() {
-		if (syncBuffer != null) {
-			syncBuffer.release();
-		}
-		syncBuffer = new SynchronizedByteBuf(CompressorUtil.MAX_CHUNK_SIZE, CompressorUtil.MAX_BUFFER_SIZE);
+	public void outgoingPacket(ModernPacket packet, EntityPlayer ignored) {
+		testBufferInitialized();
+		syncBuffer.writerAccess(buffer -> {
+			int packetLengthIndex = buffer.writerIndex();
+			buffer.writeInt(0);
+
+			LPDataIOWrapper.writeData(buffer, output -> {
+				output.writeShort(packet.getId());
+				output.writeInt(packet.getDebugId());
+				packet.writeData(output);
+			});
+
+			int afterPacketIndex = buffer.writerIndex();
+			buffer.writerIndex(packetLengthIndex);
+			buffer.writeInt(afterPacketIndex - packetLengthIndex - Integer.BYTES);
+			buffer.writerIndex(afterPacketIndex);
+		});
+		signalNewData();
 	}
 }

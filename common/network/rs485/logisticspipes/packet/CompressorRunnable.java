@@ -43,7 +43,7 @@ import logisticspipes.network.abstractpackets.ModernPacket;
 
 public interface CompressorRunnable extends Runnable {
 
-	void appendPacket(ModernPacket packet, EntityPlayer client);
+	void outgoingPacket(ModernPacket packet, EntityPlayer client);
 
 	void setPause(boolean pause);
 
