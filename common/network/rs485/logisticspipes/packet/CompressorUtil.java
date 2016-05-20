@@ -43,6 +43,7 @@ import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
 
 import logisticspipes.network.abstractpackets.ModernPacket;
+import logisticspipes.network.packets.BufferTransfer;
 import network.rs485.logisticspipes.util.LPDataIOWrapper;
 import network.rs485.logisticspipes.util.SynchronizedByteBuf;
 
@@ -69,6 +70,10 @@ final class CompressorUtil {
 			buffer.writeInt(afterPacketIndex - packetLengthIndex - Integer.BYTES);
 			buffer.writerIndex(afterPacketIndex);
 		});
+	}
+
+	static void addPacketToBuffer(SynchronizedByteBuf syncBuffer, BufferTransfer packet) {
+		syncBuffer.writerAccess(buffer -> buffer.writeBytes(packet.getContent()));
 	}
 
 	static void compressAndProvide(SynchronizedByteBuf syncBuffer, Consumer<byte[]> compressedArrayConsumer) throws IOException {
