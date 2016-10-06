@@ -5,10 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 import net.minecraft.entity.player.EntityPlayer;
 import cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent;
@@ -16,9 +14,10 @@ import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
-import logisticspipes.network.packets.BufferTransfer;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.logisticspipes.packet.ClientCompressorRunnable;
+import network.rs485.logisticspipes.packet.CompressorRunnable;
 import network.rs485.logisticspipes.util.LPDataIOWrapper;
 
 public class ClientPacketBufferHandlerThread {
@@ -27,18 +26,6 @@ public class ClientPacketBufferHandlerThread {
 	private final ClientDecompressorThread clientDecompressorThread = new ClientDecompressorThread();
 
 	public ClientPacketBufferHandlerThread() {}
-
-	private static byte[] compress(byte[] content) {
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		try {
-			GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream);
-			gzipOutputStream.write(content);
-			gzipOutputStream.close();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		return byteArrayOutputStream.toByteArray();
-	}
 
 	private static byte[] decompress(byte[] contentBytes) {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -84,16 +71,7 @@ public class ClientPacketBufferHandlerThread {
 
 	private class ClientCompressorThread extends Thread {
 
-		//list of C->S packets to be serialized and compressed
-		private final LinkedList<ModernPacket> clientList = new LinkedList<>();
-		//serialized but still uncompressed C->S data
-		private byte[] clientBuffer = new byte[] {};
-		//used to cork the compressor so we can queue up a whole bunch of packets at once
-		private boolean pause = false;
-		//Clear content on next tick
-		private boolean clear = false;
-
-		private Lock clearLock = new ReentrantLock();
+		private final CompressorRunnable clientCompressorRunnable = new ClientCompressorRunnable();
 
 		public ClientCompressorThread() {
 			super("LogisticsPipes Packet Compressor Client");
@@ -103,83 +81,19 @@ public class ClientPacketBufferHandlerThread {
 
 		@Override
 		public void run() {
-			while (true) {
-				synchronized (clientList) {
-					if (!pause && clientList.size() > 0) {
-						clientBuffer = LPDataIOWrapper.collectData(output -> {
-							output.writeBytes(clientBuffer);
-							clearLock.lock();
-							try {
-								for (ModernPacket packet : clientList) {
-									output.writeByteArray(LPDataIOWrapper.collectData(dataOutput -> {
-										dataOutput.writeShort(packet.getId());
-										dataOutput.writeInt(packet.getDebugId());
-										packet.writeData(dataOutput);
-									}));
-								}
-							} finally {
-								clientList.clear();
-								clearLock.unlock();
-							}
-						});
-					}
-				}
-				//Send Content
-				if (clientBuffer.length > 0) {
-					while (clientBuffer.length > 1024 * 32) {
-						byte[] sendbuffer = Arrays.copyOf(clientBuffer, 1024 * 32);
-						clientBuffer = Arrays.copyOfRange(clientBuffer, 1024 * 32, clientBuffer.length);
-						byte[] compressed = ClientPacketBufferHandlerThread.compress(sendbuffer);
-						MainProxy.sendPacketToServer(PacketHandler.getPacket(BufferTransfer.class).setContent(compressed));
-					}
-					byte[] sendbuffer = clientBuffer;
-					clientBuffer = new byte[] {};
-					byte[] compressed = ClientPacketBufferHandlerThread.compress(sendbuffer);
-					MainProxy.sendPacketToServer(PacketHandler.getPacket(BufferTransfer.class).setContent(compressed));
-				}
-				synchronized (clientList) {
-					while (pause || clientList.size() == 0) {
-						try {
-							clientList.wait();
-						} catch (InterruptedException ignored) { }
-					}
-				}
-				if (clear) {
-					clear = false;
-					clientBuffer = new byte[] {};
-				}
-			}
+			clientCompressorRunnable.run();
 		}
 
 		public void addPacketToCompressor(ModernPacket packet) {
-			synchronized (clientList) {
-				clientList.add(packet);
-				if (!pause) {
-					clientList.notify();
-				}
-			}
+			clientCompressorRunnable.outgoingPacket(packet, null);
 		}
 
 		public void setPause(boolean flag) {
-			synchronized (clientList) {
-				pause = flag;
-				if (!pause) {
-					clientList.notify();
-				}
-			}
+			clientCompressorRunnable.setPause(flag);
 		}
 
 		public void clear() {
-			clear = true;
-			new Thread() {
-
-				@Override
-				public void run() {
-					clearLock.lock();
-					clientList.clear();
-					clearLock.unlock();
-				}
-			}.start();
+			clientCompressorRunnable.clear();
 		}
 	}
 

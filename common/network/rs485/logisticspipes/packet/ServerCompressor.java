@@ -37,32 +37,20 @@
 
 package network.rs485.logisticspipes.packet;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.function.Consumer;
-import java.util.zip.GZIPOutputStream;
+import java.util.HashMap;
+
+import net.minecraft.entity.player.EntityPlayer;
 
 import network.rs485.logisticspipes.util.SynchronizedByteBuf;
 
-abstract class Compressor {
+public class ServerCompressor extends Compressor {
 
-	public static final int MAX_BUFFER_SIZE = 1024 * 1024;
-	public static final int MAX_CHUNK_SIZE = 32 * 1024;
+	protected HashMap<EntityPlayer, SynchronizedByteBuf> clientBufferMap;
 
-	protected void compressAndProvide(SynchronizedByteBuf syncBuffer, Consumer<byte[]> compressedArrayConsumer) throws IOException {
-		boolean more;
-		do {
-			ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-			try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream)) {
-				more = syncBuffer.writeToOutputStream(gzipOutputStream, MAX_CHUNK_SIZE);
-			}
-			compressedArrayConsumer.accept(byteArrayOutputStream.toByteArray());
-		} while (more);
-	}
-
-	protected void testBufferInitialized(SynchronizedByteBuf syncBuffer) {
-		if (syncBuffer == null) {
-			throw new IllegalStateException("Synchronized buffer not initialized");
+	public void clear() {
+		if (clientBufferMap != null) {
+			clientBufferMap.values().forEach(SynchronizedByteBuf::release);
 		}
+		clientBufferMap = new HashMap<>();
 	}
 }

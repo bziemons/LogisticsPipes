@@ -37,91 +37,29 @@
 
 package network.rs485.logisticspipes.packet;
 
-import java.io.IOException;
-import java.util.concurrent.locks.Condition;
-
 import net.minecraft.entity.player.EntityPlayer;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
-import logisticspipes.network.packets.BufferTransfer;
-import logisticspipes.proxy.MainProxy;
-import network.rs485.logisticspipes.util.LPDataIOWrapper;
 
-@SideOnly(Side.CLIENT)
-public class ClientCompressorRunnable extends ClientCompressor implements CompressorRunnable {
-
-	private final Condition pauseCondition = lock.newCondition();
-	private boolean pause = false;
+@SideOnly(Side.SERVER)
+public class ServerCompressorRunnable extends ServerCompressor implements CompressorRunnable {
 
 	@Override
 	public void run() {
-		clear();
-		BufferTransfer compressedPacket = PacketHandler.getPacket(BufferTransfer.class);
-
-		try {
-			while (true) {
-				lock.lock();
-				try {
-					while (pause) pauseCondition.await();
-					while (!newData) newDataCondition.await();
-					while (pause) pauseCondition.await();
-
-					newData = false;
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-					return;
-				} finally {
-					lock.unlock();
-				}
-
-				try {
-					compressAndProvide(syncBuffer, compressedData -> {
-						compressedPacket.setContent(compressedData);
-						MainProxy.sendPacketToServer(compressedPacket);
-					});
-				} catch (IOException e) {
-					e.printStackTrace();
-					return;
-				}
-			}
-		} finally {
-			syncBuffer.release();
-			syncBuffer = null;
-		}
+		// TODO
 	}
 
 	@Override
 	public void setPause(boolean pause) {
-		lock.lock();
-		try {
-			this.pause = pause;
-			pauseCondition.signal();
-		} finally {
-			lock.unlock();
-		}
+		// TODO
 	}
 
 	@Override
-	public void outgoingPacket(ModernPacket packet, EntityPlayer ignored) {
-		testBufferInitialized(syncBuffer);
-		syncBuffer.writerAccess(buffer -> {
-			int packetLengthIndex = buffer.writerIndex();
-			buffer.writeInt(0);
-
-			LPDataIOWrapper.writeData(buffer, output -> {
-				output.writeShort(packet.getId());
-				output.writeInt(packet.getDebugId());
-				packet.writeData(output);
-			});
-
-			int afterPacketIndex = buffer.writerIndex();
-			buffer.writerIndex(packetLengthIndex);
-			buffer.writeInt(afterPacketIndex - packetLengthIndex - Integer.BYTES);
-			buffer.writerIndex(afterPacketIndex);
-		});
-		signalNewData();
+	public void outgoingPacket(ModernPacket packet, EntityPlayer client) {
+		testBufferInitialized(clientBufferMap.get(client));
+		// TODO
+		//signalNewData();
 	}
 }

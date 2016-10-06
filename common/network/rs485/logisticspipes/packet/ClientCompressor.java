@@ -37,32 +37,33 @@
 
 package network.rs485.logisticspipes.packet;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.function.Consumer;
-import java.util.zip.GZIPOutputStream;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import network.rs485.logisticspipes.util.SynchronizedByteBuf;
 
-abstract class Compressor {
+public abstract class ClientCompressor extends Compressor {
 
-	public static final int MAX_BUFFER_SIZE = 1024 * 1024;
-	public static final int MAX_CHUNK_SIZE = 32 * 1024;
+	protected final ReentrantLock lock = new ReentrantLock();
+	protected final Condition newDataCondition = lock.newCondition();
+	protected boolean newData = false;
 
-	protected void compressAndProvide(SynchronizedByteBuf syncBuffer, Consumer<byte[]> compressedArrayConsumer) throws IOException {
-		boolean more;
-		do {
-			ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-			try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream)) {
-				more = syncBuffer.writeToOutputStream(gzipOutputStream, MAX_CHUNK_SIZE);
-			}
-			compressedArrayConsumer.accept(byteArrayOutputStream.toByteArray());
-		} while (more);
+	protected SynchronizedByteBuf syncBuffer;
+
+	protected void signalNewData() {
+		lock.lock();
+		try {
+			newData = true;
+			newDataCondition.signal();
+		} finally {
+			lock.unlock();
+		}
 	}
 
-	protected void testBufferInitialized(SynchronizedByteBuf syncBuffer) {
-		if (syncBuffer == null) {
-			throw new IllegalStateException("Synchronized buffer not initialized");
+	public void clear() {
+		if (syncBuffer != null) {
+			syncBuffer.release();
 		}
+		syncBuffer = new SynchronizedByteBuf(MAX_CHUNK_SIZE, MAX_BUFFER_SIZE);
 	}
 }
