@@ -1,6 +1,7 @@
 package logisticspipes.pipes.signs;
 
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +24,6 @@ import logisticspipes.network.guis.item.ItemAmountSignGui;
 import logisticspipes.network.packets.pipe.ItemAmountSignUpdatePacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.renderer.LogisticsRenderPipe;
 import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.IRouter;
@@ -88,7 +88,8 @@ public class ItemAmountPipeSign implements IPipeSign, ISimpleInventoryEventHandl
 		}
 		int newAmount = 0;
 		if (itemTypeInv.getIDStackInSlot(0) != null) {
-			Map<ItemIdentifier, Integer> availableItems = SimpleServiceLocator.logisticsManager.getAvailableItems(pipe.getRouter().getIRoutersByCost());
+			// TODO PROVIDE REFACTOR
+			Map<ItemIdentifier, Integer> availableItems = Collections.emptyMap(); // SimpleServiceLocator.logisticsManager.getAvailableItems(pipe.getRouter().getIRoutersByCost());
 			if(availableItems != null) {
 				BitSet set = new BitSet(ServerRouter.getBiggestSimpleID());
 				spread(availableItems, set);

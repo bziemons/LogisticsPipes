@@ -8,7 +8,16 @@
 
 package logisticspipes.pipes;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.Set;
+import java.util.WeakHashMap;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumFacing;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.gui.hud.HUDSatellite;
@@ -16,9 +25,6 @@ import logisticspipes.interfaces.IChestContentReceiver;
 import logisticspipes.interfaces.IHeadUpDisplayRenderer;
 import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
 import logisticspipes.interfaces.IInventoryUtil;
-import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
-import logisticspipes.interfaces.routing.IRequestItems;
-import logisticspipes.interfaces.routing.IRequireReliableTransport;
 import logisticspipes.modules.ModuleSatellite;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.network.GuiIDs;
@@ -32,19 +38,12 @@ import logisticspipes.network.packets.satpipe.SatPipePrev;
 import logisticspipes.network.packets.satpipe.SatPipeSetID;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.request.RequestTree;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifierStack;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-import net.minecraft.nbt.NBTTagCompound;
-
-import net.minecraft.util.EnumFacing;
-
-public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IRequestItems, IRequireReliableTransport, IHeadUpDisplayRendererProvider, IChestContentReceiver {
+public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IHeadUpDisplayRendererProvider, IChestContentReceiver {
 
 	public final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
 	public final LinkedList<ItemIdentifierStack> itemList = new LinkedList<>();
@@ -257,30 +256,8 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IRequ
 	@Override
 	public void throttledUpdateEntity() {
 		super.throttledUpdateEntity();
-		if (_lostItems.isEmpty()) {
-			return;
-		}
-		final Iterator<ItemIdentifierStack> iterator = _lostItems.iterator();
-		while (iterator.hasNext()) {
-			ItemIdentifierStack stack = iterator.next();
-			int received = RequestTree.requestPartial(stack, (CoreRoutedPipe) container.pipe, null);
-			if (received > 0) {
-				if (received == stack.getStackSize()) {
-					iterator.remove();
-				} else {
-					stack.setStackSize(stack.getStackSize() - received);
-				}
-			}
-		}
+		// TODO PROVIDE REFACTOR
 	}
-
-	@Override
-	public void itemLost(ItemIdentifierStack item, IAdditionalTargetInformation info) {
-		_lostItems.add(item);
-	}
-
-	@Override
-	public void itemArrived(ItemIdentifierStack item, IAdditionalTargetInformation info) {}
 
 	public void setSatelliteId(int integer) {
 		satelliteId = integer;

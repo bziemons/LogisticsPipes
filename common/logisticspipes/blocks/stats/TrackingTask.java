@@ -3,7 +3,6 @@ package logisticspipes.blocks.stats;
 import net.minecraft.nbt.NBTTagCompound;
 
 import logisticspipes.pipes.basic.CoreRoutedPipe;
-import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.IRouter;
 import logisticspipes.utils.item.ItemIdentifier;
 import network.rs485.logisticspipes.util.LPDataInput;
@@ -25,7 +24,8 @@ public class TrackingTask {
 		if (router == null) {
 			return;
 		}
-		amountRecorded[arrayPos++] = SimpleServiceLocator.logisticsManager.getAmountFor(item, router.getIRoutersByCost());
+		// TODO PROVIDE REFACTOR: statistics
+		amountRecorded[arrayPos++] = 0; // SimpleServiceLocator.logisticsManager.getAmountFor(item, router.getIRoutersByCost());
 		if (arrayPos >= amountRecorded.length) {
 			arrayPos = 0;
 		}

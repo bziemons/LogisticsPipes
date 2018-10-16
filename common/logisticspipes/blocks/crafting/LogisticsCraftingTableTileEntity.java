@@ -59,7 +59,7 @@ public class LogisticsCraftingTableTileEntity extends LogisticsSolidTileEntity i
 	public ItemIdentifier targetType = null;
 	//just use CraftingRequirement to store flags; field "stack" is ignored
 	public DictResource[] fuzzyFlags = new DictResource[9];
-	public DictResource outputFuzzyFlags = new DictResource(null, null);
+	public DictResource outputFuzzyFlags = new DictResource((ItemIdentifierStack) null);
 	private IRecipe cache;
 	private EntityPlayerMP fake;
 	private PlayerIdentifier placedBy = null;
@@ -71,7 +71,7 @@ public class LogisticsCraftingTableTileEntity extends LogisticsSolidTileEntity i
 	public LogisticsCraftingTableTileEntity() {
 		matrix.addListener(this);
 		for (int i = 0; i < 9; i++) {
-			fuzzyFlags[i] = new DictResource(null, null);
+			fuzzyFlags[i] = new DictResource((ItemIdentifierStack) null);
 		}
 	}
 

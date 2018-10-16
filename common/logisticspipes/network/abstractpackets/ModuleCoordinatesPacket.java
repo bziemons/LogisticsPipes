@@ -1,10 +1,6 @@
 package logisticspipes.network.abstractpackets;
 
-import java.util.function.BooleanSupplier;
-import java.util.function.Function;
-
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
 import lombok.Getter;

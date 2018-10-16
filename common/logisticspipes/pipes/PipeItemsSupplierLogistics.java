@@ -10,9 +10,9 @@ package logisticspipes.pipes;
 
 import java.util.List;
 
-import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
-import logisticspipes.interfaces.routing.IRequestItems;
-import logisticspipes.interfaces.routing.IRequireReliableTransport;
+import net.minecraft.item.Item;
+import net.minecraft.nbt.NBTTagCompound;
+
 import logisticspipes.modules.ModuleActiveSupplier;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
@@ -20,12 +20,8 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.debug.StatusEntry;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
-import logisticspipes.utils.item.ItemIdentifierStack;
 
-import net.minecraft.item.Item;
-import net.minecraft.nbt.NBTTagCompound;
-
-public class PipeItemsSupplierLogistics extends CoreRoutedPipe implements IRequestItems, IRequireReliableTransport {
+public class PipeItemsSupplierLogistics extends CoreRoutedPipe {
 
 	private ModuleActiveSupplier module;
 
@@ -39,11 +35,6 @@ public class PipeItemsSupplierLogistics extends CoreRoutedPipe implements IReque
 	@Override
 	public TextureType getCenterTexture() {
 		return Textures.LOGISTICSPIPE_SUPPLIER_TEXTURE;
-	}
-
-	/* TRIGGER INTERFACE */
-	public boolean isRequestFailed() {
-		return module.isRequestFailed();
 	}
 
 	@Override
@@ -66,16 +57,6 @@ public class PipeItemsSupplierLogistics extends CoreRoutedPipe implements IReque
 	public void writeToNBT(NBTTagCompound nbttagcompound) {
 		super.writeToNBT(nbttagcompound);
 		module.writeToNBT(nbttagcompound);
-	}
-
-	@Override
-	public void itemLost(ItemIdentifierStack item, IAdditionalTargetInformation info) {
-		module.itemLost(item, info);
-	}
-
-	@Override
-	public void itemArrived(ItemIdentifierStack item, IAdditionalTargetInformation info) {
-		module.itemArrived(item, info);
 	}
 
 	@Override

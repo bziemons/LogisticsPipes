@@ -8,13 +8,10 @@
 
 package logisticspipes.logistics;
 
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import logisticspipes.interfaces.routing.IFilter;
 import logisticspipes.logisticspipes.IRoutedItem;
-import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.IRouter;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
@@ -29,14 +26,5 @@ public interface ILogisticsManager {
 
 	Triplet<Integer, SinkReply, List<IFilter>> hasDestinationWithMinPriority(ItemIdentifier stack, int sourceRouter, boolean excludeSource, FixedPriority priority);
 
-	LinkedList<ItemIdentifier> getCraftableItems(List<ExitRoute> list);
-
-	Map<ItemIdentifier, Integer> getAvailableItems(List<ExitRoute> list);
-
 	String getBetterRouterName(IRouter r);
-
-	int getAmountFor(ItemIdentifier item, List<ExitRoute> validDestinations);
-	//boolean request(LogisticsTransaction transaction, List<IRouter> validDestinations, List<ItemMessage> errors, boolean realrequest, boolean denyCrafterAdding);
-	//boolean request(LogisticsTransaction transaction, List<IRouter> validDestinations, List<ItemMessage> errors);
-	//boolean request(LogisticsRequest originalRequest, List<IRouter> validDestinations, List<ItemMessage> errors);
 }

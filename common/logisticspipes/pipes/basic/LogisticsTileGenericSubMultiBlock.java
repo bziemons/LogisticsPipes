@@ -1,35 +1,25 @@
 package logisticspipes.pipes.basic;
 
-import logisticspipes.interfaces.routing.IFilter;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.packets.multiblock.MultiBlockCoordinatesPacket;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.renderer.state.PipeSubRenderState;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider;
 import logisticspipes.routing.pathfinder.ISubMultiBlockPipeInformationProvider;
-import logisticspipes.transport.LPTravelingItem;
-import logisticspipes.utils.OrientationsUtil;
 import logisticspipes.utils.TileBuffer;
 
-import logisticspipes.utils.item.ItemIdentifier;
-
-import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
-import network.rs485.logisticspipes.util.LPDataIOWrapper;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.Packet;
 import net.minecraft.tileentity.TileEntity;
 
 import net.minecraft.util.EnumFacing;

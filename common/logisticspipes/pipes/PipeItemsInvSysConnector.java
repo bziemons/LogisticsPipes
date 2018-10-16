@@ -1,7 +1,6 @@
 package logisticspipes.pipes;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -29,13 +28,10 @@ import logisticspipes.interfaces.IGuiOpenControler;
 import logisticspipes.interfaces.IHeadUpDisplayRenderer;
 import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
 import logisticspipes.interfaces.IInventoryUtil;
-import logisticspipes.interfaces.IOrderManagerContentReceiver;
 import logisticspipes.interfaces.routing.IChannelManager;
 import logisticspipes.interfaces.routing.IChannelRoutingConnection;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.network.GuiHandler;
-import logisticspipes.network.GuiIDs;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.guis.pipe.InvSysConGuiProvider;
@@ -48,17 +44,14 @@ import logisticspipes.pipefxhandlers.Particles;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.ItemRoutingInformation;
 import logisticspipes.routing.channels.ChannelInformation;
-import logisticspipes.routing.channels.ChannelManager;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.transport.TransportInvConnection;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifier;
-import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.transactor.ITransactor;
 import logisticspipes.utils.tuples.Pair;
@@ -67,8 +60,7 @@ import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
-public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannelRoutingConnection, IHeadUpDisplayRendererProvider, IOrderManagerContentReceiver,
-		IGuiOpenControler {
+public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannelRoutingConnection, IHeadUpDisplayRendererProvider, IGuiOpenControler {
 
 	private boolean init = false;
 	private HashMap<ItemIdentifier, List<ItemRoutingInformation>> itemsOnRoute = new HashMap<>();
@@ -166,7 +158,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 				}
 				int itemAmount = amounts.get(ident);
 				List<ItemRoutingInformation> needs = itemsOnRoute.get(ident);
-				for (Iterator<ItemRoutingInformation> iterator = needs.iterator(); iterator.hasNext();) {
+				for (Iterator<ItemRoutingInformation> iterator = needs.iterator(); iterator.hasNext(); ) {
 					ItemRoutingInformation need = iterator.next();
 					if (need.getItem().getStackSize() <= itemAmount) {
 						if (!useEnergy(6)) {
@@ -280,7 +272,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 	public void writeToNBT(NBTTagCompound nbttagcompound) {
 		super.writeToNBT(nbttagcompound);
 		nbttagcompound.setInteger("resistance", resistance);
-		if(connectedChannel != null) {
+		if (connectedChannel != null) {
 			nbttagcompound.setString("connectedChannel", connectedChannel.toString());
 		}
 	}
@@ -289,7 +281,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 	public void readFromNBT(NBTTagCompound nbttagcompound) {
 		super.readFromNBT(nbttagcompound);
 		resistance = nbttagcompound.getInteger("resistance");
-		if(nbttagcompound.hasKey("connectedChannel")) {
+		if (nbttagcompound.hasKey("connectedChannel")) {
 			connectedChannel = UUID.fromString(nbttagcompound.getString("connectedChannel"));
 		} else {
 			connectedChannel = null;
@@ -380,7 +372,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 						.filter(triplet -> triplet.getValue2() != null && triplet.getValue3() != null)
 						.filter(triplet -> triplet.getValue2().exitOrientation != triplet.getValue3().exitOrientation)
 						.min(Comparator.comparing(trip -> trip.getValue2().blockDistance)).map(Pair::getValue1);
-				if(!bestConnection.isPresent()) {
+				if (!bestConnection.isPresent()) {
 					bestConnection = connectedPipes.stream()
 							.map(con -> new Pair<>(
 									con,
@@ -389,7 +381,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 							.filter(triplet -> triplet.getValue2() != null)
 							.min(Comparator.comparing(trip -> trip.getValue2().blockDistance)).map(Pair::getValue1);
 				}
-				if(bestConnection.isPresent() && bestConnection.get() instanceof IChannelRoutingConnection) {
+				if (bestConnection.isPresent() && bestConnection.get() instanceof IChannelRoutingConnection) {
 					IChannelRoutingConnection pipe = (IChannelRoutingConnection) bestConnection.get();
 					pipe.addItem(info);
 					spawnParticle(Particles.OrangeParticle, 4);
@@ -437,12 +429,6 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 	public void playerStopWatching(EntityPlayer player, int mode) {
 		super.playerStopWatching(player, mode);
 		localModeWatchers.remove(player);
-	}
-
-	@Override
-	public void setOrderManagerContent(Collection<ItemIdentifierStack> list) {
-		displayList.clear();
-		displayList.addAll(list);
 	}
 
 	public void setChannelFromClient(UUID fromString) {

@@ -1,6 +1,6 @@
 package logisticspipes.modules;
 
-import java.util.List;
+import net.minecraft.nbt.NBTTagCompound;
 
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
@@ -8,8 +8,6 @@ import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
 import logisticspipes.utils.item.ItemIdentifier;
-
-import net.minecraft.nbt.NBTTagCompound;
 
 public class ModulePolymorphicItemSink extends LogisticsModule {
 
@@ -78,11 +76,6 @@ public class ModulePolymorphicItemSink extends LogisticsModule {
 	}
 
 	//TODO: SINK UNDAMAGED MATCH CORRECTLY!
-
-	@Override
-	public List<ItemIdentifier> getSpecificInterests() {
-		return null;
-	}
 
 	@Override
 	public boolean interestedInAttachedInventory() {

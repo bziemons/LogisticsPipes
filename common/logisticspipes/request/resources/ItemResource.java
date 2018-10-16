@@ -1,7 +1,5 @@
 package logisticspipes.request.resources;
 
-import logisticspipes.interfaces.routing.IRequestItems;
-import logisticspipes.routing.IRouter;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.string.ChatColor;
@@ -11,17 +9,14 @@ import network.rs485.logisticspipes.util.LPDataOutput;
 public class ItemResource implements IResource {
 
 	private final ItemIdentifierStack stack;
-	private final IRequestItems requester;
 	private Object ccObject;
 
-	public ItemResource(ItemIdentifierStack stack, IRequestItems requester) {
+	public ItemResource(ItemIdentifierStack stack) {
 		this.stack = stack;
-		this.requester = requester;
 	}
 
 	public ItemResource(LPDataInput input) {
 		stack = input.readItemIdentifierStack();
-		requester = null;
 	}
 
 	@Override
@@ -47,15 +42,6 @@ public class ItemResource implements IResource {
 		return stack;
 	}
 
-	public IRequestItems getTarget() {
-		return requester;
-	}
-
-	@Override
-	public IRouter getRouter() {
-		return requester.getRouter();
-	}
-
 	@Override
 	public boolean matches(ItemIdentifier itemType, MatchSettings settings) {
 		switch (settings) {
@@ -71,25 +57,7 @@ public class ItemResource implements IResource {
 	public IResource clone(int multiplier) {
 		ItemIdentifierStack stack = this.stack.clone();
 		stack.setStackSize(stack.getStackSize() * multiplier);
-		return new ItemResource(stack, requester);
-	}
-
-	@Override
-	public boolean mergeForDisplay(IResource resource, int withAmount) {
-		if (resource instanceof ItemResource) {
-			if (((ItemResource) resource).stack.getItem().equals(stack.getItem())) {
-				stack.setStackSize(stack.getStackSize() + withAmount);
-				return true;
-			}
-		}
-		return false;
-	}
-
-	@Override
-	public IResource copyForDisplayWith(int amount) {
-		ItemIdentifierStack stack = this.stack.clone();
-		stack.setStackSize(amount);
-		return new ItemResource(stack, requester);
+		return new ItemResource(stack);
 	}
 
 	@Override

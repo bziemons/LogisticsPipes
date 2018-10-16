@@ -25,7 +25,6 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
-import logisticspipes.LPItems;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.crash.CrashReportCategory;
@@ -45,6 +44,7 @@ import net.minecraftforge.items.CapabilityItemHandler;
 import lombok.Getter;
 
 import logisticspipes.LPConstants;
+import logisticspipes.LPItems;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.api.ILogisticsPowerProvider;
 import logisticspipes.asm.ModDependentMethod;
@@ -64,9 +64,6 @@ import logisticspipes.interfaces.IWatchingHandler;
 import logisticspipes.interfaces.IWorldProvider;
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.interfaces.routing.IFilter;
-import logisticspipes.interfaces.routing.IRequestItems;
-import logisticspipes.interfaces.routing.IRequireReliableFluidTransport;
-import logisticspipes.interfaces.routing.IRequireReliableTransport;
 import logisticspipes.items.ItemPipeSignCreator;
 import logisticspipes.logisticspipes.ExtractionMode;
 import logisticspipes.logisticspipes.IRoutedItem;
@@ -107,8 +104,6 @@ import logisticspipes.routing.IRouter;
 import logisticspipes.routing.ItemRoutingInformation;
 import logisticspipes.routing.ServerRouter;
 import logisticspipes.routing.order.IOrderInfoProvider;
-import logisticspipes.routing.order.LogisticsItemOrderManager;
-import logisticspipes.routing.order.LogisticsOrderManager;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
 import logisticspipes.security.PermissionException;
 import logisticspipes.security.SecuritySettings;
@@ -118,7 +113,6 @@ import logisticspipes.transport.LPTravelingItem.LPTravelingItemServer;
 import logisticspipes.transport.PipeTransportLogistics;
 import logisticspipes.utils.CacheHolder;
 import logisticspipes.utils.EnumFacingUtil;
-import logisticspipes.utils.FluidIdentifierStack;
 import logisticspipes.utils.OrientationsUtil;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.SinkReply;
@@ -133,7 +127,7 @@ import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 @CCType(name = "LogisticsPipes:Normal")
 public abstract class CoreRoutedPipe extends CoreUnroutedPipe
-		implements IClientState, IRequestItems, ITrackStatistics, IWorldProvider, IWatchingHandler, IPipeServiceProvider, IQueueCCEvent, ILPPositionProvider {
+		implements IClientState, ITrackStatistics, IWorldProvider, IWatchingHandler, IPipeServiceProvider, IQueueCCEvent, ILPPositionProvider {
 
 	private static int pipecount = 0;
 	public final PlayerCollectionList watchers = new PlayerCollectionList();
@@ -161,7 +155,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 	protected RouteLayer _routeLayer;
 	protected TransportLayer _transportLayer;
 	protected UpgradeManager upgradeManager = new UpgradeManager(this);
-	protected LogisticsItemOrderManager _orderItemManager = null;
 	protected List<TileEntity> _cachedAdjacentInventories;
 	protected EnumFacing pointedDirection = null;
 	//public BaseRoutingLogic logic;
@@ -521,10 +514,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		System.out.println("~~~~~~~~~~~SUBSYSTEMPOWER~~~~~~~~~~~");
 		System.out.println(r.getSubSystemPowerProvider());
 		System.out.println();
-		if (_orderItemManager != null) {
-			System.out.println("################ORDERDUMP#################");
-			_orderItemManager.dump();
-		}
+		// TODO PROVIDE REFACTOR: dump provider/request/crafting info
 		System.out.println("################END#################");
 		refreshConnectionAndRender(true);
 		System.out.print("");
@@ -987,13 +977,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		}
 	}
 
-	@Override
-	public void itemCouldNotBeSend(ItemIdentifierStack item, IAdditionalTargetInformation info) {
-		if (this instanceof IRequireReliableTransport) {
-			((IRequireReliableTransport) this).itemLost(item, info);
-		}
-	}
-
 	public boolean isLockedExit(EnumFacing orientation) {
 		return false;
 	}
@@ -1171,20 +1154,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		return _initialInit;
 	}
 
-	@Override
-	public int compareTo(IRequestItems other) {
-		return getID() - other.getID();
-	}
-
-	@Override
-	public int getID() {
-		return getRouter().getSimpleID();
-	}
-
-	public Set<ItemIdentifier> getSpecificInterests() {
-		return null;
-	}
-
 	public boolean hasGenericInterests() {
 		return false;
 	}
@@ -1277,30 +1246,9 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		return null;
 	}
 
-	/**
-	 * used as a distance offset when deciding which pipe to use NOTE: called
-	 * very regularly, returning a pre-calculated int is probably appropriate.
-	 *
-	 * @return
-	 */
-	public double getLoadFactor() {
-		return 0.0;
-	}
-
 	public void notifyOfItemArival(ItemRoutingInformation information) {
 		_inTransitToMe.remove(information);
-		if (this instanceof IRequireReliableTransport) {
-			((IRequireReliableTransport) this).itemArrived(information.getItem(), information.targetInfo);
-		}
-		if (this instanceof IRequireReliableFluidTransport) {
-			ItemIdentifierStack stack = information.getItem();
-			if (stack.getItem().isFluidContainer()) {
-				FluidIdentifierStack liquid = SimpleServiceLocator.logisticsFluidManager.getFluidFromContainer(stack);
-				if (liquid != null) {
-					((IRequireReliableFluidTransport) this).liquidArrived(liquid.getFluid(), liquid.getAmount());
-				}
-			}
-		}
+		// TODO PROVIDE REFACTOR: promise fulfilled
 	}
 
 	@Override
@@ -1605,16 +1553,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 			}
 		}
 		return pointedDirection;
-	}
-
-	@Override
-	public LogisticsItemOrderManager getItemOrderManager() {
-		_orderItemManager = _orderItemManager != null ? _orderItemManager : new LogisticsItemOrderManager(this);
-		return _orderItemManager;
-	}
-
-	public LogisticsOrderManager<?, ?> getOrderManager() {
-		return getItemOrderManager();
 	}
 
 	public void addPipeSign(EnumFacing dir, IPipeSign type, EntityPlayer player) {

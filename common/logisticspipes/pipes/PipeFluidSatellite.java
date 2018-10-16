@@ -3,10 +3,12 @@ package logisticspipes.pipes;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Map.Entry;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
+import net.minecraft.nbt.NBTTagCompound;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.gui.hud.HUDSatellite;
@@ -14,8 +16,6 @@ import logisticspipes.interfaces.IChestContentReceiver;
 import logisticspipes.interfaces.IHeadUpDisplayRenderer;
 import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
 import logisticspipes.interfaces.ITankUtil;
-import logisticspipes.interfaces.routing.IRequestFluid;
-import logisticspipes.interfaces.routing.IRequireReliableFluidTransport;
 import logisticspipes.modules.ModuleSatellite;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.network.GuiIDs;
@@ -29,18 +29,13 @@ import logisticspipes.network.packets.satpipe.SatPipePrev;
 import logisticspipes.network.packets.satpipe.SatPipeSetID;
 import logisticspipes.pipes.basic.fluid.FluidRoutedPipe;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.request.RequestTree;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifierStack;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-import net.minecraft.nbt.NBTTagCompound;
-
-public class PipeFluidSatellite extends FluidRoutedPipe implements IRequestFluid, IRequireReliableFluidTransport, IHeadUpDisplayRendererProvider, IChestContentReceiver {
+public class PipeFluidSatellite extends FluidRoutedPipe implements IHeadUpDisplayRendererProvider, IChestContentReceiver {
 
 	public final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
 	public final LinkedList<ItemIdentifierStack> itemList = new LinkedList<>();
@@ -83,11 +78,6 @@ public class PipeFluidSatellite extends FluidRoutedPipe implements IRequestFluid
 		if (isNthTick(20) && localModeWatchers.size() > 0) {
 			updateInv(false);
 		}
-	}
-
-	@Override
-	public void sendFailed(FluidIdentifier liquid, Integer amount) {
-		liquidLost(liquid, amount);
 	}
 
 	private void addToList(ItemIdentifierStack stack) {
@@ -246,6 +236,7 @@ public class PipeFluidSatellite extends FluidRoutedPipe implements IRequestFluid
 
 	@Override
 	public void onAllowedRemoval() {
+		// TODO PROVIDE REFACTOR: cancel all orders
 		if (MainProxy.isClient(getWorld())) {
 			return;
 		}
@@ -265,43 +256,11 @@ public class PipeFluidSatellite extends FluidRoutedPipe implements IRequestFluid
 	@Override
 	public void throttledUpdateEntity() {
 		super.throttledUpdateEntity();
-		if (_lostItems.isEmpty()) {
-			return;
-		}
-		final Iterator<Entry<FluidIdentifier, Integer>> iterator = _lostItems.entrySet().iterator();
-		while (iterator.hasNext()) {
-			Entry<FluidIdentifier, Integer> stack = iterator.next();
-			int received = RequestTree.requestFluidPartial(stack.getKey(), stack.getValue(), this, null);
-
-			if (received > 0) {
-				if (received == stack.getValue()) {
-					iterator.remove();
-				} else {
-					stack.setValue(stack.getValue() - received);
-				}
-			}
-		}
+		// TODO PROVIDE REFACTOR
 	}
 
 	public void setSatelliteId(int integer) {
 		satelliteId = integer;
-	}
-
-	@Override
-	public void liquidLost(FluidIdentifier item, int amount) {
-		if (_lostItems.containsKey(item)) {
-			_lostItems.put(item, _lostItems.get(item) + amount);
-		} else {
-			_lostItems.put(item, amount);
-		}
-	}
-
-	@Override
-	public void liquidArrived(FluidIdentifier item, int amount) {}
-
-	@Override
-	public void liquidNotInserted(FluidIdentifier item, int amount) {
-		liquidLost(item, amount);
 	}
 
 	@Override

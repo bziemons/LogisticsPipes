@@ -31,7 +31,7 @@ public class RollingMachine implements ICraftingRecipeProvider {
 			return null;
 		}
 		try {
-			Class<?> c = Class.forName("mods.railcraft.common.util.crafting.RollingMachineCraftingManager");
+			Class<?> c = Class.forName("mods.railcraft.common.network.crafting.RollingMachineCraftingManager");
 			Method inst = c.getMethod("getInstance");
 			Object instance = inst.invoke(null);
 			Method findMatchingRecipe = c.getMethod("findMatchingRecipe", InventoryCrafting.class, World.class);

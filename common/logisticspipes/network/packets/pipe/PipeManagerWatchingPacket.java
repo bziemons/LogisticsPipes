@@ -9,10 +9,9 @@ import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
+import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class PipeManagerWatchingPacket extends CoordinatesPacket {
@@ -32,10 +31,11 @@ public class PipeManagerWatchingPacket extends CoordinatesPacket {
 			return;
 		}
 		CoreRoutedPipe cPipe = (CoreRoutedPipe) pipe.pipe;
+		// TODO PROVIDE REFACTOR
 		if (start) {
-			cPipe.getOrderManager().startWatching(player);
+			//cPipe.getOrderManager().startWatching(player);
 		} else {
-			cPipe.getOrderManager().stopWatching(player);
+			//cPipe.getOrderManager().stopWatching(player);
 		}
 	}
 

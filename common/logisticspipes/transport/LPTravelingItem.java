@@ -2,16 +2,22 @@ package logisticspipes.transport;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.world.World;
+
+import lombok.Getter;
+import lombok.Setter;
+
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
-import logisticspipes.interfaces.routing.IRequireReliableFluidTransport;
-import logisticspipes.interfaces.routing.IRequireReliableTransport;
 import logisticspipes.items.LogisticsFluidContainer;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
@@ -23,26 +29,11 @@ import logisticspipes.routing.IRouterManager;
 import logisticspipes.routing.ItemRoutingInformation;
 import logisticspipes.routing.order.IDistanceTracker;
 import logisticspipes.utils.EnumFacingUtil;
-import logisticspipes.utils.FluidIdentifier;
-import logisticspipes.utils.FluidIdentifierStack;
 import logisticspipes.utils.SlidingWindowBitSet;
 import logisticspipes.utils.item.ItemIdentifierStack;
-
+import logisticspipes.utils.tuples.Pair;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
-
-import logisticspipes.utils.tuples.Pair;
-
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
-
-import net.minecraft.util.EnumFacing;
-import net.minecraftforge.fluids.FluidStack;
-
-import lombok.Getter;
-import lombok.Setter;
 
 public abstract class LPTravelingItem {
 
@@ -335,18 +326,7 @@ public abstract class LPTravelingItem {
 			}
 			if (info.destinationint >= 0 && SimpleServiceLocator.routerManager.isRouter(info.destinationint)) {
 				IRouter destinationRouter = SimpleServiceLocator.routerManager.getRouter(info.destinationint);
-				if (destinationRouter.getPipe() != null) {
-					destinationRouter.getPipe().notifyOfReroute(info);
-					if (destinationRouter.getPipe() instanceof IRequireReliableTransport) {
-						((IRequireReliableTransport) destinationRouter.getPipe()).itemLost(info.getItem().clone(), info.targetInfo);
-					}
-					if (destinationRouter.getPipe() instanceof IRequireReliableFluidTransport) {
-						if (info.getItem().getItem().isFluidContainer()) {
-							FluidIdentifierStack liquid = SimpleServiceLocator.logisticsFluidManager.getFluidFromContainer(info.getItem());
-							((IRequireReliableFluidTransport) destinationRouter.getPipe()).liquidLost(liquid.getFluid(), liquid.getAmount());
-						}
-					}
-				}
+				// TODO PROVIDE REFACTOR: lost item, retry or cancel request
 			}
 		}
 

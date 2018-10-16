@@ -502,7 +502,8 @@ public class PipeTransportLogistics {
 						ModulePositionType slot = null;
 						int positionInt = -1;
 						if (arrivingItem.getInfo().targetInfo instanceof ChassiTargetInformation) {
-							positionInt = ((ChassiTargetInformation) arrivingItem.getInfo().targetInfo).getModuleSlot();
+							// TODO PROVIDE REFACTOR
+							// positionInt = ((ChassiTargetInformation) arrivingItem.getInfo().targetInfo).getModuleSlot();
 							slot = ModulePositionType.SLOT;
 						} else if (LPConstants.DEBUG && container.pipe instanceof PipeLogisticsChassi) {
 							System.out.println(arrivingItem);

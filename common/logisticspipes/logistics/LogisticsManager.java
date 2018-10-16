@@ -11,16 +11,11 @@ package logisticspipes.logistics;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import logisticspipes.interfaces.routing.ICraftItems;
 import logisticspipes.interfaces.routing.IFilter;
-import logisticspipes.interfaces.routing.IProvideItems;
 import logisticspipes.items.LogisticsFluidContainer;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.logisticspipes.IRoutedItem.TransportMode;
@@ -318,142 +313,5 @@ public class LogisticsManager implements ILogisticsManager {
 
 		return r.getId().toString();
 
-	}
-
-	/**
-	 * @param validDestinations
-	 *            a list of ExitRoute of valid destinations.
-	 * @return HashMap with ItemIdentifier and Integer item count of available
-	 *         items.
-	 */
-	@Override
-	public HashMap<ItemIdentifier, Integer> getAvailableItems(List<ExitRoute> validDestinations) {
-		//TODO: Replace this entire function wiht a fetch from the pre-built arrays (path incoming later)
-		List<Map<ItemIdentifier, Integer>> items = new ArrayList<>(ServerRouter.getBiggestSimpleID());
-		for (int i = 0; i < ServerRouter.getBiggestSimpleID(); i++) {
-			items.add(new HashMap<>());
-		}
-		BitSet used = new BitSet(ServerRouter.getBiggestSimpleID());
-		outer:
-			for (ExitRoute r : validDestinations) {
-				if (r == null) {
-					continue;
-				}
-				if (!r.containsFlag(PipeRoutingConnectionType.canRequestFrom)) {
-					continue;
-				}
-				if (!(r.destination.getPipe() instanceof IProvideItems)) {
-					continue;
-				}
-				for (IFilter filter : r.filters) {
-					if (filter.blockProvider()) {
-						continue outer;
-					}
-				}
-				IProvideItems provider = (IProvideItems) r.destination.getPipe();
-				provider.getAllItems(items.get(r.destination.getSimpleID()), r.filters);
-				used.set(r.destination.getSimpleID(), true);
-			}
-		//TODO: Fix this doubly nested list
-		HashMap<ItemIdentifier, Integer> allAvailableItems = new HashMap<>();
-		for (Map<ItemIdentifier, Integer> allItems : items) {
-			for (Entry<ItemIdentifier, Integer> item : allItems.entrySet()) {
-				Integer currentItem = allAvailableItems.get(item.getKey());
-				if (currentItem == null) {
-					allAvailableItems.put(item.getKey(), item.getValue());
-				} else {
-					allAvailableItems.put(item.getKey(), currentItem + item.getValue());
-				}
-			}
-		}
-		return allAvailableItems;
-	}
-
-	/**
-	 * @param validDestinations
-	 *            a List of ExitRoute of valid destinations.
-	 * @return LinkedList with ItemIdentifier
-	 */
-	@Override
-	public LinkedList<ItemIdentifier> getCraftableItems(List<ExitRoute> validDestinations) {
-		LinkedList<ItemIdentifier> craftableItems = new LinkedList<>();
-		BitSet used = new BitSet(ServerRouter.getBiggestSimpleID());
-		outer:
-			for (ExitRoute r : validDestinations) {
-				if (r == null) {
-					continue;
-				}
-				if (!r.containsFlag(PipeRoutingConnectionType.canRequestFrom)) {
-					continue;
-				}
-				if (used.get(r.destination.getSimpleID())) {
-					continue;
-				}
-				if (!(r.destination.getPipe() instanceof ICraftItems)) {
-					continue;
-				}
-				for (IFilter filter : r.filters) {
-					if (filter.blockCrafting()) {
-						continue outer;
-					}
-				}
-				ICraftItems crafter = (ICraftItems) r.destination.getPipe();
-				List<ItemIdentifierStack> craftedItems = crafter.getCraftedItems();
-				if (craftedItems != null) {
-				outer2:
-						for (ItemIdentifierStack craftedItem : craftedItems) {
-							if (craftedItem != null && !craftableItems.contains(craftedItem.getItem())) {
-								for (IFilter filter : r.filters) {
-									if (filter.isBlocked() == filter.isFilteredItem(craftedItem.getItem())) {
-										continue outer2;
-									}
-								}
-								craftableItems.add(craftedItem.getItem());
-							}
-						}
-				}
-				used.set(r.destination.getSimpleID(), true);
-			}
-		return craftableItems;
-	}
-
-	@Override
-	public int getAmountFor(ItemIdentifier itemType, List<ExitRoute> validDestinations) {
-		// TODO: Replace this entire function wiht a fetch from the pre-built arrays (path incoming later)
-		List<Map<ItemIdentifier, Integer>> items = new ArrayList<>(ServerRouter.getBiggestSimpleID());
-		for (int i = 0; i < ServerRouter.getBiggestSimpleID(); i++) {
-			items.add(new HashMap<>());
-		}
-		BitSet used = new BitSet(ServerRouter.getBiggestSimpleID());
-		outer:
-			for (ExitRoute r : validDestinations) {
-				if (r == null) {
-					continue;
-				}
-				if (!r.containsFlag(PipeRoutingConnectionType.canRequestFrom)) {
-					continue;
-				}
-				if (!(r.destination.getPipe() instanceof IProvideItems)) {
-					continue;
-				}
-				for (IFilter filter : r.filters) {
-					if (filter.blockProvider()) {
-						continue outer;
-					}
-				}
-				IProvideItems provider = (IProvideItems) r.destination.getPipe();
-				provider.getAllItems(items.get(r.destination.getSimpleID()), r.filters);
-				used.set(r.destination.getSimpleID(), true);
-			}
-		// TODO: Fix this doubly nested list
-		int amount = 0;
-		for (Map<ItemIdentifier, Integer> allItems : items) {
-			for (Entry<ItemIdentifier, Integer> item : allItems.entrySet()) {
-				if (item.getKey().equals(itemType)) {
-					amount += item.getValue();
-				}
-			}
-		}
-		return amount;
 	}
 }

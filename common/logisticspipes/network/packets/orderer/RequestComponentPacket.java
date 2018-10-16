@@ -7,8 +7,6 @@ import logisticspipes.network.abstractpackets.RequestPacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.request.RequestHandler;
-
 import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
@@ -29,6 +27,7 @@ public class RequestComponentPacket extends RequestPacket {
 		if (pipe == null || !(pipe.pipe instanceof CoreRoutedPipe)) {
 			return;
 		}
-		RequestHandler.simulate(player, getStack(), (CoreRoutedPipe) pipe.pipe);
+		// TODO PROVIDE REFACTOR
+		//RequestHandler.simulate(player, getStack(), (CoreRoutedPipe) pipe.pipe);
 	}
 }

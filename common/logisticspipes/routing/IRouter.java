@@ -31,8 +31,6 @@ public interface IRouter extends LPFinalSerializable {
 
 	void update(boolean doFullRefresh, CoreRoutedPipe pipe);
 
-	void updateInterests(); // calls getInterests on the attached pipe, and updates the global cache.
-
 	boolean isRoutedExit(EnumFacing connection);
 
 	boolean isSubPoweredExit(EnumFacing connection);

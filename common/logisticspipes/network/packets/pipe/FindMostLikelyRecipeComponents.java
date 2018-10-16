@@ -66,34 +66,35 @@ public class FindMostLikelyRecipeComponents extends CoordinatesPacket {
 		}
 		if (pipe == null) return;
 		LinkedList<ItemIdentifier> craftable = null;
-		for (int j = 0; j < content.size(); j++) {
-			GuiRecipeImport.Canidates canidates = content.get(j);
-			int maxItemPos = -1;
-			int max = 0;
-			for (int i = 0; i < canidates.order.size(); i++) {
-				ItemIdentifier ident = canidates.order.get(i).getItem();
-				int newAmount = SimpleServiceLocator.logisticsManager.getAmountFor(ident, pipe.getRouter().getIRoutersByCost());
-				if (newAmount > max) {
-					max = newAmount;
-					maxItemPos = i;
-				}
-			}
-			if (max < 64) {
-				if (craftable == null) {
-					craftable = SimpleServiceLocator.logisticsManager.getCraftableItems(pipe.getRouter().getIRoutersByCost());
-				}
-				for (ItemIdentifier craft : craftable) {
-					for (int i = 0; i < canidates.order.size(); i++) {
-						ItemIdentifier ident = canidates.order.get(i).getItem();
-						if (craft == ident) {
-							maxItemPos = i;
-							break;
-						}
-					}
-				}
-			}
-			list.set(j, maxItemPos);
-		}
+		// TODO PROVIDE REFACTOR
+//		for (int j = 0; j < content.size(); j++) {
+//			GuiRecipeImport.Canidates canidates = content.get(j);
+//			int maxItemPos = -1;
+//			int max = 0;
+//			for (int i = 0; i < canidates.order.size(); i++) {
+//				ItemIdentifier ident = canidates.order.get(i).getItem();
+//				int newAmount = SimpleServiceLocator.logisticsManager.getAmountFor(ident, pipe.getRouter().getIRoutersByCost());
+//				if (newAmount > max) {
+//					max = newAmount;
+//					maxItemPos = i;
+//				}
+//			}
+//			if (max < 64) {
+//				if (craftable == null) {
+//					craftable = SimpleServiceLocator.logisticsManager.getCraftableItems(pipe.getRouter().getIRoutersByCost());
+//				}
+//				for (ItemIdentifier craft : craftable) {
+//					for (int i = 0; i < canidates.order.size(); i++) {
+//						ItemIdentifier ident = canidates.order.get(i).getItem();
+//						if (craft == ident) {
+//							maxItemPos = i;
+//							break;
+//						}
+//					}
+//				}
+//			}
+//			list.set(j, maxItemPos);
+//		}
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(MostLikelyRecipeComponentsResponse.class).setResponse(list), player);
 	}
 

@@ -11,11 +11,10 @@ import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.request.resources.IResource;
 import logisticspipes.request.resources.ResourceNetwork;
-import logisticspipes.routing.order.LinkedLogisticsOrderList;
+import logisticspipes.utils.StaticResolve;
+import network.rs485.logisticspipes.logistic.TempOrders;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class OrdererWatchPacket extends IntegerCoordinatesPacket {
@@ -26,7 +25,7 @@ public class OrdererWatchPacket extends IntegerCoordinatesPacket {
 
 	@Getter
 	@Setter
-	private LinkedLogisticsOrderList orders;
+	private TempOrders orders;
 
 	public OrdererWatchPacket(int id) {
 		super(id);
@@ -43,7 +42,7 @@ public class OrdererWatchPacket extends IntegerCoordinatesPacket {
 	public void readData(LPDataInput input) {
 		super.readData(input);
 		stack = ResourceNetwork.readResource(input);
-		orders = new LinkedLogisticsOrderList(input);
+		orders = new TempOrders(input);
 	}
 
 	@Override

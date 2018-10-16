@@ -1,14 +1,12 @@
 package logisticspipes.modules;
 
-import java.util.Collection;
+import net.minecraft.nbt.NBTTagCompound;
 
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
 import logisticspipes.utils.item.ItemIdentifier;
-
-import net.minecraft.nbt.NBTTagCompound;
 
 public class ModuleEnchantmentSink extends LogisticsModule {
 
@@ -83,15 +81,6 @@ public class ModuleEnchantmentSink extends LogisticsModule {
 	 */
 	public boolean hasGenericInterests() {
 		return true;
-	}
-
-	@Override
-	/*
-	 * Null return as checking all items
-	 * @see logisticspipes.modules.LogisticsModule#getSpecificInterests()
-	 */
-	public Collection<ItemIdentifier> getSpecificInterests() {
-		return null;
 	}
 
 	@Override

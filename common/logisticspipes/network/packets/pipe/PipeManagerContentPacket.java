@@ -4,28 +4,18 @@ import java.util.List;
 
 import net.minecraft.entity.player.EntityPlayer;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.routing.order.ClientSideOrderInfo;
 import logisticspipes.routing.order.IOrderInfoProvider;
-import logisticspipes.routing.order.LogisticsOrder;
-import logisticspipes.routing.order.LogisticsOrderManager;
+import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 
-import logisticspipes.utils.StaticResolve;
-
 @StaticResolve
 public class PipeManagerContentPacket extends CoordinatesPacket {
-
-	@Getter
-	@Setter
-	private LogisticsOrderManager<? extends LogisticsOrder, ?> manager;
 
 	private List<IOrderInfoProvider> clientOrder;
 
@@ -53,11 +43,12 @@ public class PipeManagerContentPacket extends CoordinatesPacket {
 	public void writeData(LPDataOutput output) {
 		super.writeData(output);
 
+		// TODO PROVIDE REFACTOR: write order list
 		// manual collection write, because generics are wrong here
-		output.writeInt(manager.size());
-		for (LogisticsOrder order : manager) {
-			output.writeSerializable(order);
-		}
+//		output.writeInt(manager.size());
+//		for (LogisticsOrder order : manager) {
+//			output.writeSerializable(order);
+//		}
 	}
 
 	@Override

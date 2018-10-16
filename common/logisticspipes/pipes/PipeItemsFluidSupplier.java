@@ -1,49 +1,31 @@
 package logisticspipes.pipes;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-
-import logisticspipes.LogisticsPipes;
-import logisticspipes.interfaces.ITankUtil;
-import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
-import logisticspipes.interfaces.routing.IRequestItems;
-import logisticspipes.interfaces.routing.IRequireReliableTransport;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.network.GuiIDs;
-import logisticspipes.pipes.basic.CoreRoutedPipe;
-import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.request.RequestTree;
-import logisticspipes.textures.Textures;
-import logisticspipes.textures.Textures.TextureType;
-import logisticspipes.transport.LPTravelingItem.LPTravelingItemServer;
-import logisticspipes.transport.PipeTransportLogistics;
-import logisticspipes.utils.CacheHolder.CacheTypes;
-import logisticspipes.utils.FluidIdentifier;
-import logisticspipes.utils.FluidIdentifierStack;
-import logisticspipes.utils.item.ItemIdentifier;
-import logisticspipes.utils.item.ItemIdentifierInventory;
-import logisticspipes.utils.item.ItemIdentifierStack;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-
 import net.minecraft.util.EnumFacing;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTankInfo;
-import net.minecraftforge.fluids.FluidUtil;
 
-import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
+import logisticspipes.LogisticsPipes;
+import logisticspipes.interfaces.ITankUtil;
+import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.network.GuiIDs;
+import logisticspipes.pipes.basic.CoreRoutedPipe;
+import logisticspipes.proxy.MainProxy;
+import logisticspipes.proxy.SimpleServiceLocator;
+import logisticspipes.textures.Textures;
+import logisticspipes.textures.Textures.TextureType;
+import logisticspipes.transport.LPTravelingItem.LPTravelingItemServer;
+import logisticspipes.transport.PipeTransportLogistics;
+import logisticspipes.utils.CacheHolder.CacheTypes;
+import logisticspipes.utils.FluidIdentifierStack;
+import logisticspipes.utils.item.ItemIdentifier;
+import logisticspipes.utils.item.ItemIdentifierInventory;
 
-public class PipeItemsFluidSupplier extends CoreRoutedPipe implements IRequestItems, IRequireReliableTransport {
-
-	private boolean _lastRequestFailed = false;
+public class PipeItemsFluidSupplier extends CoreRoutedPipe {
 
 	public PipeItemsFluidSupplier(Item item) {
 		super(new PipeTransportLogistics(true) {
@@ -75,15 +57,6 @@ public class PipeItemsFluidSupplier extends CoreRoutedPipe implements IRequestIt
 	@Override
 	public TextureType getCenterTexture() {
 		return Textures.LOGISTICSPIPE_LIQUIDSUPPLIER_TEXTURE;
-	}
-
-	/* TRIGGER INTERFACE */
-	public boolean isRequestFailed() {
-		return _lastRequestFailed;
-	}
-
-	public void setRequestFailed(boolean value) {
-		_lastRequestFailed = value;
 	}
 
 	@Override
@@ -152,107 +125,7 @@ public class PipeItemsFluidSupplier extends CoreRoutedPipe implements IRequestIt
 		}
 		super.throttledUpdateEntity();
 
-		//@formatter:off
-		Iterator<ITankUtil> iterator = new WorldCoordinatesWrapper(container).getConnectedAdjacentTileEntities()
-				.filter(adjacent -> !SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.tileEntity))
-				.map(adjacent -> SimpleServiceLocator.tankUtilFactory.getTankUtilForTE(adjacent.tileEntity, adjacent.direction))
-				.filter(Objects::nonNull)
-				.iterator();
-		//@formatter:on
-
-		while (iterator.hasNext()) {
-			ITankUtil next = iterator.next();
-
-			if (!next.containsTanks()) {
-				continue;
-			}
-
-			//How much do I want?
-			Map<ItemIdentifier, Integer> wantContainers = dummyInventory.getItemsAndCount();
-			HashMap<FluidIdentifier, Integer> wantFluids = new HashMap<>();
-			for (Entry<ItemIdentifier, Integer> item : wantContainers.entrySet()) {
-				ItemStack wantItem = item.getKey().unsafeMakeNormalStack(1);
-				FluidStack liquidstack = FluidUtil.getFluidContained(wantItem);
-				if (liquidstack == null) {
-					continue;
-				}
-				wantFluids.put(FluidIdentifier.get(liquidstack), item.getValue() * liquidstack.amount);
-			}
-
-			//How much do I have?
-			HashMap<FluidIdentifier, Integer> haveFluids = new HashMap<>();
-
-			next.forEachFluid(fluid -> {
-				if (wantFluids.containsKey(fluid.getFluid())) {
-					haveFluids.merge(fluid.getFluid(), fluid.getAmount(), (a, b) -> a + b);
-				}
-			});
-
-			//HashMap<Integer, Integer> needFluids = new HashMap<Integer, Integer>();
-			//Reduce what I have and what have been requested already
-			for (Entry<FluidIdentifier, Integer> liquidId : wantFluids.entrySet()) {
-				Integer haveCount = haveFluids.get(liquidId.getKey());
-				if (haveCount != null) {
-					liquidId.setValue(liquidId.getValue() - haveCount);
-				}
-			}
-			for (Entry<ItemIdentifier, Integer> requestedItem : _requestedItems.entrySet()) {
-				ItemStack wantItem = requestedItem.getKey().unsafeMakeNormalStack(1);
-				FluidStack requestedFluidId = FluidUtil.getFluidContained(wantItem);
-				if (requestedFluidId == null) {
-					continue;
-				}
-				FluidIdentifier requestedFluid = FluidIdentifier.get(requestedFluidId);
-				Integer want = wantFluids.get(requestedFluid);
-				if (want != null) {
-					wantFluids.put(requestedFluid, want - requestedItem.getValue() * requestedFluidId.amount);
-				}
-			}
-
-			((PipeItemsFluidSupplier) container.pipe).setRequestFailed(false);
-
-			//Make request
-
-			for (ItemIdentifier need : wantContainers.keySet()) {
-				FluidStack requestedFluidId = FluidUtil.getFluidContained(need.unsafeMakeNormalStack(1));
-				if (requestedFluidId == null) {
-					continue;
-				}
-				if (!wantFluids.containsKey(FluidIdentifier.get(requestedFluidId))) {
-					continue;
-				}
-				int countToRequest = wantFluids.get(FluidIdentifier.get(requestedFluidId)) / requestedFluidId.amount;
-				if (countToRequest < 1) {
-					continue;
-				}
-
-				if (!useEnergy(11)) {
-					break;
-				}
-
-				boolean success = false;
-
-				if (_requestPartials) {
-					countToRequest = RequestTree.requestPartial(need.makeStack(countToRequest), (IRequestItems) container.pipe, null);
-					if (countToRequest > 0) {
-						success = true;
-					}
-				} else {
-					success = RequestTree.request(need.makeStack(countToRequest), (IRequestItems) container.pipe, null, null);
-				}
-
-				if (success) {
-					Integer currentRequest = _requestedItems.get(need);
-					if (currentRequest == null) {
-						_requestedItems.put(need, countToRequest);
-					} else {
-						_requestedItems.put(need, currentRequest + countToRequest);
-					}
-				} else {
-					((PipeItemsFluidSupplier) container.pipe).setRequestFailed(true);
-				}
-			}
-		}
+		// TODO PROVIDE REFACTOR: request needed fluids
 	}
 
 	@Override
@@ -267,43 +140,6 @@ public class PipeItemsFluidSupplier extends CoreRoutedPipe implements IRequestIt
 		super.writeToNBT(nbttagcompound);
 		dummyInventory.writeToNBT(nbttagcompound, "");
 		nbttagcompound.setBoolean("requestpartials", _requestPartials);
-	}
-
-	private void decreaseRequested(ItemIdentifierStack item) {
-		int remaining = item.getStackSize();
-		//see if we can get an exact match
-		Integer count = _requestedItems.get(item.getItem());
-		if (count != null) {
-			_requestedItems.put(item.getItem(), Math.max(0, count - remaining));
-			remaining -= count;
-		}
-		if (remaining <= 0) {
-			return;
-		}
-		//still remaining... was from fuzzyMatch on a crafter
-		for (Entry<ItemIdentifier, Integer> e : _requestedItems.entrySet()) {
-			if (e.getKey().item == item.getItem().item && e.getKey().itemDamage == item.getItem().itemDamage) {
-				int expected = e.getValue();
-				e.setValue(Math.max(0, expected - remaining));
-				remaining -= expected;
-			}
-			if (remaining <= 0) {
-				return;
-			}
-		}
-		//we have no idea what this is, log it.
-		debug.log("liquid supplier got unexpected item " + item.toString());
-	}
-
-	@Override
-	public void itemLost(ItemIdentifierStack item, IAdditionalTargetInformation info) {
-		decreaseRequested(item);
-	}
-
-	@Override
-	public void itemArrived(ItemIdentifierStack item, IAdditionalTargetInformation info) {
-		decreaseRequested(item);
-		delayThrottle();
 	}
 
 	public boolean isRequestingPartials() {

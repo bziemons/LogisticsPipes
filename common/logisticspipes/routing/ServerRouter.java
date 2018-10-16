@@ -16,7 +16,6 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +27,17 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
+
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+
+import net.minecraftforge.common.DimensionManager;
+
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 
 import logisticspipes.LPConstants;
 import logisticspipes.api.ILogisticsPowerProvider;
@@ -57,22 +67,9 @@ import logisticspipes.utils.OneList;
 import logisticspipes.utils.StackTraceUtil;
 import logisticspipes.utils.StackTraceUtil.Info;
 import logisticspipes.utils.item.ItemIdentifier;
-
-import network.rs485.logisticspipes.world.DoubleCoordinates;
-
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Quartet;
-
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-
-import net.minecraftforge.common.DimensionManager;
-import net.minecraft.util.EnumFacing;
-
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
+import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 
@@ -1153,7 +1150,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 			connectionNeedsChecking = 2;
 		}
 		handleQueuedTasks(pipe);
-		updateInterests();
+		// TODO PROVIDE REFACTOR: updateInterests(); ??
 		if (doFullRefresh) {
 			ensureChangeListenerAttachedToPipe(pipe);
 
@@ -1287,42 +1284,6 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 	@Override
 	public boolean isSideDisconneceted(EnumFacing dir) {
 		return null != dir && sideDisconnected[dir.ordinal()];
-	}
-
-	@Override
-	public void updateInterests() {
-		if (--ticksUntillNextInventoryCheck > 0) {
-			return;
-		}
-		ticksUntillNextInventoryCheck = ServerRouter.REFRESH_TIME;
-		if (ServerRouter.iterated++ % simpleID == 0) {
-			ticksUntillNextInventoryCheck++; // randomly wait 1 extra tick - just so that every router doesn't tick at the same time
-		}
-		if (ServerRouter.iterated >= ServerRouter.getBiggestSimpleID()) {
-			ServerRouter.iterated = 0;
-		}
-		CoreRoutedPipe pipe = getPipe();
-		if (pipe == null) {
-			return;
-		}
-		if (pipe.hasGenericInterests()) {
-			declareGenericInterest();
-		} else {
-			removeGenericInterest();
-		}
-		Set<ItemIdentifier> newInterests = pipe.getSpecificInterests();
-		if (newInterests == null) {
-			newInterests = new TreeSet<>();
-		}
-		if (!newInterests.equals(_hasInterestIn)) {
-			for (ItemIdentifier i : _hasInterestIn) {
-				if (!newInterests.contains(i)) {
-					removeInterest(i);
-				}
-			}
-			newInterests.stream().filter(i -> !_hasInterestIn.contains(i)).forEach(this::addInterest);
-			_hasInterestIn = newInterests;
-		}
 	}
 
 	private void removeGenericInterest() {

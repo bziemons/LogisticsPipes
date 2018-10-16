@@ -7,6 +7,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.InventoryCraftResult;
+import net.minecraft.inventory.SlotCrafting;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.text.TextComponentTranslation;
+
+import net.minecraftforge.event.world.WorldEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+
 import logisticspipes.LPItems;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.blocks.crafting.AutoCraftingInventory;
@@ -20,14 +35,11 @@ import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.block.CraftingSetType;
 import logisticspipes.network.packets.block.RequestRotationPacket;
 import logisticspipes.network.packets.orderer.OrderWatchRemovePacket;
-import logisticspipes.network.packets.orderer.OrdererWatchPacket;
 import logisticspipes.pipefxhandlers.Particles;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.request.resources.IResource;
-import logisticspipes.routing.order.IOrderInfoProvider;
-import logisticspipes.routing.order.LinkedLogisticsOrderList;
 import logisticspipes.security.SecuritySettings;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
@@ -39,22 +51,6 @@ import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.item.SimpleStackInventory;
 import logisticspipes.utils.tuples.Pair;
-
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryCraftResult;
-import net.minecraft.inventory.SlotCrafting;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.nbt.NBTTagCompound;
-
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.text.TextComponentTranslation;
-
-import net.minecraftforge.event.world.WorldEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements ISimpleInventoryEventHandler, IRequestWatcher, IGuiOpenControler, IRotationProvider {
 
@@ -72,7 +68,9 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	private boolean init = false;
 
 	private PlayerCollectionList localGuiWatcher = new PlayerCollectionList();
-	public Map<Integer, Pair<IResource, LinkedLogisticsOrderList>> watchedRequests = new HashMap<>();
+	// TODO PROVIDE REFACTOR
+	//public Map<Integer, Pair<IResource, TempOrders>> watchedRequests = new HashMap<>();
+	public Map<Integer, Pair<IResource, TempOrders>> watchedRequests = new HashMap<>();
 	private int localLastUsedWatcherId = 0;
 
 	public ItemIdentifier targetType = null;
@@ -117,8 +115,9 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 		if (tick % 2 == 0 && !localGuiWatcher.isEmpty()) {
 			checkForExpired();
 			if (getUpgradeManager().hasCraftingMonitoringUpgrade()) {
-				for (Entry<Integer, Pair<IResource, LinkedLogisticsOrderList>> entry : watchedRequests.entrySet()) {
-					MainProxy.sendToPlayerList(PacketHandler.getPacket(OrdererWatchPacket.class).setOrders(entry.getValue().getValue2()).setStack(entry.getValue().getValue1()).setInteger(entry.getKey()).setTilePos(container), localGuiWatcher);
+				for (Entry<Integer, Pair<IResource, TempOrders>> entry : watchedRequests.entrySet()) {
+					// TODO PROVIDE REFACTOR
+					// MainProxy.sendToPlayerList(PacketHandler.getPacket(OrdererWatchPacket.class).setOrders(entry.getValue().getValue2()).setStack(entry.getValue().getValue1()).setInteger(entry.getKey()).setTilePos(container), localGuiWatcher);
 				}
 			}
 		} else if (tick % 20 == 0) {
@@ -127,32 +126,15 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	}
 
 	private void checkForExpired() {
-		Iterator<Entry<Integer, Pair<IResource, LinkedLogisticsOrderList>>> iter = watchedRequests.entrySet().iterator();
+		Iterator<Entry<Integer, Pair<IResource, TempOrders>>> iter = watchedRequests.entrySet().iterator();
 		while (iter.hasNext()) {
-			Entry<Integer, Pair<IResource, LinkedLogisticsOrderList>> entry = iter.next();
-			if (isDone(entry.getValue().getValue2())) {
-				MainProxy.sendToPlayerList(PacketHandler.getPacket(OrderWatchRemovePacket.class).setInteger(entry.getKey()).setTilePos(container), localGuiWatcher);
-				iter.remove();
-			}
+			Entry<Integer, Pair<IResource, TempOrders>> entry = iter.next();
+			// TODO PROVIDE REFACTOR
+			//			if (isDone(entry.getValue().getValue2())) {
+			//				MainProxy.sendToPlayerList(PacketHandler.getPacket(OrderWatchRemovePacket.class).setInteger(entry.getKey()).setTilePos(container), localGuiWatcher);
+			//				iter.remove();
+			//			}
 		}
-	}
-
-	private boolean isDone(LinkedLogisticsOrderList orders) {
-		boolean isDone = true;
-		for (IOrderInfoProvider order : orders) {
-			if (!order.isFinished()) {
-				isDone = false;
-			}
-			if (!order.getProgresses().isEmpty()) {
-				isDone = false;
-			}
-		}
-		for (LinkedLogisticsOrderList orderList : orders.getSubOrders()) {
-			if (!isDone(orderList)) {
-				isDone = false;
-			}
-		}
-		return isDone;
 	}
 
 	@Override
@@ -249,6 +231,7 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 
 	@Override
 	public void onAllowedRemoval() {
+		// TODO PROVIDE REFACTOR: cancel all orders
 		if (MainProxy.isServer(getWorld())) {
 			inv.dropContents(getWorld(), getX(), getY(), getZ());
 			toSortInv.dropContents(getWorld(), getX(), getY(), getZ());
@@ -374,39 +357,39 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 		int[] toUse = new int[9];
 		int[] used = new int[inv.getSizeInventory()];
 		outer:
-			for (int i = 0; i < 9; i++) {
-				ItemStack item = matrix.getStackInSlot(i);
+		for (int i = 0; i < 9; i++) {
+			ItemStack item = matrix.getStackInSlot(i);
+			if (item.isEmpty()) {
+				toUse[i] = -1;
+				continue;
+			}
+			ItemIdentifier ident = ItemIdentifier.get(item);
+			for (int j = 0; j < inv.getSizeInventory(); j++) {
+				item = inv.getStackInSlot(j);
 				if (item.isEmpty()) {
-					toUse[i] = -1;
 					continue;
 				}
-				ItemIdentifier ident = ItemIdentifier.get(item);
-				for (int j = 0; j < inv.getSizeInventory(); j++) {
-					item = inv.getStackInSlot(j);
-					if (item.isEmpty()) {
-						continue;
+				ItemIdentifier withIdent = ItemIdentifier.get(item);
+				if (ident.equalsForCrafting(withIdent)) {
+					if (item.getCount() > used[j]) {
+						used[j]++;
+						toUse[i] = j;
+						continue outer;
 					}
-					ItemIdentifier withIdent = ItemIdentifier.get(item);
-					if (ident.equalsForCrafting(withIdent)) {
+				}
+				if (oreDict) {
+					if (ident.getDictIdentifiers() != null && withIdent.getDictIdentifiers() != null && ident.getDictIdentifiers().canMatch(withIdent.getDictIdentifiers(), true, false)) {
 						if (item.getCount() > used[j]) {
 							used[j]++;
 							toUse[i] = j;
 							continue outer;
 						}
 					}
-					if (oreDict) {
-						if (ident.getDictIdentifiers() != null && withIdent.getDictIdentifiers() != null && ident.getDictIdentifiers().canMatch(withIdent.getDictIdentifiers(), true, false)) {
-							if (item.getCount() > used[j]) {
-								used[j]++;
-								toUse[i] = j;
-								continue outer;
-							}
-						}
-					}
 				}
-				//Not enough material
-				return ItemStack.EMPTY;
 			}
+			//Not enough material
+			return ItemStack.EMPTY;
+		}
 		AutoCraftingInventory crafter = new AutoCraftingInventory(null);//TODO
 		for (int i = 0; i < 9; i++) {
 			int j = toUse[i];
@@ -473,7 +456,7 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	}
 
 	public ItemStack getResultForClick() {
-		if(MainProxy.isServer(getWorld())) {
+		if (MainProxy.isServer(getWorld())) {
 			ItemStack result = getOutput(true);
 			if (result.isEmpty()) {
 				result = getOutput(false);
@@ -560,22 +543,13 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	}
 
 	@Override
-	public void handleOrderList(IResource stack, LinkedLogisticsOrderList orders) {
-		if (!getUpgradeManager().hasCraftingMonitoringUpgrade()) {
-			return;
-		}
-		orders.setWatched();
-		watchedRequests.put(++localLastUsedWatcherId, new Pair<>(stack, orders));
-		MainProxy.sendToPlayerList(PacketHandler.getPacket(OrdererWatchPacket.class).setOrders(orders).setStack(stack).setInteger(localLastUsedWatcherId).setTilePos(container), localGuiWatcher);
-	}
-
-	@Override
 	public void guiOpenedByPlayer(EntityPlayer player) {
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OrderWatchRemovePacket.class).setInteger(-1).setTilePos(container), player);
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(CraftingSetType.class).setTargetType(targetType).setTilePos(container), player);
 		localGuiWatcher.add(player);
-		for (Entry<Integer, Pair<IResource, LinkedLogisticsOrderList>> entry : watchedRequests.entrySet()) {
-			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OrdererWatchPacket.class).setOrders(entry.getValue().getValue2()).setStack(entry.getValue().getValue1()).setInteger(entry.getKey()).setTilePos(container), player);
+		for (Entry<Integer, Pair<IResource, TempOrders>> entry : watchedRequests.entrySet()) {
+			// TODO PROVIDE REFACTOR
+			//MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OrdererWatchPacket.class).setOrders(entry.getValue().getValue2()).setStack(entry.getValue().getValue1()).setInteger(entry.getKey()).setTilePos(container), player);
 		}
 	}
 
@@ -585,7 +559,12 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	}
 
 	@Override
-	public void handleClientSideListInfo(int id, IResource stack, LinkedLogisticsOrderList orders) {
+	public void handleOrderList(IResource stack, TempOrders orders) {
+		// TODO PROVIDE REFACTOR
+	}
+
+	@Override
+	public void handleClientSideListInfo(int id, IResource stack, TempOrders orders) {
 		if (MainProxy.isClient(getWorld())) {
 			watchedRequests.put(id, new Pair<>(stack, orders));
 		}

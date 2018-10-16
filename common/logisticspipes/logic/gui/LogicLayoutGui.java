@@ -16,13 +16,13 @@ import org.lwjgl.opengl.GL12;
 
 import logisticspipes.logic.LogicController;
 import logisticspipes.routing.order.IOrderInfoProvider;
-import logisticspipes.routing.order.LinkedLogisticsOrderList;
 import logisticspipes.utils.Color;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
 import logisticspipes.utils.gui.SimpleGraphics;
 import logisticspipes.utils.string.ChatColor;
+import network.rs485.logisticspipes.logistic.TempOrders;
 
 public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 
@@ -253,7 +253,7 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 		RenderHelper.disableStandardItemLighting();
 	}
 
-	private void renderLinkedOrderListItems(LinkedLogisticsOrderList list, int xPos, int yPos, int par1, int par2) {
+	private void renderLinkedOrderListItems(TempOrders list, int xPos, int yPos, int par1, int par2) {
 		int size = list.size();
 		int startLeft = -(size - 1) * (30 / 2) + xPos;
 		yPos += 13;
@@ -296,7 +296,7 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 		}
 	}
 
-	private void renderLinkedOrderListLines(LinkedLogisticsOrderList list, int xPos, int yPos) {
+	private void renderLinkedOrderListLines(TempOrders list, int xPos, int yPos) {
 		int size = list.size();
 		if (list.isEmpty()) {
 			size = 1;
@@ -337,7 +337,7 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 		}
 	}
 
-	private void drawPointFor(LinkedLogisticsOrderList list, int xPos, int yPos, int i, int startLeft) {
+	private void drawPointFor(TempOrders list, int xPos, int yPos, int i, int startLeft) {
 		float totalLine = 10 + 1 + 10 + 1 + Math.abs(startLeft - (xPos + 20)) + 10 + 1 + 10;
 		for (Float point : list.getSubOrders().get(i).getProgresses()) {
 			int pos = (int) (totalLine * (1.0F - point));

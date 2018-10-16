@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.nbt.NBTTagCompound;
 
 import logisticspipes.gui.hud.modules.HUDItemSink;
 import logisticspipes.interfaces.IClientInformationProvider;
@@ -40,10 +42,6 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
-
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.nbt.NBTTagCompound;
 
 @CCType(name = "ItemSink Module")
 public class ModuleItemSink extends LogisticsGuiModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, ISimpleInventoryEventHandler, IModuleInventoryReceive {
@@ -230,35 +228,6 @@ public class ModuleItemSink extends LogisticsGuiModule implements IClientInforma
 	@Override
 	public boolean hasGenericInterests() {
 		return _isDefaultRoute;
-	}
-
-	@Override
-	public List<ItemIdentifier> getSpecificInterests() {
-		if (_isDefaultRoute) {
-			return null;
-		}
-		Map<ItemIdentifier, Integer> mapIC = _filterInventory.getItemsAndCount();
-		List<ItemIdentifier> li = new ArrayList<>(mapIC.size());
-		li.addAll(mapIC.keySet());
-		li.addAll(mapIC.keySet().stream().map(ItemIdentifier::getUndamaged).collect(Collectors.toList()));
-		if (_service.getUpgradeManager(slot, positionInt).isFuzzyUpgrade()) {
-			for (Pair<ItemIdentifierStack, Integer> stack : _filterInventory) {
-				if (stack.getValue1() == null) {
-					continue;
-				}
-				ItemIdentifier ident = stack.getValue1().getItem();
-				if (ignoreData.get(stack.getValue2())) {
-					li.add(ident.getIgnoringData());
-				}
-				if (ignoreNBT.get(stack.getValue2())) {
-					li.add(ident.getIgnoringNBT());
-				}
-				if (ignoreData.get(stack.getValue2()) && ignoreNBT.get(stack.getValue2())) {
-					li.add(ident.getIgnoringData().getIgnoringNBT());
-				}
-			}
-		}
-		return li;
 	}
 
 	@Override

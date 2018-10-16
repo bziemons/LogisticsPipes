@@ -1,7 +1,5 @@
 package logisticspipes.request.resources;
 
-import logisticspipes.interfaces.routing.IRequestFluid;
-import logisticspipes.routing.IRouter;
 import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -12,20 +10,17 @@ import network.rs485.logisticspipes.util.LPDataOutput;
 public class FluidResource implements IResource {
 
 	private final FluidIdentifier liquid;
-	private final IRequestFluid target;
 	private int amount;
 	private Object ccObject;
 
-	public FluidResource(FluidIdentifier liquid, int amount, IRequestFluid target) {
+	public FluidResource(FluidIdentifier liquid, int amount) {
 		this.liquid = liquid;
 		this.amount = amount;
-		this.target = target;
 	}
 
 	public FluidResource(LPDataInput input) {
 		liquid = FluidIdentifier.get(input.readItemIdentifier());
 		amount = input.readInt();
-		target = null;
 	}
 
 	@Override
@@ -48,15 +43,6 @@ public class FluidResource implements IResource {
 		return liquid;
 	}
 
-	public IRequestFluid getTarget() {
-		return target;
-	}
-
-	@Override
-	public IRouter getRouter() {
-		return target.getRouter();
-	}
-
 	@Override
 	public boolean matches(ItemIdentifier itemType, MatchSettings settings) {
 		if (itemType.isFluidContainer()) {
@@ -68,23 +54,7 @@ public class FluidResource implements IResource {
 
 	@Override
 	public IResource clone(int multiplier) {
-		return new FluidResource(liquid, amount * multiplier, target);
-	}
-
-	@Override
-	public boolean mergeForDisplay(IResource resource, int withAmount) {
-		if (resource instanceof FluidResource) {
-			if (((FluidResource) resource).liquid.equals(liquid)) {
-				amount += withAmount;
-				return true;
-			}
-		}
-		return false;
-	}
-
-	@Override
-	public IResource copyForDisplayWith(int amount) {
-		return new FluidResource(liquid, amount, null);
+		return new FluidResource(liquid, amount * multiplier);
 	}
 
 	@Override

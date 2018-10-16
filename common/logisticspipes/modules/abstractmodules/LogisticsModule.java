@@ -1,8 +1,9 @@
 package logisticspipes.modules.abstractmodules;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+
+import lombok.Getter;
 
 import logisticspipes.interfaces.IPipeServiceProvider;
 import logisticspipes.interfaces.IQueueCCEvent;
@@ -15,8 +16,6 @@ import logisticspipes.proxy.computers.objects.CCSinkResponder;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
-
-import lombok.Getter;
 
 @CCType(name = "LogisticsModule")
 public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
@@ -121,15 +120,6 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 	 *         getSpecificInterestes() will be checked
 	 */
 	public abstract boolean hasGenericInterests();
-
-	/**
-	 * the list of items which this module is capable of providing or supplying
-	 * (or is otherwise interested in) the size of the list here does not
-	 * influence the ongoing computational cost.
-	 * 
-	 * @return
-	 */
-	public abstract Collection<ItemIdentifier> getSpecificInterests();
 
 	public abstract boolean interestedInAttachedInventory();
 

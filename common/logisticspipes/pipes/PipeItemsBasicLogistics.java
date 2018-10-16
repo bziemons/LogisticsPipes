@@ -6,10 +6,13 @@
 
 package logisticspipes.pipes;
 
-import java.util.Collection;
 import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
+
+import net.minecraft.item.Item;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
+
+import net.minecraftforge.items.CapabilityItemHandler;
 
 import logisticspipes.blocks.LogisticsProgramCompilerTileEntity;
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
@@ -24,19 +27,8 @@ import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipe
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.transport.PipeTransportLogistics;
-import logisticspipes.utils.InventoryHelper;
 import logisticspipes.utils.OrientationsUtil;
-import logisticspipes.utils.item.ItemIdentifier;
-import logisticspipes.utils.tuples.Pair;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
-
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.Item;
-import net.minecraft.tileentity.TileEntity;
-
-import net.minecraft.util.EnumFacing;
-
-import net.minecraftforge.items.CapabilityItemHandler;
 
 public class PipeItemsBasicLogistics extends CoreRoutedPipe {
 
@@ -142,20 +134,6 @@ public class PipeItemsBasicLogistics extends CoreRoutedPipe {
 			}
 		}
 		return inv;
-	}
-
-	@Override
-	public Set<ItemIdentifier> getSpecificInterests() {
-		if (itemSinkModule.isDefaultRoute()) {
-			return null;
-		}
-
-		Set<ItemIdentifier> l1 = new TreeSet<>();
-		Collection<ItemIdentifier> current = itemSinkModule.getSpecificInterests();
-		if (current != null) {
-			l1.addAll(current);
-		}
-		return l1;
 	}
 
 	@Override

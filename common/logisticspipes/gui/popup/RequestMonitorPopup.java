@@ -15,7 +15,6 @@ import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
@@ -29,7 +28,6 @@ import org.lwjgl.opengl.GL12;
 
 import logisticspipes.pipes.PipeBlockRequestTable;
 import logisticspipes.routing.order.IOrderInfoProvider;
-import logisticspipes.routing.order.LinkedLogisticsOrderList;
 import logisticspipes.utils.Color;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.SimpleGraphics;
@@ -37,6 +35,7 @@ import logisticspipes.utils.gui.SubGuiScreen;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.string.ChatColor;
 import logisticspipes.utils.string.StringUtils;
+import network.rs485.logisticspipes.logistic.TempOrders;
 
 public class RequestMonitorPopup extends SubGuiScreen {
 
@@ -212,9 +211,9 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		SimpleGraphics.drawGradientRect(0, 0, width, height, Color.BLANK, Color.BLANK, 0.0);
 	}
 
-	private void findLowest(LinkedLogisticsOrderList list, int lowerLimit) {
+	private void findLowest(TempOrders list, int lowerLimit) {
 		lowerLimit += 48;
-		for (LinkedLogisticsOrderList sub : list.getSubOrders()) {
+		for (TempOrders sub : list.getSubOrders()) {
 			findLowest(sub, lowerLimit);
 		}
 		if (maxY < (lowerLimit + 10) * zoom.zoom) {
@@ -316,7 +315,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
-		LinkedLogisticsOrderList list = _table.watchedRequests.get(orderId).getValue2();
+		TempOrders list = _table.watchedRequests.get(orderId).getValue2();
 		if (!list.isEmpty()) {
 			SimpleGraphics.drawVerticalLine(left + 8, top + 0, top + 17, Color.GREEN, zoom.line);
 		}
@@ -406,7 +405,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDepthFunc(GL11.GL_LEQUAL);
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
-		LinkedLogisticsOrderList list = _table.watchedRequests.get(orderId).getValue2();
+		TempOrders list = _table.watchedRequests.get(orderId).getValue2();
 		if (!list.isEmpty()) {
 			SimpleGraphics.drawVerticalLine(innerLeftSide - mapX + 110, innerTopSide - mapY - 197, innerTopSide - mapY - 180, Color.GREEN, zoom.line);
 		}
@@ -458,7 +457,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		RenderHelper.disableStandardItemLighting();
 	}
 
-	private void renderLinkedOrderListItems(LinkedLogisticsOrderList list, int xPos, int yPos, int par1, int par2) {
+	private void renderLinkedOrderListItems(TempOrders list, int xPos, int yPos, int par1, int par2) {
 		int size = list.size();
 		int startLeft = -(size - 1) * (30 / 2) + xPos;
 		yPos += 13;
@@ -501,7 +500,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		}
 	}
 
-	private void renderLinkedOrderListLines(LinkedLogisticsOrderList list, int xPos, int yPos) {
+	private void renderLinkedOrderListLines(TempOrders list, int xPos, int yPos) {
 		int size = list.size();
 		if (list.isEmpty()) {
 			size = 1;
@@ -542,7 +541,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		}
 	}
 
-	private void drawPointFor(LinkedLogisticsOrderList list, int xPos, int yPos, int i, int startLeft) {
+	private void drawPointFor(TempOrders list, int xPos, int yPos, int i, int startLeft) {
 		float totalLine = 10 + 1 + 10 + 1 + Math.abs(startLeft - (xPos + 20)) + 10 + 1 + 10;
 		for (Float point : list.getSubOrders().get(i).getProgresses()) {
 			int pos = (int) (totalLine * (1.0F - point));

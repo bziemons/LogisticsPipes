@@ -1,6 +1,7 @@
 package logisticspipes.modules;
 
-import java.util.Collection;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.nbt.NBTTagCompound;
 
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.IPipeServiceProvider;
@@ -12,10 +13,6 @@ import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipe
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
 import logisticspipes.utils.item.ItemIdentifier;
-
-import net.minecraft.inventory.IInventory;
-import net.minecraft.nbt.NBTTagCompound;
-
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 //IHUDModuleHandler,
@@ -90,11 +87,6 @@ public class ModuleSatellite extends LogisticsModule {
 	@Override
 	public boolean hasGenericInterests() {
 		return false;
-	}
-
-	@Override
-	public Collection<ItemIdentifier> getSpecificInterests() {
-		return pipe.getSpecificInterests();
 	}
 
 	@Override

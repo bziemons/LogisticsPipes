@@ -1,13 +1,13 @@
 package logisticspipes.interfaces;
 
 import logisticspipes.request.resources.IResource;
-import logisticspipes.routing.order.LinkedLogisticsOrderList;
+import network.rs485.logisticspipes.logistic.TempOrders;
 
 public interface IRequestWatcher {
 
-	public void handleOrderList(IResource stack, LinkedLogisticsOrderList orders);
+	public void handleOrderList(IResource stack, TempOrders orders);
 
-	public void handleClientSideListInfo(int id, IResource stack, LinkedLogisticsOrderList orders);
+	public void handleClientSideListInfo(int id, IResource stack, TempOrders orders);
 
 	public void handleClientSideRemove(int id);
 }

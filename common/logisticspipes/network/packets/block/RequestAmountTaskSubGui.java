@@ -1,9 +1,12 @@
 package logisticspipes.network.packets.block;
 
-import java.util.LinkedList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeSet;
+
+import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
 import logisticspipes.network.PacketHandler;
@@ -11,13 +14,9 @@ import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
+import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
-
-import net.minecraft.entity.player.EntityPlayer;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class RequestAmountTaskSubGui extends CoordinatesPacket {
@@ -34,8 +33,9 @@ public class RequestAmountTaskSubGui extends CoordinatesPacket {
 			return;
 		}
 
-		Map<ItemIdentifier, Integer> _availableItems = SimpleServiceLocator.logisticsManager.getAvailableItems(pipe.getRouter().getIRoutersByCost());
-		LinkedList<ItemIdentifier> _craftableItems = SimpleServiceLocator.logisticsManager.getCraftableItems(pipe.getRouter().getIRoutersByCost());
+		// TODO PROVIDE REFACTOR
+		Map<ItemIdentifier, Integer> _availableItems = Collections.emptyMap(); // SimpleServiceLocator.logisticsManager.getAvailableItems(pipe.getRouter().getIRoutersByCost());
+		List<ItemIdentifier> _craftableItems = Collections.emptyList(); // SimpleServiceLocator.logisticsManager.getCraftableItems(pipe.getRouter().getIRoutersByCost());
 
 		TreeSet<ItemIdentifierStack> _allItems = new TreeSet<>();
 

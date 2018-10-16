@@ -5,15 +5,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -21,13 +17,8 @@ import lombok.Setter;
 import logisticspipes.interfaces.IClientInformationProvider;
 import logisticspipes.interfaces.IHUDModuleHandler;
 import logisticspipes.interfaces.IHUDModuleRenderer;
-import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.IModuleInventoryReceive;
 import logisticspipes.interfaces.IModuleWatchReciver;
-import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
-import logisticspipes.interfaces.routing.IRequestItems;
-import logisticspipes.interfaces.routing.IRequireReliableTransport;
-import logisticspipes.interfaces.routing.ITargetSlotInformation;
 import logisticspipes.modules.abstractmodules.LogisticsGuiModule;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.network.NewGuiHandler;
@@ -44,19 +35,14 @@ import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.pipes.basic.debug.StatusEntry;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.request.RequestTree;
-import logisticspipes.routing.IRouter;
-import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
 import logisticspipes.utils.ISimpleInventoryEventHandler;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
-import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
-public class ModuleActiveSupplier extends LogisticsGuiModule implements IRequestItems, IRequireReliableTransport, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, IModuleInventoryReceive, ISimpleInventoryEventHandler {
+public class ModuleActiveSupplier extends LogisticsGuiModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, IModuleInventoryReceive, ISimpleInventoryEventHandler {
 
 	private final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
 
@@ -130,11 +116,6 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IRequest
 	}
 
 	@Override
-	public List<ItemIdentifier> getSpecificInterests() {
-		return new ArrayList<>(0);
-	}
-
-	@Override
 	public boolean interestedInAttachedInventory() {
 		return false;
 	}
@@ -147,11 +128,6 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IRequest
 	@Override
 	public boolean recievePassive() {
 		return true;
-	}
-
-	/* TRIGGER INTERFACE */
-	public boolean isRequestFailed() {
-		return _lastRequestFailed;
 	}
 
 	public void setRequestFailed(boolean value) {
@@ -198,206 +174,7 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IRequest
 
 		_requestedItems.values().stream().filter(amount -> amount > 0).forEach(amount -> _service.spawnParticle(Particles.VioletParticle, 2));
 
-		WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(_world.getWorld(), getX(), getY(), getZ());
-
-		worldCoordinates.getConnectedAdjacentTileEntities(ConnectionPipeType.ITEM)
-				.filter(adjacent -> !(adjacent.tileEntity instanceof LogisticsTileGenericPipe))
-				.map(adjacent -> {
-					EnumFacing direction = adjacent.direction.getOpposite();
-					if (_service.getUpgradeManager(slot, positionInt).hasSneakyUpgrade()) {
-						direction = _service.getUpgradeManager(slot, positionInt).getSneakyOrientation();
-					}
-					return SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(adjacent.tileEntity, direction);
-				})
-				.filter(Objects::nonNull)
-				.filter(invUtil -> invUtil.getSizeInventory() > 0)
-				.forEach(invUtil -> {
-					if (_service.getUpgradeManager(slot, positionInt).hasPatternUpgrade()) {
-						createPatternRequest(invUtil);
-					} else {
-						createSupplyRequest(invUtil);
-					}
-				});
-	}
-
-	private void createPatternRequest(IInventoryUtil invUtil) {
-		_service.getDebug().log("Supplier: Start calculating pattern request");
-		setRequestFailed(false);
-		for (int i = 0; i < 9; i++) {
-			ItemIdentifierStack needed = dummyInventory.getIDStackInSlot(i);
-			if (needed == null) {
-				continue;
-			}
-			if (invUtil.getSizeInventory() <= slotArray[i]) {
-				continue;
-			}
-			ItemStack stack = invUtil.getStackInSlot(slotArray[i]);
-			ItemIdentifierStack have = null;
-			if (!stack.isEmpty()) {
-				have = ItemIdentifierStack.getFromStack(stack);
-			}
-			int haveCount = 0;
-			if (have != null) {
-				if (!have.getItem().equals(needed.getItem())) {
-					_service.getDebug().log("Supplier: Slot for " + i + ", " + needed + " already taken by " + have);
-					setRequestFailed(true);
-					continue;
-				}
-				haveCount = have.getStackSize();
-			}
-			if ((_patternMode == PatternMode.Bulk50 && haveCount > needed.getStackSize() / 2) || (_patternMode == PatternMode.Bulk100 && haveCount >= needed.getStackSize())) {
-				continue;
-			}
-
-			Integer requestedCount = _requestedItems.get(needed.getItem());
-			if (requestedCount != null) {
-				haveCount += requestedCount;
-			}
-
-			int neededCount = needed.getStackSize() - haveCount;
-			if (neededCount < 1) {
-				continue;
-			}
-
-			ItemIdentifierStack toRequest = new ItemIdentifierStack(needed.getItem(), neededCount);
-
-			_service.getDebug().log("Supplier: Missing for slot " + i + ": " + toRequest);
-
-			if (!_service.useEnergy(10)) {
-				break;
-			}
-
-			boolean success = false;
-
-			IAdditionalTargetInformation targetInformation = new PatternSupplierTargetInformation(slotArray[i], needed.getStackSize());
-
-			if (_patternMode != PatternMode.Full) {
-				_service.getDebug().log("Supplier: Requesting partial: " + toRequest);
-				neededCount = RequestTree.requestPartial(toRequest, this, targetInformation);
-				_service.getDebug().log("Supplier: Requested: " + toRequest.getItem().makeStack(neededCount));
-				if (neededCount > 0) {
-					success = true;
-				}
-			} else {
-				_service.getDebug().log("Supplier: Requesting: " + toRequest);
-				success = RequestTree.request(toRequest, this, null, targetInformation);
-				if (success) {
-					_service.getDebug().log("Supplier: Request success");
-				} else {
-					_service.getDebug().log("Supplier: Request failed");
-				}
-			}
-
-			if (success) {
-				Integer currentRequest = _requestedItems.get(toRequest.getItem());
-				if (currentRequest == null) {
-					_requestedItems.put(toRequest.getItem(), neededCount);
-				} else {
-					_requestedItems.put(toRequest.getItem(), currentRequest + neededCount);
-				}
-			} else {
-				setRequestFailed(true);
-			}
-		}
-	}
-
-	private void createSupplyRequest(IInventoryUtil invUtil) {
-		_service.getDebug().log("Supplier: Start calculating supply request");
-		//How many do I want?
-		HashMap<ItemIdentifier, Integer> needed = new HashMap<>(dummyInventory.getItemsAndCount());
-		_service.getDebug().log("Supplier: Needed: " + needed);
-
-		//How many do I have?
-		Map<ItemIdentifier, Integer> have = invUtil.getItemsAndCount();
-		_service.getDebug().log("Supplier: Have:   " + have);
-
-		//How many do I have?
-		HashMap<ItemIdentifier, Integer> haveUndamaged = new HashMap<>();
-		for (Entry<ItemIdentifier, Integer> item : have.entrySet()) {
-			haveUndamaged.merge(item.getKey().getUndamaged(), item.getValue(), (a, b) -> a + b);
-		}
-
-		//Reduce what I have and what have been requested already
-		for (Entry<ItemIdentifier, Integer> item : needed.entrySet()) {
-			Integer haveCount = haveUndamaged.get(item.getKey().getUndamaged());
-			if (haveCount == null) {
-				haveCount = 0;
-			}
-			int spaceAvailable = invUtil.roomForItem(item.getKey());
-			if (_requestMode == SupplyMode.Infinite) {
-				Integer requestedCount = _requestedItems.get(item.getKey());
-				if (requestedCount != null) {
-					spaceAvailable -= requestedCount;
-				}
-				item.setValue(Math.min(item.getKey().getMaxStackSize(), spaceAvailable));
-				continue;
-
-			}
-			if (spaceAvailable == 0 || (_requestMode == SupplyMode.Bulk50 && haveCount > item.getValue() / 2) || (_requestMode == SupplyMode.Bulk100 && haveCount >= item.getValue())) {
-				item.setValue(0);
-				continue;
-			}
-			if (haveCount > 0) {
-				item.setValue(item.getValue() - haveCount);
-				// so that 1 damaged item can't satisfy a request for 2 other damage values.
-				haveUndamaged.put(item.getKey().getUndamaged(), haveCount - item.getValue());
-			}
-			Integer requestedCount = _requestedItems.get(item.getKey());
-			if (requestedCount != null) {
-				item.setValue(item.getValue() - requestedCount);
-			}
-		}
-
-		_service.getDebug().log("Supplier: Missing:   " + needed);
-
-		setRequestFailed(false);
-
-		//Make request
-		for (Entry<ItemIdentifier, Integer> need : needed.entrySet()) {
-			Integer amountRequested = need.getValue();
-			if (amountRequested == null || amountRequested < 1) {
-				continue;
-			}
-			int neededCount = amountRequested;
-			if (!_service.useEnergy(10)) {
-				break;
-			}
-
-			boolean success = false;
-
-			IAdditionalTargetInformation targetInformation = new SupplierTargetInformation();
-
-			if (_requestMode != SupplyMode.Full) {
-				_service.getDebug().log("Supplier: Requesting partial: " + need.getKey().makeStack(neededCount));
-				neededCount = RequestTree.requestPartial(need.getKey().makeStack(neededCount), this, targetInformation);
-				_service.getDebug().log("Supplier: Requested: " + need.getKey().makeStack(neededCount));
-				if (neededCount > 0) {
-					success = true;
-				}
-			} else {
-				_service.getDebug().log("Supplier: Requesting: " + need.getKey().makeStack(neededCount));
-				success = RequestTree.request(need.getKey().makeStack(neededCount), this, null, targetInformation);
-				if (success) {
-					_service.getDebug().log("Supplier: Request success");
-				} else {
-					_service.getDebug().log("Supplier: Request failed");
-				}
-			}
-
-			if (success) {
-				Integer currentRequest = _requestedItems.get(need.getKey());
-				if (currentRequest == null) {
-					_requestedItems.put(need.getKey(), neededCount);
-					_service.getDebug().log("Supplier: Inserting Requested Items: " + neededCount);
-				} else {
-					_requestedItems.put(need.getKey(), currentRequest + neededCount);
-					_service.getDebug().log("Supplier: Raising Requested Items from: " + currentRequest + " to: " + currentRequest + neededCount);
-				}
-			} else {
-				setRequestFailed(true);
-			}
-
-		}
+		// TODO PROVIDE REFACTOR: request available items
 	}
 
 	@Override
@@ -474,18 +251,6 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IRequest
 		_service.getDebug().log("Supplier: supplier got unexpected item " + item.toString());
 	}
 
-	@Override
-	public void itemLost(ItemIdentifierStack item, IAdditionalTargetInformation info) {
-		_service.getDebug().log("Supplier: Registered Item Lost: " + item);
-		decreaseRequested(item);
-	}
-
-	@Override
-	public void itemArrived(ItemIdentifierStack item, IAdditionalTargetInformation info) {
-		_service.getDebug().log("Supplier: Registered Item Arrived: " + item);
-		decreaseRequested(item);
-	}
-
 	public SupplyMode getSupplyMode() {
 		return _requestMode;
 	}
@@ -519,14 +284,6 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IRequest
 		return array;
 	}
 
-	public int getInvSlotForSlot(int i) {
-		return slotArray[i];
-	}
-
-	public int getAmountForSlot(int i) {
-		return dummyInventory.getIDStackInSlot(i).getStackSize();
-	}
-
 	public void addStatusInformation(List<StatusEntry> status) {
 		StatusEntry entry = new StatusEntry();
 		entry.name = "Requested Items";
@@ -549,67 +306,10 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IRequest
 		return NewGuiHandler.getGui(ActiveSupplierInHand.class);
 	}
 
-	@Override
-	public IRouter getRouter() {
-		return _service.getRouter();
-	}
-
-	@Override
-	public void itemCouldNotBeSend(ItemIdentifierStack item, IAdditionalTargetInformation info) {
-		itemLost(item, info);
-	}
-
-	@Override
-	public int getID() {
-		return _service.getRouter().getSimpleID();
-	}
-
-	@Override
-	public int compareTo(IRequestItems value2) {
-		return 0;
-	}
-
 	public boolean hasPatternUpgrade() {
 		if (_service != null && _service.getUpgradeManager(slot, positionInt) != null) {
 			return _service.getUpgradeManager(slot, positionInt).hasPatternUpgrade();
 		}
 		return false;
-	}
-
-	public class PatternSupplierTargetInformation extends SupplierTargetInformation implements ITargetSlotInformation {
-
-		private final int amount;
-		private final int targetSlot;
-
-		public PatternSupplierTargetInformation(int targetSlot, int amount) {
-			super();
-			this.targetSlot = targetSlot;
-			this.amount = amount;
-
-		}
-
-		@Override
-		public int getTargetSlot() {
-			return targetSlot;
-		}
-
-		@Override
-		public int getAmount() {
-			return amount;
-		}
-
-		@Override
-		public boolean isLimited() {
-			return ModuleActiveSupplier.this.isLimited();
-		}
-
-	}
-
-	public class SupplierTargetInformation extends ChassiTargetInformation {
-
-		public SupplierTargetInformation() {
-			super(getPositionInt());
-		}
-
 	}
 }

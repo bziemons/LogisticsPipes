@@ -1,21 +1,18 @@
 package logisticspipes.pipes;
 
-import logisticspipes.LogisticsPipes;
-import logisticspipes.interfaces.routing.IRequestFluid;
-import logisticspipes.network.GuiIDs;
-import logisticspipes.pipes.basic.fluid.FluidRoutedPipe;
-import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.security.SecuritySettings;
-import logisticspipes.textures.Textures;
-import logisticspipes.textures.Textures.TextureType;
-import logisticspipes.utils.FluidIdentifier;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.util.text.TextComponentString;
 
-public class PipeFluidRequestLogistics extends FluidRoutedPipe implements IRequestFluid {
+import logisticspipes.LogisticsPipes;
+import logisticspipes.network.GuiIDs;
+import logisticspipes.pipes.basic.fluid.FluidRoutedPipe;
+import logisticspipes.proxy.MainProxy;
+import logisticspipes.security.SecuritySettings;
+import logisticspipes.textures.Textures;
+import logisticspipes.textures.Textures.TextureType;
+
+public class PipeFluidRequestLogistics extends FluidRoutedPipe {
 
 	public PipeFluidRequestLogistics(Item item) {
 		super(item);
@@ -40,11 +37,6 @@ public class PipeFluidRequestLogistics extends FluidRoutedPipe implements IReque
 	@Override
 	public TextureType getCenterTexture() {
 		return Textures.LOGISTICSPIPE_LIQUID_REQUEST;
-	}
-
-	@Override
-	public void sendFailed(FluidIdentifier value1, Integer value2) {
-		//Request Pipe doesn't handle this.
 	}
 
 	@Override

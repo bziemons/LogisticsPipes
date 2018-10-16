@@ -16,7 +16,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import logisticspipes.LPConstants;
 import logisticspipes.interfaces.ITankUtil;
-import logisticspipes.interfaces.routing.IRequireReliableFluidTransport;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.logisticspipes.IRoutedItem.TransportMode;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
@@ -25,8 +24,6 @@ import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.ItemRoutingInformation;
-import logisticspipes.routing.order.LogisticsFluidOrderManager;
-import logisticspipes.routing.order.LogisticsOrderManager;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.transport.LPTravelingItem.LPTravelingItemServer;
@@ -41,8 +38,6 @@ import logisticspipes.utils.tuples.Triplet;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 public abstract class FluidRoutedPipe extends CoreRoutedPipe {
-
-	private LogisticsFluidOrderManager _orderFluidManager;
 
 	public FluidRoutedPipe(Item item) {
 		super(new PipeFluidTransportLogistics(), item);
@@ -288,10 +283,10 @@ public abstract class FluidRoutedPipe extends CoreRoutedPipe {
 			//If liquids still exist,
 			liquid.lowerAmount(filled);
 
-			//TODO: FIX THIS
-			if (this instanceof IRequireReliableFluidTransport) {
-				((IRequireReliableFluidTransport) this).liquidNotInserted(liquid.getFluid(), liquid.getAmount());
-			}
+			// TODO PROVIDE REFACTOR
+			//if (this instanceof IRequireReliableFluidTransport) {
+			//	((IRequireReliableFluidTransport) this).liquidNotInserted(liquid.getFluid(), liquid.getAmount());
+			//}
 
 			IRoutedItem routedItem = SimpleServiceLocator.routedItemHelper.createNewTravelItem(SimpleServiceLocator.logisticsFluidManager.getFluidContainer(liquid));
 			Pair<Integer, Integer> replies = SimpleServiceLocator.logisticsFluidManager.getBestReply(liquid, getRouter(), routedItem.getJamList());
@@ -329,15 +324,5 @@ public abstract class FluidRoutedPipe extends CoreRoutedPipe {
 			list.addAll(SimpleServiceLocator.specialTankHandler.getBaseTileFor(pair.getValue2()));
 		}
 		return list;
-	}
-
-	public LogisticsFluidOrderManager getFluidOrderManager() {
-		_orderFluidManager = _orderFluidManager != null ? _orderFluidManager : new LogisticsFluidOrderManager(this);
-		return _orderFluidManager;
-	}
-
-	@Override
-	public LogisticsOrderManager<?, ?> getOrderManager() {
-		return getFluidOrderManager();
 	}
 }

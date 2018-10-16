@@ -1,7 +1,10 @@
 package logisticspipes.network.packets.block;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+
+import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
 import logisticspipes.network.PacketHandler;
@@ -11,11 +14,8 @@ import logisticspipes.pipes.PipeItemsCraftingLogistics;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.routing.ExitRoute;
-import logisticspipes.utils.item.ItemIdentifierStack;
-
-import net.minecraft.entity.player.EntityPlayer;
-
 import logisticspipes.utils.StaticResolve;
+import logisticspipes.utils.item.ItemIdentifierStack;
 
 @StaticResolve
 public class RequestRunningCraftingTasks extends CoordinatesPacket {
@@ -40,7 +40,8 @@ public class RequestRunningCraftingTasks extends CoordinatesPacket {
 			}
 			if (r.destination.getPipe() instanceof PipeItemsCraftingLogistics) {
 				PipeItemsCraftingLogistics crafting = (PipeItemsCraftingLogistics) r.destination.getPipe();
-				List<ItemIdentifierStack> content = crafting.getItemOrderManager().getContentList(player.getEntityWorld());
+				// TODO PROVIDE REFACTOR
+				List<ItemIdentifierStack> content = Collections.emptyList(); // crafting.getItemOrderManager().getContentList(player.getEntityWorld());
 				items.addAll(content);
 			}
 		}

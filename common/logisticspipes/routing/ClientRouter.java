@@ -172,11 +172,6 @@ public class ClientRouter implements IRouter {
 	}
 
 	@Override
-	public void updateInterests() {
-
-	}
-
-	@Override
 	public List<ExitRoute> getDistanceTo(IRouter r) {
 		return null;
 	}

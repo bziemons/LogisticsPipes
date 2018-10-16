@@ -146,11 +146,6 @@ public class ChassiModule extends LogisticsGuiModule {
 	}
 
 	@Override
-	public List<ItemIdentifier> getSpecificInterests() {
-		return null;
-	}
-
-	@Override
 	public boolean interestedInAttachedInventory() {
 		return false;
 	}

@@ -6,8 +6,6 @@ import net.minecraft.item.ItemStack;
 
 import com.google.common.base.Objects;
 
-import logisticspipes.interfaces.routing.IRequestItems;
-import logisticspipes.routing.IRouter;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.string.ChatColor;
@@ -16,7 +14,6 @@ import network.rs485.logisticspipes.util.LPDataOutput;
 
 public class DictResource implements IResource {
 
-	private final IRequestItems requester;
 	public ItemIdentifierStack stack;
 	//match all items with same oredict name
 	public boolean use_od = false;
@@ -28,14 +25,12 @@ public class DictResource implements IResource {
 	public boolean use_category = false;
 	private Object ccObject;
 
-	public DictResource(ItemIdentifierStack stack, IRequestItems requester) {
+	public DictResource(ItemIdentifierStack stack) {
 		this.stack = stack;
-		this.requester = requester;
 	}
 
 	public DictResource(LPDataInput input) {
 		stack = input.readItemIdentifierStack();
-		requester = null;
 		BitSet bits = input.readBitSet();
 		use_od = bits.get(0);
 		ignore_dmg = bits.get(1);
@@ -98,15 +93,10 @@ public class DictResource implements IResource {
 	}
 
 	@Override
-	public IRouter getRouter() {
-		return requester.getRouter();
-	}
-
-	@Override
 	public IResource clone(int multiplier) {
 		ItemIdentifierStack stack = this.stack.clone();
 		stack.setStackSize(stack.getStackSize() * multiplier);
-		DictResource clone = new DictResource(stack, requester);
+		DictResource clone = new DictResource(stack);
 		clone.use_od = use_od;
 		clone.ignore_dmg = ignore_dmg;
 		clone.ignore_nbt = ignore_nbt;
@@ -115,16 +105,12 @@ public class DictResource implements IResource {
 	}
 
 	public DictResource clone() {
-		DictResource clone = new DictResource(this.stack.clone(), requester);
+		DictResource clone = new DictResource(this.stack.clone());
 		clone.use_od = use_od;
 		clone.ignore_dmg = ignore_dmg;
 		clone.ignore_nbt = ignore_nbt;
 		clone.use_category = use_category;
 		return clone;
-	}
-
-	public IRequestItems getTarget() {
-		return requester;
 	}
 
 	public ItemIdentifier getItem() {
@@ -133,31 +119,6 @@ public class DictResource implements IResource {
 
 	public ItemIdentifierStack getItemStack() {
 		return stack;
-	}
-
-	@Override
-	public boolean mergeForDisplay(IResource resource, int withAmount) {
-		if (resource instanceof DictResource) {
-			if (((DictResource) resource).use_od == use_od && ((DictResource) resource).ignore_dmg == ignore_dmg
-					&& ((DictResource) resource).ignore_nbt == ignore_nbt && ((DictResource) resource).use_category == use_category && ((DictResource) resource)
-					.getItem().equals(getItem())) {
-				stack.setStackSize(stack.getStackSize() + withAmount);
-				return true;
-			}
-		}
-		return false;
-	}
-
-	@Override
-	public IResource copyForDisplayWith(int amount) {
-		ItemIdentifierStack stack = this.stack.clone();
-		stack.setStackSize(amount);
-		DictResource clone = new DictResource(stack, null);
-		clone.use_od = use_od;
-		clone.ignore_dmg = ignore_dmg;
-		clone.ignore_nbt = ignore_nbt;
-		clone.use_category = use_category;
-		return clone;
 	}
 
 	@Override
