@@ -131,7 +131,7 @@ public class CCResource implements ILPCCTypeDefinition {
 
 		@CCCommand(description = "Returns the amount of the resource")
 		public int getResourceAmount() {
-			return resource.getRequestedAmount();
+			return resource.getAmount();
 		}
 
 		/* Lagacy Support for old scripts */
@@ -158,7 +158,7 @@ public class CCResource implements ILPCCTypeDefinition {
 
 		@CCCommand(description = "Returns the second value")
 		public Object getValue2() {
-			return resource.getRequestedAmount();
+			return resource.getAmount();
 		}
 
 		@CCCommand(description = "Returns the type of the second value")

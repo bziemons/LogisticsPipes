@@ -398,22 +398,8 @@ public class GuiRequestTable extends LogisticsBaseGuiScreen implements IItemSear
 	}
 
 	public void refreshItems() {
-		int integer;
-		switch (displayOptions) {
-			case Both:
-				integer = 0;
-				break;
-			case SupplyOnly:
-				integer = 1;
-				break;
-			case CraftOnly:
-				integer = 2;
-				break;
-			default:
-				integer = 3;
-		}
-		integer += (dimension * 10);
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(OrdererRefreshRequestPacket.class).setInteger(integer).setTilePos(_table.container));
+		MainProxy.sendPacketToServer(PacketHandler.getPacket(OrdererRefreshRequestPacket.class)
+				.setInteger2(displayOptions.ordinal()).setInteger(dimension).setTilePos(_table.container));
 	}
 
 	@Override

@@ -2,7 +2,7 @@ package logisticspipes.network.packets.orderer;
 
 import net.minecraft.entity.player.EntityPlayer;
 
-import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
+import logisticspipes.network.abstractpackets.Integer2CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
@@ -10,7 +10,7 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
-public class OrdererRefreshRequestPacket extends IntegerCoordinatesPacket {
+public class OrdererRefreshRequestPacket extends Integer2CoordinatesPacket {
 
 	public OrdererRefreshRequestPacket(int id) {
 		super(id);

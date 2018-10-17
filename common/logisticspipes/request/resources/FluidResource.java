@@ -1,5 +1,8 @@
 package logisticspipes.request.resources;
 
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+
 import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -30,12 +33,7 @@ public class FluidResource implements IResource {
 	}
 
 	@Override
-	public ItemIdentifier getAsItem() {
-		return liquid.getItemIdentifier();
-	}
-
-	@Override
-	public int getRequestedAmount() {
+	public int getAmount() {
 		return amount;
 	}
 
@@ -44,17 +42,12 @@ public class FluidResource implements IResource {
 	}
 
 	@Override
-	public boolean matches(ItemIdentifier itemType, MatchSettings settings) {
+	public boolean matches(ItemIdentifier itemType) {
 		if (itemType.isFluidContainer()) {
 			FluidIdentifier other = FluidIdentifier.get(itemType);
 			return other.equals(liquid);
 		}
 		return false;
-	}
-
-	@Override
-	public IResource clone(int multiplier) {
-		return new FluidResource(liquid, amount * multiplier);
 	}
 
 	@Override
@@ -68,6 +61,7 @@ public class FluidResource implements IResource {
 	}
 
 	@Override
+	@SideOnly(Side.CLIENT)
 	public String getDisplayText(ColorCode code) {
 		StringBuilder builder = new StringBuilder();
 		if (code != ColorCode.NONE) {

@@ -14,6 +14,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -29,7 +31,6 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.computers.interfaces.CCCommand;
 import logisticspipes.proxy.computers.interfaces.CCQueued;
 import logisticspipes.proxy.computers.interfaces.CCType;
-import logisticspipes.request.resources.DictResource;
 import logisticspipes.request.resources.IResource;
 import logisticspipes.request.resources.ItemResource;
 import logisticspipes.security.SecuritySettings;
@@ -111,8 +112,8 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 
 	@Override
 	public SimulationResult simulateRequest(ItemStack wanted) {
-		final List<IResource> used = new ArrayList<>();
-		final List<IResource> missing = new ArrayList<>();
+		final List<IResource> used = Collections.emptyList();
+		final List<IResource> missing = Collections.emptyList();
 		// TODO PROVIDE REFACTOR
 //		RequestTree.simulate(ItemIdentifier.get(wanted).makeStack(wanted.getCount()), this, new RequestLog() {
 //
@@ -129,32 +130,16 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 //				used.addAll(items);
 //			}
 //		});
-		List<ItemStack> usedList = new ArrayList<>(used.size());
-		List<ItemStack> missingList = new ArrayList<>(missing.size());
-		for (IResource e : used) {
-			if (e instanceof ItemResource) {
-				usedList.add(((ItemResource) e).getItem().unsafeMakeNormalStack(e.getRequestedAmount()));
-			} else if (e instanceof DictResource) {
-				usedList.add(((DictResource) e).getItem().unsafeMakeNormalStack(e.getRequestedAmount()));
-			}
-		}
-		for (IResource e : missing) {
-			if (e instanceof ItemResource) {
-				missingList.add(((ItemResource) e).getItem().unsafeMakeNormalStack(e.getRequestedAmount()));
-			} else if (e instanceof DictResource) {
-				missingList.add(((DictResource) e).getItem().unsafeMakeNormalStack(e.getRequestedAmount()));
-			}
-		}
 
 		SimulationResult r = new SimulationResult();
-		r.used = usedList;
-		r.missing = missingList;
+		r.used = resourcesToItemStacks(used.stream()).collect(Collectors.toList());
+		r.missing = resourcesToItemStacks(missing.stream()).collect(Collectors.toList());
 		return r;
 	}
 
 	@Override
 	public List<ItemStack> performRequest(ItemStack wanted) {
-		final List<IResource> missing = new ArrayList<>();
+		final List<IResource> missing = Collections.emptyList();
 		// TODO PROVIDE REFACTOR
 //		RequestTree.request(ItemIdentifier.get(wanted).makeStack(wanted.getCount()), this, new RequestLog() {
 //
@@ -169,16 +154,13 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 //			@Override
 //			public void handleSucessfullRequestOfList(List<IResource> items, TempOrders parts) {}
 //		}, null);
-		List<ItemStack> missingList = new ArrayList<>(missing.size());
-		for (IResource e : missing) {
-			if (e instanceof ItemResource) {
-				missingList.add(((ItemResource) e).getItem().unsafeMakeNormalStack(e.getRequestedAmount()));
-			} else if (e instanceof DictResource) {
-				missingList.add(((DictResource) e).getItem().unsafeMakeNormalStack(e.getRequestedAmount()));
-			}
-		}
+		return resourcesToItemStacks(missing.stream()).collect(Collectors.toList());
+	}
 
-		return missingList;
+	private static Stream<ItemStack> resourcesToItemStacks(Stream<IResource> resourceStream) {
+		return resourceStream
+				.filter(resource -> resource instanceof ItemResource)
+				.map(resource -> ((ItemResource) resource).getItem().unsafeMakeNormalStack(resource.getAmount()));
 	}
 
 	/* CC */

@@ -2,6 +2,10 @@ package logisticspipes.pipes;
 
 import java.util.BitSet;
 
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
+import net.minecraft.nbt.NBTTagCompound;
+
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.routing.IFilter;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
@@ -10,20 +14,11 @@ import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.pipe.FireWallFlag;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.request.resources.IResource;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
-import logisticspipes.utils.item.ItemIdentifierStack;
-
 import network.rs485.logisticspipes.world.DoubleCoordinates;
-
-import logisticspipes.utils.tuples.Pair;
-
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-import net.minecraft.nbt.NBTTagCompound;
 
 public class PipeItemsFirewall extends CoreRoutedPipe {
 
@@ -133,16 +128,6 @@ public class PipeItemsFirewall extends CoreRoutedPipe {
 					return PipeItemsFirewall.this.getLPPosition();
 				}
 
-				@Override
-				public boolean isFilteredItem(IResource resultItem) {
-					for (Pair<ItemIdentifierStack, Integer> pair : inv) {
-						ItemIdentifierStack stack = pair.getValue1();
-						if (stack != null && resultItem.matches(stack.getItem(), IResource.MatchSettings.NORMAL)) {
-							return true;
-						}
-					}
-					return false;
-				}
 			};
 		}
 		return filter;

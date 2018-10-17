@@ -9,18 +9,11 @@ import logisticspipes.utils.item.ItemIdentifierStack;
 import network.rs485.logisticspipes.util.LPDataOutput;
 import network.rs485.logisticspipes.util.LPFinalSerializable;
 
-/**
- * With Destination and amount
- */
 public interface IResource extends ILPCCTypeHolder, LPFinalSerializable {
 
-	ItemIdentifier getAsItem();
+	int getAmount();
 
-	int getRequestedAmount();
-
-	boolean matches(ItemIdentifier itemType, MatchSettings settings);
-
-	IResource clone(int multiplier);
+	boolean matches(ItemIdentifier itemType);
 
 	void writeData(LPDataOutput output);
 
@@ -32,14 +25,6 @@ public interface IResource extends ILPCCTypeHolder, LPFinalSerializable {
 	@Override
 	default void write(LPDataOutput output) {
 		ResourceNetwork.writeResource(output, this);
-	}
-
-	/**
-	 * Settings only apply for the normal Item Implementation.
-	 */
-	enum MatchSettings {
-		NORMAL,
-		WITHOUT_NBT
 	}
 
 	enum ColorCode {

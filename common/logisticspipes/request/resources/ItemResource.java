@@ -1,5 +1,10 @@
 package logisticspipes.request.resources;
 
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+
+import lombok.Getter;
+
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.string.ChatColor;
@@ -8,8 +13,9 @@ import network.rs485.logisticspipes.util.LPDataOutput;
 
 public class ItemResource implements IResource {
 
-	private final ItemIdentifierStack stack;
-	private Object ccObject;
+	@Getter
+	protected final ItemIdentifierStack stack;
+	protected Object ccObject;
 
 	public ItemResource(ItemIdentifierStack stack) {
 		this.stack = stack;
@@ -25,12 +31,7 @@ public class ItemResource implements IResource {
 	}
 
 	@Override
-	public ItemIdentifier getAsItem() {
-		return stack.getItem();
-	}
-
-	@Override
-	public int getRequestedAmount() {
+	public int getAmount() {
 		return stack.getStackSize();
 	}
 
@@ -43,21 +44,8 @@ public class ItemResource implements IResource {
 	}
 
 	@Override
-	public boolean matches(ItemIdentifier itemType, MatchSettings settings) {
-		switch (settings) {
-			case NORMAL:
-				return stack.getItem().equals(itemType);
-			case WITHOUT_NBT:
-				return stack.getItem().equalsWithoutNBT(itemType);
-		}
+	public boolean matches(ItemIdentifier itemType) {
 		return stack.getItem().equals(itemType);
-	}
-
-	@Override
-	public IResource clone(int multiplier) {
-		ItemIdentifierStack stack = this.stack.clone();
-		stack.setStackSize(stack.getStackSize() * multiplier);
-		return new ItemResource(stack);
 	}
 
 	@Override
@@ -71,6 +59,7 @@ public class ItemResource implements IResource {
 	}
 
 	@Override
+	@SideOnly(Side.CLIENT)
 	public String getDisplayText(ColorCode code) {
 		StringBuilder builder = new StringBuilder();
 		if (code != ColorCode.NONE) {

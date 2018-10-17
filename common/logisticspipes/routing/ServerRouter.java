@@ -1388,11 +1388,9 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 				}
 			}
 			ServerRouter._globalSpecificInterests.entrySet().stream()
-					.filter(entry -> dict.matches(entry.getKey(), IResource.MatchSettings.NORMAL)).forEach(entry -> {
-				for (IRouter r : entry.getValue()) {
-					s.set(r.getSimpleID());
-				}
-			});
+					.filter(entry -> dict.matches(entry.getKey()))
+					.flatMap(entry -> entry.getValue().stream())
+					.forEach(router -> s.set(router.getSimpleID()));
 			return s;
 		}
 		return new BitSet(ServerRouter.getBiggestSimpleID() + 1);
