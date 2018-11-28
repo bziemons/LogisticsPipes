@@ -2,6 +2,7 @@ package logisticspipes.modules.abstractmodules;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import lombok.Getter;
 
@@ -13,12 +14,12 @@ import logisticspipes.proxy.computers.interfaces.CCCommand;
 import logisticspipes.proxy.computers.interfaces.CCType;
 import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
 import logisticspipes.proxy.computers.objects.CCSinkResponder;
-import logisticspipes.utils.SinkReply;
-import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.logistic.IDestination;
+import network.rs485.logisticspipes.logistic.Interests;
 
 @CCType(name = "LogisticsModule")
-public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
+public abstract class LogisticsModule implements IDestination, ISaveState, ILPCCTypeHolder {
 
 	private Object ccType;
 
@@ -27,12 +28,10 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 
 	/**
 	 * Registers the Inventory and ItemSender to the module
-	 * 
-	 * @param world
-	 *            that the module is in.
-	 * @param service
-	 *            Inventory access, power and utility functions provided by the
-	 *            pipe
+	 *
+	 * @param world   that the module is in.
+	 * @param service Inventory access, power and utility functions provided by the
+	 *                pipe
 	 */
 	public void registerHandler(IWorldProvider world, IPipeServiceProvider service) {
 		_world = world;
@@ -81,28 +80,9 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 	public abstract int getZ();
 
 	/**
-	 * Gives an sink answer on the given itemstack
-	 * 
-	 * @param stack
-	 *            to sink
-	 * @param bestPriority
-	 *            best priority seen so far
-	 * @param bestCustomPriority
-	 *            best custom subpriority
-	 * @param allowDefault
-	 *            is a default only sink allowed to sink this?
-	 * @param includeInTransit
-	 *            inclide the "in transit" items? -- true for a destination
-	 *            search, false for a sink check.
-	 * @return SinkReply whether the module sinks the item or not
-	 */
-	public abstract SinkReply sinksItem(ItemIdentifier stack, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit);
-
-	/**
 	 * Returns submodules. Normal modules don't have submodules
-	 * 
-	 * @param slot
-	 *            of the requested module
+	 *
+	 * @param slot of the requested module
 	 * @return
 	 */
 	public abstract LogisticsModule getSubModule(int slot);
@@ -113,31 +93,21 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 	public abstract void tick();
 
 	/**
-	 * Is this module interested in all items, or just some specific ones?
-	 * 
-	 * @return true: this module will be checked against every item request
-	 *         false: only requests involving items returned by
-	 *         getSpecificInterestes() will be checked
-	 */
-	public abstract boolean hasGenericInterests();
-
-	public abstract boolean interestedInAttachedInventory();
-
-	/**
-	 * is this module interested in receiving any damage variant of items in the
-	 * attached inventory?
-	 */
-	public abstract boolean interestedInUndamagedID();
-
-	/**
 	 * is this module a valid destination for bounced items.
 	 */
 	public abstract boolean recievePassive();
 
 	/**
+	 * Returns the module's interests.
+	 *
+	 * @return a {@link Stream} of {@link Interests}.
+	 */
+	public abstract Stream<Interests> streamInterests();
+
+	/**
 	 * Returns whether the module should be displayed the effect when as an
 	 * item.
-	 * 
+	 *
 	 * @return True to show effect False to no effect (default)
 	 */
 	public boolean hasEffect() {
@@ -157,7 +127,7 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 
 	@Override
 	public String toString() {
-		return (new StringBuilder()).append(getClass().getSimpleName()).append("@").append("(").append(getX()).append(", ").append(getY()).append(", ").append(getZ()).append(")").toString();
+		return getClass().getSimpleName() + "@" + "(" + getX() + ", " + getY() + ", " + getZ() + ")";
 	}
 
 	/**

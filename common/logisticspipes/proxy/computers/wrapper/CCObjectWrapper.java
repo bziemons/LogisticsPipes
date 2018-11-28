@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import net.minecraft.nbt.NBTBase;
+
 import logisticspipes.proxy.computers.interfaces.CCCommand;
 import logisticspipes.proxy.computers.interfaces.CCQueued;
 import logisticspipes.proxy.computers.interfaces.CCSecurtiyCheck;
@@ -19,9 +21,7 @@ import logisticspipes.proxy.computers.objects.CCItemIdentifierInventory;
 import logisticspipes.proxy.computers.objects.CCItemIdentifierStack;
 import logisticspipes.proxy.computers.objects.CCPair;
 import logisticspipes.proxy.computers.objects.CCQuartet;
-import logisticspipes.proxy.computers.objects.CCResource;
 import logisticspipes.proxy.computers.objects.CCTriplet;
-import logisticspipes.request.resources.IResource;
 import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
@@ -29,8 +29,6 @@ import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Quartet;
 import logisticspipes.utils.tuples.Triplet;
-
-import net.minecraft.nbt.NBTBase;
 
 public class CCObjectWrapper {
 
@@ -43,7 +41,8 @@ public class CCObjectWrapper {
 		CCObjectWrapper.specialMappings.put(Pair.class, new CCPair());
 		CCObjectWrapper.specialMappings.put(Triplet.class, new CCTriplet());
 		CCObjectWrapper.specialMappings.put(Quartet.class, new CCQuartet());
-		CCObjectWrapper.specialMappings.put(IResource.class, new CCResource());
+		// TODO: (Re-)Add ingame computer resource mapping
+		// CCObjectWrapper.specialMappings.put(IResource.class, new CCResource());
 		CCObjectWrapper.specialMappings.put(FluidIdentifier.class, new CCFluidIdentifier());
 	}
 

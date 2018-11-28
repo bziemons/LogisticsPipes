@@ -21,6 +21,7 @@ import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.logisticspipes.logistic.TransportNetwork;
 import network.rs485.logisticspipes.util.LPDataOutput;
 import network.rs485.logisticspipes.util.LPFinalSerializable;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
@@ -48,6 +49,8 @@ public interface IRouter extends LPFinalSerializable {
 	CoreRoutedPipe getPipe();
 
 	CoreRoutedPipe getCachedPipe();
+
+	TransportNetwork getNetwork();
 
 	boolean isInDim(int dimension);
 
@@ -82,8 +85,6 @@ public interface IRouter extends LPFinalSerializable {
 	boolean isSideDisconneceted(EnumFacing dir);
 
 	List<ExitRoute> getDistanceTo(IRouter r);
-
-	void clearInterests();
 
 	List<Pair<ILogisticsPowerProvider, List<IFilter>>> getPowerProvider();
 

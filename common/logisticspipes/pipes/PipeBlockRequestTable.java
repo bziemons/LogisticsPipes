@@ -29,7 +29,6 @@ import logisticspipes.interfaces.IGuiOpenControler;
 import logisticspipes.interfaces.IRequestWatcher;
 import logisticspipes.interfaces.IRotationProvider;
 import logisticspipes.logisticspipes.IRoutedItem;
-import logisticspipes.logisticspipes.TransportLayer;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.block.CraftingSetType;
@@ -48,7 +47,6 @@ import logisticspipes.utils.ISimpleInventoryEventHandler;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
-import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.item.SimpleStackInventory;
 import logisticspipes.utils.tuples.Pair;
 
@@ -147,9 +145,9 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 				return;
 			}
 			IRoutedItem itemToSend = SimpleServiceLocator.routedItemHelper.createNewTravelItem(stack);
-			SimpleServiceLocator.logisticsManager.assignDestinationFor(itemToSend, getRouter().getSimpleID(), false);
+			getRouter().getNetwork().lostItem(itemToSend);
 			if (itemToSend.getDestinationUUID() != null) {
-				EnumFacing dir = getRouteLayer().getOrientationForItem(itemToSend, null);
+				EnumFacing dir = getOrientationForItem(itemToSend, null);
 				super.queueRoutedItem(itemToSend, dir.getOpposite());
 				spawnParticle(Particles.OrangeParticle, 4);
 				toSortInv.clearInventorySlotContents(0);
@@ -512,34 +510,6 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	@Override
 	public boolean sharesInterestWith(CoreRoutedPipe other) {
 		return false;
-	}
-
-	@Override
-	public TransportLayer getTransportLayer() {
-		if (_transportLayer == null) {
-			_transportLayer = new TransportLayer() {
-
-				@Override
-				public void handleItem(IRoutedItem item) {
-					PipeBlockRequestTable.this.notifyOfItemArival(item.getInfo());
-					if (item.getItemIdentifierStack() != null) {
-						ItemIdentifierStack stack = item.getItemIdentifierStack();
-						stack.setStackSize(inv.addCompressed(stack.makeNormalStack(), false));
-					}
-				}
-
-				@Override
-				public EnumFacing itemArrived(IRoutedItem item, EnumFacing denyed) {
-					return null;
-				}
-
-				@Override
-				public boolean stillWantItem(IRoutedItem item) {
-					return false;
-				}
-			};
-		}
-		return _transportLayer;
 	}
 
 	@Override

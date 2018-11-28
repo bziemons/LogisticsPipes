@@ -32,7 +32,6 @@ import logisticspipes.pipefxhandlers.Particles;
 import logisticspipes.pipes.basic.CoreRoutedPipe.ItemSendMode;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.PlayerCollectionList;
-import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.tuples.Pair;
 
@@ -83,11 +82,6 @@ public class ModuleExtractor extends LogisticsSneakyDirectionModule implements I
 	public void setSneakyDirection(EnumFacing sneakyDirection) {
 		_sneakyDirection = sneakyDirection;
 		MainProxy.sendToPlayerList(PacketHandler.getPacket(ExtractorModuleMode.class).setDirection(_sneakyDirection).setModulePos(this), localModeWatchers);
-	}
-
-	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		return null;
 	}
 
 	@Override
@@ -241,21 +235,6 @@ public class ModuleExtractor extends LogisticsSneakyDirectionModule implements I
 	@Override
 	public IHUDModuleRenderer getHUDRenderer() {
 		return HUD;
-	}
-
-	@Override
-	public boolean hasGenericInterests() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInAttachedInventory() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInUndamagedID() {
-		return false;
 	}
 
 	@Override

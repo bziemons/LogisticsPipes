@@ -12,7 +12,6 @@ import logisticspipes.gui.hud.modules.HUDSimpleFilterModule;
 import logisticspipes.interfaces.IClientInformationProvider;
 import logisticspipes.interfaces.IHUDModuleHandler;
 import logisticspipes.interfaces.IHUDModuleRenderer;
-import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.IModuleInventoryReceive;
 import logisticspipes.interfaces.IModuleWatchReciver;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
@@ -27,7 +26,6 @@ import logisticspipes.utils.ISimpleInventoryEventHandler;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
-import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 
@@ -53,34 +51,7 @@ public class ModulePassiveSupplier extends LogisticsSimpleFilterModule implement
 	@Override
 	public void registerPosition(ModulePositionType slot, int positionInt) {
 		super.registerPosition(slot, positionInt);
-		_sinkReply = new SinkReply(FixedPriority.PassiveSupplier, 0, true, false, 2, 0, new ChassiTargetInformation(getPositionInt()));
-	}
-
-	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		if (bestPriority > _sinkReply.fixedPriority.ordinal() || (bestPriority == _sinkReply.fixedPriority.ordinal() && bestCustomPriority >= _sinkReply.customPriority)) {
-			return null;
-		}
-
-		IInventoryUtil targetUtil = _service.getSneakyInventory(false, slot, positionInt);
-		if (targetUtil == null) {
-			return null;
-		}
-
-		if (!_filterInventory.containsItem(item)) {
-			return null;
-		}
-
-		int targetCount = _filterInventory.itemCount(item);
-		int haveCount = targetUtil.itemCount(item);
-		if (targetCount <= haveCount) {
-			return null;
-		}
-
-		if (_service.canUseEnergy(2)) {
-			return new SinkReply(_sinkReply, targetCount - haveCount);
-		}
-		return null;
+		_sinkReply = new SinkReply(FixedPriority.PassiveSupplier, 0, 2, 0, new ChassiTargetInformation(getPositionInt()));
 	}
 
 	@Override
@@ -146,21 +117,6 @@ public class ModulePassiveSupplier extends LogisticsSimpleFilterModule implement
 		if (MainProxy.isServer(_world.getWorld())) {
 			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(_filterInventory)).setModulePos(this), localModeWatchers);
 		}
-	}
-
-	@Override
-	public boolean hasGenericInterests() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInAttachedInventory() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInUndamagedID() {
-		return false;
 	}
 
 	@Override

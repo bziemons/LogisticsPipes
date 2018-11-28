@@ -42,15 +42,7 @@ public class ModuleSatellite extends LogisticsModule {
 		return pipe.getZ();
 	}
 
-	private SinkReply _sinkReply = new SinkReply(FixedPriority.ItemSink, 0, true, false, 1, 0, null);
-
-	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		if (bestPriority > _sinkReply.fixedPriority.ordinal() || (bestPriority == _sinkReply.fixedPriority.ordinal() && bestCustomPriority >= _sinkReply.customPriority)) {
-			return null;
-		}
-		return new SinkReply(_sinkReply, spaceFor(item, includeInTransit));
-	}
+	private SinkReply _sinkReply = new SinkReply(FixedPriority.ItemSink, 0, 1, 0, null);
 
 	private int spaceFor(ItemIdentifier item, boolean includeInTransit) {
 		WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(pipe.container);
@@ -83,22 +75,6 @@ public class ModuleSatellite extends LogisticsModule {
 
 	@Override
 	public void tick() {}
-
-	@Override
-	public boolean hasGenericInterests() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInAttachedInventory() {
-		return false;
-		// when we are default we are interested in everything anyway, otherwise we're only interested in our filter.
-	}
-
-	@Override
-	public boolean interestedInUndamagedID() {
-		return false;
-	}
 
 	@Override
 	public boolean recievePassive() {

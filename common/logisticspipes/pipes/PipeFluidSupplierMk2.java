@@ -63,11 +63,6 @@ public class PipeFluidSupplierMk2 extends FluidRoutedPipe {
 		return Textures.LOGISTICSPIPE_LIQUIDSUPPLIER_MK2_TEXTURE;
 	}
 
-	@Override
-	public boolean hasGenericInterests() {
-		return true;
-	}
-
 	//from PipeFluidSupplierMk2
 	private ItemIdentifierInventory dummyInventory = new ItemIdentifierInventory(1, "Fluid to keep stocked", 127, true);
 	private int amount = 0;

@@ -10,6 +10,8 @@ import net.minecraftforge.fml.client.FMLClientHandler;
 
 import lombok.Getter;
 import lombok.Setter;
+import static network.rs485.logisticspipes.resource.ResourceUtil.ColorCode.MISSING;
+import static network.rs485.logisticspipes.resource.ResourceUtil.ColorCode.SUCCESS;
 
 import logisticspipes.asm.ClientSideOnlyMethodContent;
 import logisticspipes.config.Configs;
@@ -17,12 +19,11 @@ import logisticspipes.gui.orderer.GuiOrderer;
 import logisticspipes.gui.orderer.GuiRequestTable;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.request.resources.IResource;
-import logisticspipes.request.resources.IResource.ColorCode;
 import logisticspipes.request.resources.ResourceNetwork;
+import logisticspipes.utils.StaticResolve;
+import network.rs485.logisticspipes.resource.ResourceUtil;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class ComponentList extends ModernPacket {
@@ -55,10 +56,10 @@ public class ComponentList extends ModernPacket {
 					.handleSimulateAnswer(used, missing, (GuiRequestTable) FMLClientHandler.instance().getClient().currentScreen, player);
 		} else {
 			for (IResource item : used) {
-				player.sendMessage(new TextComponentString("Component: " + item.getDisplayText(ColorCode.SUCCESS)));
+				player.sendMessage(new TextComponentString("Component: " + ResourceUtil.getDisplayText(SUCCESS, item)));
 			}
 			for (IResource item : missing) {
-				player.sendMessage(new TextComponentString("Missing: " + item.getDisplayText(ColorCode.MISSING)));
+				player.sendMessage(new TextComponentString("Missing: " + ResourceUtil.getDisplayText(MISSING, item)));
 			}
 		}
 	}

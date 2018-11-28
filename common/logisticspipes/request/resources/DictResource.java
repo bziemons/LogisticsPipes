@@ -4,14 +4,10 @@ import java.util.BitSet;
 
 import net.minecraft.item.ItemStack;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-
 import com.google.common.base.Objects;
 
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
-import logisticspipes.utils.string.ChatColor;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 
@@ -49,7 +45,6 @@ public class DictResource extends ItemResource {
 		output.writeBitSet(getBitSet());
 	}
 
-	@Override
 	public boolean matches(ItemIdentifier other) {
 		if (use_od || use_category) {
 			if (stack.getItem().getDictIdentifiers() != null && other.getDictIdentifiers() != null) {
@@ -90,38 +85,6 @@ public class DictResource extends ItemResource {
 	@Override
 	public void setCCType(Object type) {
 		ccObject = type;
-	}
-
-	@Override
-	@SideOnly(Side.CLIENT)
-	public String getDisplayText(ColorCode code) {
-		StringBuilder builder = new StringBuilder();
-		builder.append(ChatColor.GRAY);
-		builder.append("{");
-		if (code != ColorCode.NONE) {
-			builder.append(code == ColorCode.MISSING ? ChatColor.RED : ChatColor.GREEN);
-		}
-		builder.append(stack.getFriendlyName());
-		if (code != ColorCode.NONE) {
-			builder.append(ChatColor.GRAY);
-		}
-		builder.append(" [");
-		builder.append(use_od ? ChatColor.GREEN : ChatColor.RED);
-		builder.append("OreDict");
-		builder.append(ChatColor.GRAY);
-		builder.append(", ");
-		builder.append(use_category ? ChatColor.GREEN : ChatColor.RED);
-		builder.append("OreCat");
-		builder.append(ChatColor.GRAY);
-		builder.append(", ");
-		builder.append(ignore_dmg ? ChatColor.GREEN : ChatColor.RED);
-		builder.append("IgnDmg");
-		builder.append(ChatColor.GRAY);
-		builder.append(", ");
-		builder.append(ignore_nbt ? ChatColor.GREEN : ChatColor.RED);
-		builder.append("IgnNBT");
-		builder.append(ChatColor.GRAY);
-		return builder.append("]}").toString();
 	}
 
 	public void loadFromBitSet(BitSet bits) {

@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -69,33 +69,29 @@ public class ModuleCCBasedQuickSort extends ModuleQuickSort implements IClientIn
 			return;
 		}
 		BitSet routersIndex = ServerRouter.getRoutersInterestedIn((ItemIdentifier) null); // get only pipes with generic interest
-		List<ExitRoute> validDestinations = new ArrayList<>(); // get the routing table
+		IntStream.Builder routerIdStreamBuilder = IntStream.builder();
 		for (int i = routersIndex.nextSetBit(0); i >= 0; i = routersIndex.nextSetBit(i + 1)) {
-			IRouter r = SimpleServiceLocator.routerManager.getRouterUnsafe(i, false);
-			List<ExitRoute> exits = sourceRouter.getDistanceTo(r);
-			if (exits != null) {
-				validDestinations.addAll(exits.stream()
-						.filter(e -> e.containsFlag(PipeRoutingConnectionType.canRouteTo))
-						.collect(Collectors.toList()));
-			}
+			routerIdStreamBuilder.add(i);
 		}
-		Collections.sort(validDestinations);
+		routerIdStreamBuilder.build()
+				.mapToObj(routerId -> SimpleServiceLocator.routerManager.getRouterUnsafe(routerId, false))
+				.flatMap(router -> sourceRouter.getDistanceTo(router).stream())
+				.filter(exit -> exit.containsFlag(PipeRoutingConnectionType.canRouteTo))
+				.sorted()
+				.forEachOrdered(candidateRouter -> {
+			if (candidateRouter.destination == null || candidateRouter.destination.getId().equals(sourceRouter.getId())) {
+				return;
+			}
 
-		outer:
-			for (ExitRoute candidateRouter : validDestinations) {
-				if (candidateRouter.destination.getId().equals(sourceRouter.getId())) {
-					continue;
-				}
-
-				for (IFilter filter : candidateRouter.filters) {
-					if (filter.blockRouting() || (filter.isBlocked() == filter.isFilteredItem(stack.getItem()))) {
-						continue outer;
-					}
-				}
-				if (candidateRouter.destination != null && candidateRouter.destination.getLogisticsModule() != null) {
-					respones.addAll(candidateRouter.destination.getLogisticsModule().queueCCSinkEvent(stack));
+			for (IFilter filter : candidateRouter.filters) {
+				if (filter.blockRouting() || (filter.isBlocked() == filter.isFilteredItem(stack.getItem()))) {
+					return;
 				}
 			}
+			if (candidateRouter.destination.getLogisticsModule() != null) {
+				respones.addAll(candidateRouter.destination.getLogisticsModule().queueCCSinkEvent(stack));
+			}
+		});
 		sinkResponses.put(slot, new Pair<>(0, respones));
 	}
 

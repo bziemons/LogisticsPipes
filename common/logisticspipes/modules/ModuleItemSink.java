@@ -41,7 +41,6 @@ import logisticspipes.utils.SinkReply.FixedPriority;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
-import logisticspipes.utils.tuples.Pair;
 
 @CCType(name = "ItemSink Module")
 public class ModuleItemSink extends LogisticsGuiModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, ISimpleInventoryEventHandler, IModuleInventoryReceive {
@@ -84,60 +83,8 @@ public class ModuleItemSink extends LogisticsGuiModule implements IClientInforma
 	@Override
 	public void registerPosition(ModulePositionType slot, int positionInt) {
 		super.registerPosition(slot, positionInt);
-		_sinkReply = new SinkReply(FixedPriority.ItemSink, 0, true, false, 1, 0, new ChassiTargetInformation(getPositionInt()));
-		_sinkReplyDefault = new SinkReply(FixedPriority.DefaultRoute, 0, true, true, 1, 0, new ChassiTargetInformation(getPositionInt()));
-	}
-
-	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		if (_isDefaultRoute && !allowDefault) {
-			return null;
-		}
-		if (bestPriority > _sinkReply.fixedPriority.ordinal() || (bestPriority == _sinkReply.fixedPriority.ordinal() && bestCustomPriority >= _sinkReply.customPriority)) {
-			return null;
-		}
-		if (_filterInventory.containsUndamagedItem(item.getUndamaged())) {
-			if (_service.canUseEnergy(1)) {
-				return _sinkReply;
-			}
-			return null;
-		}
-		if (_service.getUpgradeManager(slot, positionInt).isFuzzyUpgrade()) {
-			for (Pair<ItemIdentifierStack, Integer> stack : _filterInventory) {
-				if (stack == null) {
-					continue;
-				}
-				if (stack.getValue1() == null) {
-					continue;
-				}
-				ItemIdentifier ident1 = item;
-				ItemIdentifier ident2 = stack.getValue1().getItem();
-				if (ignoreData.get(stack.getValue2())) {
-					ident1 = ident1.getIgnoringData();
-					ident2 = ident2.getIgnoringData();
-				}
-				if (ignoreNBT.get(stack.getValue2())) {
-					ident1 = ident1.getIgnoringNBT();
-					ident2 = ident2.getIgnoringNBT();
-				}
-				if (ident1.equals(ident2)) {
-					if (_service.canUseEnergy(5)) {
-						return _sinkReply;
-					}
-					return null;
-				}
-			}
-		}
-		if (_isDefaultRoute) {
-			if (bestPriority > _sinkReplyDefault.fixedPriority.ordinal() || (bestPriority == _sinkReplyDefault.fixedPriority.ordinal() && bestCustomPriority >= _sinkReplyDefault.customPriority)) {
-				return null;
-			}
-			if (_service.canUseEnergy(1)) {
-				return _sinkReplyDefault;
-			}
-			return null;
-		}
-		return null;
+		_sinkReply = new SinkReply(FixedPriority.ItemSink, 0, 1, 0, new ChassiTargetInformation(getPositionInt()));
+		_sinkReplyDefault = new SinkReply(FixedPriority.DefaultRoute, 0, 1, 0, new ChassiTargetInformation(getPositionInt()));
 	}
 
 	@Override
@@ -223,22 +170,6 @@ public class ModuleItemSink extends LogisticsGuiModule implements IClientInforma
 	@Override
 	public void handleInvContent(Collection<ItemIdentifierStack> list) {
 		_filterInventory.handleItemIdentifierList(list);
-	}
-
-	@Override
-	public boolean hasGenericInterests() {
-		return _isDefaultRoute;
-	}
-
-	@Override
-	public boolean interestedInAttachedInventory() {
-		return false;
-		// when we are default we are interested in everything anyway, otherwise we're only interested in our filter.
-	}
-
-	@Override
-	public boolean interestedInUndamagedID() {
-		return false;
 	}
 
 	@Override

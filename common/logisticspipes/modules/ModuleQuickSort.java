@@ -21,7 +21,6 @@ import logisticspipes.pipes.basic.CoreRoutedPipe.ItemSendMode;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.specialinventoryhandler.SpecialInventoryHandler;
 import logisticspipes.utils.PlayerCollectionList;
-import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.tuples.Pair;
 
@@ -44,11 +43,6 @@ public class ModuleQuickSort extends LogisticsGuiModule {
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbttagcompound) {}
-
-	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		return null;
-	}
 
 	@Override
 	public LogisticsModule getSubModule(int slot) {
@@ -260,21 +254,6 @@ public class ModuleQuickSort extends LogisticsGuiModule {
 
 	private void sendPacketTo(EntityPlayer player) {
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(QuickSortState.class).setInteger2(lastPosSend).setInteger(getPositionInt()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()), player);
-	}
-
-	@Override
-	public boolean hasGenericInterests() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInAttachedInventory() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInUndamagedID() {
-		return false;
 	}
 
 	@Override

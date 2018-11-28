@@ -14,7 +14,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -24,6 +23,7 @@ import net.minecraft.util.text.TextComponentString;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.api.IRequestAPI;
+import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
@@ -32,13 +32,14 @@ import logisticspipes.proxy.computers.interfaces.CCCommand;
 import logisticspipes.proxy.computers.interfaces.CCQueued;
 import logisticspipes.proxy.computers.interfaces.CCType;
 import logisticspipes.request.resources.IResource;
-import logisticspipes.request.resources.ItemResource;
 import logisticspipes.security.SecuritySettings;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.logisticspipes.logistic.IDestination;
+import network.rs485.logisticspipes.logistic.Interests;
 
 @CCType(name = "LogisticsPipes:Request")
 public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IRequestAPI {
@@ -71,6 +72,16 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 			}
 		}
 		return true;
+	}
+
+	@Override
+	protected Stream<Interests> streamPipeInterests() {
+		return Stream.empty();
+	}
+
+	@Override
+	public IDestination handleItem(IRoutedItem item) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -132,8 +143,10 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 //		});
 
 		SimulationResult r = new SimulationResult();
-		r.used = resourcesToItemStacks(used.stream()).collect(Collectors.toList());
-		r.missing = resourcesToItemStacks(missing.stream()).collect(Collectors.toList());
+//		r.used = resourcesToItemStacks(used.stream()).collect(Collectors.toList());
+//		r.missing = resourcesToItemStacks(missing.stream()).collect(Collectors.toList());
+		r.used = Collections.emptyList();
+		r.missing = Collections.emptyList();
 		return r;
 	}
 
@@ -154,14 +167,15 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 //			@Override
 //			public void handleSucessfullRequestOfList(List<IResource> items, TempOrders parts) {}
 //		}, null);
-		return resourcesToItemStacks(missing.stream()).collect(Collectors.toList());
+//		return resourcesToItemStacks(missing.stream()).collect(Collectors.toList());
+		return Collections.emptyList();
 	}
 
-	private static Stream<ItemStack> resourcesToItemStacks(Stream<IResource> resourceStream) {
-		return resourceStream
-				.filter(resource -> resource instanceof ItemResource)
-				.map(resource -> ((ItemResource) resource).getItem().unsafeMakeNormalStack(resource.getAmount()));
-	}
+//	private static Stream<ItemStack> resourcesToItemStacks(Stream<IResource> resourceStream) {
+//		return resourceStream
+//				.filter(resource -> resource instanceof ItemResource)
+//				.map(resource -> ((ItemResource) resource).getItem().unsafeMakeNormalStack(resource.getAmount()));
+//	}
 
 	/* CC */
 	@CCCommand(description = "Requests the given ItemIdentifierStack")

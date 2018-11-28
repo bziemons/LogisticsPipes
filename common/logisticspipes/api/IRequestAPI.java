@@ -7,6 +7,7 @@ import net.minecraft.item.ItemStack;
 /**
  * Public interface implemented by Request pipes
  */
+@Deprecated
 public interface IRequestAPI {
 
 	/**

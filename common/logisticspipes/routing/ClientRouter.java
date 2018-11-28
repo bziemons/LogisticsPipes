@@ -15,6 +15,8 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.item.ItemIdentifier;
+import network.rs485.logisticspipes.logistic.ClientNetwork;
+import network.rs485.logisticspipes.logistic.TransportNetwork;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 import logisticspipes.utils.tuples.Pair;
 
@@ -113,6 +115,11 @@ public class ClientRouter implements IRouter {
 	}
 
 	@Override
+	public TransportNetwork getNetwork() {
+		return ClientNetwork.getInstance();
+	}
+
+	@Override
 	public boolean isInDim(int dimension) {
 		return true;
 	}
@@ -174,11 +181,6 @@ public class ClientRouter implements IRouter {
 	@Override
 	public List<ExitRoute> getDistanceTo(IRouter r) {
 		return null;
-	}
-
-	@Override
-	public void clearInterests() {
-
 	}
 
 	@Override

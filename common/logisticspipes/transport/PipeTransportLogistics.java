@@ -1,6 +1,5 @@
 /**
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -66,6 +65,7 @@ import logisticspipes.utils.SyncList;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.logisticspipes.logistic.IDestination;
 import network.rs485.logisticspipes.util.items.ItemStackLoader;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
@@ -75,6 +75,7 @@ public class PipeTransportLogistics {
 	@Data
 	@AllArgsConstructor
 	class RoutingResult {
+
 		private EnumFacing face;
 		private boolean hasRoute;
 	}
@@ -203,7 +204,7 @@ public class PipeTransportLogistics {
 			readjustSpeed((LPTravelingItemServer) item);
 			RoutingResult result = resolveDestination((LPTravelingItemServer) item);
 			item.output = result.getFace();
-			if(!result.hasRoute) {
+			if (!result.hasRoute) {
 				return 0;
 			}
 			getPipe().debug.log("Injected Item: [" + item.input + ", " + item.output + "] (" + ((LPTravelingItemServer) item).getInfo());
@@ -231,7 +232,7 @@ public class PipeTransportLogistics {
 	 * emit the supplied item. This function assumes ownershop of the item, and
 	 * you may assume that it is now either buffered by the pipe or moving
 	 * through the pipe.
-	 * 
+	 *
 	 * @param item
 	 *            the item that just bounced off an inventory. In the case of a
 	 *            pipe with a buffer, this function will alter item.
@@ -262,7 +263,7 @@ public class PipeTransportLogistics {
 		readjustSpeed(item);
 		RoutingResult result = resolveDestination(item);
 		item.output = result.getFace();
-		if(!result.hasRoute) {
+		if (!result.hasRoute) {
 			return;
 		} else if (item.output == null) {
 			dropItem(item);
@@ -334,7 +335,7 @@ public class PipeTransportLogistics {
 			data.setDoNotBuffer(false);
 			value = null;
 		} else {
-			value = getRoutedPipe().getRouteLayer().getOrientationForItem(data, blocked);
+			value = getRoutedPipe().getOrientationForItem(data, blocked);
 		}
 		if (value == null && MainProxy.isClient(getWorld())) {
 			return new RoutingResult(null, true);
@@ -482,7 +483,8 @@ public class PipeTransportLogistics {
 		} else {
 			IInventoryUtil util = SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(tile, dir.getOpposite());
 			if (util != null && isRouted) {
-				getRoutedPipe().getCacheHolder().trigger(CacheTypes.Inventory);
+				CoreRoutedPipe routedPipe = getRoutedPipe();
+				routedPipe.getCacheHolder().trigger(CacheTypes.Inventory);
 
 				// items.scheduleRemoval(arrivingItem);
 				if (MainProxy.isServer(getWorld())) {
@@ -492,7 +494,8 @@ public class PipeTransportLogistics {
 					}
 					// last chance for chassi to back out
 					if (arrivingItem != null) {
-						if (arrivingItem.getTransportMode() != TransportMode.Active && !getRoutedPipe().getTransportLayer().stillWantItem(arrivingItem)) {
+						IDestination destination = routedPipe.handleItem(arrivingItem);
+						if (arrivingItem.getTransportMode() != TransportMode.Active && !destination.stillWantItem(arrivingItem)) {
 							reverseItem(arrivingItem);
 							return;
 						}
@@ -502,8 +505,7 @@ public class PipeTransportLogistics {
 						ModulePositionType slot = null;
 						int positionInt = -1;
 						if (arrivingItem.getInfo().targetInfo instanceof ChassiTargetInformation) {
-							// TODO PROVIDE REFACTOR
-							// positionInt = ((ChassiTargetInformation) arrivingItem.getInfo().targetInfo).getModuleSlot();
+							positionInt = ((ChassiTargetInformation) arrivingItem.getInfo().targetInfo).getModuleSlot();
 							slot = ModulePositionType.SLOT;
 						} else if (LPConstants.DEBUG && container.pipe instanceof PipeLogisticsChassi) {
 							System.out.println(arrivingItem);
@@ -743,7 +745,6 @@ public class PipeTransportLogistics {
 		}
 	}
 	*/
-
 	private void dropItem(LPTravelingItemServer item) {
 		if (MainProxy.isClient(container.getWorld())) {
 			return;

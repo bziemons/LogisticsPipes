@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Stream;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
@@ -46,6 +47,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.logisticspipes.logistic.Interests;
 
 @CCType(name = "Advanced Extractor Module")
 public class ModuleAdvancedExtractor extends LogisticsSneakyDirectionModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, IModuleInventoryReceive, ISimpleInventoryEventHandler {
@@ -127,11 +129,6 @@ public class ModuleAdvancedExtractor extends LogisticsSneakyDirectionModule impl
 	@Override
 	protected ModuleInHandGuiProvider getInHandGuiProvider() {
 		return NewGuiHandler.getGui(AdvancedExtractorModuleInHand.class);
-	}
-
-	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		return null;
 	}
 
 	@Override
@@ -310,23 +307,13 @@ public class ModuleAdvancedExtractor extends LogisticsSneakyDirectionModule impl
 	}
 
 	@Override
-	public boolean hasGenericInterests() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInAttachedInventory() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInUndamagedID() {
-		return false;
-	}
-
-	@Override
 	public boolean recievePassive() {
 		return false;
+	}
+
+	@Override
+	public Stream<Interests> streamInterests() {
+		return Stream.empty();
 	}
 
 }

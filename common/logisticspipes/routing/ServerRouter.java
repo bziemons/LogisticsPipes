@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -55,10 +54,6 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.request.resources.DictResource;
-import logisticspipes.request.resources.FluidResource;
-import logisticspipes.request.resources.IResource;
-import logisticspipes.request.resources.ItemResource;
 import logisticspipes.routing.pathfinder.PathFinder;
 import logisticspipes.ticks.LPTickHandler;
 import logisticspipes.ticks.RoutingTableUpdateThread;
@@ -69,22 +64,10 @@ import logisticspipes.utils.StackTraceUtil.Info;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Quartet;
+import network.rs485.logisticspipes.logistic.TransportNetwork;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 public class ServerRouter implements IRouter, Comparable<ServerRouter> {
-
-	// things with specific interests -- providers (including crafters)
-	static HashMap<ItemIdentifier, Set<IRouter>> _globalSpecificInterests = new HashMap<>();
-	// things potentially interested in every item (chassi with generic sinks)
-	static Set<IRouter> _genericInterests = new TreeSet<>();
-
-	// things this pipe is interested in (either providing or sinking)
-	Set<ItemIdentifier> _hasInterestIn = new TreeSet<>();
-	boolean _hasGenericInterest;
-
-	static final int REFRESH_TIME = 20;
-	static int iterated = 0;// used pseudp-random to spread items over the tick range
-	int ticksUntillNextInventoryCheck = 0;
 
 	@Override
 	public int hashCode() {
@@ -204,6 +187,8 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		}
 	}
 
+	private TransportNetwork network;
+
 	// these are maps, not hashMaps because they are unmodifiable Collections to avoid concurrentModification exceptions.
 	public Map<CoreRoutedPipe, ExitRoute> _adjacent = new HashMap<>();
 	public Map<IRouter, ExitRoute> _adjacentRouter = new HashMap<>();
@@ -265,8 +250,6 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 
 	// called on server shutdown only
 	public static void cleanup() {
-		ServerRouter._globalSpecificInterests.clear();
-		ServerRouter._genericInterests.clear();
 		ServerRouter.SharedLSADatabasewriteLock.lock();
 		ServerRouter.SharedLSADatabase = new LSA[0];
 		ServerRouter._lastLSAVersion = new int[0];
@@ -1015,7 +998,6 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 			ServerRouter.SharedLSADatabase[simpleID] = null;
 		}
 		ServerRouter.SharedLSADatabasewriteLock.unlock();
-		removeAllInterests();
 
 		clearPipeCache();
 		setDestroied(true);
@@ -1023,14 +1005,9 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		for (List<ITileEntityChangeListener> list : listenedPipes) {
 			list.remove(localChangeListener);
 		}
+		network = null;
 		updateAdjacentAndLsa();
 		ServerRouter.releaseSimpleID(simpleID);
-	}
-
-	private void removeAllInterests() {
-		removeGenericInterest();
-		_hasInterestIn.forEach(this::removeInterest);
-		_hasInterestIn.clear();
 	}
 
 	/**
@@ -1286,45 +1263,6 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		return null != dir && sideDisconnected[dir.ordinal()];
 	}
 
-	private void removeGenericInterest() {
-		_hasGenericInterest = false;
-		ServerRouter._genericInterests.remove(this);
-	}
-
-	private void declareGenericInterest() {
-		_hasGenericInterest = true;
-		ServerRouter._genericInterests.add(this);
-	}
-
-	private void addInterest(ItemIdentifier items) {
-		Set<IRouter> interests = ServerRouter._globalSpecificInterests.get(items);
-		if (interests == null) {
-			interests = new TreeSet<>();
-			ServerRouter._globalSpecificInterests.put(items, interests);
-		}
-		interests.add(this);
-	}
-
-	private void removeInterest(ItemIdentifier p2) {
-		Set<IRouter> interests = ServerRouter._globalSpecificInterests.get(p2);
-		if (interests == null) {
-			return;
-		}
-		interests.remove(this);
-		if (interests.isEmpty()) {
-			ServerRouter._globalSpecificInterests.remove(p2);
-		}
-
-	}
-
-	public boolean hasGenericInterest() {
-		return _hasGenericInterest;
-	}
-
-	public boolean hasInterestIn(ItemIdentifier item) {
-		return _hasInterestIn.contains(item);
-	}
-
 	public static BitSet getRoutersInterestedIn(ItemIdentifier item) {
 		BitSet s = new BitSet(ServerRouter.getBiggestSimpleID() + 1);
 		if (ServerRouter._genericInterests != null) {
@@ -1374,28 +1312,6 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		return s;
 	}
 
-	public static BitSet getRoutersInterestedIn(IResource item) {
-		if (item instanceof ItemResource) {
-			return ServerRouter.getRoutersInterestedIn(((ItemResource) item).getItem());
-		} else if (item instanceof FluidResource) {
-			return ServerRouter.getRoutersInterestedIn(((FluidResource) item).getFluid().getItemIdentifier());
-		} else if (item instanceof DictResource) {
-			DictResource dict = (DictResource) item;
-			BitSet s = new BitSet(ServerRouter.getBiggestSimpleID() + 1);
-			if (ServerRouter._genericInterests != null) {
-				for (IRouter r : ServerRouter._genericInterests) {
-					s.set(r.getSimpleID());
-				}
-			}
-			ServerRouter._globalSpecificInterests.entrySet().stream()
-					.filter(entry -> dict.matches(entry.getKey()))
-					.flatMap(entry -> entry.getValue().stream())
-					.forEach(router -> s.set(router.getSimpleID()));
-			return s;
-		}
-		return new BitSet(ServerRouter.getBiggestSimpleID() + 1);
-	}
-
 	@Override
 	public int compareTo(ServerRouter o) {
 		return simpleID - o.simpleID;
@@ -1410,19 +1326,6 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		}
 		List<ExitRoute> result = _routeTable.get(id);
 		return result != null ? result : new ArrayList<>(0);
-	}
-
-	public static Map<ItemIdentifier, Set<IRouter>> getInterestedInSpecifics() {
-		return ServerRouter._globalSpecificInterests;
-	}
-
-	public static Set<IRouter> getInterestedInGeneral() {
-		return ServerRouter._genericInterests;
-	}
-
-	@Override
-	public void clearInterests() {
-		removeAllInterests();
 	}
 
 	@Override

@@ -28,7 +28,6 @@ import logisticspipes.utils.ISimpleInventoryEventHandler;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
-import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 
@@ -56,21 +55,7 @@ public class ModuleEnchantmentSinkMK2 extends LogisticsSimpleFilterModule implem
 	@Override
 	public void registerPosition(ModulePositionType slot, int positionInt) {
 		super.registerPosition(slot, positionInt);
-		_sinkReply = new SinkReply(FixedPriority.EnchantmentItemSink, 1, true, false, 1, 0, new ChassiTargetInformation(getPositionInt()));
-	}
-
-	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		if (bestPriority > _sinkReply.fixedPriority.ordinal() || (bestPriority == _sinkReply.fixedPriority.ordinal() && bestCustomPriority >= _sinkReply.customPriority)) {
-			return null;
-		}
-		if (_filterInventory.containsExcludeNBTItem(item.getUndamaged().getIgnoringNBT())) {
-			if (item.makeNormalStack(1).isItemEnchanted()) {
-				return _sinkReply;
-			}
-			return null;
-		}
-		return null;
+		_sinkReply = new SinkReply(FixedPriority.EnchantmentItemSink, 1, 1, 0, new ChassiTargetInformation(getPositionInt()));
 	}
 
 	@Override
@@ -136,26 +121,6 @@ public class ModuleEnchantmentSinkMK2 extends LogisticsSimpleFilterModule implem
 	@Override
 	public void handleInvContent(Collection<ItemIdentifierStack> list) {
 		_filterInventory.handleItemIdentifierList(list);
-	}
-
-	@Override
-	/*
-	 * (non-Javadoc)
-	 * @see logisticspipes.modules.LogisticsModule#hasGenericInterests()
-	 * Only looking for items in filter
-	 */
-	public boolean hasGenericInterests() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInAttachedInventory() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInUndamagedID() {
-		return true;
 	}
 
 	@Override

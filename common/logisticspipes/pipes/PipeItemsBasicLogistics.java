@@ -136,8 +136,4 @@ public class PipeItemsBasicLogistics extends CoreRoutedPipe {
 		return inv;
 	}
 
-	@Override
-	public boolean hasGenericInterests() {
-		return itemSinkModule.isDefaultRoute();
-	}
 }

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Stream;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
@@ -37,10 +38,10 @@ import logisticspipes.pipes.basic.debug.StatusEntry;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.ISimpleInventoryEventHandler;
 import logisticspipes.utils.PlayerCollectionList;
-import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.logistic.Interests;
 
 public class ModuleActiveSupplier extends LogisticsGuiModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, IModuleInventoryReceive, ISimpleInventoryEventHandler {
 
@@ -50,11 +51,6 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IClientI
 
 	public ModuleActiveSupplier() {
 		dummyInventory.addListener(this);
-	}
-
-	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		return null;
 	}
 
 	@Override
@@ -111,23 +107,14 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IClientI
 	}
 
 	@Override
-	public boolean hasGenericInterests() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInAttachedInventory() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInUndamagedID() {
-		return false;
-	}
-
-	@Override
 	public boolean recievePassive() {
 		return true;
+	}
+
+	@Override
+	public Stream<Interests> streamInterests() {
+		// active suppliers do not have interests, but actively request items on #tick.
+		return Stream.empty();
 	}
 
 	public void setRequestFailed(boolean value) {

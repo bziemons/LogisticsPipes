@@ -1,7 +1,6 @@
 package logisticspipes.logisticspipes;
 
 import logisticspipes.interfaces.IInventoryUtil;
-import logisticspipes.interfaces.ISendRoutedItem;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
 import logisticspipes.utils.item.ItemIdentifier;
@@ -9,7 +8,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 
-public interface IInventoryProvider extends ISendRoutedItem {
+public interface IInventoryProvider {
 
 	public IInventoryUtil getPointedInventory();
 

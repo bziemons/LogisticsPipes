@@ -9,8 +9,6 @@ import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.proxy.computers.objects.CCSinkResponder;
 import logisticspipes.utils.OneList;
-import logisticspipes.utils.SinkReply;
-import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 
 public class ModuleCCBasedItemSink extends LogisticsModule {
@@ -44,32 +42,12 @@ public class ModuleCCBasedItemSink extends LogisticsModule {
 	}
 
 	@Override
-	public SinkReply sinksItem(ItemIdentifier stack, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		return null;
-	}
-
-	@Override
 	public LogisticsModule getSubModule(int slot) {
 		return null;
 	}
 
 	@Override
 	public void tick() {}
-
-	@Override
-	public boolean hasGenericInterests() {
-		return true;
-	}
-
-	@Override
-	public boolean interestedInAttachedInventory() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInUndamagedID() {
-		return false;
-	}
 
 	@Override
 	public boolean recievePassive() {

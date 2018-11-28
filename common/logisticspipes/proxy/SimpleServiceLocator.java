@@ -14,7 +14,6 @@ import logisticspipes.interfaces.ISecurityStationManager;
 import logisticspipes.interfaces.routing.IChannelConnectionManager;
 import logisticspipes.interfaces.routing.IChannelManagerProvider;
 import logisticspipes.logistics.ILogisticsFluidManager;
-import logisticspipes.logistics.ILogisticsManager;
 import logisticspipes.proxy.interfaces.IBCProxy;
 import logisticspipes.proxy.interfaces.IBetterStorageProxy;
 import logisticspipes.proxy.interfaces.ICCLProxy;
@@ -82,12 +81,6 @@ public final class SimpleServiceLocator {
 
 	public static void setRouterManager(final IRouterManager routerMngr) {
 		SimpleServiceLocator.routerManager = routerMngr;
-	}
-
-	public static ILogisticsManager logisticsManager;
-
-	public static void setLogisticsManager(final ILogisticsManager logisticsMngr) {
-		SimpleServiceLocator.logisticsManager = logisticsMngr;
 	}
 
 	public static ILogisticsFluidManager logisticsFluidManager;

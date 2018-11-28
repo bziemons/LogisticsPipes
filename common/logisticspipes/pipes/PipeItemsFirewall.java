@@ -196,8 +196,4 @@ public class PipeItemsFirewall extends CoreRoutedPipe {
 		isBlocking = flags.get(4);
 	}
 
-	@Override
-	public boolean hasGenericInterests() {
-		return true;
-	}
 }

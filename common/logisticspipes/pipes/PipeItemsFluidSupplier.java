@@ -102,11 +102,6 @@ public class PipeItemsFluidSupplier extends CoreRoutedPipe {
 		}
 	}
 
-	@Override
-	public boolean hasGenericInterests() {
-		return true;
-	}
-
 	// from PipeItemsFluidSupplier
 	private ItemIdentifierInventory dummyInventory = new ItemIdentifierInventory(9, "Fluids to keep stocked", 127);
 

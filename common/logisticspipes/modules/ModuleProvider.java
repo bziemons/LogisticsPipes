@@ -38,7 +38,6 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.computers.interfaces.CCCommand;
 import logisticspipes.proxy.computers.interfaces.CCType;
 import logisticspipes.utils.PlayerCollectionList;
-import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -152,11 +151,6 @@ public class ModuleProvider extends LogisticsSneakyDirectionModule implements IC
 			return null;
 		}
 		return _service.getUpgradeManager(slot, positionInt);
-	}
-
-	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		return null;
 	}
 
 	@Override
@@ -303,22 +297,6 @@ public class ModuleProvider extends LogisticsSneakyDirectionModule implements IC
 	public void handleInvContent(Collection<ItemIdentifierStack> list) {
 		displayList.clear();
 		displayList.addAll(list);
-	}
-
-	@Override
-	public boolean hasGenericInterests() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInAttachedInventory() {
-		return isExcludeFilter || _filterInventory.isEmpty(); // when items included this is only interested in items in the filter
-		// when items not included, we can only serve those items in the filter.
-	}
-
-	@Override
-	public boolean interestedInUndamagedID() {
-		return false;
 	}
 
 	@Override

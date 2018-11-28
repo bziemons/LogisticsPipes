@@ -51,10 +51,12 @@ public class LogisticsCraftingTableTileEntity extends LogisticsSolidTileEntity i
 
 	private InventoryCraftResult vanillaResult = new InventoryCraftResult();
 
-	public ItemIdentifier targetType = null;
+	// TODO PROVIDE REFACTOR
 	//just use CraftingRequirement to store flags; field "stack" is ignored
 	public DictResource[] fuzzyFlags = new DictResource[9];
 	public DictResource outputFuzzyFlags = new DictResource((ItemIdentifierStack) null);
+
+	public ItemIdentifier targetType = null;
 	private IRecipe cache;
 	private EntityPlayerMP fake;
 	private PlayerIdentifier placedBy = null;
@@ -185,11 +187,6 @@ public class LogisticsCraftingTableTileEntity extends LogisticsSolidTileEntity i
 		}
 
 		cacheRecipe();
-	}
-
-	private boolean testFuzzy(ItemIdentifier item, ItemIdentifierStack item2, int slot) {
-		fuzzyFlags[slot] = new DictResource(fuzzyFlags[slot], item.makeStack(1));
-		return fuzzyFlags[slot].matches(item2.getItem());
 	}
 
 	public ItemStack getOutput(IResource wanted, IRoutedPowerProvider power) {
@@ -482,7 +479,9 @@ public class LogisticsCraftingTableTileEntity extends LogisticsSolidTileEntity i
 			if (stack != null && !itemstack.isEmpty()) {
 				if (isFuzzy() && fuzzyFlags[i].getBitSet().nextSetBit(0) != -1) {
 					fuzzyFlags[i] = new DictResource(fuzzyFlags[i], stack);
-					return fuzzyFlags[i].matches(ItemIdentifier.get(itemstack));
+					// TODO PROVIDE REFACTOR
+					// return fuzzyFlags[i].matches(ItemIdentifier.get(itemstack));
+					return false;
 				}
 				return stack.getItem().equalsWithoutNBT(ItemIdentifier.get(itemstack));
 			}

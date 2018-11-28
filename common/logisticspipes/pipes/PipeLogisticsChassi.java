@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -35,13 +36,10 @@ import logisticspipes.interfaces.IBufferItems;
 import logisticspipes.interfaces.IHeadUpDisplayRenderer;
 import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
 import logisticspipes.interfaces.ISendQueueContentRecieiver;
-import logisticspipes.interfaces.ISendRoutedItem;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.items.ItemModule;
-import logisticspipes.logisticspipes.ChassiTransportLayer;
 import logisticspipes.logisticspipes.ItemModuleInformationManager;
-import logisticspipes.logisticspipes.TransportLayer;
 import logisticspipes.modules.ChassiModule;
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.modules.ModuleProvider;
@@ -69,11 +67,12 @@ import logisticspipes.utils.ISimpleInventoryEventHandler;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.logistic.Interests;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 @CCType(name = "LogisticsChassiePipe")
-public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements IBufferItems, ISimpleInventoryEventHandler, ISendRoutedItem, IHeadUpDisplayRendererProvider, ISendQueueContentRecieiver {
+public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements IBufferItems, ISimpleInventoryEventHandler, IHeadUpDisplayRendererProvider, ISendQueueContentRecieiver {
 
 	private final ChassiModule _module;
 	private final ItemIdentifierInventory _moduleInventory;
@@ -352,14 +351,6 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements IBuf
 		return _module;
 	}
 
-	@Override
-	public TransportLayer getTransportLayer() {
-		if (_transportLayer == null) {
-			_transportLayer = new ChassiTransportLayer(this);
-		}
-		return _transportLayer;
-	}
-
 	private boolean tryInsertingModule(EntityPlayer entityplayer) {
 		for (int i = 0; i < _moduleInventory.getSizeInventory(); i++) {
 			ItemStack item = _moduleInventory.getStackInSlot(i);
@@ -488,23 +479,13 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements IBuf
 	}
 
 	@Override
-	public int getSourceID() {
-		return getRouterId();
-	}
-
-	@Override
-	public boolean hasGenericInterests() {
+	protected Stream<Interests> streamPipeInterests() {
+		// if we don't have a pointed inventory we can't be interested in anything
 		if (getRealInventory() == null) {
-			return false;
+			return Stream.empty();
 		}
-		for (int i = 0; i < getChassiSize(); i++) {
-			LogisticsModule x = _module.getSubModule(i);
 
-			if (x != null && x.hasGenericInterests()) {
-				return true;
-			}
-		}
-		return false;
+		return _module.streamModules().flatMap(LogisticsModule::streamInterests);
 	}
 
 	@CCCommand(description = "Returns the LogisticsModule for the given slot number starting by 1")

@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.List;
 
 import logisticspipes.request.resources.IResource;
-import logisticspipes.request.resources.IResource.ColorCode;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.SubGuiScreen;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -14,6 +13,10 @@ import logisticspipes.utils.string.StringUtils;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.text.TextComponentString;
+
+import static network.rs485.logisticspipes.resource.ResourceUtil.ColorCode.NONE;
+
+import network.rs485.logisticspipes.resource.ResourceUtil;
 
 public class GuiRequestPopup extends SubGuiScreen {
 
@@ -33,7 +36,7 @@ public class GuiRequestPopup extends SubGuiScreen {
 						textArray.add(((ItemIdentifierStack) oTwo).getFriendlyName());
 					}
 					if (oTwo instanceof IResource) {
-						textArray.add(((IResource) oTwo).getDisplayText(ColorCode.NONE));
+						textArray.add(ResourceUtil.getDisplayText(NONE, (IResource) oTwo));
 					}
 				}
 			} else {

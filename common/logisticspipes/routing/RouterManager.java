@@ -264,7 +264,6 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 		synchronized (_routersServer) {
 			_routersServer.stream().filter(r -> r != null && r.isInDim(dim)).forEach(r -> {
 				r.clearPipeCache();
-				r.clearInterests();
 			});
 		}
 	}

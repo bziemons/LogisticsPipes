@@ -47,23 +47,7 @@ public class ModuleModBasedItemSink extends LogisticsGuiModule implements IStrin
 	@Override
 	public void registerPosition(ModulePositionType slot, int positionInt) {
 		super.registerPosition(slot, positionInt);
-		_sinkReply = new SinkReply(FixedPriority.ModBasedItemSink, 0, true, false, 5, 0, new ChassiTargetInformation(getPositionInt()));
-	}
-
-	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		if (bestPriority > _sinkReply.fixedPriority.ordinal() || (bestPriority == _sinkReply.fixedPriority.ordinal() && bestCustomPriority >= _sinkReply.customPriority)) {
-			return null;
-		}
-		if (modIdSet == null) {
-			buildModIdSet();
-		}
-		if (modIdSet.contains(item.getModName())) {
-			if (_service.canUseEnergy(5)) {
-				return _sinkReply;
-			}
-		}
-		return null;
+		_sinkReply = new SinkReply(FixedPriority.ModBasedItemSink, 0, 5, 0, new ChassiTargetInformation(getPositionInt()));
 	}
 
 	@Override
@@ -156,21 +140,6 @@ public class ModuleModBasedItemSink extends LogisticsGuiModule implements IStrin
 	@Override
 	public IHUDModuleRenderer getHUDRenderer() {
 		return HUD;
-	}
-
-	@Override
-	public boolean hasGenericInterests() {
-		return true;
-	}
-
-	@Override
-	public boolean interestedInAttachedInventory() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInUndamagedID() {
-		return false;
 	}
 
 	@Override

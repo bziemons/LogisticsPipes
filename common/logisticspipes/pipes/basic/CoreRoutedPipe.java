@@ -14,15 +14,14 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
 import net.minecraft.block.state.IBlockState;
@@ -31,7 +30,6 @@ import net.minecraft.crash.CrashReportCategory;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
@@ -62,16 +60,11 @@ import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.interfaces.ISubSystemPowerProvider;
 import logisticspipes.interfaces.IWatchingHandler;
 import logisticspipes.interfaces.IWorldProvider;
-import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.interfaces.routing.IFilter;
 import logisticspipes.items.ItemPipeSignCreator;
 import logisticspipes.logisticspipes.ExtractionMode;
 import logisticspipes.logisticspipes.IRoutedItem;
-import logisticspipes.logisticspipes.IRoutedItem.TransportMode;
 import logisticspipes.logisticspipes.ITrackStatistics;
-import logisticspipes.logisticspipes.PipeTransportLayer;
-import logisticspipes.logisticspipes.RouteLayer;
-import logisticspipes.logisticspipes.TransportLayer;
 import logisticspipes.modules.abstractmodules.LogisticsGuiModule;
 import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
@@ -115,11 +108,12 @@ import logisticspipes.utils.CacheHolder;
 import logisticspipes.utils.EnumFacingUtil;
 import logisticspipes.utils.OrientationsUtil;
 import logisticspipes.utils.PlayerCollectionList;
-import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.logisticspipes.logistic.IDestination;
+import network.rs485.logisticspipes.logistic.Interests;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
@@ -152,8 +146,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 	protected Object routerIdLock = new Object();
 	protected int _delayOffset = 0;
 	protected boolean _initialInit = true;
-	protected RouteLayer _routeLayer;
-	protected TransportLayer _transportLayer;
 	protected UpgradeManager upgradeManager = new UpgradeManager(this);
 	protected List<TileEntity> _cachedAdjacentInventories;
 	protected EnumFacing pointedDirection = null;
@@ -188,20 +180,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		_delayOffset = CoreRoutedPipe.pipecount % Configs.LOGISTICS_DETECTION_FREQUENCY;
 	}
 
-	public RouteLayer getRouteLayer() {
-		if (_routeLayer == null) {
-			_routeLayer = new RouteLayer(getRouter(), getTransportLayer(), this);
-		}
-		return _routeLayer;
-	}
-
-	public TransportLayer getTransportLayer() {
-		if (_transportLayer == null) {
-			_transportLayer = new PipeTransportLayer(this, this, getRouter());
-		}
-		return _transportLayer;
-	}
-
 	@Override
 	public ISlotUpgradeManager getUpgradeManager(ModulePositionType slot, int positionInt) {
 		return upgradeManager;
@@ -222,14 +200,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 			throw new NullPointerException();
 		}
 		_sendQueue.addLast(new Triplet<>(routedItem, from, ItemSendMode.Normal));
-		sendQueueChanged(false);
-	}
-
-	public void queueRoutedItem(IRoutedItem routedItem, EnumFacing from, ItemSendMode mode) {
-		if (from == null) {
-			throw new NullPointerException();
-		}
-		_sendQueue.addLast(new Triplet<>(routedItem, from, mode));
 		sendQueueChanged(false);
 	}
 
@@ -461,20 +431,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 			return;
 		}
 		System.out.println("***");
-		System.out.println("---------Interests---------------");
-		for (Entry<ItemIdentifier, Set<IRouter>> i : ServerRouter.getInterestedInSpecifics().entrySet()) {
-			System.out.print(i.getKey().getFriendlyName() + ":");
-			for (IRouter j : i.getValue()) {
-				System.out.print(j.getSimpleID() + ",");
-			}
-			System.out.println();
-		}
-
-		System.out.print("ALL ITEMS:");
-		for (IRouter j : ServerRouter.getInterestedInGeneral()) {
-			System.out.print(j.getSimpleID() + ",");
-		}
-		System.out.println();
 
 		ServerRouter sr = (ServerRouter) r;
 
@@ -558,7 +514,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		super.onChunkUnload();
 		if (router != null) {
 			router.clearPipeCache();
-			router.clearInterests();
 		}
 	}
 
@@ -1154,10 +1109,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		return _initialInit;
 	}
 
-	public boolean hasGenericInterests() {
-		return false;
-	}
-
 	public ISecurityProvider getSecurityProvider() {
 		return SimpleServiceLocator.securityStationManager.getStation(getOriginalUpgradeManager().getSecurityID());
 	}
@@ -1506,43 +1457,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		return getPointedOrientation();
 	}
 
-	/* ISendRoutedItem */
-
-	public int getSourceint() {
-		return getRouter().getSimpleID();
-	}
-
-	@Override
-	public Triplet<Integer, SinkReply, List<IFilter>> hasDestination(ItemIdentifier stack, boolean allowDefault, List<Integer> routerIDsToExclude) {
-		return SimpleServiceLocator.logisticsManager.hasDestination(stack, allowDefault, getRouter().getSimpleID(), routerIDsToExclude);
-	}
-
-	@Override
-	public IRoutedItem sendStack(ItemStack stack, Pair<Integer, SinkReply> reply, ItemSendMode mode) {
-		IRoutedItem itemToSend = SimpleServiceLocator.routedItemHelper.createNewTravelItem(stack);
-		itemToSend.setDestination(reply.getValue1());
-		if (reply.getValue2().isPassive) {
-			if (reply.getValue2().isDefault) {
-				itemToSend.setTransportMode(TransportMode.Default);
-			} else {
-				itemToSend.setTransportMode(TransportMode.Passive);
-			}
-		}
-		itemToSend.setAdditionalTargetInformation(reply.getValue2().addInfo);
-		queueRoutedItem(itemToSend, getPointedOrientation(), mode);
-		return itemToSend;
-	}
-
-	@Override
-	public IRoutedItem sendStack(ItemStack stack, int destination, ItemSendMode mode, IAdditionalTargetInformation info) {
-		IRoutedItem itemToSend = SimpleServiceLocator.routedItemHelper.createNewTravelItem(stack);
-		itemToSend.setDestination(destination);
-		itemToSend.setTransportMode(TransportMode.Active);
-		itemToSend.setAdditionalTargetInformation(info);
-		queueRoutedItem(itemToSend, getPointedOrientation(), mode);
-		return itemToSend;
-	}
-
 	public EnumFacing getPointedOrientation() {
 		if (pointedDirection == null) {
 			WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(container);
@@ -1699,11 +1613,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 	}
 
 	@Override
-	public int getSourceID() {
-		return getRouterId();
-	}
-
-	@Override
 	public DebugLogController getDebug() {
 		return debug;
 	}
@@ -1761,4 +1670,61 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		Normal,
 		Fast
 	}
+
+	protected abstract Stream<Interests> streamPipeInterests();
+
+	public EnumFacing getOrientationForItem(IRoutedItem item, EnumFacing blocked) {
+
+		item.checkIDFromUUID();
+		//If a item has no destination, find one
+		//OR If the destination is unknown / unroutable or it already arrived at its destination and somehow looped back
+		if (item.getDestination() < 0 || (!getRouter().hasRoute(item.getDestination(), item.getTransportMode() == IRoutedItem.TransportMode.Active, item.getItemIdentifierStack().getItem()) || item.getArrived())) {
+			getRouter().getNetwork().lostItem(item);
+			debug.log("No or unreachable Destination, assigned new destination: (" + item.getInfo() + ")");
+		}
+
+		item.checkIDFromUUID();
+		//If we still have no destination or client side unroutable, drop it
+		if (item.getDestination() < 0) {
+			return null;
+		}
+
+		//Is the destination ourself? Deliver it
+		if (item.getDestinationUUID().equals(getRouter().getId())) {
+			IDestination dest = handleItem(item);
+
+			if (item.getDistanceTracker() != null) {
+				item.getDistanceTracker().setCurrentDistanceToTarget(0);
+				item.getDistanceTracker().setDestinationReached();
+			}
+
+			if (item.getTransportMode() != IRoutedItem.TransportMode.Active && !dest.stillWantItem(item)) {
+				getRouter().getNetwork().sendItemElsewhere(item, dest);
+				return getOrientationForItem(item, null);
+			}
+
+			item.setDoNotBuffer(true);
+			item.setArrived(true);
+			return dest.itemArrived(item, blocked);
+		}
+
+		//Do we now know the destination?
+		if (!getRouter().hasRoute(item.getDestination(), item.getTransportMode() == IRoutedItem.TransportMode.Active, item.getItemIdentifierStack().getItem())) {
+			return null;
+		}
+
+		//Which direction should we send it
+		ExitRoute exit = getRouter().getExitFor(item.getDestination(), item.getTransportMode() == IRoutedItem.TransportMode.Active, item.getItemIdentifierStack().getItem());
+		if (exit == null) {
+			return null;
+		}
+
+		if (item.getDistanceTracker() != null) {
+			item.getDistanceTracker().setCurrentDistanceToTarget(exit.blockDistance);
+		}
+
+		return exit.exitOrientation;
+	}
+
+	public abstract IDestination handleItem(IRoutedItem item);
 }

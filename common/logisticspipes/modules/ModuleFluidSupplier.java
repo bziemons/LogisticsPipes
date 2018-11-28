@@ -13,11 +13,9 @@ import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider;
 import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
 import logisticspipes.network.guis.module.inpipe.FluidSupplierSlot;
-import logisticspipes.pipefxhandlers.Particles;
 import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
-import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 
 public class ModuleFluidSupplier extends LogisticsGuiModule implements IClientInformationProvider {
@@ -33,19 +31,7 @@ public class ModuleFluidSupplier extends LogisticsGuiModule implements IClientIn
 	@Override
 	public void registerPosition(ModulePositionType slot, int positionInt) {
 		super.registerPosition(slot, positionInt);
-		_sinkReply = new SinkReply(FixedPriority.ItemSink, 0, true, false, 0, 0, new ChassiTargetInformation(getPositionInt()));
-	}
-
-	@Override
-	public SinkReply sinksItem(ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit) {
-		if (bestPriority > _sinkReply.fixedPriority.ordinal() || (bestPriority == _sinkReply.fixedPriority.ordinal() && bestCustomPriority >= _sinkReply.customPriority)) {
-			return null;
-		}
-		if (_filterInventory.containsItem(item)) {
-			_service.spawnParticle(Particles.VioletParticle, 2);
-			return _sinkReply;
-		}
-		return null;
+		_sinkReply = new SinkReply(FixedPriority.ItemSink, 0, 0, 0, new ChassiTargetInformation(getPositionInt()));
 	}
 
 	@Override
@@ -83,21 +69,6 @@ public class ModuleFluidSupplier extends LogisticsGuiModule implements IClientIn
 		list.add("<inventory>");
 		list.add("<that>");
 		return list;
-	}
-
-	@Override
-	public boolean hasGenericInterests() {
-		return true;
-	}
-
-	@Override
-	public boolean interestedInAttachedInventory() {
-		return false;
-	}
-
-	@Override
-	public boolean interestedInUndamagedID() {
-		return false;
 	}
 
 	@Override
