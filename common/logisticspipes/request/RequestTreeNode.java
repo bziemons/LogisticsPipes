@@ -17,6 +17,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import kotlin.Unit;
 import lombok.Getter;
 
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
@@ -37,6 +38,7 @@ import logisticspipes.routing.order.IOrderInfoProvider.ResourceType;
 import logisticspipes.routing.order.LinkedLogisticsOrderList;
 import logisticspipes.routing.order.LogisticsOrderManager;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.logisticspipes.request.Request;
 
 public class RequestTreeNode {
 
@@ -45,6 +47,7 @@ public class RequestTreeNode {
 	private final IResource requestType;
 	private final IAdditionalTargetInformation info;
 	private final RequestTreeNode parentNode;
+	private final Request request;
 	private List<RequestTreeNode> subRequests = new ArrayList<>();
 	private List<IPromise> promises = new ArrayList<>();
 	private List<IExtraPromise> extrapromises = new ArrayList<>();
@@ -53,6 +56,7 @@ public class RequestTreeNode {
 	private Set<LogisticsOrderManager<?, ?>> usedExtrasFromManager = new HashSet<LogisticsOrderManager<?, ?>>();
 	private ICraftingTemplate lastCrafterTried = null;
 	private int promiseAmount = 0;
+
 	protected RequestTreeNode(IResource requestType, RequestTreeNode parentNode, EnumSet<ActiveRequestType> requestFlags, IAdditionalTargetInformation info) {
 		this(null, requestType, parentNode, requestFlags, info);
 	}
@@ -61,6 +65,7 @@ public class RequestTreeNode {
 		this.info = info;
 		this.parentNode = parentNode;
 		this.requestType = requestType;
+		this.request = new Request(requestType, parentNode != null ? parentNode.request : null);
 		if (parentNode != null) {
 			parentNode.subRequests.add(this);
 			root = parentNode.root;
@@ -71,7 +76,10 @@ public class RequestTreeNode {
 			declareCrafterUsed(template);
 		}
 
-		if (requestFlags.contains(ActiveRequestType.Provide) && checkProvider()) {
+		if (requestFlags.contains(ActiveRequestType.Provide) && request.checkProvider(this::isDone, (provider, filters) -> {
+					provider.canProvide(this, root, filters);
+					return Unit.INSTANCE;
+				})) {
 			return;
 		}
 
@@ -84,38 +92,6 @@ public class RequestTreeNode {
 		}
 
 		// crafting is not done!
-	}
-
-	private static List<Pair<IProvide, List<IFilter>>> getProviders(IRouter destination, IResource item) {
-
-		// get all the routers
-		BitSet routersIndex = ServerRouter.getRoutersInterestedIn(item);
-		List<ExitRoute> validSources = new ArrayList<>(); // get the routing table
-		for (int i = routersIndex.nextSetBit(0); i >= 0; i = routersIndex.nextSetBit(i + 1)) {
-			IRouter r = SimpleServiceLocator.routerManager.getRouterUnsafe(i, false);
-
-			if (!r.isValidCache()) {
-				continue; //Skip Routers without a valid pipe
-			}
-
-			List<ExitRoute> e = destination.getDistanceTo(r);
-			if (e != null) {
-				validSources.addAll(e);
-			}
-		}
-		// closer providers are good
-		Collections.sort(validSources, new workWeightedSorter(1.0));
-
-		List<Pair<IProvide, List<IFilter>>> providers = new LinkedList<>();
-		validSources.stream().filter(r -> r.containsFlag(PipeRoutingConnectionType.canRequestFrom)).forEach(r -> {
-			CoreRoutedPipe pipe = r.destination.getPipe();
-			if (pipe instanceof IProvide) {
-				List<IFilter> list = new LinkedList<>();
-				list.addAll(r.filters);
-				providers.add(new Pair<>((IProvide) pipe, list));
-			}
-		});
-		return providers;
 	}
 
 	private static List<Pair<ICraftingTemplate, List<IFilter>>> getCrafters(IResource iRequestType, List<ExitRoute> validDestinations) {
@@ -339,25 +315,6 @@ public class RequestTreeNode {
 		for (RequestTreeNode subNode : subRequests) {
 			subNode.buildUsedMap(used, missing);
 		}
-	}
-
-	private boolean checkProvider() {
-		CoreRoutedPipe thisPipe = requestType.getRouter().getCachedPipe();
-		if (thisPipe == null) {
-			return false;
-		}
-		for (Pair<IProvide, List<IFilter>> provider : RequestTreeNode.getProviders(requestType.getRouter(), getRequestType())) {
-			if (isDone()) {
-				break;
-			}
-			if (provider.getValue1() == null || provider.getValue1().getRouter() == null || provider.getValue1().getRouter().getPipe() == null) {
-				continue;
-			}
-			if (!thisPipe.sharesInterestWith(provider.getValue1().getRouter().getPipe())) {
-				provider.getValue1().canProvide(this, root, provider.getValue2());
-			}
-		}
-		return isDone();
 	}
 
 	private boolean checkExtras() {
