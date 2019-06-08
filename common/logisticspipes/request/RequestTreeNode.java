@@ -90,36 +90,14 @@ public class RequestTreeNode {
 			return;// crafting was able to complete
 		}
 
-		if (requestFlags.contains(ActiveRequestType.Craft) && checkCrafting()) {
+		if (requestFlags.contains(ActiveRequestType.Craft) && request.checkCrafting(root, this::isDone, this::getMissingAmount, this::isCrafterUsed, this::getSubRequests, (promise) -> {
+			this.addPromise(promise);
+			return Unit.INSTANCE;
+		})) {
 			return;// crafting was able to complete
 		}
 
 		// crafting is not done!
-	}
-
-	private static List<Pair<ICraftingTemplate, List<IFilter>>> getCrafters(IResource iRequestType, List<ExitRoute> validDestinations) {
-		List<Pair<ICraftingTemplate, List<IFilter>>> crafters = new ArrayList<>(validDestinations.size());
-		for (ExitRoute r : validDestinations) {
-			CoreRoutedPipe pipe = r.destination.getPipe();
-			if (r.containsFlag(PipeRoutingConnectionType.canRequestFrom)) {
-				if (pipe instanceof ICraft) {
-					ICraftingTemplate craftable = ((ICraft) pipe).addCrafting(iRequestType);
-					if (craftable != null) {
-						for (IFilter filter : r.filters) {
-							if (filter.isBlocked() == filter.isFilteredItem(craftable.getResultItem()) || filter.blockCrafting()) {
-								continue;
-							}
-						}
-						List<IFilter> list = new LinkedList<>();
-						list.addAll(r.filters);
-						crafters.add(new Pair<>(craftable, list));
-					}
-				}
-			}
-		}
-		// don't need to sort, as a sorted list is passed in and List guarantees order preservation
-		//		Collections.sort(crafters,new CraftingTemplate.PairPrioritizer());
-		return crafters;
 	}
 
 	protected static List<IResource> shrinkToList(Map<IResource, Integer> items) {
@@ -187,14 +165,6 @@ public class RequestTreeNode {
 
 	public boolean isDone() {
 		return getMissingAmount() <= 0;
-	}
-
-	public boolean isAllDone() {
-		boolean result = getMissingAmount() <= 0;
-		for (RequestTreeNode node : subRequests) {
-			result &= node.isAllDone();
-		}
-		return result;
 	}
 
 	protected void remove(RequestTreeNode subNode) {
@@ -320,147 +290,6 @@ public class RequestTreeNode {
 		}
 	}
 
-	private boolean checkCrafting() {
-
-		// get all the routers
-		BitSet routersIndex = ServerRouter.getRoutersInterestedIn(getRequestType());
-		List<ExitRoute> validSources = new ArrayList<>(); // get the routing table
-		for (int i = routersIndex.nextSetBit(0); i >= 0; i = routersIndex.nextSetBit(i + 1)) {
-			IRouter r = SimpleServiceLocator.routerManager.getRouterUnsafe(i, false);
-
-			if (!r.isValidCache()) {
-				continue; //Skip Routers without a valid pipe
-			}
-
-			List<ExitRoute> e = getRequestType().getRouter().getDistanceTo(r);
-			if (e != null) {
-				validSources.addAll(e);
-			}
-		}
-		workWeightedSorter wSorter = new workWeightedSorter(0); // distance doesn't matter, because ingredients have to be delivered to the crafter, and we can't tell how long that will take.
-		Collections.sort(validSources, wSorter);
-
-		List<Pair<ICraftingTemplate, List<IFilter>>> allCraftersForItem = RequestTreeNode.getCrafters(getRequestType(), validSources);
-
-		// if you have a crafter which can make the top treeNode.getStack().getItem()
-		Iterator<Pair<ICraftingTemplate, List<IFilter>>> iterAllCrafters = allCraftersForItem.iterator();
-
-		//a queue to store the crafters, sorted by todo; we will fill up from least-most in a balanced way.
-		PriorityQueue<CraftingSorterNode> craftersSamePriority = new PriorityQueue<>(5);
-		ArrayList<CraftingSorterNode> craftersToBalance = new ArrayList<>();
-		//TODO ^ Make this a generic list
-		boolean done = false;
-		Pair<ICraftingTemplate, List<IFilter>> lastCrafter = null;
-		int currentPriority = 0;
-		outer:
-			while (!done) {
-
-			/// First: Create a list of all crafters with the same priority (craftersSamePriority).
-				if (iterAllCrafters.hasNext()) {
-					if (lastCrafter == null) {
-						lastCrafter = iterAllCrafters.next();
-					}
-				} else if (lastCrafter == null) {
-					done = true;
-				}
-
-			int itemsNeeded = getMissingAmount();
-
-			if (lastCrafter != null && (craftersSamePriority.isEmpty() || (currentPriority == lastCrafter.getValue1().getPriority()))) {
-					currentPriority = lastCrafter.getValue1().getPriority();
-					Pair<ICraftingTemplate, List<IFilter>> crafter = lastCrafter;
-					lastCrafter = null;
-					ICraftingTemplate template = crafter.getValue1();
-					if (isCrafterUsed(template)) {
-						continue;
-					}
-					if (!template.canCraft(getRequestType())) {
-						continue; // we this is crafting something else
-					}
-					for (IFilter filter : crafter.getValue2()) { // is this filtered for some reason.
-						if (filter.isBlocked() == filter.isFilteredItem(template.getResultItem()) || filter.blockCrafting()) {
-							continue outer;
-						}
-					}
-					CraftingSorterNode cn = new CraftingSorterNode(crafter, itemsNeeded, root, this);
-				//				if(cn.getWorkSetsAvailableForCrafting()>0)
-				craftersSamePriority.add(cn);
-					continue;
-				}
-				if (craftersToBalance.isEmpty() && (craftersSamePriority == null || craftersSamePriority.isEmpty())) {
-					continue; //nothing at this priority was available for crafting
-				}
-				/// end of crafter prioriy selection.
-
-				if (craftersSamePriority.size() == 1) { // then no need to balance.
-					craftersToBalance.add(craftersSamePriority.poll());
-					// automatically capped at the real amount of extra work.
-					craftersToBalance.get(0).addToWorkRequest(itemsNeeded);
-				} else {
-				//				for(CraftingSorterNode c:craftersSamePriority)
-				//					c.clearWorkRequest(); // so the max request isn't in there; nothing is reserved, balancing can work correctly.
-
-				// go through this list, pull the crafter(s) with least work, add work until either they can not do more work,
-					//   or the amount of work they have is equal to the next-least busy crafter. then pull the next crafter and repeat.
-					if (!craftersSamePriority.isEmpty()) {
-						craftersToBalance.add(craftersSamePriority.poll());
-					}
-					// while we crafters that can work and we have work to do.
-					while (!craftersToBalance.isEmpty() && itemsNeeded > 0) {
-						//while there is more, and the next crafter has the same toDo as the current one, add it to craftersToBalance.
-						//  typically pulls 1 at a time, but may pull multiple, if they have the exact same todo.
-						while (!craftersSamePriority.isEmpty() && craftersSamePriority.peek().currentToDo() <= craftersToBalance.get(0).currentToDo()) {
-							craftersToBalance.add(craftersSamePriority.poll());
-						}
-
-					// find the most we can add this iteration
-						int cap;
-						if (!craftersSamePriority.isEmpty()) {
-							cap = craftersSamePriority.peek().currentToDo();
-						} else {
-							cap = Integer.MAX_VALUE;
-						}
-
-					//split the work between N crafters, up to "cap" (at which point we would be dividing the work between N+1 crafters.
-						int floor = craftersToBalance.get(0).currentToDo();
-						cap = Math.min(cap, floor + (itemsNeeded + craftersToBalance.size() - 1) / craftersToBalance.size());
-
-						for (CraftingSorterNode crafter : craftersToBalance) {
-							int request = Math.min(itemsNeeded, cap - floor);
-							if (request > 0) {
-								int craftingDone = crafter.addToWorkRequest(request);
-								itemsNeeded -= craftingDone; // ignored under-crafting
-							}
-						}
-
-				} // all craftersToBalance exhausted, or work completed.
-
-			}// end of else more than 1 crafter at this priority
-				// commit this work set.
-				Iterator<CraftingSorterNode> iter = craftersToBalance.iterator();
-				while (iter.hasNext()) {
-					CraftingSorterNode c = iter.next();
-					if (c.stacksOfWorkRequested > 0 && !c.addWorkPromisesToTree()) { // then it ran out of resources
-						iter.remove();
-				}
-
-				}
-				itemsNeeded = getMissingAmount();
-
-			if (itemsNeeded <= 0) {
-					break outer; // we have everything we need for this crafting request
-				}
-
-				// don't clear, because we might have under-requested, and need to consider these again
-				if (!craftersToBalance.isEmpty()) {
-					done = false;
-				//craftersSamePriority.clear(); // we've extracted all we can from these priority crafters, and we still have more to do, back to the top to get the next priority level.
-				}
-			}
-		//LogisticsPipes.log.info("done");
-		return isDone();
-	}
-
 	public boolean hasBeenQueried(LogisticsOrderManager<?, ?> orderManager) {
 		return usedExtrasFromManager.contains(orderManager);
 	}
@@ -555,79 +384,5 @@ public class RequestTreeNode {
 
 	private void destroy() {
 		parentNode.remove(this);
-	}
-
-	private class CraftingSorterNode implements Comparable<CraftingSorterNode> {
-
-		public final Pair<ICraftingTemplate, List<IFilter>> crafter;
-		public final int originalToDo;
-		private final int setSize;
-		private final int maxWorkSetsAvailable;
-		private final RequestTreeNode treeNode; // current node we are calculating
-		private int stacksOfWorkRequested;
-
-		CraftingSorterNode(Pair<ICraftingTemplate, List<IFilter>> crafter, int maxCount, RequestTree tree, RequestTreeNode treeNode) {
-			this.crafter = crafter;
-			this.treeNode = treeNode;
-			originalToDo = crafter.getValue1().getCrafter().getTodo();
-			stacksOfWorkRequested = 0;
-			setSize = crafter.getValue1().getResultStackSize();
-			maxWorkSetsAvailable = ((treeNode.getMissingAmount()) + setSize - 1) / setSize;
-		}
-
-		int calculateMaxWork(int maxSetsToCraft) {
-
-			int nCraftingSetsNeeded;
-			if (maxSetsToCraft == 0) {
-				nCraftingSetsNeeded = ((treeNode.getMissingAmount()) + setSize - 1) / setSize;
-			} else {
-				nCraftingSetsNeeded = maxSetsToCraft;
-			}
-
-			if (nCraftingSetsNeeded == 0) {
-				return 0;
-			}
-
-			ICraftingTemplate template = crafter.getValue1();
-			int stacks = getSubRequests(nCraftingSetsNeeded, template);
-
-			return stacks;
-		}
-
-		int addToWorkRequest(int extraWork) {
-			int stacksRequested = (extraWork + setSize - 1) / setSize;
-			stacksOfWorkRequested += stacksRequested;
-			return stacksRequested * setSize;
-		}
-
-		/**
-		 * Add promises for the requested work to the tree.
-		 */
-		boolean addWorkPromisesToTree() {
-			ICraftingTemplate template = crafter.getValue1();
-			int setsToCraft = Math.min(stacksOfWorkRequested, maxWorkSetsAvailable);
-			int setsAbleToCraft = calculateMaxWork(setsToCraft); // Deliberately outside the 0 check, because calling generatePromies(0) here clears the old ones.
-
-			if (setsAbleToCraft > 0) { // sanity check, as creating 0 sized promises is an exception. This should never be hit.
-				//if we got here, we can at least some of the remaining amount
-				IPromise job = template.generatePromise(setsAbleToCraft);
-				if (job.getAmount() != setsAbleToCraft * setSize) {
-					throw new IllegalStateException("generatePromises not creating the promisesPromised; this is goign to end badly.");
-				}
-				treeNode.addPromise(job);
-			}
-			boolean isDone = setsToCraft == setsAbleToCraft;
-			stacksOfWorkRequested = 0; // just incase we call it twice.
-			return isDone;
-		}
-
-		@Override
-		public int compareTo(CraftingSorterNode o) {
-			return currentToDo() - o.currentToDo();
-		}
-
-		public int currentToDo() {
-			return originalToDo + stacksOfWorkRequested * setSize;
-		}
 	}
 }
