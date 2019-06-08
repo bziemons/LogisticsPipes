@@ -77,13 +77,16 @@ public class RequestTreeNode {
 		}
 
 		if (requestFlags.contains(ActiveRequestType.Provide) && request.checkProvider(this::isDone, (provider, filters) -> {
-					provider.canProvide(this, root, filters);
-					return Unit.INSTANCE;
-				})) {
+			provider.canProvide(this, root, filters);
+			return Unit.INSTANCE;
+		})) {
 			return;
 		}
 
-		if (requestFlags.contains(ActiveRequestType.Craft) && checkExtras()) {
+		if (requestFlags.contains(ActiveRequestType.Craft) && request.checkExtras(root, this::isDone, this::getMissingAmount, (promise) -> {
+			this.addPromise(promise);
+			return Unit.INSTANCE;
+		})) {
 			return;// crafting was able to complete
 		}
 
@@ -315,38 +318,6 @@ public class RequestTreeNode {
 		for (RequestTreeNode subNode : subRequests) {
 			subNode.buildUsedMap(used, missing);
 		}
-	}
-
-	private boolean checkExtras() {
-		LinkedList<IExtraPromise> map = root.getExtrasFor(requestType);
-		for (IExtraPromise extraPromise : map) {
-			if (isDone()) {
-				break;
-			}
-			if (extraPromise.getAmount() == 0) {
-				continue;
-			}
-			boolean valid = false;
-			List<ExitRoute> sources = extraPromise.getProvider().getRouter().getRouteTable().get(getRequestType().getRouter().getSimpleID());
-			outer:
-				for (ExitRoute source : sources) {
-					if (source != null && source.containsFlag(PipeRoutingConnectionType.canRouteTo)) {
-						for (ExitRoute node : getRequestType().getRouter().getIRoutersByCost()) {
-							if (node.destination == extraPromise.getProvider().getRouter()) {
-								if (node.containsFlag(PipeRoutingConnectionType.canRequestFrom)) {
-									valid = true;
-									break outer;
-								}
-							}
-						}
-					}
-				}
-			if (valid) {
-				extraPromise.setAmount(Math.min(extraPromise.getAmount(), getMissingAmount()));
-				addPromise(extraPromise);
-			}
-		}
-		return isDone();
 	}
 
 	private boolean checkCrafting() {

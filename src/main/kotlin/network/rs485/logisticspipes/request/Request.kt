@@ -39,8 +39,8 @@ package network.rs485.logisticspipes.request
 
 import logisticspipes.interfaces.routing.IFilter
 import logisticspipes.interfaces.routing.IProvide
-import logisticspipes.pipes.basic.CoreRoutedPipe
 import logisticspipes.proxy.SimpleServiceLocator
+import logisticspipes.request.IExtraPromise
 import logisticspipes.request.RequestTree
 import logisticspipes.request.resources.IResource
 import logisticspipes.routing.ExitRoute
@@ -73,12 +73,12 @@ class Request(private val resource: IResource,
 //    var delivered = resource.clone(0)
 //    var children = LinkedList<Request>()
 
-    private fun providerPipes(): Sequence<Pair<CoreRoutedPipe, LinkedList<IFilter>>> {
+    private fun providerPipes(): Sequence<Pair<IProvide, LinkedList<IFilter>>> {
         return providers(resource.asItem, resource.router)
                 .filter { it.containsFlag(PipeRoutingConnectionType.canRequestFrom) }
                 .sortedWith(RequestTree.workWeightedSorter(1.0))
                 .filter { it.destination.pipe is IProvide }
-                .map { it.destination.pipe to LinkedList(it.filters) }
+                .map { it.destination.pipe as IProvide to LinkedList(it.filters) }
     }
 
     fun checkProvider(isDone: () -> Boolean,
@@ -88,7 +88,30 @@ class Request(private val resource: IResource,
             if (isDone()) return true
             if (it.first.router != null && it.first.router.pipe != null) {
                 if (!thisPipe.sharesInterestWith(it.first.router.pipe)) {
-                    canProvide(it.first as IProvide, it.second)
+                    canProvide(it.first, it.second)
+                }
+            }
+        }
+        return isDone()
+    }
+
+    fun checkExtras(root: RequestTree,
+                    isDone: () -> Boolean,
+                    getMissingAmount: () -> Int,
+                    addPromise: (promise: IExtraPromise) -> Unit): Boolean {
+        root.getExtrasFor(resource).forEach { extraPromise ->
+            if (isDone()) return true
+            if (extraPromise.amount != 0) {
+                val sources = extraPromise.provider.router.routeTable[resource.router.simpleID]
+                val foundSource = sources.firstOrNull {
+                    it != null && it.containsFlag(PipeRoutingConnectionType.canRouteTo)
+                }
+                val foundDestination = resource.router.iRoutersByCost.firstOrNull {
+                    it.destination === extraPromise.provider.router && it.containsFlag(PipeRoutingConnectionType.canRequestFrom)
+                }
+                if (foundSource != null && foundDestination != null) {
+                    extraPromise.amount = Math.min(extraPromise.amount, getMissingAmount())
+                    addPromise(extraPromise)
                 }
             }
         }
