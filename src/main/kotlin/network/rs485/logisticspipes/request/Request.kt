@@ -49,8 +49,6 @@ import logisticspipes.routing.PipeRoutingConnectionType
 import logisticspipes.routing.ServerRouter
 import logisticspipes.utils.item.ItemIdentifier
 import java.util.*
-import logisticspipes.utils.tuples.Pair as LPPair
-
 
 class Request(private val resource: IResource,
               private val parent: Request? = null) {
@@ -67,12 +65,13 @@ class Request(private val resource: IResource,
                 }
             }.filter {
                 it.isValidCache
-            }.flatMap { it.getDistanceTo(destination).asSequence() }
+            }.flatMap {
+                it.getDistanceTo(destination).asSequence()
+            }
         }
 
-
-        private fun crafters(iRequestType: IResource, validDestinations: List<ExitRoute>): List<logisticspipes.utils.tuples.Pair<ICraftingTemplate, List<IFilter>>> {
-            val crafters = ArrayList<logisticspipes.utils.tuples.Pair<ICraftingTemplate, List<IFilter>>>(validDestinations.size)
+        private fun crafters(iRequestType: IResource, validDestinations: List<ExitRoute>): List<Pair<ICraftingTemplate, List<IFilter>>> {
+            val crafters = ArrayList<Pair<ICraftingTemplate, List<IFilter>>>(validDestinations.size)
             for (r in validDestinations) {
                 val pipe = r.destination.pipe
                 if (r.containsFlag(PipeRoutingConnectionType.canRequestFrom)) {
@@ -86,7 +85,7 @@ class Request(private val resource: IResource,
                             }
                             val list = LinkedList<IFilter>()
                             list.addAll(r.filters)
-                            crafters.add(logisticspipes.utils.tuples.Pair(craftable, list))
+                            crafters.add(craftable to list)
                         }
                     }
                 }
@@ -108,8 +107,8 @@ class Request(private val resource: IResource,
                 .map { it.destination.pipe as IProvide to LinkedList(it.filters) }
     }
 
-    fun checkProvider(isDone: () -> Boolean,
-                      canProvide: (provider: IProvide, list: LinkedList<IFilter>) -> Unit): Boolean {
+    private fun checkProvider(isDone: () -> Boolean,
+                              canProvide: (provider: IProvide, list: LinkedList<IFilter>) -> Unit): Boolean {
         val thisPipe = resource.router.cachedPipe ?: return false
         providerPipes().forEach {
             if (isDone()) return true
@@ -122,10 +121,10 @@ class Request(private val resource: IResource,
         return isDone()
     }
 
-    fun checkExtras(root: RequestTree,
-                    isDone: () -> Boolean,
-                    getMissingAmount: () -> Int,
-                    addPromise: (promise: IExtraPromise) -> Unit): Boolean {
+    private fun checkExtras(root: RequestTree,
+                            isDone: () -> Boolean,
+                            getMissingAmount: () -> Int,
+                            addPromise: (promise: IExtraPromise) -> Unit): Boolean {
         root.getExtrasFor(resource).forEach { extraPromise ->
             if (isDone()) return true
             if (extraPromise.amount != 0) {
@@ -145,12 +144,12 @@ class Request(private val resource: IResource,
         return isDone()
     }
 
-    fun checkCrafting(root: RequestTree,
-                      isDone: () -> Boolean,
-                      getMissingAmount: () -> Int,
-                      isCrafterUsed: (test: ICraftingTemplate) -> Boolean,
-                      getSubRequests: (nCraftingSetsNeeded: Int, template: ICraftingTemplate) -> Int,
-                      addPromise: (promise: IPromise) -> Unit): Boolean {
+    private fun checkCrafting(root: RequestTree,
+                              isDone: () -> Boolean,
+                              getMissingAmount: () -> Int,
+                              isCrafterUsed: (test: ICraftingTemplate) -> Boolean,
+                              getSubRequests: (nCraftingSetsNeeded: Int, template: ICraftingTemplate) -> Int,
+                              addPromise: (promise: IPromise) -> Unit): Boolean {
         // get all the routers
         val routersIndex = ServerRouter.getRoutersInterestedIn(resource)
         val validSources = ArrayList<ExitRoute>() // get the routing table
@@ -182,7 +181,7 @@ class Request(private val resource: IResource,
         val craftersToBalance = ArrayList<CraftingSorterNode>()
         //TODO ^ Make this a generic list
         var done = false
-        var lastCrafter: LPPair<ICraftingTemplate, List<IFilter>>? = null
+        var lastCrafter: Pair<ICraftingTemplate, List<IFilter>>? = null
         var currentPriority = 0
         outer@ while (!done) {
 
@@ -197,28 +196,28 @@ class Request(private val resource: IResource,
 
             var itemsNeeded = getMissingAmount()
 
-            if (lastCrafter != null && (craftersSamePriority.isEmpty() || currentPriority == lastCrafter.value1.priority)) {
-                currentPriority = lastCrafter.value1.priority
+            if (lastCrafter != null && (craftersSamePriority.isEmpty() || currentPriority == lastCrafter.first.priority)) {
+                currentPriority = lastCrafter.first.priority
                 val crafter = lastCrafter
                 lastCrafter = null
-                val template = crafter.value1
+                val template = crafter.first
                 if (isCrafterUsed(template)) {
                     continue
                 }
                 if (!template.canCraft(resource)) {
                     continue // we this is crafting something else
                 }
-                for (filter in crafter.value2) { // is this filtered for some reason.
+                for (filter in crafter.second) { // is this filtered for some reason.
                     if (filter.isBlocked == filter.isFilteredItem(template.resultItem) || filter.blockCrafting()) {
                         continue@outer
                     }
                 }
-                val cn = CraftingSorterNode(crafter.value1, itemsNeeded, root, getSubRequests, getMissingAmount, addPromise)
+                val cn = CraftingSorterNode(crafter.first, itemsNeeded, root, getSubRequests, getMissingAmount, addPromise)
                 //				if(cn.getWorkSetsAvailableForCrafting()>0)
                 craftersSamePriority.add(cn)
                 continue
             }
-            if (craftersToBalance.isEmpty() && (craftersSamePriority == null || craftersSamePriority.isEmpty())) {
+            if (craftersToBalance.isEmpty() && craftersSamePriority.isEmpty()) {
                 continue //nothing at this priority was available for crafting
             }
             /// end of crafter prioriy selection.
@@ -359,6 +358,38 @@ class Request(private val resource: IResource,
         fun currentToDo(): Int {
             return originalToDo + stacksOfWorkRequested * setSize
         }
+    }
+
+    fun addPromisesInOrder(node: RequestTreeNode,
+                           requestFlags: EnumSet<RequestTree.ActiveRequestType>,
+                           root: RequestTree,
+                           isCrafterUsed: (test: ICraftingTemplate) -> Boolean,
+                           getSubRequests: (nCraftingSetsNeeded: Int, template: ICraftingTemplate) -> Int) {
+        if (requestFlags.contains(RequestTree.ActiveRequestType.Provide) && checkProvider(node::isDone) { provider, filters ->
+                    provider.canProvide(node, root, filters)
+                }) {
+            return
+        }
+
+        if (requestFlags.contains(RequestTree.ActiveRequestType.Craft) && checkExtras(
+                        root,
+                        node::isDone,
+                        node::getMissingAmount,
+                        node::addPromise)) {
+            return // crafting was able to complete
+        }
+
+        if (requestFlags.contains(RequestTree.ActiveRequestType.Craft) && checkCrafting(
+                        root,
+                        node::isDone,
+                        node::getMissingAmount,
+                        isCrafterUsed,
+                        getSubRequests,
+                        node::addPromise)) {
+            return // crafting was able to complete
+        }
+
+        // crafting is not done!
     }
 
 }

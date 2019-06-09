@@ -1,8 +1,6 @@
 package logisticspipes.request;
 
 import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,7 +9,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -21,18 +18,9 @@ import kotlin.Unit;
 import lombok.Getter;
 
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
-import logisticspipes.interfaces.routing.ICraft;
-import logisticspipes.interfaces.routing.IFilter;
 import logisticspipes.interfaces.routing.IProvide;
-import logisticspipes.pipes.basic.CoreRoutedPipe;
-import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.request.RequestTree.ActiveRequestType;
-import logisticspipes.request.RequestTree.workWeightedSorter;
 import logisticspipes.request.resources.IResource;
-import logisticspipes.routing.ExitRoute;
-import logisticspipes.routing.IRouter;
-import logisticspipes.routing.PipeRoutingConnectionType;
-import logisticspipes.routing.ServerRouter;
 import logisticspipes.routing.order.IOrderInfoProvider;
 import logisticspipes.routing.order.IOrderInfoProvider.ResourceType;
 import logisticspipes.routing.order.LinkedLogisticsOrderList;
@@ -76,28 +64,7 @@ public class RequestTreeNode {
 			declareCrafterUsed(template);
 		}
 
-		if (requestFlags.contains(ActiveRequestType.Provide) && request.checkProvider(this::isDone, (provider, filters) -> {
-			provider.canProvide(this, root, filters);
-			return Unit.INSTANCE;
-		})) {
-			return;
-		}
-
-		if (requestFlags.contains(ActiveRequestType.Craft) && request.checkExtras(root, this::isDone, this::getMissingAmount, (promise) -> {
-			this.addPromise(promise);
-			return Unit.INSTANCE;
-		})) {
-			return;// crafting was able to complete
-		}
-
-		if (requestFlags.contains(ActiveRequestType.Craft) && request.checkCrafting(root, this::isDone, this::getMissingAmount, this::isCrafterUsed, this::getSubRequests, (promise) -> {
-			this.addPromise(promise);
-			return Unit.INSTANCE;
-		})) {
-			return;// crafting was able to complete
-		}
-
-		// crafting is not done!
+		request.addPromisesInOrder(this, requestFlags, root, this::isCrafterUsed, this::getSubRequests);
 	}
 
 	protected static List<IResource> shrinkToList(Map<IResource, Integer> items) {
