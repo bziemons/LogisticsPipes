@@ -14,7 +14,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import kotlin.Unit;
 import lombok.Getter;
 
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
@@ -26,16 +25,19 @@ import logisticspipes.routing.order.IOrderInfoProvider.ResourceType;
 import logisticspipes.routing.order.LinkedLogisticsOrderList;
 import logisticspipes.routing.order.LogisticsOrderManager;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.logisticspipes.api.IRouterProvider;
+import network.rs485.logisticspipes.request.DefaultRouterProvider;
 import network.rs485.logisticspipes.request.Request;
 
 public class RequestTreeNode {
 
-	protected final RequestTree root;
 	@Getter
-	private final IResource requestType;
+	protected final IResource requestType;
+	protected final RequestTree root;
+	protected final Request request;
 	private final IAdditionalTargetInformation info;
 	private final RequestTreeNode parentNode;
-	private final Request request;
+	private final IRouterProvider routerProvider;
 	private List<RequestTreeNode> subRequests = new ArrayList<>();
 	private List<IPromise> promises = new ArrayList<>();
 	private List<IExtraPromise> extrapromises = new ArrayList<>();
@@ -45,15 +47,16 @@ public class RequestTreeNode {
 	private ICraftingTemplate lastCrafterTried = null;
 	private int promiseAmount = 0;
 
-	protected RequestTreeNode(IResource requestType, RequestTreeNode parentNode, EnumSet<ActiveRequestType> requestFlags, IAdditionalTargetInformation info) {
-		this(null, requestType, parentNode, requestFlags, info);
+	protected RequestTreeNode(IResource requestType, RequestTreeNode parentNode, EnumSet<ActiveRequestType> requestFlags, IAdditionalTargetInformation info, IRouterProvider routerProvider) {
+		this(null, requestType, parentNode, requestFlags, info, routerProvider);
 	}
 
-	private RequestTreeNode(ICraftingTemplate template, IResource requestType, RequestTreeNode parentNode, EnumSet<ActiveRequestType> requestFlags, IAdditionalTargetInformation info) {
+	private RequestTreeNode(ICraftingTemplate template, IResource requestType, RequestTreeNode parentNode, EnumSet<ActiveRequestType> requestFlags, IAdditionalTargetInformation info, IRouterProvider routerProvider) {
 		this.info = info;
 		this.parentNode = parentNode;
 		this.requestType = requestType;
-		this.request = new Request(requestType, parentNode != null ? parentNode.request : null);
+		this.routerProvider = routerProvider;
+		this.request = new Request(requestType, parentNode != null ? parentNode.request : null, routerProvider);
 		if (parentNode != null) {
 			parentNode.subRequests.add(this);
 			root = parentNode.root;
@@ -81,7 +84,7 @@ public class RequestTreeNode {
 		return resources;
 	}
 
-	private boolean isCrafterUsed(ICraftingTemplate test) {
+	protected boolean isCrafterUsed(ICraftingTemplate test) {
 		if (!usedCrafters.isEmpty() && usedCrafters.contains(test)) {
 			return true;
 		}
@@ -265,13 +268,13 @@ public class RequestTreeNode {
 		usedExtrasFromManager.add(orderManager);
 	}
 
-	private int getSubRequests(int nCraftingSets, ICraftingTemplate template) {
+	protected int getSubRequests(int nCraftingSets, ICraftingTemplate template) {
 		boolean failed = false;
 		List<Pair<IResource, IAdditionalTargetInformation>> stacks = template.getComponents(nCraftingSets);
 		int workSetsAvailable = nCraftingSets;
 		ArrayList<RequestTreeNode> lastNodes = new ArrayList<>(stacks.size());
 		for (Pair<IResource, IAdditionalTargetInformation> stack : stacks) {
-			RequestTreeNode node = new RequestTreeNode(template, stack.getValue1(), this, RequestTree.defaultRequestFlags, stack.getValue2());
+			RequestTreeNode node = new RequestTreeNode(template, stack.getValue1(), this, RequestTree.defaultRequestFlags, stack.getValue2(), routerProvider);
 			lastNodes.add(node);
 			if (!node.isDone()) {
 				failed = true;
@@ -301,7 +304,7 @@ public class RequestTreeNode {
 			List<Pair<IResource, IAdditionalTargetInformation>> stacks = template.getComponents(workSets);
 			boolean failed = false;
 			for (Pair<IResource, IAdditionalTargetInformation> stack : stacks) {
-				RequestTreeNode node = new RequestTreeNode(template, stack.getValue1(), this, RequestTree.defaultRequestFlags, stack.getValue2());
+				RequestTreeNode node = new RequestTreeNode(template, stack.getValue1(), this, RequestTree.defaultRequestFlags, stack.getValue2(), routerProvider);
 				newChildren.add(node);
 				if (!node.isDone()) {
 					failed = true;
@@ -331,7 +334,7 @@ public class RequestTreeNode {
 		List<Pair<IResource, IAdditionalTargetInformation>> stacks = template.getComponents(nCraftingSetsNeeded);
 
 		for (Pair<IResource, IAdditionalTargetInformation> stack : stacks) {
-			new RequestTreeNode(template, stack.getValue1(), this, RequestTree.defaultRequestFlags, stack.getValue2());
+			new RequestTreeNode(template, stack.getValue1(), this, RequestTree.defaultRequestFlags, stack.getValue2(), routerProvider);
 		}
 
 		addPromise(template.generatePromise(nCraftingSetsNeeded));

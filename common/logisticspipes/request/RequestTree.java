@@ -1,6 +1,5 @@
 package logisticspipes.request;
 
-import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -14,16 +13,17 @@ import logisticspipes.interfaces.routing.IRequestItems;
 import logisticspipes.request.resources.FluidResource;
 import logisticspipes.request.resources.IResource;
 import logisticspipes.request.resources.ItemResource;
-import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.order.LinkedLogisticsOrderList;
 import logisticspipes.utils.FinalPair;
 import logisticspipes.utils.FluidIdentifier;
-import logisticspipes.utils.IHavePriority;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
+
+import network.rs485.logisticspipes.api.IRouterProvider;
+import network.rs485.logisticspipes.request.DefaultRouterProvider;
 
 public class RequestTree extends RequestTreeNode {
 
@@ -39,8 +39,8 @@ public class RequestTree extends RequestTreeNode {
 	public static final EnumSet<ActiveRequestType> defaultRequestFlags = EnumSet.of(ActiveRequestType.Provide, ActiveRequestType.Craft);
 	private HashMap<FinalPair<IProvide, ItemIdentifier>, Integer> _promisetotals;
 
-	public RequestTree(IResource requestType, RequestTree parent, EnumSet<ActiveRequestType> requestFlags, IAdditionalTargetInformation info) {
-		super(requestType, parent, requestFlags, info);
+	public RequestTree(IResource requestType, RequestTree parent, EnumSet<ActiveRequestType> requestFlags, IAdditionalTargetInformation info, IRouterProvider routerProvider) {
+		super(requestType, parent, requestFlags, info, routerProvider);
 	}
 
 	private int getExistingPromisesFor(FinalPair<IProvide, ItemIdentifier> key) {
@@ -104,45 +104,9 @@ public class RequestTree extends RequestTreeNode {
 		}
 	}
 
-	public static class workWeightedSorter implements Comparator<ExitRoute> {
-
-		public final double distanceWeight;
-
-		public workWeightedSorter(double distanceWeight) {
-			this.distanceWeight = distanceWeight;
-		}
-
-		@Override
-		public int compare(ExitRoute o1, ExitRoute o2) {
-			int c = 0;
-			if (o1.destination.getPipe() instanceof IHavePriority) {
-				if (o2.destination.getPipe() instanceof IHavePriority) {
-					c = ((IHavePriority) o2.destination.getCachedPipe()).getPriority() - ((IHavePriority) o1.destination.getCachedPipe()).getPriority();
-					if (c != 0) {
-						return c;
-					}
-				} else {
-					return -1;
-				}
-			} else {
-				if (o2.destination.getPipe() instanceof IHavePriority) {
-					return 1;
-				}
-			}
-
-			//GetLoadFactor*64 should be an integer anyway.
-			c = (int) Math.floor(o1.destination.getCachedPipe().getLoadFactor() * 64) - (int) Math.floor(o2.destination.getCachedPipe().getLoadFactor() * 64);
-			if (distanceWeight != 0) {
-				c += (int) (Math.floor(o1.distanceToDestination * 64) - (int) Math.floor(o2.distanceToDestination * 64)) * distanceWeight;
-			}
-			return c;
-		}
-
-	}
-
 	public static boolean request(List<ItemIdentifierStack> items, IRequestItems requester, RequestLog log, EnumSet<ActiveRequestType> requestFlags, IAdditionalTargetInformation info) {
 		Map<IResource, Integer> messages = new HashMap<>();
-		RequestTree tree = new RequestTree(new ItemResource(new ItemIdentifierStack(ItemIdentifier.get(Item.getItemFromBlock(Blocks.STONE), 0, null), 0), requester), null, requestFlags, info);
+		RequestTree tree = new RequestTree(new ItemResource(new ItemIdentifierStack(ItemIdentifier.get(Item.getItemFromBlock(Blocks.STONE), 0, null), 0), requester), null, requestFlags, info, DefaultRouterProvider.INSTANCE);
 		boolean isDone = true;
 		for (ItemIdentifierStack stack : items) {
 			ItemIdentifier item = stack.getItem();
@@ -153,7 +117,7 @@ public class RequestTree extends RequestTreeNode {
 			count += stack.getStackSize();
 			ItemResource req = new ItemResource(stack, requester);
 			messages.put(req, count);
-			RequestTree node = new RequestTree(req, tree, requestFlags, info);
+			RequestTree node = new RequestTree(req, tree, requestFlags, info, DefaultRouterProvider.INSTANCE);
 			isDone = isDone && node.isDone();
 		}
 		if (isDone) {
@@ -172,7 +136,7 @@ public class RequestTree extends RequestTreeNode {
 
 	public static int request(ItemIdentifierStack item, IRequestItems requester, RequestLog log, boolean acceptPartial, boolean simulateOnly, boolean logMissing, boolean logUsed, EnumSet<ActiveRequestType> requestFlags, IAdditionalTargetInformation info) {
 		ItemResource req = new ItemResource(item, requester);
-		RequestTree tree = new RequestTree(req, null, requestFlags, info);
+		RequestTree tree = new RequestTree(req, null, requestFlags, info, DefaultRouterProvider.INSTANCE);
 		if (!simulateOnly && (tree.isDone() || ((tree.getPromiseAmount() > 0) && acceptPartial))) {
 			LinkedLogisticsOrderList list = tree.fullFillAll();
 			if (log != null) {
@@ -218,7 +182,7 @@ public class RequestTree extends RequestTreeNode {
 
 	private static int requestFluid(FluidIdentifier liquid, int amount, IRequestFluid pipe, RequestLog log, boolean acceptPartial) {
 		FluidResource req = new FluidResource(liquid, amount, pipe);
-		RequestTree request = new RequestTree(req, null, RequestTree.defaultRequestFlags, null);
+		RequestTree request = new RequestTree(req, null, RequestTree.defaultRequestFlags, null, DefaultRouterProvider.INSTANCE);
 		if (request.isDone() || acceptPartial) {
 			request.fullFill();
 			if (log != null) {

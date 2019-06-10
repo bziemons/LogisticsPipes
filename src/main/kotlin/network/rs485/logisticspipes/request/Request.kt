@@ -40,69 +40,75 @@ package network.rs485.logisticspipes.request
 import logisticspipes.interfaces.routing.ICraft
 import logisticspipes.interfaces.routing.IFilter
 import logisticspipes.interfaces.routing.IProvide
-import logisticspipes.proxy.SimpleServiceLocator
 import logisticspipes.request.*
 import logisticspipes.request.resources.IResource
 import logisticspipes.routing.ExitRoute
-import logisticspipes.routing.IRouter
 import logisticspipes.routing.PipeRoutingConnectionType
-import logisticspipes.routing.ServerRouter
-import logisticspipes.utils.item.ItemIdentifier
+import logisticspipes.utils.IHavePriority
+import network.rs485.logisticspipes.api.IRouterProvider
 import java.util.*
 
 class Request(private val resource: IResource,
-              private val parent: Request? = null) {
+              private val parent: Request? = null,
+              private val routerProvider: IRouterProvider = DefaultRouterProvider) {
     companion object {
-        private fun providers(item: ItemIdentifier, destination: IRouter): Sequence<ExitRoute> {
-            val interestedRouterBitSet = ServerRouter.getRoutersInterestedIn(item)
-            var routerIndex = interestedRouterBitSet.nextSetBit(0)
-
-            return generateSequence {
-                SimpleServiceLocator.routerManager.getRouterUnsafe(routerIndex, false).takeUnless {
-                    routerIndex == -1
-                }?.apply {
-                    routerIndex = interestedRouterBitSet.nextSetBit(routerIndex + 1)
-                }
-            }.filter {
-                it.isValidCache
-            }.flatMap {
-                it.getDistanceTo(destination).asSequence()
-            }
-        }
-
-        private fun crafters(iRequestType: IResource, validDestinations: List<ExitRoute>): List<Pair<ICraftingTemplate, List<IFilter>>> {
-            val crafters = ArrayList<Pair<ICraftingTemplate, List<IFilter>>>(validDestinations.size)
-            for (r in validDestinations) {
-                val pipe = r.destination.pipe
-                if (r.containsFlag(PipeRoutingConnectionType.canRequestFrom)) {
-                    if (pipe is ICraft) {
-                        val craftable = (pipe as ICraft).addCrafting(iRequestType)
-                        if (craftable != null) {
-                            for (filter in r.filters) {
-                                if (filter.isBlocked == filter.isFilteredItem(craftable.resultItem) || filter.blockCrafting()) {
-                                    continue
-                                }
-                            }
-                            val list = LinkedList<IFilter>()
-                            list.addAll(r.filters)
-                            crafters.add(craftable to list)
-                        }
-                    }
-                }
-            }
+        private fun crafters(resource: IResource, validDestinations: List<ExitRoute>): Sequence<Pair<ICraftingTemplate, LinkedList<IFilter>>> {
             // don't need to sort, as a sorted list is passed in and List guarantees order preservation
-            //		Collections.sort(crafters,new CraftingTemplate.PairPrioritizer());
-            return crafters
+            return validDestinations.asSequence().mapNotNull { exitRoute ->
+                exitRoute.takeIf {
+                    it.containsFlag(PipeRoutingConnectionType.canRequestFrom)
+                }?.let {
+                    (exitRoute.destination.pipe as? ICraft)?.addCrafting(resource)
+                }?.takeIf {
+                    exitRoute.filters.none { filter ->
+                        filter.isBlocked == filter.isFilteredItem(it.resultItem) || filter.blockCrafting()
+                    }
+                }?.let {
+                    it to LinkedList(exitRoute.filters)
+                }
+            }
         }
     }
 
 //    var delivered = resource.clone(0)
 //    var children = LinkedList<Request>()
 
+    fun addPromisesInOrder(node: RequestTreeNode,
+                           requestFlags: EnumSet<RequestTree.ActiveRequestType>,
+                           root: RequestTree,
+                           isCrafterUsed: (test: ICraftingTemplate) -> Boolean,
+                           getSubRequests: (nCraftingSetsNeeded: Int, template: ICraftingTemplate) -> Int) {
+        if (requestFlags.contains(RequestTree.ActiveRequestType.Provide) && checkProvider(node::isDone) { provider, filters ->
+                    provider.canProvide(node, root, filters)
+                }) {
+            return
+        }
+
+        if (requestFlags.contains(RequestTree.ActiveRequestType.Craft) && checkExtras(
+                        root,
+                        node::isDone,
+                        node::getMissingAmount,
+                        node::addPromise)) {
+            return // crafting was able to complete
+        }
+
+        if (requestFlags.contains(RequestTree.ActiveRequestType.Craft) && checkCrafting(
+                        root,
+                        node::isDone,
+                        node::getMissingAmount,
+                        isCrafterUsed,
+                        getSubRequests,
+                        node::addPromise)) {
+            return // crafting was able to complete
+        }
+
+        // crafting is not done!
+    }
+
     private fun providerPipes(): Sequence<Pair<IProvide, LinkedList<IFilter>>> {
-        return providers(resource.asItem, resource.router)
+        return routerProvider.getInterestedExits(resource, resource.router)
                 .filter { it.containsFlag(PipeRoutingConnectionType.canRequestFrom) }
-                .sortedWith(RequestTree.workWeightedSorter(1.0))
+                .sortedWith(WorkRouteComparator(1.0))
                 .filter { it.destination.pipe is IProvide }
                 .map { it.destination.pipe as IProvide to LinkedList(it.filters) }
     }
@@ -151,30 +157,13 @@ class Request(private val resource: IResource,
                               getSubRequests: (nCraftingSetsNeeded: Int, template: ICraftingTemplate) -> Int,
                               addPromise: (promise: IPromise) -> Unit): Boolean {
         // get all the routers
-        val routersIndex = ServerRouter.getRoutersInterestedIn(resource)
-        val validSources = ArrayList<ExitRoute>() // get the routing table
-        var i = routersIndex.nextSetBit(0)
-        while (i >= 0) {
-            val r = SimpleServiceLocator.routerManager.getRouterUnsafe(i, false)
-
-            if (!r.isValidCache) {
-                i = routersIndex.nextSetBit(i + 1)
-                continue //Skip Routers without a valid pipe
-            }
-
-            val e = resource.router.getDistanceTo(r)
-            if (e != null) {
-                validSources.addAll(e)
-            }
-            i = routersIndex.nextSetBit(i + 1)
-        }
-        val wSorter = RequestTree.workWeightedSorter(0.0) // distance doesn't matter, because ingredients have to be delivered to the crafter, and we can't tell how long that will take.
-        Collections.sort(validSources, wSorter)
-
-        val allCraftersForItem = crafters(resource, validSources)
+        val validSources = routerProvider.getInterestedExits(resource, resource.router).toMutableList()
+        validSources.sortWith(WorkRouteComparator(0.0)) // distance doesn't matter, because ingredients have to be delivered to the crafter, and we can't tell how long that will take.
 
         // if you have a crafter which can make the top treeNode.getStack().getItem()
-        val iterAllCrafters = allCraftersForItem.iterator()
+        // what?
+
+        val crafterIter = crafters(resource, validSources).iterator()
 
         //a queue to store the crafters, sorted by todo; we will fill up from least-most in a balanced way.
         val craftersSamePriority = PriorityQueue<CraftingSorterNode>(5)
@@ -186,9 +175,11 @@ class Request(private val resource: IResource,
         outer@ while (!done) {
 
             /// First: Create a list of all crafters with the same priority (craftersSamePriority).
-            if (iterAllCrafters.hasNext()) {
+            // what?
+
+            if (crafterIter.hasNext()) {
                 if (lastCrafter == null) {
-                    lastCrafter = iterAllCrafters.next()
+                    lastCrafter = crafterIter.next()
                 }
             } else if (lastCrafter == null) {
                 done = true
@@ -360,36 +351,33 @@ class Request(private val resource: IResource,
         }
     }
 
-    fun addPromisesInOrder(node: RequestTreeNode,
-                           requestFlags: EnumSet<RequestTree.ActiveRequestType>,
-                           root: RequestTree,
-                           isCrafterUsed: (test: ICraftingTemplate) -> Boolean,
-                           getSubRequests: (nCraftingSetsNeeded: Int, template: ICraftingTemplate) -> Int) {
-        if (requestFlags.contains(RequestTree.ActiveRequestType.Provide) && checkProvider(node::isDone) { provider, filters ->
-                    provider.canProvide(node, root, filters)
-                }) {
-            return
+    private inner class WorkRouteComparator(val distanceWeight: Double) : Comparator<ExitRoute> {
+
+        override fun compare(o1: ExitRoute, o2: ExitRoute): Int {
+            var c = 0
+            if (o1.destination.pipe is IHavePriority) {
+                if (o2.destination.pipe is IHavePriority) {
+                    c = (o2.destination.cachedPipe as IHavePriority).priority - (o1.destination.cachedPipe as IHavePriority).priority
+                    if (c != 0) {
+                        return c
+                    }
+                } else {
+                    return -1
+                }
+            } else {
+                if (o2.destination.pipe is IHavePriority) {
+                    return 1
+                }
+            }
+
+            //GetLoadFactor*64 should be an integer anyway.
+            c = Math.floor(o1.destination.cachedPipe.loadFactor * 64).toInt() - Math.floor(o2.destination.cachedPipe.loadFactor * 64).toInt()
+            if (distanceWeight != 0.0) {
+                c += ((Math.floor(o1.distanceToDestination * 64) - Math.floor(o2.distanceToDestination * 64).toInt()).toInt() * distanceWeight).toInt()
+            }
+            return c
         }
 
-        if (requestFlags.contains(RequestTree.ActiveRequestType.Craft) && checkExtras(
-                        root,
-                        node::isDone,
-                        node::getMissingAmount,
-                        node::addPromise)) {
-            return // crafting was able to complete
-        }
-
-        if (requestFlags.contains(RequestTree.ActiveRequestType.Craft) && checkCrafting(
-                        root,
-                        node::isDone,
-                        node::getMissingAmount,
-                        isCrafterUsed,
-                        getSubRequests,
-                        node::addPromise)) {
-            return // crafting was able to complete
-        }
-
-        // crafting is not done!
     }
 
 }
