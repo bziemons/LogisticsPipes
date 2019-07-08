@@ -273,7 +273,7 @@ public class LogisticsPipes {
 				final Manifest manifest = new Manifest(resources.nextElement().openStream());
 				foundLp = "LogisticsPipes".equals(manifest.getMainAttributes().getValue("Specification-Title"));
 				if (foundLp) {
-					LogisticsPipes.DEBUG = false;
+					//LogisticsPipes.DEBUG = false;
 					LogisticsPipes.VERSION = manifest.getMainAttributes().getValue("Implementation-Version");
 					LogisticsPipes.VENDOR = manifest.getMainAttributes().getValue("Implementation-Vendor");
 					LogisticsPipes.TARGET = manifest.getMainAttributes().getValue("Implementation-Target");

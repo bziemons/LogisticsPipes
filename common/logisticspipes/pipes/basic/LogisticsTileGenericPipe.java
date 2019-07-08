@@ -185,8 +185,8 @@ public class LogisticsTileGenericPipe extends LPDuctHolderTileEntity
 	@Override
 	public void update() {
 		imcmpltgpCompanion.update();
-		final Info superDebug = StackTraceUtil.addSuperTraceInformation(() -> "Time: " + getWorld().getWorldTime());
-		final Info debug = StackTraceUtil.addTraceInformation(() -> "(" + getX() + ", " + getY() + ", " + getZ() + ")", superDebug);
+//		final Info superDebug = StackTraceUtil.addSuperTraceInformation(() -> "Time: " + getWorld().getWorldTime());
+//		final Info debug = StackTraceUtil.addTraceInformation(() -> "(" + getX() + ", " + getY() + ", " + getZ() + ")", superDebug);
 		if (sendInitPacket && MainProxy.isServer(getWorld())) {
 			sendInitPacket = false;
 			getRenderController().sendInit();
@@ -197,7 +197,7 @@ public class LogisticsTileGenericPipe extends LPDuctHolderTileEntity
 			}
 
 			if (pipe == null) {
-				debug.end();
+//				debug.end();
 				return;
 			}
 
@@ -207,14 +207,14 @@ public class LogisticsTileGenericPipe extends LPDuctHolderTileEntity
 		}
 
 		if (!LogisticsBlockGenericPipe.isValid(pipe)) {
-			debug.end();
+//			debug.end();
 			return;
 		}
 
 		pipe.updateEntity();
 
 		if (world.isRemote) {
-			debug.end();
+//			debug.end();
 			return;
 		}
 
@@ -253,7 +253,7 @@ public class LogisticsTileGenericPipe extends LPDuctHolderTileEntity
 			addedToNetwork = true;
 			SimpleServiceLocator.openComputersProxy.addToNetwork(this);
 		}
-		debug.end();
+//		debug.end();
 	}
 
 	private void refreshRenderState() {
