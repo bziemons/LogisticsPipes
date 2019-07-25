@@ -5,6 +5,10 @@ public class DelayPacketException extends RuntimeException {
 		super(message);
 	}
 
+	public DelayPacketException(Throwable cause) {
+		super(cause);
+	}
+
 	public DelayPacketException() {
 		super();
 	}

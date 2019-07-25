@@ -1,5 +1,6 @@
 package logisticspipes.commands.commands.debug;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -21,7 +22,8 @@ import logisticspipes.network.packets.debuggui.DebugPanelOpen;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
-import network.rs485.debug.api.IDebugGuiEntry;
+import network.rs485.debug.ServerDebugGuiEntry;
+import network.rs485.debug.api.IClientDebugGuiEntry;
 import network.rs485.debug.api.IDataConnection;
 import network.rs485.debug.api.IObjectIdentification;
 
@@ -44,69 +46,68 @@ public class DebugGuiController {
 	}
 
 	public void execClient() {
-		if(clientController != null) {
+		if (clientController != null) {
 			clientController.exec();
 		}
 	}
 
 	public void execServer() {
-		serverDebugger.values().forEach(IDebugGuiEntry::exec);
+		serverDebugger.values().forEach(ServerDebugGuiEntry::exec);
 	}
 
-	private HashMap<EntityPlayer, IDebugGuiEntry> serverDebugger = new HashMap<>();
+	private HashMap<EntityPlayer, ServerDebugGuiEntry> serverDebugger = new HashMap<>();
 	private List<IDataConnection> serverList = new LinkedList<>();
 
-	private IDebugGuiEntry clientController = null;
+	private IClientDebugGuiEntry clientController = null;
 	private List<Future<IDataConnection>> clientList = new LinkedList<>();
 
 	public void startWatchingOf(Object object, EntityPlayer player) {
 		if (object == null) {
 			return;
 		}
-		IDebugGuiEntry entry = serverDebugger.get(player);
-		if(entry == null) {
-			try {
-				entry = IDebugGuiEntry.create();
-				serverDebugger.put(player, entry);
-			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-				e.printStackTrace();
-				return;
-			}
-		}
-		if(entry == null) {
-			System.out.println("DebugGui could not be loaded");
-			return;
+		ServerDebugGuiEntry entry = serverDebugger.get(player);
+		if (entry == null) {
+			entry = new ServerDebugGuiEntry();
+			serverDebugger.put(player, entry);
 		}
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(DebugPanelOpen.class).setName(object.getClass().getSimpleName()), player);
 		synchronized (serverList) {
 			int identification = serverList.size();
 			IDataConnection conIn = new DataConnectionServer(identification, player);
-			while(serverList.size() <= identification) serverList.add(null);
-			serverList.set(identification, entry.startServerDebugging(object, conIn, new ObjectIdentification()));
+			while (serverList.size() <= identification) serverList.add(null);
+			try {
+				serverList.set(identification, entry.startServerDebugging(object, conIn, new ObjectIdentification()));
+			} catch (IOException e) {
+				serverDebugger.remove(player);
+				System.err.println("DebugGui could not be loaded");
+				e.printStackTrace();
+			}
 		}
 	}
 
 	public void createNewDebugGui(String name, int identification) {
-		if(clientController == null) {
+		if (clientController == null) {
 			try {
-				clientController = IDebugGuiEntry.create();
+				clientController = IClientDebugGuiEntry.create();
 			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
 				e.printStackTrace();
 				return;
 			}
 		}
 		synchronized (clientList) {
-			while(clientList.size() <= identification) clientList.add(null);
+			while (clientList.size() <= identification) clientList.add(null);
 			clientList.set(identification, clientController.startClientDebugging(name, new DataConnectionClient(identification)));
 		}
 	}
 
 	public void handleDataPacket(byte[] payload, int identifier, EntityPlayer player) {
-		if(MainProxy.isServer(player.getEntityWorld())) {
+		if (MainProxy.isServer(player.getEntityWorld())) {
 			synchronized (serverList) {
 				IDataConnection connection = serverList.get(identifier);
-				if(connection != null) {
-					connection.passData(payload);
+				if (connection != null) {
+					try {
+						connection.passData(payload);
+					} catch (IOException ignored) {}
 				}
 			}
 		} else {
@@ -114,11 +115,11 @@ public class DebugGuiController {
 				Future<IDataConnection> connectionFuture;
 				try {
 					connectionFuture = clientList.get(identifier);
-				} catch(IndexOutOfBoundsException e) {
+				} catch (IndexOutOfBoundsException e) {
 					System.out.println(clientList);
 					throw e;
 				}
-				if(connectionFuture == null || !connectionFuture.isDone()) {
+				if (connectionFuture == null || !connectionFuture.isDone()) {
 					throw new DelayPacketException();
 				}
 				IDataConnection connection = null;
@@ -127,8 +128,12 @@ public class DebugGuiController {
 				} catch (InterruptedException | ExecutionException e) {
 					e.printStackTrace();
 				}
-				if(connection != null) {
-					connection.passData(payload);
+				if (connection != null) {
+					try {
+						connection.passData(payload);
+					} catch (IOException e) {
+						throw new DelayPacketException(e);
+					}
 				} else {
 					throw new DelayPacketException();
 				}
@@ -170,6 +175,7 @@ public class DebugGuiController {
 	}
 
 	private class ObjectIdentification implements IObjectIdentification {
+
 		@Override
 		public boolean toStringObject(Object o) {
 			return o.getClass() == EnumFacing.class || o.getClass() == ItemIdentifier.class || o.getClass() == ItemIdentifierStack.class;
@@ -177,10 +183,10 @@ public class DebugGuiController {
 
 		@Override
 		public String handleObject(Object o) {
-			if(o instanceof World) {
-				return ((World)o).getWorldInfo().getWorldName();
+			if (o instanceof World) {
+				return ((World) o).getWorldInfo().getWorldName();
 			}
-			if(o != null && o.getClass().isArray() && Array.getLength(o) > 100) {
+			if (o != null && o.getClass().isArray() && Array.getLength(o) > 100) {
 				return "(Too big)";
 			}
 			return null;

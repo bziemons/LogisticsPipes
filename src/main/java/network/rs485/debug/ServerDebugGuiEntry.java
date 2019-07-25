@@ -35,13 +35,55 @@
  * SOFTWARE.
  */
 
-package network.rs485.debug.api;
+package network.rs485.debug;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.FutureTask;
 
-public interface IDataConnection {
+import lombok.SneakyThrows;
 
-	void passData(byte[] packet) throws IOException;
+import network.rs485.debug.api.IDataConnection;
+import network.rs485.debug.api.IObjectIdentification;
+import network.rs485.debug.api.IServerDebugGuiEntry;
+import network.rs485.debug.api.ObjectHandler;
 
-	void closeCon() throws IOException;
+public class ServerDebugGuiEntry extends IServerDebugGuiEntry {
+
+	private static ConcurrentLinkedQueue<Runnable> queue = new ConcurrentLinkedQueue<Runnable>();
+	private static ArrayList<ObjectHandler> objects = new ArrayList<ObjectHandler>();
+
+	@Override
+	public IDataConnection startServerDebugging(Object object, IDataConnection outgoingData, IObjectIdentification objectIdent) throws IOException {
+		ObjectHandler handler = new ObjectHandler(object, outgoingData, objectIdent, this);
+		objects.add(handler);
+		return handler;
+	}
+
+	@Override
+	public void remove(ObjectHandler objectHandler) {
+		objects.remove(objectHandler);
+	}
+
+	@SneakyThrows
+	public void exec() {
+		while (!queue.isEmpty()) {
+			Runnable poll = queue.poll();
+			poll.run();
+			if (poll instanceof FutureTask) {
+				((FutureTask) poll).get();
+			}
+		}
+		for (ObjectHandler handler : objects) {
+			handler.run();
+		}
+		while (!queue.isEmpty()) {
+			Runnable poll = queue.poll();
+			poll.run();
+			if (poll instanceof FutureTask) {
+				((FutureTask) poll).get();
+			}
+		}
+	}
 }

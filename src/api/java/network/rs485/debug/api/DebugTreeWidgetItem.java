@@ -37,11 +37,9 @@
 
 package network.rs485.debug.api;
 
-import java.io.IOException;
+public class DebugTreeWidgetItem {
 
-public interface IDataConnection {
-
-	void passData(byte[] packet) throws IOException;
-
-	void closeCon() throws IOException;
+	public boolean aboutToBeReplacedBy(DebugTreeWidgetItem node) {
+		return false;
+	}
 }

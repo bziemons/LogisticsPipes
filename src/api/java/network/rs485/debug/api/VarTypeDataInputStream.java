@@ -37,11 +37,69 @@
 
 package network.rs485.debug.api;
 
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
-public interface IDataConnection {
+import static network.rs485.debug.api.DataClass.VarType;
+import static network.rs485.debug.api.DataClass.getClassForId;
 
-	void passData(byte[] packet) throws IOException;
+public class VarTypeDataInputStream extends DataInputStream {
 
-	void closeCon() throws IOException;
+	private HashMap<Integer, VarType> hashCodes = new HashMap<>();
+
+	/**
+	 * Creates a DataInputStream that uses the specified
+	 * underlying InputStream.
+	 *
+	 * @param in the specified input stream
+	 */
+	public VarTypeDataInputStream(InputStream in) {
+		super(in);
+	}
+
+	VarType readVarType() throws IOException, IllegalAccessException, InstantiationException {
+		if (readBoolean()) {
+			if (readBoolean()) {
+				int hash = readInt();
+				Class<? extends VarType> c = getClassForId(readInt());
+				VarType varType = c.newInstance();
+				hashCodes.put(hash, varType);
+				VarType parent = readVarType();
+				varType.setParent(parent);
+				varType.read(this);
+				return varType;
+			} else {
+				int hash = readInt();
+				return hashCodes.get(hash);
+			}
+		}
+		return null;
+	}
+
+	public Integer[] readIntegerArray() throws IOException {
+		Integer[] array = new Integer[readInt()];
+		for (int i = 0; i < array.length; i++) {
+			array[i] = readInt();
+		}
+		return array;
+	}
+
+	<T, V> Map<T, V> readMap(IPartReader<T> part1, IPartReader<V> part2) throws IOException, IllegalAccessException, InstantiationException {
+		Map<T, V> map = new HashMap<T, V>();
+		while (readBoolean()) {
+			map.put(part1.readObject(this), part2.readObject(this));
+		}
+		return map;
+	}
+
+	String[] readStringArray() throws IOException {
+		String[] array = new String[readInt()];
+		for (int i = 0; i < array.length; i++) {
+			array[i] = readUTF();
+		}
+		return array;
+	}
 }

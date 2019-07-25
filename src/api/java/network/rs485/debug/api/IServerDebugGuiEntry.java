@@ -39,9 +39,9 @@ package network.rs485.debug.api;
 
 import java.io.IOException;
 
-public interface IDataConnection {
+public abstract class IServerDebugGuiEntry {
 
-	void passData(byte[] packet) throws IOException;
+	public abstract IDataConnection startServerDebugging(Object object, IDataConnection outgoingData, IObjectIdentification objectIdent) throws IOException;
 
-	void closeCon() throws IOException;
+	public abstract void remove(ObjectHandler objectHandler);
 }

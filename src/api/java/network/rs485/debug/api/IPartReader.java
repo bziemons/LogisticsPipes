@@ -39,9 +39,7 @@ package network.rs485.debug.api;
 
 import java.io.IOException;
 
-public interface IDataConnection {
+public interface IPartReader<T> {
 
-	void passData(byte[] packet) throws IOException;
-
-	void closeCon() throws IOException;
+	T readObject(VarTypeDataInputStream data) throws IOException, InstantiationException, IllegalAccessException;
 }

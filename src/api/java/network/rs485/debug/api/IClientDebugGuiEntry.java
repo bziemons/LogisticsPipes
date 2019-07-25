@@ -37,11 +37,15 @@
 
 package network.rs485.debug.api;
 
-import java.io.IOException;
+import java.util.concurrent.Future;
 
-public interface IDataConnection {
+public abstract class IClientDebugGuiEntry {
 
-	void passData(byte[] packet) throws IOException;
+	public static IClientDebugGuiEntry create() throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+		return (IClientDebugGuiEntry) Class.forName("network.rs485.debug.DebugGuiEntry").newInstance();
+	}
 
-	void closeCon() throws IOException;
+	public abstract Future<IDataConnection> startClientDebugging(String name, IDataConnection dataConnection);
+
+	public abstract void exec();
 }

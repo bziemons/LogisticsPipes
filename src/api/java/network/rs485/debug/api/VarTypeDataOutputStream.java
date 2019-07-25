@@ -37,11 +37,69 @@
 
 package network.rs485.debug.api;
 
+import java.io.DataOutputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
-public interface IDataConnection {
+import static network.rs485.debug.api.DataClass.VarType;
 
-	void passData(byte[] packet) throws IOException;
+public class VarTypeDataOutputStream extends DataOutputStream {
 
-	void closeCon() throws IOException;
+	private HashMap<VarType, Integer> hashCodes = new HashMap<VarType, Integer>();
+
+	/**
+	 * Creates a new data output stream to write data to the specified
+	 * underlying output stream. The counter <code>written</code> is
+	 * set to zero.
+	 *
+	 * @param out the underlying output stream, to be saved for later
+	 *            use.
+	 * @see FilterOutputStream#out
+	 */
+	public VarTypeDataOutputStream(OutputStream out) {
+		super(out);
+	}
+
+	public void writeVarType(VarType var) throws IOException {
+		writeBoolean(var != null);
+		if (var == null) return;
+		if (hashCodes.containsKey(var)) {
+			writeBoolean(false);
+			writeInt(hashCodes.get(var));
+		} else {
+			writeBoolean(true);
+			int hash = var.hashCode();
+			hashCodes.put(var, hash);
+			writeInt(hash);
+			writeInt(var.getClass().getAnnotation(DataID.class).value());
+			writeVarType(var.getParent());
+			var.writeData(this);
+		}
+	}
+
+	public void writeIntegerArray(Integer[] array) throws IOException {
+		writeInt(array.length);
+		for (int i = 0; i < array.length; i++) {
+			writeInt(array[i]);
+		}
+	}
+
+	public <T, V> void writeMap(Map<T, V> map, IPartWriter<T> part1, IPartWriter<V> part2) throws IOException {
+		for (Map.Entry<T, V> e : map.entrySet()) {
+			writeBoolean(true);
+			part1.writeObject(this, e.getKey());
+			part2.writeObject(this, e.getValue());
+		}
+		writeBoolean(false);
+	}
+
+	public void writeStringArray(String[] array) throws IOException {
+		writeInt(array.length);
+		for (int i = 0; i < array.length; i++) {
+			writeUTF(array[i]);
+		}
+	}
 }
