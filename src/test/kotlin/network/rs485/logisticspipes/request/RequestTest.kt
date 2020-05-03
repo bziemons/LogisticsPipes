@@ -37,6 +37,7 @@
 
 package network.rs485.logisticspipes.request
 
+import logisticspipes.interfaces.routing.IRequestItems
 import logisticspipes.pipes.PipeItemsRequestLogistics
 import logisticspipes.request.ICraftingTemplate
 import logisticspipes.request.IPromise
@@ -46,65 +47,108 @@ import logisticspipes.request.resources.IResource
 import logisticspipes.request.resources.ItemResource
 import logisticspipes.routing.ExitRoute
 import logisticspipes.routing.IRouter
+import logisticspipes.routing.PipeRoutingConnectionType
 import logisticspipes.routing.ServerRouter
 import logisticspipes.utils.item.ItemIdentifierStack
 import net.minecraft.init.Blocks
 import net.minecraft.init.Bootstrap
+import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
+import net.minecraft.util.EnumFacing
 import network.rs485.logisticspipes.api.IRouterProvider
 import java.util.*
+import org.junit.jupiter.api.*
 
 internal class RequestTest {
 
-    private var node: MockRequestTreeNode? = null
-    private var createdRequest: Request? = null
-
-    @org.junit.jupiter.api.BeforeEach
+    @BeforeEach
     fun setUp() {
         Bootstrap.register()
-        val stack = ItemIdentifierStack.getFromStack(ItemStack(Blocks.PLANKS))
-        val resource = MockItemResource(stack)
-        val routerProvider = MockRouterProvider()
-        node = MockRequestTreeNode("node1", resource, RequestTree.defaultRequestFlags, routerProvider)
-        createdRequest = node!!.getRequest()
     }
 
-    @org.junit.jupiter.api.AfterEach
+    @AfterEach
     fun tearDown() {
-        node = null
-        createdRequest = null
     }
 
-    @org.junit.jupiter.api.Test
-    fun `test addPromisesInOrder`() {
-        createdRequest!!.also { request ->
-            node!!.apply {
-                request.addPromisesInOrder(this, RequestTree.defaultRequestFlags, getRoot(), this::isCrafterUsed, this::getSubRequests)
-            }
+    @Test
+    fun `test simple addPromisesInOrder run`() {
+        val itemStack = ItemStack(Blocks.PLANKS)
+        val stack = ItemIdentifierStack.getFromStack(itemStack)
+        val resource = MockItemResource(stack, MockRequester(itemStack.item))
+        val routerProvider = MockRouterProvider(emptyList())
+        MockRequestTreeNode(
+                id = "node1",
+                resource = resource,
+                requestFlags = RequestTree.defaultRequestFlags,
+                routerProvider = routerProvider
+        ).apply {
+            getRequest().addPromisesInOrder(
+                    node = this,
+                    requestFlags = RequestTree.defaultRequestFlags,
+                    root = getRoot(),
+                    isCrafterUsed = this::isCrafterUsed,
+                    getSubRequests = this::getSubRequests)
+            // no error? great!
         }
+    }
+
+    @Test
+    fun `test addPromisesInOrder run with provider`() {
+        val itemStack = ItemStack(Blocks.PLANKS)
+        val stack = ItemIdentifierStack.getFromStack(itemStack)
+        val requester = MockRequester(itemStack.item)
+        val resource = MockItemResource(stack, requester)
+        val mockedProviderRouter = ServerRouter(UUID.randomUUID(), 0, 0, 1, 0)
+        val routerProvider = MockRouterProvider(
+                listOf(makeExitRoute(
+                        source = mockedProviderRouter,
+                        destination = requester.mockedRouter,
+                        exitOrientation = EnumFacing.UP,
+                        insertOrientation = EnumFacing.DOWN,
+                        metric = 1.0,
+                        connectionDetails = EnumSet.allOf(PipeRoutingConnectionType::class.java),
+                        blockDistance = 1)
+                )
+        )
+        MockRequestTreeNode(
+                id = "node1",
+                resource = resource,
+                requestFlags = RequestTree.defaultRequestFlags,
+                routerProvider = routerProvider
+        ).apply {
+            getRequest().addPromisesInOrder(
+                    node = this,
+                    requestFlags = RequestTree.defaultRequestFlags,
+                    root = getRoot(),
+                    isCrafterUsed = this::isCrafterUsed,
+                    getSubRequests = this::getSubRequests)
+            // no error? great!
+        }
+    }
+
+    private fun makeExitRoute(source: ServerRouter, destination: ServerRouter, exitOrientation: EnumFacing, insertOrientation: EnumFacing, metric: Double, connectionDetails: EnumSet<PipeRoutingConnectionType>, blockDistance: Int): ExitRoute {
+        return ExitRoute(source, destination, exitOrientation, insertOrientation, metric, connectionDetails, blockDistance)
     }
 }
 
-private class MockRequester : PipeItemsRequestLogistics(null) {
-    private val mockedRouter = ServerRouter(UUID.randomUUID(), 0, 0, 0, 0)
+private class MockRequester(item: Item) : PipeItemsRequestLogistics(item) {
+    val mockedRouter = ServerRouter(UUID.randomUUID(), 0, 0, 0, 0)
 
     override fun getRouter(): IRouter {
         return mockedRouter
     }
 }
 
-private class MockItemResource(stack: ItemIdentifierStack) : ItemResource(stack, MockRequester()) {
+private class MockItemResource(stack: ItemIdentifierStack, requester: IRequestItems) : ItemResource(stack, requester) {
     override fun toString(): String {
         return "MockItemResource{${super.getItem()}}"
     }
 }
 
-private class MockRouterProvider : IRouterProvider {
+private class MockRouterProvider(val exitRoutes: List<ExitRoute>) : IRouterProvider {
     override fun getInterestedExits(resource: IResource, destination: IRouter): Sequence<ExitRoute> {
-        println("[MockRouterProvider] getInterestedExits($resource, $destination)")
-        return generateSequence {
-            null
-        }
+        println("[MockRouterProvider] getInterestedExits($resource, $destination): $exitRoutes")
+        return exitRoutes.asSequence()
     }
 }
 
@@ -122,7 +166,7 @@ private class MockRequestTreeNode(val id: String,
                 MockRequestTree("$id.root", resource, requestFlags, routerProvider),
                 requestFlags,
                 null,
-                MockRouterProvider()) {
+                routerProvider) {
     fun getRequest(): Request {
         return super.request!!
     }
