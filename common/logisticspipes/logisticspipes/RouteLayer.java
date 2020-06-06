@@ -6,6 +6,7 @@
 
 package logisticspipes.logisticspipes;
 
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 
 import net.minecraft.util.EnumFacing;
@@ -32,61 +33,94 @@ public class RouteLayer {
 		_pipe = pipe;
 	}
 
-	public EnumFacing getOrientationForItem(IRoutedItem item, EnumFacing blocked) {
-
-		item.checkIDFromUUID();
+	public CompletableFuture<EnumFacing> getOrientationForItem(IRoutedItem routedItem, EnumFacing blocked) {
+		routedItem.checkIDFromUUID();
 		//If a item has no destination, find one
-		if (item.getDestination() < 0) {
-			item = SimpleServiceLocator.logisticsManager.assignDestinationFor(item, _router.getSimpleID(), false);
-			_pipe.debug.log("No Destination, assigned new destination: (" + item.getInfo());
+		if (routedItem.getDestination() < 0) {
+			routedItem = SimpleServiceLocator.logisticsManager.assignDestinationFor(routedItem, _router.getSimpleID(), false);
+			_pipe.debug.log("No Destination, assigned new destination: (" + routedItem.getInfo().toString() + ")");
 		}
 
-		//If the destination is unknown / unroutable or it already arrived at its destination and somehow looped back
-		if (item.getDestination() >= 0 && (!_router.hasRoute(item.getDestination(), item.getTransportMode() == TransportMode.Active, item.getItemIdentifierStack().getItem()) || item.getArrived())) {
-			item = SimpleServiceLocator.logisticsManager.assignDestinationFor(item, _router.getSimpleID(), false);
-			_pipe.debug.log("Unreachable Destination, sssigned new destination: (" + item.getInfo());
-		}
+		final CompletableFuture<EnumFacing> returnedFuture = new CompletableFuture<>();
 
-		item.checkIDFromUUID();
-		//If we still have no destination or client side unroutable, drop it
-		if (item.getDestination() < 0) {
-			return null;
-		}
+		final CompletableFuture<Boolean> hasRouteFuture = _router
+				.hasRoute(routedItem.getDestination(), routedItem.getTransportMode() == TransportMode.Active, routedItem.getItemIdentifierStack().getItem());
+		final IRoutedItem finalItem = routedItem;
 
-		//Is the destination ourself? Deliver it
-		if (item.getDestinationUUID().equals(_router.getId())) {
-
-			_transport.handleItem(item);
-
-			if (item.getDistanceTracker() != null) {
-				item.getDistanceTracker().setCurrentDistanceToTarget(0);
-				item.getDistanceTracker().setDestinationReached();
+		hasRouteFuture.thenAccept(hasRoute -> {
+			IRoutedItem item = finalItem;
+			//If the destination is unknown / unroutable or it already arrived at its destination and somehow looped back
+			if (item.getDestination() >= 0 && (!hasRoute || item.getArrived())) {
+				item = SimpleServiceLocator.logisticsManager.assignDestinationFor(item, _router.getSimpleID(), false);
+				_pipe.debug.log("Unreachable Destination, assigned new destination: (" + item.getInfo().toString() + ")");
 			}
 
-			if (item.getTransportMode() != TransportMode.Active && !_transport.stillWantItem(item)) {
-				return getOrientationForItem(SimpleServiceLocator.logisticsManager.assignDestinationFor(item, _router.getSimpleID(), true), null);
+			item.checkIDFromUUID();
+			//If we still have no destination or client side unroutable, drop it
+			if (item.getDestination() < 0) {
+				returnedFuture.complete(null);
+				return;
 			}
 
-			item.setDoNotBuffer(true);
-			item.setArrived(true);
-			return _transport.itemArrived(item, blocked);
-		}
+			//Is the destination ourself? Deliver it
+			if (item.getDestinationUUID().equals(_router.getId())) {
 
-		//Do we now know the destination?
-		if (!_router.hasRoute(item.getDestination(), item.getTransportMode() == TransportMode.Active, item.getItemIdentifierStack().getItem())) {
+				_transport.handleItem(item);
+
+				if (item.getDistanceTracker() != null) {
+					item.getDistanceTracker().setCurrentDistanceToTarget(0);
+					item.getDistanceTracker().setDestinationReached();
+				}
+
+				if (item.getTransportMode() != TransportMode.Active && !_transport.stillWantItem(item)) {
+					getOrientationForItem(SimpleServiceLocator.logisticsManager.assignDestinationFor(item, _router.getSimpleID(), true), null)
+							.whenComplete((forgeDirection, throwable) -> {
+								if (throwable == null) {
+									returnedFuture.complete(forgeDirection);
+								} else {
+									returnedFuture.completeExceptionally(throwable);
+								}
+							});
+					return;
+				}
+
+				item.setDoNotBuffer(true);
+				item.setArrived(true);
+				returnedFuture.complete(_transport.itemArrived(item, blocked));
+				return;
+			}
+
+			//Do we now know the destination?
+			if (!hasRoute) {
+				returnedFuture.complete(null);
+				return;
+			}
+
+			final IRoutedItem finalfinalItem = item;
+			final CompletableFuture<ExitRoute> exitRouteFuture = _router
+					.getExitFor(item.getDestination(), item.getTransportMode() == TransportMode.Active, item.getItemIdentifierStack().getItem());
+
+			exitRouteFuture.thenAccept(exitRoute -> {
+				//Which direction should we send it
+				if (exitRoute == null) {
+					returnedFuture.complete(null);
+					return;
+				}
+
+				if (finalfinalItem.getDistanceTracker() != null) {
+					finalfinalItem.getDistanceTracker().setCurrentDistanceToTarget(exitRoute.blockDistance);
+				}
+
+				returnedFuture.complete(exitRoute.exitOrientation);
+			}).exceptionally(throwable -> {
+				returnedFuture.completeExceptionally(throwable);
+				return null;
+			});
+		}).exceptionally(throwable -> {
+			returnedFuture.completeExceptionally(throwable);
 			return null;
-		}
+		});
 
-		//Which direction should we send it
-		ExitRoute exit = _router.getExitFor(item.getDestination(), item.getTransportMode() == TransportMode.Active, item.getItemIdentifierStack().getItem());
-		if (exit == null) {
-			return null;
-		}
-
-		if (item.getDistanceTracker() != null) {
-			item.getDistanceTracker().setCurrentDistanceToTarget(exit.blockDistance);
-		}
-
-		return exit.exitOrientation;
+		return returnedFuture;
 	}
 }

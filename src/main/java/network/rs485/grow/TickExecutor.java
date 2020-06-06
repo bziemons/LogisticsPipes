@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -61,6 +62,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
+
+import logisticspipes.LogisticsPipes;
+
 @SuppressWarnings({ "unused", "WeakerAccess" })
 @ParametersAreNonnullByDefault
 public class TickExecutor extends AbstractExecutorService implements ScheduledExecutorService {
@@ -68,6 +75,9 @@ public class TickExecutor extends AbstractExecutorService implements ScheduledEx
 	public static final long MILLISECONDS_PER_TICK = 50L;
 
 	private final Thread tickingThread;
+
+	private final Logger logger;
+	private final Marker marker;
 
 	private ConcurrentLinkedQueue<Runnable> taskQueue;
 
@@ -93,6 +103,11 @@ public class TickExecutor extends AbstractExecutorService implements ScheduledEx
 		terminationFuture = new CompletableFuture<>();
 		shutdownLock = new ReentrantReadWriteLock();
 		shuttingDown = false;
+
+		logger = LogisticsPipes.log;
+		marker = MarkerManager.getMarker("Async");
+
+		logger.info(marker, "TickExecutor started on ticking thread " + Objects.toString(tickingThread));
 	}
 
 	public TickExecutor() {
@@ -259,6 +274,7 @@ public class TickExecutor extends AbstractExecutorService implements ScheduledEx
 
 	@Override
 	public void execute(Runnable command) {
+		logger.debug("Executing " + Objects.toString(command) + " in executor " + Objects.toString(this));
 		shutdownLock.readLock().lock();
 		try {
 			checkShutDown();
@@ -272,13 +288,14 @@ public class TickExecutor extends AbstractExecutorService implements ScheduledEx
 		shutdownLock.readLock().lock();
 		try {
 			if (terminationFuture.isDone()) {
-				throw new IllegalStateException("Ticked, although terminated");
+				throw new IllegalStateException("Executor is terminated and cannot tick");
 			}
 
 			final Iterator<Runnable> runnableIter = taskQueue.iterator();
 			while (runnableIter.hasNext()) {
 				Runnable r = runnableIter.next();
 
+				logger.debug(marker, "Running task " + Objects.toString(r));
 				// exception safe, as exception is catched in the future
 				r.run();
 
@@ -294,6 +311,7 @@ public class TickExecutor extends AbstractExecutorService implements ScheduledEx
 					while (task != null && task.getExecutorScheduledTick() <= currentTick) {
 						task = scheduledTaskList.pollFirst();
 
+						logger.debug(marker, "Running scheduled task " + Objects.toString(task));
 						// exception safe, as exception is catched in the future
 						task.run();
 
@@ -319,6 +337,7 @@ public class TickExecutor extends AbstractExecutorService implements ScheduledEx
 		}
 
 		if (shuttingDown) {
+			logger.debug(marker, "Shutting down TickExecutor " + Objects.toString(this));
 			shutdownCleanup();
 		}
 		currentTick++;
@@ -347,6 +366,9 @@ public class TickExecutor extends AbstractExecutorService implements ScheduledEx
 		private TickScheduledTask(Callable<V> callable, int ticks) {
 			super(callable);
 			checkDelay(ticks);
+
+			logger.debug(marker, "Scheduled task " + Objects.toString(callable) + " (" + ticks + ")");
+
 			this.createdAt = currentTick;
 			this.ticks = ticks;
 			this.periodic = false;
@@ -359,6 +381,9 @@ public class TickExecutor extends AbstractExecutorService implements ScheduledEx
 			super(callable);
 			checkDelay(initialDelay);
 			checkDelay(ticks);
+
+			logger.debug(marker, "Scheduled repeating task " + Objects.toString(callable) + " (" + initialDelay + ", " + ticks + ")");
+
 			this.createdAt = currentTick + initialDelay;
 			this.ticks = ticks;
 			this.periodic = true;

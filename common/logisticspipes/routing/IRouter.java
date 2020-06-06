@@ -10,6 +10,8 @@ package logisticspipes.routing;
 import java.util.BitSet;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 import net.minecraft.util.EnumFacing;
 
@@ -38,13 +40,13 @@ public interface IRouter extends LPFinalSerializable {
 
 	int getDistanceToNextPowerPipe(EnumFacing dir);
 
-	boolean hasRoute(int id, boolean active, ItemIdentifier type);
+	CompletableFuture<Boolean> hasRoute(int id, boolean active, ItemIdentifier type);
 
-	ExitRoute getExitFor(int id, boolean active, ItemIdentifier type);
+	CompletableFuture<ExitRoute> getExitFor(int id, boolean active, ItemIdentifier type);
 
-	List<List<ExitRoute>> getRouteTable();
+	CompletableFuture<List<List<ExitRoute>>> getRouteTable();
 
-	List<ExitRoute> getIRoutersByCost();
+	CompletableFuture<List<ExitRoute>> getIRoutersByCost();
 
 	CoreRoutedPipe getPipe();
 
@@ -82,7 +84,7 @@ public interface IRouter extends LPFinalSerializable {
 	/* Automated Disconnection */
 	boolean isSideDisconnected(EnumFacing dir);
 
-	List<ExitRoute> getDistanceTo(IRouter r);
+	CompletableFuture<List<ExitRoute>> getDistanceTo(IRouter r);
 
 	void clearInterests();
 
@@ -95,7 +97,7 @@ public interface IRouter extends LPFinalSerializable {
 	//force-update LSA version in the network
 	void forceLsaUpdate();
 
-	List<ExitRoute> getRoutersOnSide(EnumFacing direction);
+	Stream<ExitRoute> getRoutersOnSide(EnumFacing direction);
 
 	int getDimension();
 

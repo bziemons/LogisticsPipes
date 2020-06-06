@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -55,6 +56,7 @@ import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.item.SimpleStackInventory;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.grow.GROW;
 
 public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements ISimpleInventoryEventHandler, IRequestWatcher, IGuiOpenControler, IRotationProvider {
 
@@ -167,10 +169,12 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 			IRoutedItem itemToSend = SimpleServiceLocator.routedItemHelper.createNewTravelItem(stack);
 			SimpleServiceLocator.logisticsManager.assignDestinationFor(itemToSend, getRouter().getSimpleID(), false);
 			if (itemToSend.getDestinationUUID() != null) {
-				EnumFacing dir = getRouteLayer().getOrientationForItem(itemToSend, null);
-				super.queueRoutedItem(itemToSend, dir.getOpposite());
-				spawnParticle(Particles.OrangeParticle, 4);
-				toSortInv.clearInventorySlotContents(0);
+				final CompletableFuture<EnumFacing> orientationFuture = getRouteLayer().getOrientationForItem(itemToSend, null);
+				orientationFuture.thenAccept(dir -> {
+					super.queueRoutedItem(itemToSend, dir.getOpposite());
+					spawnParticle(Particles.OrangeParticle, 4);
+					toSortInv.clearInventorySlotContents(0);
+				}).whenComplete((result, error) -> GROW.asyncComplete(result, error, "enabledUpdateEntity", this));
 			} else {
 				delay = 100;
 			}

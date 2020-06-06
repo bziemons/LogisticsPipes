@@ -2,6 +2,7 @@ package logisticspipes.pipes.basic;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -36,6 +37,7 @@ import logisticspipes.textures.Textures;
 import logisticspipes.transport.LPTravelingItem;
 import logisticspipes.transport.PipeTransportLogistics;
 import logisticspipes.utils.item.ItemIdentifier;
+import network.rs485.grow.GROW;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
@@ -368,7 +370,7 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 		};
 	}
 
-	public double getDistanceTo(int destinationint, EnumFacing ignore, ItemIdentifier ident, boolean isActive, double travled, double max, List<DoubleCoordinates> visited) {
+	public CompletableFuture<Double> getDistanceToTE(int destinationint, EnumFacing ignore, ItemIdentifier ident, boolean isActive, double travled, double max, List<DoubleCoordinates> visited) {
 		double lowest = Integer.MAX_VALUE;
 		for (EnumFacing dir : EnumFacing.VALUES) {
 			if (ignore == dir) {
@@ -382,12 +384,14 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 				}
 				visited.add(pos);
 
-				lowest = information.getDistanceTo(destinationint, dir.getOpposite(), ident, isActive, travled, Math.min(max, lowest), visited);
+				CompletableFuture<Double> distanceToTEFuture = information.getDistanceToTE(
+						destinationint, dir.getOpposite(), ident, isActive, travled, Math.min(max, lowest), visited);
+				lowest = GROW.asyncWorkAround(distanceToTEFuture);
 
 				visited.remove(pos);
 			}
 		}
-		return lowest;
+		return CompletableFuture.completedFuture(lowest);
 	}
 
 	public boolean isMultiBlock() {

@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -35,6 +36,7 @@ import logisticspipes.request.RequestTree;
 import logisticspipes.request.resources.DictResource;
 import logisticspipes.request.resources.IResource;
 import logisticspipes.request.resources.ItemResource;
+import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.order.LinkedLogisticsOrderList;
 import logisticspipes.security.SecuritySettings;
 import logisticspipes.textures.Textures;
@@ -42,6 +44,7 @@ import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.grow.GROW;
 
 @CCType(name = "LogisticsPipes:Request")
 public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IRequestItems, IRequestAPI {
@@ -82,7 +85,8 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 	public void enabledUpdateEntity() {
 		super.enabledUpdateEntity();
 		if (getWorld().getTotalWorldTime() % 1200 == 0) {
-			_history.addLast(SimpleServiceLocator.logisticsManager.getAvailableItems(getRouter().getIRoutersByCost()));
+			CompletableFuture<List<ExitRoute>> iRoutersByCost = getRouter().getIRoutersByCost();
+			_history.addLast(SimpleServiceLocator.logisticsManager.getAvailableItems(GROW.asyncWorkAround(iRoutersByCost)));
 			if (_history.size() > 20) {
 				_history.removeFirst();
 			}
@@ -105,7 +109,8 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 		if (stillNeedReplace()) {
 			return new ArrayList<>();
 		}
-		Map<ItemIdentifier, Integer> items = SimpleServiceLocator.logisticsManager.getAvailableItems(getRouter().getIRoutersByCost());
+		CompletableFuture<List<ExitRoute>> iRoutersByCost = getRouter().getIRoutersByCost();
+		Map<ItemIdentifier, Integer> items = SimpleServiceLocator.logisticsManager.getAvailableItems(GROW.asyncWorkAround(iRoutersByCost));
 		List<ItemStack> list = new ArrayList<>(items.size());
 		for (Entry<ItemIdentifier, Integer> item : items.entrySet()) {
 			ItemStack is = item.getKey().unsafeMakeNormalStack(item.getValue());
@@ -119,7 +124,8 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 		if (stillNeedReplace()) {
 			return new ArrayList<>();
 		}
-		LinkedList<ItemIdentifier> items = SimpleServiceLocator.logisticsManager.getCraftableItems(getRouter().getIRoutersByCost());
+		CompletableFuture<List<ExitRoute>> iRoutersByCost = getRouter().getIRoutersByCost();
+		LinkedList<ItemIdentifier> items = SimpleServiceLocator.logisticsManager.getCraftableItems(GROW.asyncWorkAround(iRoutersByCost));
 		List<ItemStack> list = new ArrayList<>(items.size());
 		for (ItemIdentifier item : items) {
 			ItemStack is = item.unsafeMakeNormalStack(1);
@@ -232,7 +238,8 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 	@CCCommand(description = "Asks for all available ItemIdentifier inside the Logistics Network")
 	@CCQueued
 	public List<Pair<ItemIdentifier, Integer>> getAvailableItems() {
-		Map<ItemIdentifier, Integer> items = SimpleServiceLocator.logisticsManager.getAvailableItems(getRouter().getIRoutersByCost());
+		CompletableFuture<List<ExitRoute>> iRoutersByCost = getRouter().getIRoutersByCost();
+		Map<ItemIdentifier, Integer> items = SimpleServiceLocator.logisticsManager.getAvailableItems(GROW.asyncWorkAround(iRoutersByCost));
 		List<Pair<ItemIdentifier, Integer>> list = new LinkedList<>();
 		for (Entry<ItemIdentifier, Integer> item : items.entrySet()) {
 			int amount = item.getValue();
@@ -244,13 +251,14 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 	@CCCommand(description = "Asks for all craftable ItemIdentifier inside the Logistics Network")
 	@CCQueued
 	public List<ItemIdentifier> getCraftableItems() {
-		return SimpleServiceLocator.logisticsManager.getCraftableItems(getRouter().getIRoutersByCost());
+		return SimpleServiceLocator.logisticsManager.getCraftableItems(GROW.asyncWorkAround(getRouter().getIRoutersByCost()));
 	}
 
 	@CCCommand(description = "Asks for the amount of an ItemIdentifier Id inside the Logistics Network")
 	@CCQueued
 	public int getItemAmount(ItemIdentifier item) throws Exception {
-		Map<ItemIdentifier, Integer> items = SimpleServiceLocator.logisticsManager.getAvailableItems(getRouter().getIRoutersByCost());
+		CompletableFuture<List<ExitRoute>> iRoutersByCost = getRouter().getIRoutersByCost();
+		Map<ItemIdentifier, Integer> items = SimpleServiceLocator.logisticsManager.getAvailableItems(GROW.asyncWorkAround(iRoutersByCost));
 		if (item == null) {
 			throw new Exception("Invalid ItemIdentifierID");
 		}

@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -47,6 +48,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.grow.GROW;
 
 public class ModuleCCBasedQuickSort extends ModuleQuickSort implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver {
 
@@ -69,7 +71,8 @@ public class ModuleCCBasedQuickSort extends ModuleQuickSort implements IClientIn
 		List<ExitRoute> validDestinations = new ArrayList<>(); // get the routing table
 		for (int i = routersIndex.nextSetBit(0); i >= 0; i = routersIndex.nextSetBit(i + 1)) {
 			IRouter r = SimpleServiceLocator.routerManager.getRouterUnsafe(i, false);
-			List<ExitRoute> exits = sourceRouter.getDistanceTo(r);
+			CompletableFuture<List<ExitRoute>> distanceTo = sourceRouter.getDistanceTo(r);
+			List<ExitRoute> exits = GROW.asyncWorkAround(distanceTo);
 			if (exits != null) {
 				validDestinations.addAll(exits.stream()
 						.filter(e -> e.containsFlag(PipeRoutingConnectionType.canRouteTo))
@@ -209,7 +212,8 @@ public class ModuleCCBasedQuickSort extends ModuleQuickSort implements IClientIn
 			if (r == null) {
 				continue;
 			}
-			List<ExitRoute> ways = source.getDistanceTo(r);
+			CompletableFuture<List<ExitRoute>> distanceTo = source.getDistanceTo(r);
+			List<ExitRoute> ways = GROW.asyncWorkAround(distanceTo);
 			double minDistance = Double.MAX_VALUE;
 			outer:
 			for (ExitRoute route : ways) {

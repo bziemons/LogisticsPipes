@@ -1,6 +1,7 @@
 package logisticspipes.network.packets.pipe;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -12,6 +13,7 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.routing.ExitRoute;
 import logisticspipes.utils.StaticResolve;
+import network.rs485.grow.GROW;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 
@@ -67,7 +69,8 @@ public class StatUpdate extends CoordinatesPacket {
 		stat_lifetime_recieved = pipe.stat_lifetime_recieved;
 		stat_lifetime_relayed = pipe.stat_lifetime_relayed;
 		int numentries = 0;
-		for (List<ExitRoute> route : pipe.getRouter().getRouteTable()) {
+		CompletableFuture<List<List<ExitRoute>>> routeTable = pipe.getRouter().getRouteTable();
+		for (List<ExitRoute> route : GROW.asyncWorkAround(routeTable)) {
 			if (route != null && !route.isEmpty()) {
 				++numentries;
 			}

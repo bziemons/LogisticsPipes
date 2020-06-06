@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 
+import logisticspipes.routing.ExitRoute;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
@@ -25,6 +27,7 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.item.ItemIdentifier;
+import network.rs485.grow.GROW;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 import network.rs485.logisticspipes.world.CoordinateUtils;
@@ -71,7 +74,8 @@ public class FindMostLikelyRecipeComponents extends CoordinatesPacket {
 			int max = 0;
 			for (int i = 0; i < canidates.order.size(); i++) {
 				ItemIdentifier ident = canidates.order.get(i).getItem();
-				int newAmount = SimpleServiceLocator.logisticsManager.getAmountFor(ident, pipe.getRouter().getIRoutersByCost());
+				CompletableFuture<List<ExitRoute>> iRoutersByCost = pipe.getRouter().getIRoutersByCost();
+				int newAmount = SimpleServiceLocator.logisticsManager.getAmountFor(ident, GROW.asyncWorkAround(iRoutersByCost));
 				if (newAmount > max) {
 					max = newAmount;
 					maxItemPos = i;
@@ -79,7 +83,8 @@ public class FindMostLikelyRecipeComponents extends CoordinatesPacket {
 			}
 			if (max < 64) {
 				if (craftable == null) {
-					craftable = SimpleServiceLocator.logisticsManager.getCraftableItems(pipe.getRouter().getIRoutersByCost());
+					CompletableFuture<List<ExitRoute>> iRoutersByCost = pipe.getRouter().getIRoutersByCost();
+					craftable = SimpleServiceLocator.logisticsManager.getCraftableItems(GROW.asyncWorkAround(iRoutersByCost));
 				}
 				for (ItemIdentifier craft : craftable) {
 					for (int i = 0; i < canidates.order.size(); i++) {

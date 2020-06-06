@@ -2,6 +2,7 @@ package logisticspipes.network.packets.block;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import net.minecraft.entity.player.EntityPlayer;
 
@@ -15,6 +16,7 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.routing.ExitRoute;
 import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.grow.GROW;
 
 @StaticResolve
 public class RequestRunningCraftingTasks extends CoordinatesPacket {
@@ -33,7 +35,8 @@ public class RequestRunningCraftingTasks extends CoordinatesPacket {
 
 		List<ItemIdentifierStack> items = new ArrayList<>();
 
-		for (ExitRoute r : pipe.getRouter().getIRoutersByCost()) {
+		CompletableFuture<List<ExitRoute>> iRoutersByCost = pipe.getRouter().getIRoutersByCost();
+		for (ExitRoute r : GROW.asyncWorkAround(iRoutersByCost)) {
 			if (r == null) {
 				continue;
 			}

@@ -589,7 +589,8 @@ public class ModuleCrafter extends LogisticsGuiModule implements ICraftItems, IH
 	}
 
 	public boolean isSatelliteConnected() {
-		//final List<ExitRoute> routes = getRouter().getIRoutersByCost();
+		//CompletableFuture<List<ExitRoute>> iRoutersByCost = getRouter().getIRoutersByCost();
+		//final List<ExitRoute> routes = GROW.asyncWorkAround(iRoutersByCost);
 		if (!getUpgradeManager().isAdvancedSatelliteCrafter()) {
 			if (satelliteUUID == null) {
 				return true;

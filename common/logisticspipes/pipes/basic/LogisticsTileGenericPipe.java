@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -79,6 +81,7 @@ import logisticspipes.utils.StackTraceUtil;
 import logisticspipes.utils.StackTraceUtil.Info;
 import logisticspipes.utils.TileBuffer;
 import logisticspipes.utils.item.ItemIdentifier;
+import network.rs485.grow.GROW;
 import network.rs485.logisticspipes.connection.PipeInventoryConnectionChecker;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
@@ -637,17 +640,42 @@ public class LogisticsTileGenericPipe extends LPDuctHolderTileEntity
 		return 1;
 	}
 
+	private void injectItemInner(CompletableFuture<Void> future, EnumFacing from, ItemStack toInsert, AtomicInteger lastStackSize,
+			Integer stackSize) {
+		if (stackSize < 0 || stackSize > lastStackSize.get()) {
+			String stackSizeString = "(" + stackSize + ", " + lastStackSize.get() + ")";
+			future.completeExceptionally(new IllegalArgumentException("Stack size is illegal " + stackSizeString));
+		} else if (stackSize == lastStackSize.get()) {
+			pipe.dropItem(toInsert);
+			future.complete(null);
+		} else if (stackSize != 0) {
+			toInsert.setCount(stackSize);
+			lastStackSize.set(toInsert.getCount());
+			LPTravelingItem.LPTravelingItemServer travelingItem = SimpleServiceLocator.routedItemHelper.createNewTravelItem(toInsert);
+			final CompletableFuture<Integer> newStackSizeFuture = pipe.transport.injectItem(travelingItem, from.getOpposite());
+			newStackSizeFuture
+					.thenAccept(newStackSize -> injectItemInner(future, from, toInsert, lastStackSize, newStackSize))
+					.exceptionally(throwable -> {
+						future.completeExceptionally(throwable);
+						return null;
+					});
+		} else {
+			throw new IllegalStateException();
+		}
+	}
+
 	public int injectItem(ItemStack payload, boolean doAdd, EnumFacing from) {
 		if (LogisticsBlockGenericPipe.isValid(pipe) && pipe.transport != null && isPipeConnectedCached(from)) {
 			if (doAdd && MainProxy.isServer(getWorld())) {
-				ItemStack leftStack = payload.copy();
-				int lastIterLeft;
-				do {
-					lastIterLeft = leftStack.getCount();
-					LPTravelingItem.LPTravelingItemServer travelingItem = SimpleServiceLocator.routedItemHelper.createNewTravelItem(leftStack);
-					leftStack.setCount(pipe.transport.injectItem(travelingItem, from.getOpposite()));
-				} while (leftStack.getCount() != lastIterLeft && leftStack.getCount() != 0);
-				return payload.getCount() - leftStack.getCount();
+				ItemStack toInsert = payload.copy();
+				AtomicInteger lastStackSize = new AtomicInteger(Integer.MAX_VALUE);
+
+				CompletableFuture<Void> future = new CompletableFuture<>();
+				injectItemInner(future, from, toInsert, lastStackSize, toInsert.getCount());
+				future.whenComplete((result, error) -> GROW.asyncComplete(result, error, "injectItem", this));
+
+				// accept everything (overhead will be dropped)
+				return payload.getCount();
 			}
 		}
 		return 0;
@@ -1003,22 +1031,25 @@ public class LogisticsTileGenericPipe extends LPDuctHolderTileEntity
 	}
 
 	@Override
-	public double getDistanceTo(int destinationint, EnumFacing ignore, ItemIdentifier ident, boolean isActive, double traveled, double max,
-			List<DoubleCoordinates> visited) {
+	public CompletableFuture<Double> getDistanceToTE(int destinationint, EnumFacing ignore, ItemIdentifier ident, boolean isActive, double traveled, double max,
+													 List<DoubleCoordinates> visited) {
 		if (pipe == null || traveled > max) {
-			return Integer.MAX_VALUE;
+			return CompletableFuture.completedFuture(Double.POSITIVE_INFINITY);
 		}
-		double result = pipe.getDistanceTo(destinationint, ignore, ident, isActive, traveled + getDistance(), max, visited);
-		if (result == Integer.MAX_VALUE) {
-			return result;
-		}
-		return result + (int) getDistance();
+		CompletableFuture<Double> result = pipe.getDistanceToTE(destinationint, ignore, ident, isActive, traveled + getDistance(), max, visited);
+		return result.thenApply(distance -> {
+			if (distance.isInfinite()) {
+				return distance;
+			}
+			return distance + (int) getDistance();
+		});
 	}
 
 	@Override
 	public boolean acceptItem(LPTravelingItem item, TileEntity from) {
 		if (LogisticsBlockGenericPipe.isValid(pipe) && pipe.transport != null) {
-			pipe.transport.injectItem(item, item.output);
+			pipe.transport.injectItem(item, item.output)
+					.whenComplete((result, error) -> GROW.asyncComplete(result, error, "acceptItem", this));
 			return true;
 		}
 		return false;

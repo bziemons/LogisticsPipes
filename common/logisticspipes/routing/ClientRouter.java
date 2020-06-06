@@ -1,10 +1,12 @@
 package logisticspipes.routing;
 
-import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.LinkedList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+import javax.annotation.Nullable;
 
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
@@ -57,35 +59,35 @@ public class ClientRouter implements IRouter {
 	}
 
 	@Override
-	public boolean hasRoute(int id, boolean flag, ItemIdentifier item) {
+	public CompletableFuture<Boolean> hasRoute(int id, boolean flag, ItemIdentifier item) {
 		if (LogisticsPipes.isDEBUG()) {
 			throw new UnsupportedOperationException("noClientRouting");
 		}
-		return false;
+		return CompletableFuture.completedFuture(false);
 	}
 
 	@Override
-	public ExitRoute getExitFor(int id, boolean flag, ItemIdentifier item) {
+	public CompletableFuture<ExitRoute> getExitFor(int id, boolean flag, ItemIdentifier item) {
 		if (LogisticsPipes.isDEBUG()) {
 			throw new UnsupportedOperationException("noClientRouting");
 		}
-		return null;
+		return CompletableFuture.completedFuture(null);
 	}
 
 	@Override
-	public ArrayList<List<ExitRoute>> getRouteTable() {
+	public CompletableFuture<List<List<ExitRoute>>> getRouteTable() {
 		if (LogisticsPipes.isDEBUG()) {
 			throw new UnsupportedOperationException("noClientRouting");
 		}
-		return new ArrayList<>();
+		return CompletableFuture.completedFuture(Collections.emptyList());
 	}
 
 	@Override
-	public List<ExitRoute> getIRoutersByCost() {
+	public CompletableFuture<List<ExitRoute>> getIRoutersByCost() {
 		if (LogisticsPipes.isDEBUG()) {
 			throw new UnsupportedOperationException("noClientRouting");
 		}
-		return new LinkedList<>();
+		return CompletableFuture.completedFuture(Collections.emptyList());
 	}
 
 	@Override
@@ -171,19 +173,15 @@ public class ClientRouter implements IRouter {
 	}
 
 	@Override
-	public void updateInterests() {
-
-	}
+	public void updateInterests() {}
 
 	@Override
-	public List<ExitRoute> getDistanceTo(IRouter r) {
+	public CompletableFuture<List<ExitRoute>> getDistanceTo(IRouter r) {
 		return null;
 	}
 
 	@Override
-	public void clearInterests() {
-
-	}
+	public void clearInterests() {}
 
 	@Override
 	public boolean isValidCache() {
@@ -209,7 +207,7 @@ public class ClientRouter implements IRouter {
 	}
 
 	@Override
-	public List<ExitRoute> getRoutersOnSide(EnumFacing exitOrientation) {
+	public @Nullable Stream<ExitRoute> getRoutersOnSide(EnumFacing exitOrientation) {
 		return null;
 	}
 

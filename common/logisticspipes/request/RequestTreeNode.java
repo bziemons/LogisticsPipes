@@ -15,6 +15,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 
 import lombok.Getter;
 
@@ -36,6 +37,7 @@ import logisticspipes.routing.order.IOrderInfoProvider.ResourceType;
 import logisticspipes.routing.order.LinkedLogisticsOrderList;
 import logisticspipes.routing.order.LogisticsOrderManager;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.grow.GROW;
 
 public class RequestTreeNode {
 
@@ -98,7 +100,8 @@ public class RequestTreeNode {
 				continue; //Skip Routers without a valid pipe
 			}
 
-			List<ExitRoute> e = destination.getDistanceTo(r);
+			CompletableFuture<List<ExitRoute>> distanceTo = destination.getDistanceTo(r);
+			List<ExitRoute> e = GROW.asyncWorkAround(distanceTo);
 			if (e != null) {
 				validSources.addAll(e);
 			}
@@ -368,11 +371,13 @@ public class RequestTreeNode {
 				continue;
 			}
 			boolean valid = false;
-			List<ExitRoute> sources = extraPromise.getProvider().getRouter().getRouteTable().get(getRequestType().getRouter().getSimpleID());
+			CompletableFuture<List<List<ExitRoute>>> routeTable = extraPromise.getProvider().getRouter().getRouteTable();
+			List<ExitRoute> sources = GROW.asyncWorkAround(routeTable).get(getRequestType().getRouter().getSimpleID());
 			outer:
 			for (ExitRoute source : sources) {
 				if (source != null && source.containsFlag(PipeRoutingConnectionType.canRouteTo)) {
-					for (ExitRoute node : getRequestType().getRouter().getIRoutersByCost()) {
+					CompletableFuture<List<ExitRoute>> iRoutersByCost = getRequestType().getRouter().getIRoutersByCost();
+						for (ExitRoute node : GROW.asyncWorkAround(iRoutersByCost)) {
 						if (node.destination == extraPromise.getProvider().getRouter()) {
 							if (node.containsFlag(PipeRoutingConnectionType.canRequestFrom)) {
 								valid = true;
@@ -402,13 +407,14 @@ public class RequestTreeNode {
 				continue; //Skip Routers without a valid pipe
 			}
 
-			List<ExitRoute> e = getRequestType().getRouter().getDistanceTo(r);
+			CompletableFuture<List<ExitRoute>> distanceTo = getRequestType().getRouter().getDistanceTo(r);
+			List<ExitRoute> e = GROW.asyncWorkAround(distanceTo);
 			if (e != null) {
 				validSources.addAll(e);
 			}
 		}
 		workWeightedSorter wSorter = new workWeightedSorter(0); // distance doesn't matter, because ingredients have to be delivered to the crafter, and we can't tell how long that will take.
-		Collections.sort(validSources, wSorter);
+		validSources.sort(wSorter);
 
 		List<Pair<ICraftingTemplate, List<IFilter>>> allCraftersForItem = RequestTreeNode.getCrafters(getRequestType(), validSources);
 

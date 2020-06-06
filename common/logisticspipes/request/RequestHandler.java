@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -28,11 +29,13 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.request.RequestTree.ActiveRequestType;
 import logisticspipes.request.resources.IResource;
+import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.order.LinkedLogisticsOrderList;
 import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.FluidIdentifierStack;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.grow.GROW;
 
 public class RequestHandler {
 
@@ -94,13 +97,14 @@ public class RequestHandler {
 		Map<ItemIdentifier, Integer> _availableItems;
 		LinkedList<ItemIdentifier> _craftableItems;
 
+		CompletableFuture<List<ExitRoute>> iRoutersByCost = pipe.getRouter().getIRoutersByCost();
 		if (option == DisplayOptions.SupplyOnly || option == DisplayOptions.Both) {
-			_availableItems = SimpleServiceLocator.logisticsManager.getAvailableItems(pipe.getRouter().getIRoutersByCost());
+			_availableItems = SimpleServiceLocator.logisticsManager.getAvailableItems(GROW.asyncWorkAround(iRoutersByCost));
 		} else {
 			_availableItems = new HashMap<>();
 		}
 		if (option == DisplayOptions.CraftOnly || option == DisplayOptions.Both) {
-			_craftableItems = SimpleServiceLocator.logisticsManager.getCraftableItems(pipe.getRouter().getIRoutersByCost());
+			_craftableItems = SimpleServiceLocator.logisticsManager.getCraftableItems(GROW.asyncWorkAround(iRoutersByCost));
 		} else {
 			_craftableItems = new LinkedList<>();
 		}
@@ -216,14 +220,14 @@ public class RequestHandler {
 	}
 
 	public static void refreshFluid(EntityPlayer player, CoreRoutedPipe pipe) {
-		TreeSet<FluidIdentifierStack> _allItems = SimpleServiceLocator.logisticsFluidManager.getAvailableFluid(pipe.getRouter().getIRoutersByCost());
+		CompletableFuture<List<ExitRoute>> iRoutersByCost = pipe.getRouter().getIRoutersByCost();
+		TreeSet<FluidIdentifierStack> _allItems = SimpleServiceLocator.logisticsFluidManager.getAvailableFluid(GROW.asyncWorkAround(iRoutersByCost));
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OrdererContent.class)
 						.setIdentSet(
 								_allItems.stream()
 										.map(item -> new ItemIdentifierStack(item.getFluid().getItemIdentifier(), item.getAmount()))
 										.collect(Collectors.toCollection(TreeSet::new))
-						)
-				, player);
+						), player);
 	}
 
 	public static void requestFluid(final EntityPlayer player, final ItemIdentifierStack stack, CoreRoutedPipe pipe, IRequestFluid requester) {

@@ -42,7 +42,6 @@ import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.proxy.interfaces.IProxy;
 import logisticspipes.routing.debug.RoutingTableDebugUpdateThread;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider;
-import logisticspipes.ticks.RoutingTableUpdateThread;
 import logisticspipes.utils.OrientationsUtil;
 import logisticspipes.utils.PlayerCollectionList;
 
@@ -75,7 +74,7 @@ public class MainProxy {
 	}
 
 	private static Side getEffectiveSide(Thread thr) {
-		if (thr.getName().equals("Server thread") || (thr instanceof RoutingTableUpdateThread) || (thr instanceof RoutingTableDebugUpdateThread)) {
+		if (thr.getName().equals("Server thread") || (thr instanceof RoutingTableDebugUpdateThread)) {
 			return Side.SERVER;
 		}
 		if (SimpleServiceLocator.ccProxy != null && SimpleServiceLocator.ccProxy.isLuaThread(thr)) {

@@ -15,12 +15,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -126,6 +128,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.grow.GROW;
 import network.rs485.logisticspipes.connection.NeighborTileEntity;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
@@ -252,10 +255,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 	}
 
 	private void sendRoutedItem(IRoutedItem routedItem, EnumFacing from) {
-
-		if (from == null) {
-			throw new NullPointerException();
-		}
+		assert from != null : "from may not be null";
 
 		transport.injectItem(routedItem, from.getOpposite());
 
@@ -277,7 +277,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 
 	private void notifyOfSend(ItemRoutingInformation routedItem) {
 		_inTransitToMe.add(routedItem);
-		//LogisticsPipes.log.info("Sending: "+routedItem.getIDStack().getItem().getFriendlyName());
+		//LogisticsPipes.log.info("Sending: " + routedItem.getItem().getFriendlyName());
 	}
 
 	public void notifyOfReroute(ItemRoutingInformation routedItem) {
@@ -470,68 +470,105 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		if (!(r instanceof ServerRouter)) {
 			return;
 		}
-		System.out.println("***");
-		System.out.println("---------Interests---------------");
+		System.out.printf("***%n");
+		System.out.printf("---------Interests---------------%n");
 		for (Entry<ItemIdentifier, Set<IRouter>> i : ServerRouter.getInterestedInSpecifics().entrySet()) {
-			System.out.print(i.getKey().getFriendlyName() + ":");
-			for (IRouter j : i.getValue()) {
-				System.out.print(j.getSimpleID() + ",");
+			System.out.print(i.getKey().getFriendlyName() + ": ");
+			{
+				StringBuilder sb = new StringBuilder();
+				boolean first = true;
+				for (IRouter j : i.getValue()) {
+					if (first) {
+						first = false;
+					} else {
+						sb.append(", ");
+					}
+					sb.append(j.getSimpleID());
+				}
+				System.out.printf("%s%n", sb.toString());
 			}
-			System.out.println();
 		}
 
-		System.out.print("ALL ITEMS:");
-		for (IRouter j : ServerRouter.getInterestedInGeneral()) {
-			System.out.print(j.getSimpleID() + ",");
+		System.out.print("ALL ITEMS: ");
+		{
+			StringBuilder sb = new StringBuilder();
+			boolean first = true;
+			for (IRouter j : ServerRouter.getInterestedInGeneral()) {
+				if (first) {
+					first = false;
+				} else {
+					sb.append(", ");
+				}
+				sb.append(j.getSimpleID());
+			}
+			System.out.printf("%s%n", sb.toString());
 		}
-		System.out.println();
 
 		ServerRouter sr = (ServerRouter) r;
 
-		System.out.println(r.toString());
-		System.out.println("---------CONNECTED TO---------------");
+		System.out.printf("%s%n", r.toString());
+		System.out.printf("---------CONNECTED TO---------------%n");
 		for (CoreRoutedPipe adj : sr._adjacent.keySet()) {
-			System.out.println(adj.getRouter().getSimpleID());
+			System.out.printf("%s%n", adj.getRouter().getSimpleID());
 		}
-		System.out.println();
-		System.out.println("========DISTANCE TABLE==============");
-		for (ExitRoute n : r.getIRoutersByCost()) {
-			System.out
-					.println(n.destination.getSimpleID() + " @ " + n.distanceToDestination + " -> " + n.connectionDetails + "(" + n.destination.getId() + ")");
-		}
-		System.out.println();
-		System.out.println("*******EXIT ROUTE TABLE*************");
-		List<List<ExitRoute>> table = r.getRouteTable();
-		for (int i = 0; i < table.size(); i++) {
-			if (table.get(i) != null) {
-				if (table.get(i).size() > 0) {
-					System.out.println(i + " -> " + table.get(i).get(0).destination.getSimpleID());
-					for (ExitRoute route : table.get(i)) {
-						System.out.println("\t\t via " + route.exitOrientation + "(" + route.distanceToDestination + " distance)");
+		System.out.printf("%n");
+		final CompletableFuture<List<ExitRoute>> routersByCostFuture = r.getIRoutersByCost();
+		routersByCostFuture.thenAccept(exitRoutes -> {
+			if (exitRoutes == null) {
+				System.out.printf("========NO DISTANCE TABLE==============%n");
+				System.out.printf("null%n");
+			} else {
+				System.out.printf("========DISTANCE TABLE==============%n");
+				for (ExitRoute n : exitRoutes) {
+					if (n.destination == null) {
+						System.out.printf("Route %s has null destination!%n", n.toString());
+					} else {
+						System.out.printf("%d @ %s -> %s(%s)%n", n.destination.getSimpleID(), n.distanceToDestination, n.connectionDetails, n.destination.getId());
 					}
 				}
 			}
-		}
-		System.out.println();
-		System.out.println("++++++++++CONNECTIONS+++++++++++++++");
-		System.out.println(Arrays.toString(EnumFacing.VALUES));
-		System.out.println(Arrays.toString(sr.sideDisconnected));
-		System.out.println(Arrays.toString(container.pipeConnectionsBuffer));
-		System.out.println();
-		System.out.println("~~~~~~~~~~~~~~~POWER~~~~~~~~~~~~~~~~");
-		System.out.println(r.getPowerProvider());
-		System.out.println();
-		System.out.println("~~~~~~~~~~~SUBSYSTEMPOWER~~~~~~~~~~~");
-		System.out.println(r.getSubSystemPowerProvider());
-		System.out.println();
-		if (_orderItemManager != null) {
-			System.out.println("################ORDERDUMP#################");
-			_orderItemManager.dump();
-		}
-		System.out.println("################END#################");
-		refreshConnectionAndRender(true);
-		System.out.print("");
-		sr.CreateRouteTable(Integer.MAX_VALUE);
+			System.out.printf("%n");
+
+			final CompletableFuture<List<List<ExitRoute>>> routingTableFuture = r.getRouteTable();
+			routingTableFuture.thenAccept(routingTable -> {
+				if (routingTable == null) {
+					System.out.printf("*******NO EXIT ROUTE TABLE*************%n");
+					System.out.printf("null%n");
+				} else {
+					System.out.printf("*******EXIT ROUTE TABLE*************%n");
+					for (int i = 0; i < routingTable.size(); i++) {
+						if (routingTable.get(i) != null) {
+							if (routingTable.get(i).size() > 0) {
+								System.out.printf("%s -> %s%n", i, routingTable.get(i).get(0).destination.getSimpleID());
+								for (ExitRoute route : routingTable.get(i)) {
+									System.out.printf("\t\t via %s (%s distance)%n", route.exitOrientation, route.distanceToDestination);
+								}
+							}
+						}
+					}
+				}
+				System.out.printf("%n");
+				System.out.printf("++++++++++CONNECTIONS+++++++++++++++%n");
+				System.out.printf("%s%n", Arrays.toString(EnumFacing.VALUES));
+				System.out.printf("%s%n", Arrays.toString(sr.sideDisconnected));
+				System.out.printf("%s%n", Arrays.toString(container.pipeConnectionsBuffer));
+				System.out.printf("%n");
+				System.out.printf("~~~~~~~~~~~~~~~POWER~~~~~~~~~~~~~~~~%n");
+				System.out.printf("%s%n", Objects.toString(r.getPowerProvider()));
+				System.out.printf("%n");
+				System.out.printf("~~~~~~~~~~~SUBSYSTEMPOWER~~~~~~~~~~~%n");
+				System.out.printf("%s%n", Objects.toString(r.getSubSystemPowerProvider()));
+				System.out.printf("%n");
+				if (_orderItemManager != null) {
+					System.out.printf("################ORDERDUMP#################%n");
+					_orderItemManager.dump();
+				}
+				System.out.printf("################END#################%n");
+				refreshConnectionAndRender(true);
+				System.out.printf("%n");
+				sr.CreateRouteTable(Integer.MAX_VALUE);
+			}).whenComplete((result, error) -> GROW.asyncComplete(result, error, "doDebugStuff", this));
+		}).whenComplete((result, error) -> GROW.asyncComplete(result, error, "doDebugStuff", this));
 	}
 
 	// end FromBaseRoutingLogic
@@ -1385,34 +1422,38 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 	@CCDirectCall
 	public void sendMessage(final Double computerId, final Object message) {
 		int sourceId = -1;
-		if (container instanceof LogisticsTileGenericPipe) {
+		if (container != null) {
 			sourceId = SimpleServiceLocator.ccProxy.getLastCCID(container);
 		}
 		final int fSourceId = sourceId;
 		BitSet set = new BitSet(ServerRouter.getBiggestSimpleID());
-		getRouter().getIRoutersByCost().stream()
+		final CompletableFuture<List<ExitRoute>> routersByCostFuture = getRouter().getIRoutersByCost();
+		routersByCostFuture.thenAccept(exitRoutes -> exitRoutes.stream()
 				.filter(exit -> !set.get(exit.destination.getSimpleID()))
 				.forEach(exit -> {
 					exit.destination.queueTask(10, (pipe, router1) -> pipe.handleMesssage(computerId.intValue(), message, fSourceId));
 					set.set(exit.destination.getSimpleID());
-				});
+				})
+		).whenComplete((result, error) -> GROW.asyncComplete(result, error, "sendMessage", this));
 	}
 
 	@CCCommand(description = "Sends a broadcast message to all Computer connected to this LP network. Event: " + CCConstants.LP_CC_BROADCAST_EVENT)
 	@CCDirectCall
 	public void sendBroadcast(final String message) {
 		int sourceId = -1;
-		if (container instanceof LogisticsTileGenericPipe) {
+		if (container != null) {
 			sourceId = SimpleServiceLocator.ccProxy.getLastCCID(container);
 		}
 		final int fSourceId = sourceId;
 		BitSet set = new BitSet(ServerRouter.getBiggestSimpleID());
-		getRouter().getIRoutersByCost().stream()
+		final CompletableFuture<List<ExitRoute>> routersByCostFuture = getRouter().getIRoutersByCost();
+		routersByCostFuture.thenAccept(exitRoutes -> exitRoutes.stream()
 				.filter(exit -> !set.get(exit.destination.getSimpleID()))
 				.forEach(exit -> {
 					exit.destination.queueTask(10, (pipe, router1) -> pipe.handleBroadcast(message, fSourceId));
 					set.set(exit.destination.getSimpleID());
-				});
+				})
+		).whenComplete((result, error) -> GROW.asyncComplete(result, error, "sendBroadcast", this));
 	}
 
 	@CCCommand(description = "Returns the access to the pipe of the givven router UUID")
@@ -1785,21 +1826,27 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 	}
 
 	@Override
-	public double getDistanceTo(int destinationint, EnumFacing ignore, ItemIdentifier ident, boolean isActive, double traveled, double max,
-			List<DoubleCoordinates> visited) {
+	public CompletableFuture<Double> getDistanceToTE(int destinationint, EnumFacing ignore, ItemIdentifier ident, boolean isActive, double traveled, double max,
+													 List<DoubleCoordinates> visited) {
+		final double unreachableValue = Double.POSITIVE_INFINITY;
+
+		CompletableFuture<Double> distanceFuture = CompletableFuture.completedFuture(unreachableValue);
 		if (!stillNeedReplace) {
 			if (getRouterId() == destinationint) {
-				return 0;
+				return CompletableFuture.completedFuture(0D);
 			}
-			ExitRoute route = getRouter().getExitFor(destinationint, isActive, ident);
-			if (route != null && route.exitOrientation != ignore) {
-				if (route.distanceToDestination + traveled >= max) {
-					return Integer.MAX_VALUE;
+			final CompletableFuture<ExitRoute> routeFuture = getRouter().getExitFor(destinationint, isActive, ident);
+			distanceFuture = routeFuture.thenApply(exitRoute -> {
+				if (exitRoute != null && exitRoute.exitOrientation != ignore) {
+					if (exitRoute.distanceToDestination + traveled >= max) {
+						return unreachableValue;
+					}
+					return exitRoute.distanceToDestination;
 				}
-				return route.distanceToDestination;
-			}
+				return unreachableValue;
+			});
 		}
-		return Integer.MAX_VALUE;
+		return distanceFuture;
 	}
 
 	public void triggerConnectionCheck() {

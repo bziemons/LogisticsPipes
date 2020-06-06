@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -42,6 +43,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.grow.GROW;
 
 public class LogisticsManager implements ILogisticsManager {
 
@@ -71,7 +73,8 @@ public class LogisticsManager implements ILogisticsManager {
 		List<ExitRoute> validDestinations = new ArrayList<>(); // get the routing table
 		for (int i = routersIndex.nextSetBit(0); i >= 0; i = routersIndex.nextSetBit(i + 1)) {
 			IRouter r = SimpleServiceLocator.routerManager.getRouterUnsafe(i, false);
-			List<ExitRoute> exits = sourceRouter.getDistanceTo(r);
+			CompletableFuture<List<ExitRoute>> distanceTo = sourceRouter.getDistanceTo(r);
+			List<ExitRoute> exits = GROW.asyncWorkAround(distanceTo);
 			if (exits != null) {
 				validDestinations
 						.addAll(exits.stream().filter(e -> e.containsFlag(PipeRoutingConnectionType.canRouteTo))
@@ -114,7 +117,7 @@ public class LogisticsManager implements ILogisticsManager {
 		if (router == null) {
 			return null;
 		}
-		Triplet<Integer, SinkReply, List<IFilter>> search = getBestReply(stack, router, router.getIRoutersByCost(), excludeSource, new ArrayList<>(), null, true);
+		Triplet<Integer, SinkReply, List<IFilter>> search = getBestReply(stack, router, GROW.asyncWorkAround(router.getIRoutersByCost()), excludeSource, new ArrayList<>(), null, true);
 		if (search.getValue2() == null) {
 			return null;
 		}
@@ -250,7 +253,8 @@ public class LogisticsManager implements ILogisticsManager {
 		List<ExitRoute> validDestinations = new ArrayList<>(); // get the routing table
 		for (int i = routersIndex.nextSetBit(0); i >= 0; i = routersIndex.nextSetBit(i + 1)) {
 			IRouter r = SimpleServiceLocator.routerManager.getRouterUnsafe(i, false);
-			List<ExitRoute> exits = sourceRouter.getDistanceTo(r);
+			CompletableFuture<List<ExitRoute>> distanceTo = sourceRouter.getDistanceTo(r);
+			List<ExitRoute> exits = GROW.asyncWorkAround(distanceTo);
 			if (exits != null) {
 				validDestinations
 						.addAll(exits.stream().filter(e -> e.containsFlag(PipeRoutingConnectionType.canRouteTo))

@@ -11,9 +11,14 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.item.ItemStack;
@@ -66,6 +71,7 @@ import logisticspipes.utils.SyncList;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.grow.GROW;
 import network.rs485.logisticspipes.util.items.ItemStackLoader;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
@@ -87,6 +93,7 @@ public class PipeTransportLogistics {
 	public LogisticsTileGenericPipe container;
 	public final boolean isRouted;
 	public final int MAX_DESTINATION_UNREACHABLE_BUFFER = 30;
+	private boolean bufferIsBeingUpdated = false;
 
 	public PipeTransportLogistics(boolean isRouted) {
 		this.isRouted = isRouted;
@@ -107,7 +114,8 @@ public class PipeTransportLogistics {
 			// items are crossing a chunk boundary, mark both chunks modified
 			if (container.getPos().getX() >> 4 != tile.getPos().getX() >> 4 || container.getPos().getZ() >> 4 != tile.getPos().getZ() >> 4) {
 				chunk.markDirty();
-				if (tile instanceof LogisticsTileGenericPipe && ((LogisticsTileGenericPipe) tile).pipe != null && ((LogisticsTileGenericPipe) tile).pipe.transport != null && ((LogisticsTileGenericPipe) tile).pipe.transport.chunk != null) {
+				if (tile instanceof LogisticsTileGenericPipe && ((LogisticsTileGenericPipe) tile).pipe != null
+						&& ((LogisticsTileGenericPipe) tile).pipe.transport != null && ((LogisticsTileGenericPipe) tile).pipe.transport.chunk != null) {
 					((LogisticsTileGenericPipe) tile).pipe.transport.chunk.markDirty();
 				} else {
 					getWorld().getChunkFromBlockCoords(tile.getPos()).markDirty();
@@ -127,39 +135,94 @@ public class PipeTransportLogistics {
 		return (CoreRoutedPipe) container.pipe;
 	}
 
+	private void updateBuffer(CompletableFuture<Stream<Triplet<ItemIdentifierStack, Pair<Integer, Integer>, LPTravelingItemServer>>> bufferUpdateStreamFuture) {
+		bufferIsBeingUpdated = true;
+		_itemBuffer.clear();
+		bufferUpdateStreamFuture.whenComplete((tripletStream, throwable) -> {
+			if (throwable == null) {
+				_itemBuffer.addAll(tripletStream.collect(Collectors.toList()));
+			} else {
+				System.err.println("Error when updating pipe buffer");
+				throwable.printStackTrace();
+			}
+			bufferIsBeingUpdated = false;
+		});
+	}
+
+	@Nonnull
+	private CompletableFuture<Void> emptyBuffer() {
+		if (!_itemBuffer.isEmpty()) {
+			final List<Pair<CompletableFuture<Boolean>, Triplet<ItemIdentifierStack, Pair<Integer, Integer>, LPTravelingItemServer>>> collect = _itemBuffer
+					.stream()
+					.map(itemData -> {
+						Pair<CompletableFuture<Boolean> /* keep */, Triplet<ItemIdentifierStack, Pair<Integer, Integer>, LPTravelingItemServer> /* item data */>
+								result = new Pair<>(CompletableFuture.completedFuture(true), itemData);
+						int currentTimeOut = itemData.getValue2().getValue1();
+						if (currentTimeOut > 0) {
+							itemData.getValue2().setValue1(currentTimeOut - 1);
+						} else if (itemData.getValue3() != null) {
+							final CompletableFuture<Boolean> hasRouteFuture = getRoutedPipe().getRouter().hasRoute(itemData.getValue3().getDestination(),
+									itemData.getValue3().getTransportMode() == TransportMode.Active, itemData.getValue3().getItemIdentifierStack().getItem());
+
+							final CompletableFuture<Boolean> keepItemFuture = hasRouteFuture.thenApply(hasRoute -> {
+								if (hasRoute || itemData.getValue2().getValue2() > MAX_DESTINATION_UNREACHABLE_BUFFER) {
+									itemData.getValue3().setBufferCounter(itemData.getValue2().getValue2() + 1);
+									return false;
+								} else {
+									itemData.getValue2().setValue2(itemData.getValue2().getValue2() + 1);
+									itemData.getValue2().setValue1(_bufferTimeOut);
+									return true;
+								}
+							});
+							result.setValue1(keepItemFuture);
+						} else {
+							LPTravelingItemServer item = SimpleServiceLocator.routedItemHelper.createNewTravelItem(itemData.getValue1());
+							item.setDoNotBuffer(true);
+							item.setBufferCounter(itemData.getValue2().getValue2() + 1);
+							itemData.setValue3(item);
+							result.setValue1(CompletableFuture.completedFuture(false));
+						}
+						return result;
+					})
+					.collect(Collectors.toList());
+
+			final CompletableFuture<Void> finishedAllItemsFuture = CompletableFuture
+					.allOf(collect.stream().map(Pair::getValue1).toArray(CompletableFuture[]::new));
+			final CompletableFuture<Stream<Triplet<ItemIdentifierStack, Pair<Integer, Integer>, LPTravelingItemServer>>> bufferUpdateStreamFuture = new CompletableFuture<>();
+			updateBuffer(bufferUpdateStreamFuture);
+
+			return finishedAllItemsFuture.thenAccept(aVoid -> {
+				final List<Pair<Boolean, Triplet<ItemIdentifierStack, Pair<Integer, Integer>, LPTravelingItemServer>>> collect1 = collect.stream().map(pair -> {
+					try {
+						return new Pair<>(pair.getValue1().get(), pair.getValue2());
+					} catch (InterruptedException | ExecutionException e) {
+						System.err.println("Error when running over pipe buffer");
+						e.printStackTrace();
+					}
+					return null;
+				}).filter(Objects::nonNull).collect(Collectors.toList());
+
+				bufferUpdateStreamFuture.complete(collect1.stream().filter(Pair::getValue1).map(Pair::getValue2));
+
+				collect1.stream().filter(pair -> !pair.getValue1()).map(Pair::getValue2)
+						.forEach(itemData -> this.injectItem(itemData.getValue3(), EnumFacing.UP));
+			}).exceptionally(throwable -> {
+				bufferUpdateStreamFuture.completeExceptionally(throwable);
+				return null;
+			});
+		}
+		return CompletableFuture.completedFuture(null);
+	}
+
 	public void updateEntity() {
 		moveSolids();
-		if (MainProxy.isServer(getWorld())) {
-			if (!_itemBuffer.isEmpty()) {
-				List<LPTravelingItem> toAdd = new LinkedList<>();
-				Iterator<Triplet<ItemIdentifierStack, Pair<Integer, Integer>, LPTravelingItemServer>> iterator = _itemBuffer.iterator();
-				while (iterator.hasNext()) {
-					Triplet<ItemIdentifierStack, Pair<Integer, Integer>, LPTravelingItemServer> next = iterator.next();
-					int currentTimeOut = next.getValue2().getValue1();
-					if (currentTimeOut > 0) {
-						next.getValue2().setValue1(currentTimeOut - 1);
-					} else if (next.getValue3() != null) {
-						if (getRoutedPipe().getRouter().hasRoute(next.getValue3().getDestination(), next.getValue3().getTransportMode() == TransportMode.Active, next.getValue3().getItemIdentifierStack().getItem()) || next.getValue2().getValue2() > MAX_DESTINATION_UNREACHABLE_BUFFER) {
-							next.getValue3().setBufferCounter(next.getValue2().getValue2() + 1);
-							toAdd.add(next.getValue3());
-							iterator.remove();
-						} else {
-							next.getValue2().setValue2(next.getValue2().getValue2() + 1);
-							next.getValue2().setValue1(_bufferTimeOut);
-						}
-					} else {
-						LPTravelingItemServer item = SimpleServiceLocator.routedItemHelper.createNewTravelItem(next.getValue1());
-						item.setDoNotBuffer(true);
-						item.setBufferCounter(next.getValue2().getValue2() + 1);
-						toAdd.add(item);
-						iterator.remove();
-					}
-				}
-				for (LPTravelingItem item : toAdd) {
-					this.injectItem(item, EnumFacing.UP);
-				}
-			}
-			_itemBuffer.sendUpdateToWaters();
+		if (MainProxy.isServer(getWorld()) && !bufferIsBeingUpdated) {
+			final CompletableFuture<Void> bufferUpdatedFuture = emptyBuffer();
+
+			// ignore exception here:
+			// The code should only be run when previous was successfully
+			// bufferUpdatedFuture will never return exceptionally, as exceptions are handled in this::updateBuffer
+			bufferUpdatedFuture.thenAccept(aVoid -> _itemBuffer.sendUpdateToWaters());
 		}
 	}
 
@@ -172,7 +235,10 @@ public class PipeTransportLogistics {
 		}
 	}
 
-	public int injectItem(LPTravelingItemServer item, EnumFacing inputOrientation) {
+	/**
+	 * @return the amount of inserted items as a future.
+	 */
+	public CompletableFuture<Integer> injectItem(LPTravelingItemServer item, EnumFacing inputOrientation) {
 		return injectItem((LPTravelingItem) item, inputOrientation);
 	}
 
@@ -188,31 +254,7 @@ public class PipeTransportLogistics {
 		return 0.0F;
 	}
 
-	public int injectItem(LPTravelingItem item, EnumFacing inputOrientation) {
-		if (item.isCorrupted()) {
-			// Safe guard - if for any reason the item is corrupted at this
-			// stage, avoid adding it to the pipe to avoid further exceptions.
-			return 0;
-		}
-		getPipe().triggerDebug();
-
-		int originalCount = item.getItemIdentifierStack().getStackSize();
-
-		item.input = inputOrientation;
-
-		if (MainProxy.isServer(container.getWorld())) {
-			readjustSpeed((LPTravelingItemServer) item);
-			ItemRoutingInformation info1 = ((LPTravelingItemServer) item).getInfo().clone();
-			RoutingResult result = resolveDestination((LPTravelingItemServer) item);
-			item.output = result.getFace();
-			if (!result.hasRoute) {
-				return 0;
-			}
-			getPipe().debug.log("Injected Item: [" + item.input + ", " + item.output + "] (" + info1);
-		} else {
-			item.output = null;
-		}
-
+	private int injectItemInner(int originalCount, LPTravelingItem item) {
 		if (item.getPosition() >= getPipeLength()) {
 			reachedEnd(item);
 		} else {
@@ -225,8 +267,41 @@ public class PipeTransportLogistics {
 		return originalCount - item.getItemIdentifierStack().getStackSize();
 	}
 
-	public int injectItem(IRoutedItem item, EnumFacing inputOrientation) {
-		return injectItem((LPTravelingItem) SimpleServiceLocator.routedItemHelper.getServerTravelingItem(item), inputOrientation);
+	/**
+	 * @return the amount of inserted items as a future.
+	 */
+	public CompletableFuture<Integer> injectItem(LPTravelingItem item, EnumFacing inputOrientation) {
+		if (item.isCorrupted()) {
+			// Safe guard - if for any reason the item is corrupted at this
+			// stage, avoid adding it to the pipe to avoid further exceptions.
+			return CompletableFuture.completedFuture(0);
+		}
+		getPipe().triggerDebug();
+
+		int originalCount = item.getItemIdentifierStack().getStackSize();
+
+		item.input = inputOrientation;
+
+		if (MainProxy.isServer(container.getWorld())) {
+			readjustSpeed((LPTravelingItemServer) item);
+			ItemRoutingInformation info1 = ((LPTravelingItemServer) item).getInfo().clone();
+			return resolveDestination((LPTravelingItemServer) item).thenApply(result -> {
+				item.output = result.getFace();
+				if (!result.hasRoute) {
+					return 0;
+				}
+				getPipe().debug.log("Injected Item: [" + item.input + ", " + item.output + "] (" + info1);
+				return injectItemInner(originalCount, item);
+			});
+		} else {
+			item.output = null;
+			return CompletableFuture.completedFuture(injectItemInner(originalCount, item));
+		}
+	}
+
+	public CompletableFuture<Integer> injectItem(IRoutedItem item, EnumFacing inputOrientation) {
+		final LPTravelingItem travelingItem = SimpleServiceLocator.routedItemHelper.getServerTravelingItem(item);
+		return injectItem(travelingItem, inputOrientation);
 	}
 
 	/**
@@ -246,7 +321,8 @@ public class PipeTransportLogistics {
 		}
 
 		if (getPipe() instanceof IBufferItems) {
-			item.getItemIdentifierStack().setStackSize(((IBufferItems) getPipe()).addToBuffer(item.getItemIdentifierStack(), item.getAdditionalTargetInformation()));
+			item.getItemIdentifierStack()
+					.setStackSize(((IBufferItems) getPipe()).addToBuffer(item.getItemIdentifierStack(), item.getAdditionalTargetInformation()));
 			if (item.getItemIdentifierStack().getStackSize() <= 0) {
 				return;
 			}
@@ -262,26 +338,32 @@ public class PipeTransportLogistics {
 		item.input = item.output.getOpposite();
 
 		readjustSpeed(item);
-		RoutingResult result = resolveDestination(item);
-		item.output = result.getFace();
-		if (!result.hasRoute) {
-			return;
-		} else if (item.output == null) {
-			dropItem(item);
-			return;
-		}
+		resolveDestination(item).whenComplete((result, throwable) -> {
+			if (throwable == null) {
+				item.output = result.getFace();
+				if (!result.hasRoute) {
+					return;
+				} else if (item.output == null) {
+					dropItem(item);
+					return;
+				}
 
-		items.unscheduleRemoval(item);
-		if (!getPipe().isOpaque()) {
-			sendItemPacket(item);
-		}
+				items.unscheduleRemoval(item);
+				if (!getPipe().isOpaque()) {
+					sendItemPacket(item);
+				}
+			} else {
+				System.err.println("Exception when resolving destination for " + item.toString());
+				throwable.printStackTrace();
+			}
+		});
 	}
 
-	public RoutingResult resolveDestination(LPTravelingItemServer data) {
+	public CompletableFuture<RoutingResult> resolveDestination(LPTravelingItemServer data) {
 		if (isRouted) {
 			return resolveRoutedDestination(data);
 		} else {
-			return resolveUnroutedDestination(data);
+			return CompletableFuture.completedFuture(resolveUnroutedDestination(data));
 		}
 	}
 
@@ -308,8 +390,24 @@ public class PipeTransportLogistics {
 		return new RoutingResult(dirs.get(num), true);
 	}
 
-	public RoutingResult resolveRoutedDestination(LPTravelingItemServer data) {
+	private EnumFacing checkOrientation(LPTravelingItemServer data, EnumFacing orientation) {
+		if (orientation == null && !data.getDoNotBuffer() && data.getBufferCounter() < 5) {
+			_itemBuffer.add(new Triplet<>(data.getItemIdentifierStack(), new Pair<>(_bufferTimeOut, data.getBufferCounter()), null));
+			return null;
+		}
 
+		if (orientation != null && !getRoutedPipe().getRouter().isRoutedExit(orientation)) {
+			if (!isItemExitable(data.getItemIdentifierStack())) {
+				return null;
+			}
+		}
+
+		data.resetDelay();
+
+		return orientation;
+	}
+
+	private CompletableFuture<RoutingResult> resolveRoutedDestination(LPTravelingItemServer data) {
 		EnumFacing blocked = null;
 
 		if (data.getDestinationUUID() == null) {
@@ -326,36 +424,36 @@ public class PipeTransportLogistics {
 			getRoutedPipe().relayedItem(data.getItemIdentifierStack().getStackSize());
 		}
 
-		if (data.getDestination() >= 0 && !getRoutedPipe().getRouter().hasRoute(data.getDestination(), data.getTransportMode() == TransportMode.Active, data.getItemIdentifierStack().getItem()) && data.getBufferCounter() < MAX_DESTINATION_UNREACHABLE_BUFFER) {
-			_itemBuffer.add(new Triplet<>(data.getItemIdentifierStack(), new Pair<>(_bufferTimeOut, data.getBufferCounter()), data));
-			return new RoutingResult(null, false);
-		}
+		final EnumFacing finalBlocked = blocked;
+		final CompletableFuture<Boolean> hasRouteFuture = getRoutedPipe().getRouter()
+				.hasRoute(data.getDestination(), data.getTransportMode() == TransportMode.Active, data.getItemIdentifierStack().getItem());
+		final CompletableFuture<RoutingResult> directionFuture = new CompletableFuture<>();
 
-		EnumFacing value;
-		if (getRoutedPipe().stillNeedReplace() || getRoutedPipe().initialInit()) {
-			data.setDoNotBuffer(false);
-			value = null;
-		} else {
-			value = getRoutedPipe().getRouteLayer().getOrientationForItem(data, blocked);
-		}
-		if (value == null && MainProxy.isClient(getWorld())) {
-			return new RoutingResult(null, true);
-		}
-
-		if (value == null && !data.getDoNotBuffer() && data.getBufferCounter() < 5) {
-			_itemBuffer.add(new Triplet<>(data.getItemIdentifierStack(), new Pair<>(_bufferTimeOut, data.getBufferCounter()), null));
-			return new RoutingResult(null, false);
-		}
-
-		if (value != null && !getRoutedPipe().getRouter().isRoutedExit(value)) {
-			if (!isItemExitable(data.getItemIdentifierStack())) {
-				return new RoutingResult(null, false);
+		hasRouteFuture.thenAccept(hasRoute -> {
+			if (data.getDestination() >= 0 && !hasRoute && data.getBufferCounter() < MAX_DESTINATION_UNREACHABLE_BUFFER) {
+				_itemBuffer.add(new Triplet<>(data.getItemIdentifierStack(), new Pair<>(_bufferTimeOut, data.getBufferCounter()), data));
+				directionFuture.complete(null);
+				return;
 			}
-		}
 
-		data.resetDelay();
-
-		return new RoutingResult(value, true);
+			if (getRoutedPipe().stillNeedReplace() || getRoutedPipe().initialInit()) {
+				data.setDoNotBuffer(false);
+				directionFuture.complete(new RoutingResult(checkOrientation(data, null), false));
+			} else {
+				getRoutedPipe().getRouteLayer().getOrientationForItem(data, finalBlocked)
+						.whenComplete((orientation, error) -> {
+							if (error == null) {
+								directionFuture.complete(new RoutingResult(checkOrientation(data, orientation), true));
+							} else {
+								directionFuture.completeExceptionally(error);
+							}
+						});
+			}
+		}).exceptionally(error -> {
+			directionFuture.completeExceptionally(error);
+			return null;
+		});
+		return directionFuture;
 	}
 
 	public void readFromNBT(NBTTagCompound nbt) {
@@ -384,9 +482,11 @@ public class PipeTransportLogistics {
 		NBTTagList nbttaglist2 = nbt.getTagList("buffercontents", 10);
 		for (int i = 0; i < nbttaglist2.tagCount(); i++) {
 			NBTTagCompound nbttagcompound1 = nbttaglist2.getCompoundTagAt(i);
-			_itemBuffer.add(new Triplet<>(ItemIdentifierStack.getFromStack(ItemStackLoader.loadAndFixItemStackFromNBT(nbttagcompound1)), new Pair<>(_bufferTimeOut, 0), null));
+			_itemBuffer.add(new Triplet<>(
+					ItemIdentifierStack.getFromStack(ItemStackLoader.loadAndFixItemStackFromNBT(nbttagcompound1)),
+					new Pair<>(_bufferTimeOut, 0),
+					null));
 		}
-
 	}
 
 	public void writeToNBT(NBTTagCompound nbt) {
@@ -529,6 +629,7 @@ public class PipeTransportLogistics {
 										int added = ((ISpecialInsertion) util).addToSlot(toAdd, slot);
 										arrivingItem.getItemIdentifierStack().lowerStackSize(added);
 										if (added > 0) {
+											tookSome = true;
 										}
 									}
 								}
@@ -547,7 +648,8 @@ public class PipeTransportLogistics {
 						if (slotManager.hasSneakyUpgrade()) {
 							insertion = slotManager.getSneakyOrientation();
 						}
-						ItemStack added = InventoryHelper.getTransactorFor(tile, insertion).add(arrivingItem.getItemIdentifierStack().makeNormalStack(), insertion, true);
+						ItemStack added = InventoryHelper.getTransactorFor(tile, insertion)
+							.add(arrivingItem.getItemIdentifierStack().makeNormalStack(), insertion, true);
 
 						arrivingItem.getItemIdentifierStack().lowerStackSize(added.getCount());
 
@@ -578,7 +680,8 @@ public class PipeTransportLogistics {
 							if (insertion == null) {
 								continue;
 							}
-							ItemStack added = InventoryHelper.getTransactorFor(tile, insertion).add(arrivingItem.getItemIdentifierStack().makeNormalStack(), insertion, true);
+							ItemStack added = InventoryHelper.getTransactorFor(tile, insertion)
+								.add(arrivingItem.getItemIdentifierStack().makeNormalStack(), insertion, true);
 
 							arrivingItem.getItemIdentifierStack().lowerStackSize(added.getCount());
 							if (added.getCount() > 0) {
@@ -635,7 +738,8 @@ public class PipeTransportLogistics {
 
 	public final boolean canPipeConnect_internal(TileEntity tile, EnumFacing side) {
 		if (tile instanceof LogisticsTileGenericPipe) {
-			if (((LogisticsTileGenericPipe) tile).pipe != null && ((LogisticsTileGenericPipe) tile).pipe.isHSTube() && !((LogisticsTileGenericPipe) tile).pipe.actAsNormalPipe()) {
+			if (((LogisticsTileGenericPipe) tile).pipe != null && ((LogisticsTileGenericPipe) tile).pipe.isHSTube() && !((LogisticsTileGenericPipe) tile).pipe
+					.actAsNormalPipe()) {
 				return false;
 			}
 		}
@@ -651,7 +755,8 @@ public class PipeTransportLogistics {
 			}
 			if (SimpleServiceLocator.betterStorageProxy.isBetterStorageCrate(tile) || SimpleServiceLocator.factorizationProxy.isBarral(tile)
 					|| SimpleServiceLocator.enderIOProxy.isItemConduit(tile, side.getOpposite())
-					|| (getPipe().getUpgradeManager().hasRFPowerSupplierUpgrade() && SimpleServiceLocator.powerProxy.isEnergyReceiver(tile, side.getOpposite())) || (getPipe().getUpgradeManager().getIC2PowerLevel() > 0 && SimpleServiceLocator.IC2Proxy.isEnergySink(tile))) {
+					|| (getPipe().getUpgradeManager().hasRFPowerSupplierUpgrade() && SimpleServiceLocator.powerProxy.isEnergyReceiver(tile, side.getOpposite())) || (
+					getPipe().getUpgradeManager().getIC2PowerLevel() > 0 && SimpleServiceLocator.IC2Proxy.isEnergySink(tile))) {
 				return true;
 			}
 			IInventoryUtil util = SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(tile, side.getOpposite());
@@ -777,10 +882,12 @@ public class PipeTransportLogistics {
 	private void sendItemPacket(LPTravelingItemServer item) {
 		if (MainProxy.isAnyoneWatching(container.getPos(), getWorld().provider.getDimension())) {
 			if (!LPTravelingItem.clientSideKnownIDs.get(item.getId())) {
-				MainProxy.sendPacketToAllWatchingChunk(container, (PacketHandler.getPacket(PipeContentPacket.class).setItem(item.getItemIdentifierStack()).setTravelId(item.getId())));
+				MainProxy.sendPacketToAllWatchingChunk(container,
+						(PacketHandler.getPacket(PipeContentPacket.class).setItem(item.getItemIdentifierStack()).setTravelId(item.getId())));
 				LPTravelingItem.clientSideKnownIDs.set(item.getId());
 			}
-			MainProxy.sendPacketToAllWatchingChunk(container, (PacketHandler.getPacket(PipePositionPacket.class).setSpeed(item.getSpeed()).setPosition(item.getPosition()).setInput(item.input).setOutput(item.output).setTravelId(item.getId()).setYaw(item.getYaw()).setTilePos(container)));
+			MainProxy.sendPacketToAllWatchingChunk(container, (PacketHandler.getPacket(PipePositionPacket.class).setSpeed(item.getSpeed()).setPosition(item.getPosition()).setInput(item.input)
+							.setOutput(item.output).setTravelId(item.getId()).setYaw(item.getYaw()).setTilePos(container)));
 		}
 	}
 
@@ -815,7 +922,9 @@ public class PipeTransportLogistics {
 	}
 
 	public void sendItem(ItemStack stackToSend) {
-		this.injectItem((LPTravelingItem) SimpleServiceLocator.routedItemHelper.createNewTravelItem(stackToSend), EnumFacing.UP);
+		final LPTravelingItem travelItem = SimpleServiceLocator.routedItemHelper.createNewTravelItem(stackToSend);
+		injectItem(travelItem, EnumFacing.UP)
+				.whenComplete((result, error) -> GROW.asyncComplete(result, error, "sendItem", this));
 	}
 
 	public World getWorld() {

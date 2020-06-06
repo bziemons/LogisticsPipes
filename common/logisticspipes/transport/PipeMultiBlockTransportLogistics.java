@@ -1,6 +1,7 @@
 package logisticspipes.transport;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
@@ -72,11 +73,11 @@ public class PipeMultiBlockTransportLogistics extends PipeTransportLogistics {
 	}
 
 	@Override
-	public RoutingResult resolveDestination(LPTravelingItemServer data) {
+	public CompletableFuture<RoutingResult> resolveDestination(LPTravelingItemServer data) {
 		if (getMultiPipe() == null) {
-			return new RoutingResult(null, false);
+			return CompletableFuture.completedFuture(new RoutingResult(null, false));
 		}
-		return new RoutingResult(getMultiPipe().getExitForInput(data.input.getOpposite()), true);
+		return CompletableFuture.completedFuture(new RoutingResult(getMultiPipe().getExitForInput(data.input.getOpposite()), true));
 	}
 
 	@Override

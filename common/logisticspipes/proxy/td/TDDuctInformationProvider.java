@@ -1,8 +1,13 @@
 package logisticspipes.proxy.td;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import net.minecraft.tileentity.TileEntity;
@@ -22,18 +27,18 @@ import cofh.thermaldynamics.multiblock.RouteCache;
 import logisticspipes.asm.td.ILPTravelingItemInfo;
 import logisticspipes.asm.te.ILPTEInformation;
 import logisticspipes.interfaces.routing.IFilter;
-import logisticspipes.logisticspipes.IRoutedItem.TransportMode;
+import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.IRouter;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider;
 import logisticspipes.routing.pathfinder.IRouteProvider;
 import logisticspipes.transport.LPTravelingItem;
-import logisticspipes.transport.LPTravelingItem.LPTravelingItemServer;
-import logisticspipes.utils.CacheHolder.CacheTypes;
+import logisticspipes.utils.CacheHolder;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.grow.GROW;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
@@ -168,50 +173,70 @@ public class TDDuctInformationProvider implements IPipeInformationProvider, IRou
 	}
 
 	@Override
-	public double getDistanceTo(int destinationint, EnumFacing ignore, ItemIdentifier ident, boolean isActive, double traveled, double max,
+	public CompletableFuture<Double> getDistanceToTE(int destinationint, EnumFacing ignore, ItemIdentifier ident, boolean isActive, double traveled,
+													 double max,
 			List<DoubleCoordinates> visited) {
 		if (traveled >= max) {
-			return Integer.MAX_VALUE;
+			return CompletableFuture.completedFuture(Double.POSITIVE_INFINITY);
 		}
 		IRouter destination = SimpleServiceLocator.routerManager.getRouter(destinationint);
 		if (destination == null) {
-			return Integer.MAX_VALUE;
+			return CompletableFuture.completedFuture(Double.POSITIVE_INFINITY);
 		}
-		LinkedList<Route<DuctUnitItem, GridItem>> paramIterable = duct.getDuct(DuctToken.ITEMS)
-				.getCache(true).outputRoutes;
-		double closesedConnection = Integer.MAX_VALUE;
-		for (Route<DuctUnitItem, GridItem> localRoute1 : paramIterable) {
-			if (localRoute1.endPoint instanceof LPDuctUnitItem) {
-				LPDuctUnitItem lpDuct = (LPDuctUnitItem) localRoute1.endPoint;
 
-				if (traveled + localRoute1.pathWeight > max) {
-					continue;
-				}
+		double closesedConnection = Double.POSITIVE_INFINITY;
+		final Stream<CompletableFuture<Double>> distanceFutureStream = duct.getCache(true).outputRoutes.stream()
+				.filter(route -> route.endPoint instanceof LPItemDuct)
+				.map(route -> {
+					LPItemDuct lpDuct = (LPItemDuct) route.endPoint;
 
-				DoubleCoordinates pos = new DoubleCoordinates((TileEntity) lpDuct.pipe);
-				if (visited.contains(pos)) {
-					continue;
-				}
-				visited.add(pos);
+					if (traveled + route.pathWeight > max) {
+						return null;
+					}
 
-				double distance = lpDuct.pipe
-						.getDistanceTo(destinationint, EnumFacing.getFront(localRoute1.pathDirections.get(localRoute1.pathDirections.size() - 1)).getOpposite(),
-								ident, isActive, traveled + localRoute1.pathWeight, Math.min(max, closesedConnection), visited);
+					DoubleCoordinates pos = new DoubleCoordinates((TileEntity) lpDuct.pipe);
+					if (visited.contains(pos)) {
+						return null;
+					}
+					visited.add(pos);
 
-				visited.remove(pos);
+					final EnumFacing opposite = EnumFacing.getFront(route.pathDirections.get(route.pathDirections.size() - 1)).getOpposite();
+					final CompletableFuture<Double> distanceFuture = lpDuct.pipe
+						.getDistanceToTE(destinationint, opposite, ident, isActive, traveled + route.pathWeight, Math.min(max, closesedConnection), visited);
 
-				if (distance != Integer.MAX_VALUE && distance + localRoute1.pathWeight < closesedConnection) {
-					closesedConnection = distance + localRoute1.pathWeight;
-				}
-			}
-		}
-		return closesedConnection;
+					return distanceFuture.thenApply(distance -> {
+						visited.remove(pos);
+
+						if (distance.isInfinite()) {
+							return distance;
+						} else {
+							return distance + route.pathWeight;
+						}
+					});
+				});
+
+		final CompletableFuture[] distanceFutures = distanceFutureStream.filter(Objects::nonNull).toArray(CompletableFuture[]::new);
+		CompletableFuture<Void> distancesCheckedFuture = CompletableFuture.allOf(distanceFutures);
+
+		return distancesCheckedFuture.thenApply(aVoid -> {
+			final Optional<Double> reduce = Arrays.stream(distanceFutures)
+					.map(completableFuture -> {
+						try {
+							//noinspection unchecked
+							return ((CompletableFuture<Double>) completableFuture).get();
+						} catch (ClassCastException | InterruptedException | ExecutionException e) {
+							e.printStackTrace();
+						}
+						return null;
+					}).filter(Objects::nonNull).reduce(Double::min);
+			return reduce.orElse(Double.POSITIVE_INFINITY);
+		});
 	}
 
 	@Override
 	public boolean acceptItem(LPTravelingItem item, TileEntity from) {
-		if (item instanceof LPTravelingItemServer) {
-			LPTravelingItemServer serverItem = (LPTravelingItemServer) item;
+		if (item instanceof LPTravelingItem.LPTravelingItemServer) {
+			LPTravelingItem.LPTravelingItemServer serverItem = (LPTravelingItem.LPTravelingItemServer) item;
 			int id = serverItem.getInfo().destinationint;
 			if (id == -1) {
 				id = SimpleServiceLocator.routerManager.getIDforUUID(serverItem.getInfo().destinationUUID);
@@ -225,9 +250,9 @@ public class TDDuctInformationProvider implements IPipeInformationProvider, IRou
 			Route route = null;
 			Object cache = null;
 			Triplet<Integer, ItemIdentifier, Boolean> key = new Triplet<>(id, item.getItemIdentifierStack()
-					.getItem(), serverItem.getInfo()._transportMode == TransportMode.Active);
+					.getItem(), serverItem.getInfo()._transportMode == IRoutedItem.TransportMode.Active);
 			if (duct instanceof ILPTEInformation && ((ILPTEInformation) duct).getObject() != null) {
-				cache = ((ILPTEInformation) duct).getObject().getCacheHolder().getCacheFor(CacheTypes.Routing, key);
+				cache = ((ILPTEInformation) duct).getObject().getCacheHolder().getCacheFor(CacheHolder.CacheTypes.Routing, key);
 			}
 			if (cache instanceof Route) {
 				route = (Route) cache;
@@ -254,11 +279,13 @@ public class TDDuctInformationProvider implements IPipeInformationProvider, IRou
 						}
 						visited.add(pos);
 
-						double distance = lpDuct.pipe
-								.getDistanceTo(id, EnumFacing.getFront(localRoute1.pathDirections.get(localRoute1.pathDirections.size() - 1)).getOpposite(),
-										item.getItemIdentifierStack().getItem(), serverItem.getInfo()._transportMode == TransportMode.Active,
-										localRoute1.pathWeight, max,
-										visited);
+						CompletableFuture<Double> distanceToTEFuture = lpDuct.pipe.getDistanceToTE(id,
+								EnumFacing.getFront(localRoute1.pathDirections.get(localRoute1.pathDirections.size() - 1)).getOpposite(),
+								item.getItemIdentifierStack().getItem(), serverItem.getInfo()._transportMode == IRoutedItem.TransportMode.Active,
+								localRoute1.pathWeight,
+								max,
+								visited);
+						double distance = GROW.asyncWorkAround(distanceToTEFuture);
 
 						visited.remove(pos);
 
@@ -274,9 +301,10 @@ public class TDDuctInformationProvider implements IPipeInformationProvider, IRou
 			}
 			if (route != null) {
 				if (duct instanceof ILPTEInformation && ((ILPTEInformation) duct).getObject() != null) {
-					((ILPTEInformation) duct).getObject().getCacheHolder().setCache(CacheTypes.Routing, key, route);
+					((ILPTEInformation) duct).getObject().getCacheHolder().setCache(CacheHolder.CacheTypes.Routing, key, route);
 				}
-				TravelingItem travelItem = new TravelingItem(item.getItemIdentifierStack().makeNormalStack(), duct.getDuct(DuctToken.ITEMS), route.copy(), (byte) serverItem.output.ordinal(), (byte) 1 /* Speed */);
+				TravelingItem travelItem = new TravelingItem(item.getItemIdentifierStack().makeNormalStack(), duct.getDuct(DuctToken.ITEMS), route.copy(),
+						(byte) serverItem.output.ordinal(), (byte) 1 /* Speed */);
 				((ILPTravelingItemInfo) travelItem).setLPRoutingInfoAddition(serverItem.getInfo());
 				duct.getDuct(DuctToken.ITEMS).insertNewItem(travelItem);
 				return true;

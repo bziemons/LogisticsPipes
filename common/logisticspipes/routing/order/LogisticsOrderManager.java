@@ -61,12 +61,17 @@ public abstract class LogisticsOrderManager<T extends LogisticsOrder, I> impleme
 	}
 
 	public void dump() {
-		StringBuilder sb = new StringBuilder(" ############################################# ").append(System.getProperty("line.separator"));
+		StringBuilder sb = new StringBuilder(" ############################################# %n");
 		for (T s : _orders) {
-			sb.append(s.getAsDisplayItem()).append(" / ").append(s.getAmount()).append(" / ").append(s.getType().name()).append(System.getProperty("line.separator"));
+			sb.append(s.getAsDisplayItem())
+					.append(" / ")
+					.append(s.getAmount())
+					.append(" / ")
+					.append(s.getType().name())
+					.append("%n");
 		}
-		System.out.print(sb.append(" ############################################# ").toString());
-		System.out.println();
+		sb.append(" ############################################# %n");
+		System.out.printf(sb.toString());
 	}
 
 	public LinkedList<ItemIdentifierStack> getContentList(World world) {

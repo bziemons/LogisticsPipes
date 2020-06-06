@@ -23,9 +23,12 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
@@ -60,7 +63,6 @@ import logisticspipes.request.resources.IResource;
 import logisticspipes.request.resources.ItemResource;
 import logisticspipes.routing.pathfinder.PathFinder;
 import logisticspipes.ticks.LPTickHandler;
-import logisticspipes.ticks.RoutingTableUpdateThread;
 import logisticspipes.utils.CacheHolder;
 import logisticspipes.utils.OneList;
 import logisticspipes.utils.StackTraceUtil;
@@ -68,6 +70,7 @@ import logisticspipes.utils.StackTraceUtil.Info;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Quartet;
+import network.rs485.grow.GROW;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 public class ServerRouter implements IRouter, Comparable<ServerRouter> {
@@ -181,7 +184,8 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		ArrayList<Pair<ILogisticsPowerProvider, List<IFilter>>> power;
 		ArrayList<Pair<ISubSystemPowerProvider, List<IFilter>>> subSystemPower;
 
-		LSARouterRunnable(HashMap<IRouter, Quartet<Double, EnumSet<PipeRoutingConnectionType>, List<IFilter>, Integer>> neighboursWithMetric, ArrayList<Pair<ILogisticsPowerProvider, List<IFilter>>> power, ArrayList<Pair<ISubSystemPowerProvider, List<IFilter>>> subSystemPower) {
+		LSARouterRunnable(HashMap<IRouter, Quartet<Double, EnumSet<PipeRoutingConnectionType>, List<IFilter>, Integer>> neighboursWithMetric,
+				ArrayList<Pair<ILogisticsPowerProvider, List<IFilter>>> power, ArrayList<Pair<ISubSystemPowerProvider, List<IFilter>>> subSystemPower) {
 			this.neighboursWithMetric = neighboursWithMetric;
 			this.power = power;
 			this.subSystemPower = subSystemPower;
@@ -379,32 +383,52 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		return getPipe() != null;
 	}
 
-	private void ensureRouteTableIsUpToDate(boolean force) {
-		if (force && connectionNeedsChecking != 0) {
+	private void routingTableUpdateFinished(Void result, Throwable throwable) {
+		if (throwable == null) {
+			LogisticsPipes.log.debug("Routing table update finished");
+		} else {
+			System.err.println("Error when updating routing table:");
+			throwable.printStackTrace();
+		}
+	}
+
+	private void lsaUpdateFinished(Void result, Throwable throwable) {
+		if (throwable == null) {
+			LogisticsPipes.log.debug("LSA update finished");
+		} else {
+			System.err.println("Error when updating LSA:");
+			throwable.printStackTrace();
+		}
+	}
+
+	private CompletableFuture<Void> ensureRouteTableIsUpToDate() {
+		return ensureRouteTableIsUpToDate(GROW.Priority.HIGH);
+	}
+
+	@Nonnull
+	private CompletableFuture<Void> ensureRouteTableIsUpToDate(@Nonnull GROW.Priority priority) {
+		if (connectionNeedsChecking != 0) {
 			boolean blockNeedsUpdate = checkAdjacentUpdate();
 			if (blockNeedsUpdate) {
 				updateLsa();
 			}
 		}
 		if (_LSAVersion > ServerRouter._lastLSAVersion[simpleID]) {
-			if (Configs.MULTI_THREAD_NUMBER > 0 && !force) {
-				RoutingTableUpdateThread.add(new UpdateRouterRunnable(this));
-			} else {
-				CreateRouteTable(_LSAVersion);
-			}
+			final CompletableFuture<Void> update = GROW.getInstance().submit(priority, new UpdateRouterRunnable(this));
+			return update.whenCompleteAsync(this::routingTableUpdateFinished, LogisticsPipes.getGlobalTickExecutor());
+		} else {
+			return CompletableFuture.completedFuture(null);
 		}
 	}
 
 	@Override
-	public List<List<ExitRoute>> getRouteTable() {
-		ensureRouteTableIsUpToDate(true);
-		return _routeTable;
+	public CompletableFuture<List<List<ExitRoute>>> getRouteTable() {
+		return ensureRouteTableIsUpToDate().handle((aVoid, throwable) -> _routeTable);
 	}
 
 	@Override
-	public List<ExitRoute> getIRoutersByCost() {
-		ensureRouteTableIsUpToDate(true);
-		return _routeCosts;
+	public CompletableFuture<List<ExitRoute>> getIRoutersByCost() {
+		return ensureRouteTableIsUpToDate().handle((aVoid, throwable) -> _routeCosts);
 	}
 
 	@Override
@@ -517,7 +541,8 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		if (changed) {
 			CoreRoutedPipe pipe = getPipe();
 			if (pipe != null) {
-				pipe.getWorld().markAndNotifyBlock(pipe.getPos(), pipe.getWorld().getChunkFromBlockCoords(pipe.getPos()), pipe.getWorld().getBlockState(pipe.getPos()), pipe.getWorld().getBlockState(pipe.getPos()), 3);
+				pipe.getWorld()
+						.markAndNotifyBlock(pipe.getPos(), pipe.getWorld().getChunkFromBlockCoords(pipe.getPos()), pipe.getWorld().getBlockState(pipe.getPos()), pipe.getWorld().getBlockState(pipe.getPos()), 3);
 				pipe.refreshConnectionAndRender(false);
 			}
 			adjacentChanged = true;
@@ -610,11 +635,15 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 			EnumMap<EnumFacing, Integer> subpowerexits = new EnumMap<>(EnumFacing.class);
 			for (Entry<CoreRoutedPipe, ExitRoute> pipe : adjacent.entrySet()) {
 				adjacentRouter.put(pipe.getKey().getRouter(), pipe.getValue());
-				if ((pipe.getValue().connectionDetails.contains(PipeRoutingConnectionType.canRouteTo) || pipe.getValue().connectionDetails.contains(PipeRoutingConnectionType.canRequestFrom) && !routedexits.contains(pipe.getValue().exitOrientation))) {
+				if ((pipe.getValue().connectionDetails.contains(PipeRoutingConnectionType.canRouteTo)
+						|| pipe.getValue().connectionDetails.contains(PipeRoutingConnectionType.canRequestFrom) && !routedexits
+						.contains(pipe.getValue().exitOrientation))) {
 					routedexits.add(pipe.getValue().exitOrientation);
 				}
-				if (!subpowerexits.containsKey(pipe.getValue().exitOrientation) && pipe.getValue().connectionDetails.contains(PipeRoutingConnectionType.canPowerSubSystemFrom)) {
-					subpowerexits.put(pipe.getValue().exitOrientation, PathFinder.messureDistanceToNextRoutedPipe(getLPPosition(), pipe.getValue().exitOrientation, pipe.getKey().getWorld()));
+				if (!subpowerexits.containsKey(pipe.getValue().exitOrientation) && pipe.getValue().connectionDetails
+						.contains(PipeRoutingConnectionType.canPowerSubSystemFrom)) {
+					subpowerexits.put(pipe.getValue().exitOrientation,
+							PathFinder.messureDistanceToNextRoutedPipe(getLPPosition(), pipe.getValue().exitOrientation, pipe.getKey().getWorld()));
 				}
 			}
 			_adjacent = Collections.unmodifiableMap(adjacent);
@@ -645,7 +674,8 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		UUID id = pipe.getSecurityID();
 		if (id != null) {
 			for (Entry<CoreRoutedPipe, ExitRoute> entry : adjacent.entrySet()) {
-				if (!entry.getValue().connectionDetails.contains(PipeRoutingConnectionType.canRouteTo) && !entry.getValue().connectionDetails.contains(PipeRoutingConnectionType.canRequestFrom)) {
+				if (!entry.getValue().connectionDetails.contains(PipeRoutingConnectionType.canRouteTo) && !entry.getValue().connectionDetails
+						.contains(PipeRoutingConnectionType.canRequestFrom)) {
 					continue;
 				}
 				UUID thatId = entry.getKey().getSecurityID();
@@ -686,14 +716,14 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		if (_subSystemPowerAdjacent != null) {
 			subSystemPower = new ArrayList<>(_subSystemPowerAdjacent);
 		}
-		if (Configs.MULTI_THREAD_NUMBER > 0) {
-			RoutingTableUpdateThread.add(new LSARouterRunnable(neighboursWithMetric, power, subSystemPower));
-		} else {
-			lockAndUpdateLSA(neighboursWithMetric, power, subSystemPower);
-		}
+
+		final LSARouterRunnable runnable = new LSARouterRunnable(neighboursWithMetric, power, subSystemPower);
+		final CompletableFuture<Void> update = GROW.getInstance().submit(GROW.Priority.BACKGROUND, runnable);
+		update.whenCompleteAsync(this::lsaUpdateFinished, LogisticsPipes.getGlobalTickExecutor());
 	}
 
-	private void lockAndUpdateLSA(HashMap<IRouter, Quartet<Double, EnumSet<PipeRoutingConnectionType>, List<IFilter>, Integer>> neighboursWithMetric, ArrayList<Pair<ILogisticsPowerProvider, List<IFilter>>> power, ArrayList<Pair<ISubSystemPowerProvider, List<IFilter>>> subSystemPower) {
+	private void lockAndUpdateLSA(HashMap<IRouter, Quartet<Double, EnumSet<PipeRoutingConnectionType>, List<IFilter>, Integer>> neighboursWithMetric,
+			ArrayList<Pair<ILogisticsPowerProvider, List<IFilter>>> power, ArrayList<Pair<ISubSystemPowerProvider, List<IFilter>>> subSystemPower) {
 		ServerRouter.SharedLSADatabasewriteLock.lock();
 		_myLsa.neighboursWithMetric = neighboursWithMetric;
 		_myLsa.power = power;
@@ -758,7 +788,8 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		}
 
 		/** The total cost for the candidate route **/
-		PriorityQueue<ExitRoute> candidatesCost = new PriorityQueue<>((int) Math.sqrt(routingTableSize)); // sqrt nodes is a good guess for the total number of candidate nodes at once.
+		PriorityQueue<ExitRoute> candidatesCost = new PriorityQueue<>(
+				(int) Math.sqrt(routingTableSize)); // sqrt nodes is a good guess for the total number of candidate nodes at once.
 
 		//Init candidates
 		// the shortest way to go to an adjacent item is the adjacent item.
@@ -766,7 +797,8 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 			ExitRoute currentE = pipe.getValue();
 			IRouter newRouter = pipe.getKey();
 			if (newRouter != null) {
-				ExitRoute newER = new ExitRoute(newRouter, newRouter, currentE.distanceToDestination, currentE.connectionDetails, currentE.filters, new ArrayList<>(0), currentE.blockDistance);
+				ExitRoute newER = new ExitRoute(newRouter, newRouter, currentE.distanceToDestination, currentE.connectionDetails, currentE.filters,
+						new ArrayList<>(0), currentE.blockDistance);
 				candidatesCost.add(newER);
 				debug.newCanidate(newER);
 			}
@@ -849,7 +881,8 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 			if (lsa == null) {
 				lowestCostNode.removeFlags(lowestCostClosedFlags);
 				lowestCostClosedFlags.addAll(lowestCostNode.getFlagsNoCopy());
-				if (lowestCostNode.containsFlag(PipeRoutingConnectionType.canRouteTo) || lowestCostNode.containsFlag(PipeRoutingConnectionType.canRequestFrom)) {
+				if (lowestCostNode.containsFlag(PipeRoutingConnectionType.canRouteTo) || lowestCostNode
+						.containsFlag(PipeRoutingConnectionType.canRequestFrom)) {
 					routeCosts.add(lowestCostNode);
 				}
 				closedSet.set(lowestCostNode.destination.getSimpleID(), lowestCostClosedFlags);
@@ -883,13 +916,15 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 					}
 				}
 			}
-			for (Entry<IRouter, Quartet<Double, EnumSet<PipeRoutingConnectionType>, List<IFilter>, Integer>> newCandidate : lsa.neighboursWithMetric.entrySet()) {
+			for (Entry<IRouter, Quartet<Double, EnumSet<PipeRoutingConnectionType>, List<IFilter>, Integer>> newCandidate : lsa.neighboursWithMetric
+					.entrySet()) {
 				double candidateCost = lowestCostNode.distanceToDestination + newCandidate.getValue().getValue1();
 				int blockDistance = lowestCostNode.blockDistance + newCandidate.getValue().getValue4();
 				EnumSet<PipeRoutingConnectionType> newCT = lowestCostNode.getFlags();
 				newCT.retainAll(newCandidate.getValue().getValue2());
 				if (!newCT.isEmpty()) {
-					ExitRoute next = new ExitRoute(lowestCostNode.root, newCandidate.getKey(), candidateCost, newCT, lowestCostNode.filters, newCandidate.getValue().getValue3(), blockDistance);
+					ExitRoute next = new ExitRoute(lowestCostNode.root, newCandidate.getKey(), candidateCost, newCT, lowestCostNode.filters,
+							newCandidate.getValue().getValue3(), blockDistance);
 					next.debug.isTraced = lowestCostNode.debug.isTraced;
 					candidatesCost.add(next);
 					debug.newCanidate(next);
@@ -900,7 +935,8 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 
 			lowestCostNode.removeFlags(lowestCostClosedFlags);
 			lowestCostClosedFlags.addAll(lowestCostNode.getFlagsNoCopy());
-			if (lowestCostNode.containsFlag(PipeRoutingConnectionType.canRouteTo) || lowestCostNode.containsFlag(PipeRoutingConnectionType.canRequestFrom) || lowestCostNode.containsFlag(PipeRoutingConnectionType.canPowerSubSystemFrom)) {
+			if (lowestCostNode.containsFlag(PipeRoutingConnectionType.canRouteTo) || lowestCostNode.containsFlag(PipeRoutingConnectionType.canRequestFrom)
+					|| lowestCostNode.containsFlag(PipeRoutingConnectionType.canPowerSubSystemFrom)) {
 				routeCosts.add(lowestCostNode);
 			}
 			EnumMap<PipeRoutingConnectionType, List<List<IFilter>>> map = filterList.get(lowestCostNode.destination.getSimpleID());
@@ -1153,11 +1189,11 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 			}
 
 			ensureChangeListenerAttachedToPipe(pipe);
-			ensureRouteTableIsUpToDate(false);
+			ensureRouteTableIsUpToDate(GROW.Priority.BACKGROUND);
 			return;
 		}
 		if (Configs.MULTI_THREAD_NUMBER > 0) {
-			ensureRouteTableIsUpToDate(false);
+			ensureRouteTableIsUpToDate(GROW.Priority.BACKGROUND);
 		}
 	}
 
@@ -1196,13 +1232,14 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 	}
 
 	@Override
-	public ExitRoute getExitFor(int id, boolean active, ItemIdentifier type) {
-		ensureRouteTableIsUpToDate(true);
-		if (getRouteTable().size() <= id || getRouteTable().get(id) == null) {
-			return null;
-		}
-		outer:
-		for (ExitRoute exit : getRouteTable().get(id)) {
+	public CompletableFuture<ExitRoute> getExitFor(int id, boolean active, ItemIdentifier type) {
+		final CompletableFuture<List<List<ExitRoute>>> routingTableFuture = getRouteTable();
+		return routingTableFuture.thenApply(routingTable -> {
+			if (routingTable.size() <= id || routingTable.get(id) == null) {
+				return null;
+			}
+			outer:
+		for (ExitRoute exit : routingTable.get(id)) {
 			if (exit.containsFlag(PipeRoutingConnectionType.canRouteTo)) {
 				for (IFilter filter : exit.filters) {
 					if (!active) {
@@ -1218,23 +1255,25 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 				return exit;
 			}
 		}
-		return null;
+			return null;
+		});
 	}
 
 	@Override
-	public boolean hasRoute(int id, boolean active, ItemIdentifier type) {
+	public CompletableFuture<Boolean> hasRoute(int id, boolean active, ItemIdentifier type) {
 		if (!SimpleServiceLocator.routerManager.isRouterUnsafe(id, false)) {
-			return false;
+			return CompletableFuture.completedFuture(false);
 		}
-		ensureRouteTableIsUpToDate(true);
-		if (getRouteTable().size() <= id) {
-			return false;
-		}
-		List<ExitRoute> source = getRouteTable().get(id);
-		if (source == null) {
-			return false;
-		}
-		outer:
+		final CompletableFuture<List<List<ExitRoute>>> routingTableFuture = getRouteTable();
+		return routingTableFuture.thenApply(routingTable -> {
+			if (routingTable.size() <= id) {
+				return false;
+			}
+			List<ExitRoute> source = routingTable.get(id);
+			if (source == null) {
+				return false;
+			}
+			outer:
 		for (ExitRoute exit : source) {
 			if (exit.containsFlag(PipeRoutingConnectionType.canRouteTo)) {
 				for (IFilter filter : exit.filters) {
@@ -1251,7 +1290,8 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 				return true;
 			}
 		}
-		return false;
+			return false;
+		});
 	}
 
 	@Override
@@ -1427,19 +1467,21 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 	}
 
 	@Override
-	public int compareTo(ServerRouter o) {
+	public int compareTo(@Nonnull ServerRouter o) {
 		return simpleID - o.simpleID;
 	}
 
 	@Override
-	public List<ExitRoute> getDistanceTo(IRouter r) {
-		ensureRouteTableIsUpToDate(true);
-		int id = r.getSimpleID();
-		if (_routeTable.size() <= id) {
-			return new ArrayList<>(0);
-		}
-		List<ExitRoute> result = _routeTable.get(id);
-		return result != null ? result : new ArrayList<>(0);
+	public CompletableFuture<List<ExitRoute>> getDistanceTo(IRouter r) {
+		final CompletableFuture<List<List<ExitRoute>>> routingTableFuture = getRouteTable();
+		return routingTableFuture.thenApply(routingTable -> {
+			int id = r.getSimpleID();
+			if (routingTable.size() <= id) {
+				return Collections.emptyList();
+			}
+			List<ExitRoute> result = routingTable.get(id);
+			return result != null ? result : Collections.emptyList();
+		});
 	}
 
 	public static Map<ItemIdentifier, Set<IRouter>> getInterestedInSpecifics() {
@@ -1467,10 +1509,9 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 	}
 
 	@Override
-	public List<ExitRoute> getRoutersOnSide(EnumFacing direction) {
+	public Stream<ExitRoute> getRoutersOnSide(EnumFacing direction) {
 		return _adjacentRouter.values().stream()
-				.filter(exit -> exit.exitOrientation == direction)
-				.collect(Collectors.toList());
+				.filter(exit -> exit.exitOrientation == direction);
 	}
 
 	@Override

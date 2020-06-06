@@ -4,7 +4,9 @@ import net.minecraft.nbt.NBTTagCompound;
 
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.SimpleServiceLocator;
+import logisticspipes.routing.IRouter;
 import logisticspipes.utils.item.ItemIdentifier;
+import network.rs485.grow.GROW;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 import network.rs485.logisticspipes.util.items.ItemStackLoader;
@@ -20,10 +22,15 @@ public class TrackingTask {
 		if (tickCount % everyNthTick != 0) {
 			return;
 		}
-		amountRecorded[arrayPos++] = SimpleServiceLocator.logisticsManager.getAmountFor(item, pipe.getRouter().getIRoutersByCost());
-		if (arrayPos >= amountRecorded.length) {
-			arrayPos = 0;
-		}
+		IRouter router = pipe.getRouter();
+		router.getIRoutersByCost().thenAccept(exitRoutes -> {
+			// TODO
+			amountRecorded[arrayPos++] = SimpleServiceLocator.logisticsManager.getAmountFor(item, exitRoutes);
+			if (arrayPos >= amountRecorded.length) {
+				arrayPos = 0;
+			}
+		}).whenComplete((result, error) -> GROW.asyncComplete(result, error, "tick", this));
+
 	}
 
 	public void readFromNBT(NBTTagCompound nbt) {

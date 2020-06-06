@@ -2,9 +2,11 @@ package logisticspipes.blocks.powertile;
 
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -46,6 +48,7 @@ import logisticspipes.routing.ServerRouter;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.grow.GROW;
 import network.rs485.logisticspipes.connection.NeighborTileEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
@@ -76,6 +79,58 @@ public abstract class LogisticsPowerProviderTileEntity extends LogisticsSolidTil
 		HUD = new HUDPowerLevel(this);
 	}
 
+	private void createLaserRoute(IRouter sourceRouter, IRouter destinationRouter, NeighborTileEntity<LogisticsTileGenericPipe> adjacent, ExitRoute route, double toSend) {
+		CoreRoutedPipe pipe = sourceRouter.getPipe();
+		if (pipe != null && pipe.isInitialized()) {
+			pipe.container.addLaser(adjacent.getOurDirection(), 1, getLaserColor(), true, true);
+		}
+		sendPowerLaserPackets(destinationRouter, new Triplet<>(sourceRouter, route.exitOrientation, (route.exitOrientation != adjacent.getDirection())));
+		internalStorage -= toSend;
+		handlePower(destinationRouter.getPipe(), toSend);
+	}
+
+	private CompletableFuture<Void> searchLaserRoute(IRouter destinationRouter, double toSend) {
+		final WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(this);
+		final Stream<NeighborTileEntity<LogisticsTileGenericPipe>> adjacentTileEntityStream = worldCoordinates.allNeighborTileEntities()
+				.flatMap(neighbor -> neighbor.getJavaInstanceOf(LogisticsTileGenericPipe.class).map(Stream::of).orElseGet(Stream::empty))
+				.filter(adjacent -> adjacent.getTileEntity().pipe instanceof CoreRoutedPipe)
+				.filter(adjacent -> !((CoreRoutedPipe) (adjacent.getTileEntity()).pipe).stillNeedReplace());
+
+		final Stream<CompletableFuture<Runnable>> futureStream = adjacentTileEntityStream.map(adjacent -> {
+			IRouter sourceRouter = ((CoreRoutedPipe) adjacent.getTileEntity().pipe).getRouter();
+			final CompletableFuture<List<ExitRoute>> distanceFuture = sourceRouter.getDistanceTo(destinationRouter);
+			return distanceFuture.thenApply(exitRoutes -> {
+				final Optional<ExitRoute> correctRoute = exitRoutes.stream()
+						.filter(exit -> exit.containsFlag(PipeRoutingConnectionType.canPowerSubSystemFrom))
+						.filter(exit -> exit.filters.stream().noneMatch(IFilter::blockPower))
+						.findFirst();
+
+				return correctRoute.<Runnable>map(exitRoute -> () -> createLaserRoute(sourceRouter, destinationRouter, adjacent, exitRoute, toSend)).orElse(null);
+			});
+		});
+
+		final CompletableFuture[] completableFutures = futureStream.toArray(CompletableFuture[]::new);
+		final CompletableFuture<Void> allRoutesFound = CompletableFuture.allOf(completableFutures);
+		return allRoutesFound.thenAccept(aVoid -> {
+			for (CompletableFuture future : completableFutures) {
+				if (!future.isDone()) {
+					throw new RuntimeException("Future should be done");
+				}
+				Object obj;
+				try {
+					obj = future.get();
+
+					if (obj != null) {
+						((Runnable) obj).run();
+						break;
+					}
+				} catch (InterruptedException | ExecutionException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
 	@Override
 	public void update() {
 		super.update();
@@ -101,8 +156,8 @@ public abstract class LogisticsPowerProviderTileEntity extends LogisticsSolidTil
 								.flatMap(neighbor -> neighbor.getJavaInstanceOf(LogisticsTileGenericPipe.class).map(Stream::of).orElseGet(Stream::empty))
 								.filter(neighbor -> neighbor.getTileEntity().pipe instanceof CoreRoutedPipe &&
 										!getPipe.apply(neighbor).stillNeedReplace())
-								.flatMap(neighbor -> getPipe.apply(neighbor).getRouter().getDistanceTo(destinationToPower.getValue1()).stream()
-										.map(exitRoute -> new Pair<>(neighbor, exitRoute)))
+								.map(neighbor -> new Pair<>(neighbor, GROW.asyncWorkAround(getPipe.apply(neighbor).getRouter().getDistanceTo(destinationToPower.getValue1()))))
+								.flatMap(neighborToDistances -> neighborToDistances.getValue2().stream().map(exitRoute -> new Pair<>(neighborToDistances.getValue1(), exitRoute)))
 								.filter(neighborToExit -> neighborToExit.getValue2().containsFlag(PipeRoutingConnectionType.canPowerSubSystemFrom) &&
 										neighborToExit.getValue2().filters.stream().noneMatch(IFilter::blockPower))
 								.findFirst()
@@ -126,44 +181,68 @@ public abstract class LogisticsPowerProviderTileEntity extends LogisticsSolidTil
 				lastUpdateStorage = internalStorage;
 			}
 		}
+
+		// Async Alternative:
+//		List<CompletableFuture<Void>> completedList = new ArrayList<>();
+//		if (globalRequest > 0) {
+//			double fullfillRatio = Math.min(1, Math.min(internalStorage, getMaxProvidePerTick()) / globalRequest);
+//			if (fullfillRatio > 0) {
+//				for (Entry<Integer, Double> order : orders.entrySet()) {
+//					double toSend = order.getValue() * fullfillRatio;
+//					if (toSend > internalStorage) {
+//						toSend = internalStorage;
+//					}
+//					IRouter destinationRouter = SimpleServiceLocator.routerManager.getRouter(order.getKey());
+//					if (destinationRouter != null && destinationRouter.getPipe() != null) {
+//						final CompletableFuture<Void> laserRouteFuture = searchLaserRoute(destinationRouter, toSend);
+//						completedList.add(laserRouteFuture);
+//					}
+//				}
+//			}
+//		}
+//
+//		CompletableFuture.allOf(completedList.toArray(new CompletableFuture[completedList.size()]))
+//				.thenAccept(aVoid -> {
+//					orders.clear();
+//					if (MainProxy.isServer(worldObj)) {
+//						if (internalStorage != lastUpdateStorage) {
+//							updateClients();
+//							lastUpdateStorage = internalStorage;
+//						}
+//					}
+//				}).whenComplete((result, error) -> GROW.asyncComplete(result, error, "updateEntity", this));
 	}
 
 	protected abstract void handlePower(CoreRoutedPipe pipe, double toSend);
 
-	private void sendPowerLaserPackets(IRouter sourceRouter, IRouter destinationRouter, EnumFacing exitOrientation, boolean addBall) {
-		if (sourceRouter == destinationRouter) {
+	private void sendPowerLaserPackets(IRouter destinationRouter, Triplet<IRouter, EnumFacing, Boolean> tripletData) {
+		if (tripletData.getValue1() == destinationRouter) {
 			return;
 		}
-		LinkedList<Triplet<IRouter, EnumFacing, Boolean>> todo = new LinkedList<>();
-		todo.add(new Triplet<>(sourceRouter, exitOrientation, addBall));
-		while (!todo.isEmpty()) {
-			Triplet<IRouter, EnumFacing, Boolean> part = todo.pollFirst();
-			List<ExitRoute> exits = part.getValue1().getRoutersOnSide(part.getValue2());
-			for (ExitRoute exit : exits) {
-				if (exit.containsFlag(PipeRoutingConnectionType.canPowerSubSystemFrom)) { // Find only result (caused by only straight connections)
-					int distance = part.getValue1().getDistanceToNextPowerPipe(exit.exitOrientation);
-					CoreRoutedPipe pipe = part.getValue1().getPipe();
+
+		tripletData.getValue1().getRoutersOnSide(tripletData.getValue2())
+				.filter(exitRoute -> exitRoute.containsFlag(PipeRoutingConnectionType.canPowerSubSystemFrom))
+				.forEach(exitRoute -> {
+					int distance = tripletData.getValue1().getDistanceToNextPowerPipe(exitRoute.exitOrientation);
+
+					CoreRoutedPipe pipe = tripletData.getValue1().getPipe();
 					if (pipe != null && pipe.isInitialized()) {
-						pipe.container.addLaser(exit.exitOrientation, distance, getLaserColor(), false, part.getValue3());
+						pipe.container.addLaser(exitRoute.exitOrientation, distance, getLaserColor(), false, tripletData.getValue3());
 					}
-					IRouter nextRouter = exit.destination; // Use new sourceRouter
+
+					IRouter nextRouter = exitRoute.destination; // Use new sourceRouter
 					if (nextRouter == destinationRouter) {
 						return;
 					}
-					outerRouters:
-					for (ExitRoute newExit : nextRouter.getDistanceTo(destinationRouter)) {
-						if (newExit.containsFlag(PipeRoutingConnectionType.canPowerSubSystemFrom)) {
-							for (IFilter filter : newExit.filters) {
-								if (filter.blockPower()) {
-									continue outerRouters;
-								}
-							}
-							todo.addLast(new Triplet<>(nextRouter, newExit.exitOrientation, newExit.exitOrientation != exit.exitOrientation));
-						}
-					}
-				}
-			}
-		}
+
+					final CompletableFuture<List<ExitRoute>> distanceFuture = nextRouter.getDistanceTo(destinationRouter);
+					distanceFuture.thenAccept(exitRoutes -> exitRoutes.stream()
+							.filter(newRoute -> newRoute.containsFlag(PipeRoutingConnectionType.canPowerSubSystemFrom))
+							.filter(newRoute -> !newRoute.filters.stream().anyMatch(IFilter::blockPower))
+							.forEach(newRoute ->
+									sendPowerLaserPackets(destinationRouter, new Triplet<>(nextRouter, newRoute.exitOrientation, newRoute.exitOrientation != exitRoute.exitOrientation)))
+					).whenComplete((result, error) -> GROW.asyncComplete(result, error, "updateEntity", this));
+				});
 	}
 
 	protected abstract double getMaxProvidePerTick();

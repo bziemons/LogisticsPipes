@@ -41,12 +41,12 @@ public class LPTickHandler {
 
 	@SubscribeEvent
 	public void serverTick(ServerTickEvent event) {
+		LogisticsPipes.getGlobalTickExecutor().tick();
 		HudUpdateTick.tick();
 		SimpleServiceLocator.serverBufferHandler.serverTick(event);
 		MainProxy.proxy.tickServer();
 		LPTickHandler.adjChecksDone = 0;
 		DebugGuiController.instance().execServer();
-		LogisticsPipes.getGlobalTickExecutor().tick();
 	}
 
 	private static Map<World, LPWorldInfo> worldInfo = new MapMaker().weakKeys().makeMap();

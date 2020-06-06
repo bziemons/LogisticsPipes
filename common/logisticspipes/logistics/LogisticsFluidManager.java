@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import net.minecraft.item.ItemStack;
@@ -24,12 +25,14 @@ import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.FluidIdentifierStack;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.grow.GROW;
 
 public class LogisticsFluidManager implements ILogisticsFluidManager {
 
 	@Override
 	public Pair<Integer, Integer> getBestReply(FluidIdentifierStack stack, IRouter sourceRouter, List<Integer> jamList) {
-		for (ExitRoute candidateRouter : sourceRouter.getIRoutersByCost()) {
+		CompletableFuture<List<ExitRoute>> iRoutersByCost = sourceRouter.getIRoutersByCost();
+		for (ExitRoute candidateRouter : GROW.asyncWorkAround(iRoutersByCost)) {
 			if (!candidateRouter.containsFlag(PipeRoutingConnectionType.canRouteTo)) {
 				continue;
 			}

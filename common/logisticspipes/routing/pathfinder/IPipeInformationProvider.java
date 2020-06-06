@@ -1,6 +1,7 @@
 package logisticspipes.routing.pathfinder;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import net.minecraft.tileentity.TileEntity;
@@ -66,7 +67,7 @@ public interface IPipeInformationProvider {
 
 	boolean isPowerPipe();
 
-	double getDistanceTo(int destinationint, EnumFacing ignore, ItemIdentifier ident, boolean isActive, double travled, double max, List<DoubleCoordinates> visited);
+	CompletableFuture<Double> getDistanceToTE(int destinationint, EnumFacing ignore, ItemIdentifier ident, boolean isActive, double travled, double max, List<DoubleCoordinates> visited);
 
 	boolean acceptItem(LPTravelingItem item, TileEntity from);
 

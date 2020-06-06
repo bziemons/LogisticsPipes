@@ -35,6 +35,7 @@ import logisticspipes.utils.FluidIdentifierStack;
 import logisticspipes.utils.SlidingWindowBitSet;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.grow.GROW;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
@@ -399,8 +400,10 @@ public abstract class LPTravelingItem {
 			newItem.setDestination(getDestination());
 			newItem.clearDestination();
 
-			if (container instanceof LogisticsTileGenericPipe && ((LogisticsTileGenericPipe) container).pipe.transport instanceof PipeTransportLogistics) {
-				((LogisticsTileGenericPipe) container).pipe.transport.injectItem((LPTravelingItem) newItem, orientation);
+			if (container instanceof LogisticsTileGenericPipe && ((LogisticsTileGenericPipe) container).pipe.transport != null) {
+				final PipeTransportLogistics pipeTransport = ((LogisticsTileGenericPipe) container).pipe.transport;
+				pipeTransport.injectItem((LPTravelingItem) newItem, orientation)
+						.whenComplete((result, error) -> GROW.asyncComplete(result, error, "split", this));
 			}
 		}
 

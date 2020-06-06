@@ -3,6 +3,7 @@ package logisticspipes.pipes.signs;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.GlStateManager;
@@ -34,6 +35,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.string.StringUtils;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.grow.GROW;
 
 public class ItemAmountPipeSign implements IPipeSign, ISimpleInventoryEventHandler {
 
@@ -88,7 +90,8 @@ public class ItemAmountPipeSign implements IPipeSign, ISimpleInventoryEventHandl
 		}
 		int newAmount = 0;
 		if (itemTypeInv.getIDStackInSlot(0) != null) {
-			Map<ItemIdentifier, Integer> availableItems = SimpleServiceLocator.logisticsManager.getAvailableItems(pipe.getRouter().getIRoutersByCost());
+			CompletableFuture<List<ExitRoute>> iRoutersByCost = pipe.getRouter().getIRoutersByCost();
+			Map<ItemIdentifier, Integer> availableItems = SimpleServiceLocator.logisticsManager.getAvailableItems(GROW.asyncWorkAround(iRoutersByCost));
 			if (availableItems != null) {
 				BitSet set = new BitSet(ServerRouter.getBiggestSimpleID());
 				spread(availableItems, set);
@@ -107,7 +110,8 @@ public class ItemAmountPipeSign implements IPipeSign, ISimpleInventoryEventHandl
 		IRouter router = pipe.getRouter();
 		if (set.get(router.getSimpleID())) return;
 		set.set(router.getSimpleID());
-		for (ExitRoute exit : router.getIRoutersByCost()) {
+		CompletableFuture<List<ExitRoute>> iRoutersByCost = router.getIRoutersByCost();
+		for (ExitRoute exit : GROW.asyncWorkAround(iRoutersByCost)) {
 			if (exit.distanceToDestination > 2) break; // Only when the signs are in one wall. To not spread to far.
 			if (!exit.filters.isEmpty()) continue;
 			if (set.get(exit.destination.getSimpleID())) continue;

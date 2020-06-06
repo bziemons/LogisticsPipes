@@ -177,7 +177,6 @@ import logisticspipes.ticks.HudUpdateTick;
 import logisticspipes.ticks.LPTickHandler;
 import logisticspipes.ticks.QueuedTasks;
 import logisticspipes.ticks.RenderTickHandler;
-import logisticspipes.ticks.RoutingTableUpdateThread;
 import logisticspipes.ticks.ServerPacketBufferHandlerThread;
 import logisticspipes.ticks.VersionChecker;
 import logisticspipes.utils.FluidIdentifier;
@@ -357,9 +356,6 @@ public class LogisticsPipes {
 			SimpleServiceLocator.setClientPacketBufferHandlerThread(new ClientPacketBufferHandlerThread());
 		}
 		SimpleServiceLocator.setServerPacketBufferHandlerThread(new ServerPacketBufferHandlerThread());
-		for (int i = 0; i < Configs.MULTI_THREAD_NUMBER; i++) {
-			new RoutingTableUpdateThread(i);
-		}
 		LogisticsEventListener eventListener = new LogisticsEventListener();
 		MinecraftForge.EVENT_BUS.register(eventListener);
 		MinecraftForge.EVENT_BUS.register(new LPChatListener());
@@ -378,6 +374,16 @@ public class LogisticsPipes {
 		NewGuiHandler.initialize();
 
 		LogisticsPipes.log = evt.getModLog();
+		log.info("====================================================");
+		log.info(" LogisticsPipes Logger initialized, enabled levels: ");
+		log.info("----------------------------------------------------");
+		log.info("    Fatal: " + log.isFatalEnabled());
+		log.info("    Error: " + log.isErrorEnabled());
+		log.info("    Warn:  " + log.isWarnEnabled());
+		log.info("    Info:  " + log.isInfoEnabled());
+		log.info("    Trace: " + log.isTraceEnabled());
+		log.info("    Debug: " + log.isDebugEnabled());
+		log.info("====================================================");
 		loadClasses();
 		ProxyManager.load();
 		Configs.load();

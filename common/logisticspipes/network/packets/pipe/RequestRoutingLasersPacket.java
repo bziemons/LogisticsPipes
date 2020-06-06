@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumFacing;
@@ -29,6 +30,7 @@ import logisticspipes.routing.LaserData;
 import logisticspipes.routing.PipeRoutingConnectionType;
 import logisticspipes.routing.pathfinder.PathFinder;
 import logisticspipes.utils.StaticResolve;
+import network.rs485.grow.GROW;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.IntegerCoordinates;
 
@@ -70,7 +72,8 @@ public class RequestRoutingLasersPacket extends CoordinatesPacket {
 			//this is here to allow players to manually trigger a network-wide LSA update
 			router.forceLsaUpdate();
 
-			List<List<ExitRoute>> exits = router.getRouteTable();
+			CompletableFuture<List<List<ExitRoute>>> routeTable = router.getRouteTable();
+			List<List<ExitRoute>> exits = GROW.asyncWorkAround(routeTable);
 			HashMap<EnumFacing, ArrayList<ExitRoute>> routers = new HashMap<>();
 			for (List<ExitRoute> exit : exits) {
 				if (exit == null) {
@@ -142,7 +145,8 @@ public class RequestRoutingLasersPacket extends CoordinatesPacket {
 				ExitRoute result = null;
 				CoreRoutedPipe resultPipe = null;
 				for (Entry<CoreRoutedPipe, ExitRoute> routeCanidate : map.entrySet()) {
-					List<ExitRoute> distances = routeCanidate.getValue().destination.getDistanceTo(routeTo.destination);
+					CompletableFuture<List<ExitRoute>> distanceTo = routeCanidate.getValue().destination.getDistanceTo(routeTo.destination);
+					List<ExitRoute> distances = GROW.asyncWorkAround(distanceTo);
 					for (ExitRoute distance : distances) {
 						if (distance.isSameWay(routeTo)) {
 							if (result == null || result.distanceToDestination > distance.distanceToDestination) {
