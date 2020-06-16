@@ -16,7 +16,7 @@ import network.rs485.logisticspipes.connection.NeighborTileEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 //IHUDModuleHandler,
-public class ModuleSatellite extends LogisticsModule {
+public class ModuleSatellite extends AbstractModule {
 
 	private final CoreRoutedPipe pipe;
 
@@ -59,7 +59,7 @@ public class ModuleSatellite extends LogisticsModule {
 	public void readFromNBT(@Nonnull NBTTagCompound nbttagcompound) {}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {}
+	public void writeToNBT(@Nonnull NBTTagCompound tag) {}
 
 	@Override
 	public void tick() {}

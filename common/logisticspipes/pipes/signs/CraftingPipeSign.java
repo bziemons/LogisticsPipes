@@ -13,7 +13,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.AbstractModule.ModulePositionType;
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;

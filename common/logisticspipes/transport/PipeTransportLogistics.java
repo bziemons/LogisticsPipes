@@ -42,7 +42,7 @@ import logisticspipes.interfaces.ISubSystemPowerProvider;
 import logisticspipes.interfaces.routing.ITargetSlotInformation;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.logisticspipes.IRoutedItem.TransportMode;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.AbstractModule.ModulePositionType;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.pipe.ItemBufferSyncPacket;
 import logisticspipes.network.packets.pipe.PipeContentPacket;

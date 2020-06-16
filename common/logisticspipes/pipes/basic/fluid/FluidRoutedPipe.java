@@ -19,7 +19,6 @@ import logisticspipes.interfaces.ITankUtil;
 import logisticspipes.interfaces.routing.IRequireReliableFluidTransport;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.logisticspipes.IRoutedItem.TransportMode;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
@@ -37,6 +36,7 @@ import logisticspipes.utils.FluidIdentifierStack;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.connection.NeighborTileEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 

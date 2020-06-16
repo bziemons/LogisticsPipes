@@ -1,7 +1,9 @@
 package logisticspipes.pipes.basic;
 
 import java.util.List;
+import java.util.Objects;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -41,6 +43,7 @@ import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTypeHolder {
 
+	@Nullable
 	public LogisticsTileGenericPipe container;
 	public final PipeTransportLogistics transport;
 	public final Item item;
@@ -156,8 +159,9 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 
 	public void onBlockRemoval() {}
 
+	@Nonnull
 	public LogisticsTileGenericPipe getContainer() {
-		return container;
+		return Objects.requireNonNull(container, "Container is not initialized");
 	}
 
 	public NonNullList<ItemStack> dropContents() {
@@ -205,8 +209,9 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 	 */
 	public void onChunkUnload() {}
 
+	@Nonnull
 	public World getWorld() {
-		return container.getWorld();
+		return getContainer().getWorld();
 	}
 
 	public void onEntityCollidedWithBlock(Entity entity) {
@@ -235,7 +240,7 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 
 	@Nonnull
 	public final BlockPos getPos() {
-		return container.getPos();
+		return Objects.requireNonNull(getContainer().getPos(), "Container position was null");
 	}
 
 	public boolean canBeDestroyed() {

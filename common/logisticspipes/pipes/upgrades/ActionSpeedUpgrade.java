@@ -1,7 +1,7 @@
 package logisticspipes.pipes.upgrades;
 
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.module.AsyncAdvancedExtractor;
 import network.rs485.logisticspipes.module.AsyncExtractorModule;
 

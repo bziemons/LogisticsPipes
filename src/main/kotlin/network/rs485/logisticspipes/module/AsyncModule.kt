@@ -40,10 +40,10 @@ package network.rs485.logisticspipes.module
 import kotlinx.coroutines.*
 import kotlinx.coroutines.time.withTimeout
 import logisticspipes.LogisticsPipes
-import logisticspipes.modules.LogisticsModule
+import logisticspipes.modules.AbstractModule
 import java.time.Duration
 
-abstract class AsyncModule<S, C> : LogisticsModule() {
+abstract class AsyncModule<S, C> : AbstractModule() {
     protected open val everyNthTick: Int = 20
     private var currentTick: Int = 0
     private var currentTask: Deferred<C?>? = null
@@ -60,7 +60,7 @@ abstract class AsyncModule<S, C> : LogisticsModule() {
             } finally {
                 currentTask = null
             }
-            else -> if (_service.isNthTick(everyNthTick)) {
+            else -> if (pipe.isNthTick(everyNthTick)) {
                 val setup = tickSetup()
                 currentTask = GlobalScope.async {
                     try {

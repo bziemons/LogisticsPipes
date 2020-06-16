@@ -4,13 +4,13 @@ import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.gui.modules.GuiStringBasedItemSink;
 import logisticspipes.interfaces.IStringBasedModule;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.abstractguis.GuiProvider;
 import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
 import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.DummyModuleContainer;
 import logisticspipes.utils.item.ItemIdentifierInventory;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 @StaticResolve
 public class StringBasedItemSinkModuleGuiInHand extends ModuleInHandGuiProvider {

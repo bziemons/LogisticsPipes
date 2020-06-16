@@ -22,7 +22,6 @@ import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
 import logisticspipes.interfaces.ITankUtil;
 import logisticspipes.interfaces.routing.IRequestFluid;
 import logisticspipes.interfaces.routing.IRequireReliableFluidTransport;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleSatellite;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.network.PacketHandler;
@@ -40,6 +39,7 @@ import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class PipeFluidSatellite extends FluidRoutedPipe implements IRequestFluid, IRequireReliableFluidTransport, IHeadUpDisplayRendererProvider, IChestContentReceiver {
 
@@ -200,9 +200,9 @@ public class PipeFluidSatellite extends FluidRoutedPipe implements IRequestFluid
 	}
 
 	private void updateWatchers() {
-		CoordinatesPacket packet = PacketHandler.getPacket(SyncSatelliteNamePacket.class).setString(satellitePipeName).setTilePos(this.getContainer());
+		CoordinatesPacket packet = PacketHandler.getPacket(SyncSatelliteNamePacket.class).setString(satellitePipeName).setTilePos(container);
 		MainProxy.sendToPlayerList(packet, localModeWatchers);
-		MainProxy.sendPacketToAllWatchingChunk(this.getContainer(), packet);
+		MainProxy.sendPacketToAllWatchingChunk(container, packet);
 	}
 
 	@Override

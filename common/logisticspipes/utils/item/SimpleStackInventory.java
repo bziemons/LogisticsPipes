@@ -25,13 +25,13 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 
 import logisticspipes.LogisticsPipes;
-import logisticspipes.interfaces.routing.ISaveState;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.ISimpleInventoryEventHandler;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.logisticspipes.api.LogisticsStateful;
 import network.rs485.logisticspipes.util.items.ItemStackLoader;
 
-public class SimpleStackInventory implements IInventory, ISaveState, Iterable<Pair<ItemStack, Integer>> {
+public class SimpleStackInventory implements IInventory, LogisticsStateful, Iterable<Pair<ItemStack, Integer>> {
 
 	private static final TextComponentString TEXT_COMPONENT_EMPTY = new TextComponentString("");
 

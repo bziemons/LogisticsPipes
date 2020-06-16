@@ -15,14 +15,14 @@ import net.minecraft.nbt.NBTTagCompound;
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.interfaces.routing.IRequestItems;
 import logisticspipes.interfaces.routing.IRequireReliableTransport;
-import logisticspipes.modules.LogisticsModule;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.AbstractModule.ModulePositionType;
 import logisticspipes.modules.ModuleActiveSupplier;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.debug.StatusEntry;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class PipeItemsSupplierLogistics extends CoreRoutedPipe implements IRequestItems, IRequireReliableTransport {
 

@@ -2,7 +2,7 @@ package logisticspipes.logisticspipes;
 
 import net.minecraft.util.EnumFacing;
 
-import logisticspipes.modules.LogisticsModule;
+import logisticspipes.modules.AbstractModule;
 import logisticspipes.pipes.PipeLogisticsChassi;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -25,7 +25,7 @@ public class ChassiTransportLayer extends TransportLayer {
 
 	@Override
 	public boolean stillWantItem(IRoutedItem item) {
-		LogisticsModule module = _chassiPipe.getLogisticsModule();
+		AbstractModule module = _chassiPipe.getLogisticsModule();
 		if (module == null) {
 			_chassiPipe.notifyOfItemArival(item.getInfo());
 			return false;

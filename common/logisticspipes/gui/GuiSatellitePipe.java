@@ -74,13 +74,13 @@ public class GuiSatellitePipe extends LogisticsBaseGuiScreen {
 	protected void actionPerformed(GuiButton guibutton) throws IOException {
 		if (_satellite != null) {
 			if (guibutton.id == 0) {
-				MainProxy.sendPacketToServer(PacketHandler.getPacket(SatelliteSetNamePacket.class).setString(input.getText()).setTilePos(_satellite.getContainer()));
+				MainProxy.sendPacketToServer(PacketHandler.getPacket(SatelliteSetNamePacket.class).setString(input.getText()).setTilePos(_satellite.container));
 			} else {
 				super.actionPerformed(guibutton);
 			}
 		} else if (_liquidSatellite != null) {
 			if (guibutton.id == 0) {
-				MainProxy.sendPacketToServer(PacketHandler.getPacket(SatelliteSetNamePacket.class).setString(input.getText()).setTilePos(_liquidSatellite.getContainer()));
+				MainProxy.sendPacketToServer(PacketHandler.getPacket(SatelliteSetNamePacket.class).setString(input.getText()).setTilePos(_liquidSatellite.container));
 			} else {
 				super.actionPerformed(guibutton);
 			}

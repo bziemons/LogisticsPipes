@@ -17,11 +17,11 @@ import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
 
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.modules.SneakyModuleDirectionUpdate;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.DummyContainer;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.module.SneakyDirection;
 
 public class GuiSneakyConfigurator extends ModuleBaseGui {

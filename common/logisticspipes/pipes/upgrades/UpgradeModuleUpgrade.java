@@ -1,8 +1,8 @@
 package logisticspipes.pipes.upgrades;
 
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.PipeLogisticsChassi;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class UpgradeModuleUpgrade implements IPipeUpgrade {
 

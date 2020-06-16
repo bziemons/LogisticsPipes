@@ -113,16 +113,16 @@ class AsyncAdvancedExtractor : AsyncModule<Channel<Pair<Int, ItemStack>>?, List<
 
     override fun recievePassive(): Boolean = false
 
-    override fun readFromNBT(nbttagcompound: NBTTagCompound) {
-        filterInventory.readFromNBT(nbttagcompound)
-        itemsIncluded = nbttagcompound.getBoolean("itemsIncluded")
-        extractor.readFromNBT(nbttagcompound)
+    override fun readFromNBT(tag: NBTTagCompound) {
+        filterInventory.readFromNBT(tag)
+        itemsIncluded = tag.getBoolean("itemsIncluded")
+        extractor.readFromNBT(tag)
     }
 
-    override fun writeToNBT(nbttagcompound: NBTTagCompound) {
-        filterInventory.writeToNBT(nbttagcompound)
-        nbttagcompound.setBoolean("itemsIncluded", _itemsIncluded)
-        extractor.writeToNBT(nbttagcompound)
+    override fun writeToNBT(tag: NBTTagCompound) {
+        filterInventory.writeToNBT(tag)
+        tag.setBoolean("itemsIncluded", _itemsIncluded)
+        extractor.writeToNBT(tag)
     }
 
     override fun hasGenericInterests(): Boolean = false
@@ -146,7 +146,7 @@ class AsyncAdvancedExtractor : AsyncModule<Channel<Pair<Int, ItemStack>>?, List<
     override fun handleInvContent(items: MutableCollection<ItemIdentifierStack>?) = filterInventory.handleItemIdentifierList(items)
 
     override fun InventoryChanged(inventory: IInventory?) {
-        if (MainProxy.isServer(_world.world)) {
+        if (MainProxy.isServer(pipe.world)) {
             MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleInventory::class.java).setIdentList(ItemIdentifierStack.getListFromInventory(inventory)).setModulePos(this), extractor.localModeWatchers)
         }
     }

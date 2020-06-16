@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.gui.GuiCraftingPipe;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.network.abstractguis.GuiProvider;
 import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
@@ -14,6 +13,7 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.DummyModuleContainer;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 

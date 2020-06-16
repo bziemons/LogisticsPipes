@@ -18,8 +18,7 @@ import logisticspipes.blocks.LogisticsProgramCompilerTileEntity;
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
 import logisticspipes.interfaces.IInventoryUtil;
-import logisticspipes.modules.LogisticsModule;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.AbstractModule.ModulePositionType;
 import logisticspipes.modules.ModuleItemSink;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
@@ -28,6 +27,7 @@ import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.transport.PipeTransportLogistics;
 import logisticspipes.utils.OrientationsUtil;
 import logisticspipes.utils.item.ItemIdentifier;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.connection.NeighborTileEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 

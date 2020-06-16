@@ -6,10 +6,10 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.world.World;
 
 import logisticspipes.items.ItemLogisticsPipe;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.utils.item.ItemIdentifier;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public interface IProxy {
 

@@ -32,7 +32,6 @@ import logisticspipes.interfaces.IOrderManagerContentReceiver;
 import logisticspipes.interfaces.routing.IChannelManager;
 import logisticspipes.interfaces.routing.IChannelRoutingConnection;
 import logisticspipes.logisticspipes.IRoutedItem;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.guis.pipe.InvSysConGuiProvider;
@@ -57,6 +56,7 @@ import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.transactor.ITransactor;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannelRoutingConnection, IHeadUpDisplayRendererProvider, IOrderManagerContentReceiver,

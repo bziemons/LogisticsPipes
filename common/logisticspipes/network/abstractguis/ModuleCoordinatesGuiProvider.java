@@ -3,17 +3,17 @@ package logisticspipes.network.abstractguis;
 import net.minecraft.world.World;
 
 import logisticspipes.LogisticsPipes;
-import logisticspipes.modules.LogisticsModule;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.AbstractModule;
 import logisticspipes.pipes.PipeLogisticsChassi;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 
 public abstract class ModuleCoordinatesGuiProvider extends CoordinatesGuiProvider {
 
-	private ModulePositionType slot;
+	private AbstractModule.ModulePositionType slot;
 	private int positionInt;
 
 	public ModuleCoordinatesGuiProvider(int id) {
@@ -30,7 +30,7 @@ public abstract class ModuleCoordinatesGuiProvider extends CoordinatesGuiProvide
 	@Override
 	public void readData(LPDataInput input) {
 		super.readData(input);
-		slot = input.readEnum(ModulePositionType.class);
+		slot = input.readEnum(AbstractModule.ModulePositionType.class);
 		positionInt = input.readInt();
 	}
 
@@ -45,9 +45,9 @@ public abstract class ModuleCoordinatesGuiProvider extends CoordinatesGuiProvide
 			return null;
 		}
 		LogisticsModule module;
-		if (slot == ModulePositionType.IN_PIPE) {
+		if (slot == AbstractModule.ModulePositionType.IN_PIPE) {
 			module = ((CoreRoutedPipe) pipe.pipe).getLogisticsModule();
-		} else if (slot == ModulePositionType.IN_HAND) {
+		} else if (slot == AbstractModule.ModulePositionType.IN_HAND) {
 			throw new UnsupportedOperationException("NO IN_HAND FOR THIS PACKET TYPE");
 		} else {
 			if (!(pipe.pipe instanceof PipeLogisticsChassi)) {
@@ -76,11 +76,11 @@ public abstract class ModuleCoordinatesGuiProvider extends CoordinatesGuiProvide
 		return (T) module;
 	}
 
-	public ModulePositionType getSlot() {
+	public AbstractModule.ModulePositionType getSlot() {
 		return this.slot;
 	}
 
-	public ModuleCoordinatesGuiProvider setSlot(ModulePositionType slot) {
+	public ModuleCoordinatesGuiProvider setSlot(AbstractModule.ModulePositionType slot) {
 		this.slot = slot;
 		return this;
 	}

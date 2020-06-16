@@ -13,7 +13,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.LogisticsPipes;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.AbstractModule.ModulePositionType;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.pipe.SlotFinderNumberPacket;
 import logisticspipes.proxy.MainProxy;

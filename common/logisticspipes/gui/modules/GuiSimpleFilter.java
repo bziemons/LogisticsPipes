@@ -12,8 +12,8 @@ import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
 
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.utils.gui.DummyContainer;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.module.SimpleFilter;
 
 public class GuiSimpleFilter extends ModuleBaseGui {

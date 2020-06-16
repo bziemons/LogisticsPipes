@@ -10,7 +10,7 @@ import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
 import logisticspipes.utils.item.ItemIdentifier;
 
-public class ModuleEnchantmentSink extends LogisticsModule {
+public class ModuleEnchantmentSink extends AbstractModule {
 
 	public static String getName() {
 		return "enchantment_sink";
@@ -20,7 +20,7 @@ public class ModuleEnchantmentSink extends LogisticsModule {
 	public void readFromNBT(@Nonnull NBTTagCompound nbttagcompound) {}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {}
+	public void writeToNBT(@Nonnull NBTTagCompound tag) {}
 
 	private SinkReply _sinkReply;
 
@@ -51,7 +51,7 @@ public class ModuleEnchantmentSink extends LogisticsModule {
 	@Override
 	/*
 	 * We will check every item return true
-	 * @see logisticspipes.modules.LogisticsModule#hasGenericInterests()
+	 * @see network.rs485.logisticspipes.api.LogisticsModule#hasGenericInterests()
 	 */
 	public boolean hasGenericInterests() {
 		return true;

@@ -18,7 +18,6 @@ import net.minecraft.util.text.TextComponentString;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.routing.IRequestItems;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
@@ -33,6 +32,7 @@ import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 @CCType(name = "LogisticsPipes:Request")
 public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IRequestItems {

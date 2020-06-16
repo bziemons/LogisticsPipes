@@ -296,7 +296,7 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 
 	private void openSubGuiForSatelliteSelection(int id, boolean fluidSatellite) {
 		if (module.getSlot().isInWorld()) {
-			this.setSubGui(new GuiSelectSatellitePopup(module.getBlockPos(), fluidSatellite, uuid ->
+			this.setSubGui(new GuiSelectSatellitePopup(module.getPipe().getPos(), fluidSatellite, uuid ->
 					MainProxy.sendPacketToServer(PacketHandler.getPacket(CraftingPipeSetSatellitePacket.class).setPipeID(uuid).setInteger(id).setModulePos(module))));
 		}
 	}

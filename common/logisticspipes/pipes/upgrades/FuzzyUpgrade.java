@@ -1,11 +1,11 @@
 package logisticspipes.pipes.upgrades;
 
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.modules.ModuleItemSink;
 import logisticspipes.pipes.PipeItemsBasicLogistics;
 import logisticspipes.pipes.PipeItemsCraftingLogistics;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class FuzzyUpgrade implements IPipeUpgrade {
 

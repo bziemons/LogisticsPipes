@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -40,7 +41,6 @@ import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.ILegacyActiveModule;
 import logisticspipes.interfaces.ISendQueueContentRecieiver;
-import logisticspipes.interfaces.ISendRoutedItem;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.interfaces.routing.ICraftItems;
@@ -52,9 +52,9 @@ import logisticspipes.items.ItemModule;
 import logisticspipes.logisticspipes.ChassiTransportLayer;
 import logisticspipes.logisticspipes.ItemModuleInformationManager;
 import logisticspipes.logisticspipes.TransportLayer;
+import logisticspipes.modules.AbstractModule;
+import logisticspipes.modules.AbstractModule.ModulePositionType;
 import logisticspipes.modules.ChassiModule;
-import logisticspipes.modules.LogisticsModule;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.hud.HUDStartWatchingPacket;
 import logisticspipes.network.packets.hud.HUDStopWatchingPacket;
@@ -89,12 +89,13 @@ import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.connection.NeighborTileEntity;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 @CCType(name = "LogisticsChassiePipe")
-public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICraftItems, IBufferItems, ISimpleInventoryEventHandler, ISendRoutedItem, IProvideItems, IHeadUpDisplayRendererProvider, ISendQueueContentRecieiver {
+public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICraftItems, IBufferItems, ISimpleInventoryEventHandler, IProvideItems, IHeadUpDisplayRendererProvider, ISendQueueContentRecieiver {
 
 	private final ChassiModule _module;
 	private final ItemIdentifierInventory _moduleInventory;
@@ -119,6 +120,10 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 		_module.registerHandler(this, this);
 		hud = new HudChassisPipe(this, _moduleInventory);
 		pointedDirection = null;
+	}
+
+	public Stream<LogisticsModule> modules() {
+		return _module.modules();
 	}
 
 	@Override
@@ -358,8 +363,8 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 			if (stack.getItem() instanceof ItemModule) {
 				LogisticsModule current = _module.getModule(i);
 				LogisticsModule next = ((ItemModule) stack.getItem()).getModuleForItem(stack, _module.getModule(i), this, this);
-				next.registerPosition(ModulePositionType.SLOT, i);
-				next.registerCCEventQueuer(this);
+				//next.registerPosition(ModulePositionType.SLOT, i);
+				//next.registerCCEventQueuer(this);
 				if (current != next) {
 					_module.installModule(i, next);
 					if (!MainProxy.isClient(getWorld())) {
@@ -580,17 +585,13 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 		displayList.addAll(_allItems);
 	}
 
-	public ChassiModule getModules() {
-		return _module;
-	}
-
 	@Override
 	public void setTile(TileEntity tile) {
 		super.setTile(tile);
 		for (int i = 0; i < _moduleInventory.getSizeInventory(); i++) {
 			LogisticsModule current = _module.getModule(i);
 			if (current != null) {
-				current.registerPosition(ModulePositionType.SLOT, i);
+				//current.registerPosition(ModulePositionType.SLOT, i);
 			}
 		}
 	}
@@ -609,8 +610,8 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 
 		for (int moduleIndex = 0; moduleIndex < getChassiSize(); moduleIndex++) {
 			LogisticsModule module = getSubModule(moduleIndex);
-			if (module != null && module.interestedInAttachedInventory()) {
-				IInventoryUtil inv = getSneakyInventory(module.getSlot(), module.getPositionInt());
+			if (module instanceof AbstractModule && ((AbstractModule) module).interestedInAttachedInventory()) {
+				IInventoryUtil inv = getSneakyInventory(((AbstractModule) module).getSlot(), ((AbstractModule) module).getPositionInt());
 				if (inv == null) {
 					continue;
 				}
@@ -620,14 +621,15 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 				//also add tag-less variants ... we should probably add a module.interestedIgnoringNBT at some point
 				items.stream().map(ItemIdentifier::getIgnoringNBT).forEach(itemidCollection::add);
 
-				boolean modulesInterestedInUndamged = false;
+				boolean anyModuleInterestedInUndamaged = false;
 				for (int i = 0; i < getChassiSize(); i++) {
-					if (getSubModule(moduleIndex).interestedInUndamagedID()) {
-						modulesInterestedInUndamged = true;
+					final LogisticsModule otherModule = getSubModule(i);
+					if (otherModule instanceof AbstractModule && ((AbstractModule) otherModule).interestedInUndamagedID()) {
+						anyModuleInterestedInUndamaged = true;
 						break;
 					}
 				}
-				if (modulesInterestedInUndamged) {
+				if (anyModuleInterestedInUndamaged) {
 					items.stream().map(ItemIdentifier::getUndamaged).forEach(itemidCollection::add);
 				}
 				break; // no need to check other modules for interest in the inventory, when we know that 1 already is.
@@ -635,8 +637,8 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 		}
 		for (int i = 0; i < getChassiSize(); i++) {
 			LogisticsModule module = getSubModule(i);
-			if (module != null) {
-				module.collectSpecificInterests(itemidCollection);
+			if (module instanceof AbstractModule) {
+				((AbstractModule) module).collectSpecificInterests(itemidCollection);
 			}
 		}
 	}
@@ -647,9 +649,9 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 			return false;
 		}
 		for (int i = 0; i < getChassiSize(); i++) {
-			LogisticsModule x = getSubModule(i);
+			LogisticsModule module = getSubModule(i);
 
-			if (x != null && x.hasGenericInterests()) {
+			if (module instanceof AbstractModule && ((AbstractModule) module).hasGenericInterests()) {
 				return true;
 			}
 		}

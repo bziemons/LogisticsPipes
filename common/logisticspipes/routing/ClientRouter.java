@@ -14,7 +14,6 @@ import logisticspipes.LogisticsPipes;
 import logisticspipes.api.ILogisticsPowerProvider;
 import logisticspipes.interfaces.ISubSystemPowerProvider;
 import logisticspipes.interfaces.routing.IFilter;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
@@ -126,15 +125,6 @@ public class ClientRouter implements IRouter {
 	@Override
 	public UUID getId() {
 		return UUID.randomUUID();
-	}
-
-	@Override
-	public LogisticsModule getLogisticsModule() {
-		CoreRoutedPipe pipe = getPipe();
-		if (pipe == null) {
-			return null;
-		}
-		return pipe.getLogisticsModule();
 	}
 
 	@Override

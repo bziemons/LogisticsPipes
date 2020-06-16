@@ -1,11 +1,16 @@
 package logisticspipes.modules;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+
+import org.jetbrains.annotations.NotNull;
 
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.network.NewGuiHandler;
@@ -18,15 +23,17 @@ import logisticspipes.proxy.computers.objects.CCSinkResponder;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.api.LogisticsModule;
+import network.rs485.logisticspipes.api.RoutedLogisticsPipe;
 import network.rs485.logisticspipes.module.Gui;
 
-public class ChassiModule extends LogisticsModule implements Gui {
+public class ChassiModule extends AbstractModule implements Gui {
 
 	private final LogisticsModule[] modules;
 	private final PipeLogisticsChassi parentChassis;
 
 	public ChassiModule(int moduleCount, PipeLogisticsChassi parentChassis) {
-		modules = new LogisticsModule[moduleCount];
+		modules = new AbstractModule[moduleCount];
 		this.parentChassis = parentChassis;
 		registerPosition(ModulePositionType.IN_PIPE, 0);
 	}
@@ -47,17 +54,19 @@ public class ChassiModule extends LogisticsModule implements Gui {
 		return (modules[slot] != null);
 	}
 
-	public LogisticsModule[] getModules() {
-		return modules;
+	public Stream<LogisticsModule> modules() {
+		return Arrays.stream(modules).filter(Objects::nonNull);
 	}
 
 	@Override
 	public SinkReply sinksItem(@Nonnull ItemStack stack, ItemIdentifier item, int bestPriority, int bestCustomPriority, boolean allowDefault, boolean includeInTransit, boolean forcePassive) {
 		SinkReply bestresult = null;
-		for (LogisticsModule module : modules) {
-			if (module != null) {
-				if (!forcePassive || module.recievePassive()) {
-					SinkReply result = module.sinksItem(stack, item, bestPriority, bestCustomPriority, allowDefault, includeInTransit, forcePassive);
+		final Iterator<LogisticsModule> moduleIterator = modules().iterator();
+		while (moduleIterator.hasNext()) {
+			LogisticsModule module = moduleIterator.next();
+			if (module instanceof AbstractModule) {
+				if (!forcePassive || ((AbstractModule) module).recievePassive()) {
+					SinkReply result = ((AbstractModule) module).sinksItem(stack, item, bestPriority, bestCustomPriority, allowDefault, includeInTransit, forcePassive);
 					if (result != null && result.maxNumberOfItems >= 0) {
 						bestresult = result;
 						bestPriority = result.fixedPriority.ordinal();
@@ -99,33 +108,27 @@ public class ChassiModule extends LogisticsModule implements Gui {
 	public void readFromNBT(@Nonnull NBTTagCompound nbttagcompound) {
 		for (int i = 0; i < modules.length; i++) {
 			if (modules[i] != null) {
-				NBTTagCompound slot = nbttagcompound.getCompoundTag("slot" + i);
-				if (slot != null) {
-					modules[i].readFromNBT(slot);
+				if (nbttagcompound.hasKey("slot" + i)) {
+					modules[i].readFromNBT(nbttagcompound.getCompoundTag("slot" + i));
 				}
 			}
 		}
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
+	public void writeToNBT(@Nonnull NBTTagCompound tag) {
 		for (int i = 0; i < modules.length; i++) {
 			if (modules[i] != null) {
-				NBTTagCompound slot = new NBTTagCompound();
-				modules[i].writeToNBT(slot);
-				nbttagcompound.setTag("slot" + i, slot);
+				NBTTagCompound slotTag = new NBTTagCompound();
+				modules[i].writeToNBT(slotTag);
+				tag.setTag("slot" + i, slotTag);
 			}
 		}
 	}
 
 	@Override
 	public void tick() {
-		for (LogisticsModule module : modules) {
-			if (module == null) {
-				continue;
-			}
-			module.tick();
-		}
+		modules().forEach(LogisticsModule::tick);
 	}
 
 	@Override
@@ -145,23 +148,12 @@ public class ChassiModule extends LogisticsModule implements Gui {
 
 	@Override
 	public boolean recievePassive() {
-		for (LogisticsModule module : modules) {
-			if (module != null && module.recievePassive()) {
-				return true;
-			}
-		}
-		return false;
+		return modules().anyMatch(LogisticsModule::recievePassive);
 	}
 
 	@Override
-	public List<CCSinkResponder> queueCCSinkEvent(ItemIdentifierStack item) {
-		List<CCSinkResponder> list = new ArrayList<>();
-		for (LogisticsModule module : modules) {
-			if (module != null) {
-				list.addAll(module.queueCCSinkEvent(item));
-			}
-		}
-		return list;
+	public Stream<CCSinkResponder> queueCCSinkEvent(ItemIdentifierStack item) {
+		return modules().flatMap(logisticsModule -> logisticsModule.queueCCSinkEvent(item));
 	}
 
 	@Nonnull
@@ -174,5 +166,17 @@ public class ChassiModule extends LogisticsModule implements Gui {
 	@Override
 	public ModuleInHandGuiProvider getInHandGuiProvider() {
 		throw new UnsupportedOperationException("Chassis GUI can never be opened in hand");
+	}
+
+	@NotNull
+	@Override
+	public RoutedLogisticsPipe getPipe() {
+		return null;
+	}
+
+	@NotNull
+	@Override
+	public UUID getModuleId() {
+		return null;
 	}
 }

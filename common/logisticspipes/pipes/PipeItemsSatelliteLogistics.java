@@ -30,7 +30,6 @@ import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.interfaces.routing.IRequestItems;
 import logisticspipes.interfaces.routing.IRequireReliableTransport;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleSatellite;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.network.PacketHandler;
@@ -47,6 +46,7 @@ import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IRequestItems, IRequireReliableTransport, IHeadUpDisplayRendererProvider, IChestContentReceiver {
 
@@ -192,9 +192,9 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IRequ
 	}
 
 	private void updateWatchers() {
-		CoordinatesPacket packet = PacketHandler.getPacket(SyncSatelliteNamePacket.class).setString(satellitePipeName).setTilePos(this.getContainer());
+		CoordinatesPacket packet = PacketHandler.getPacket(SyncSatelliteNamePacket.class).setString(satellitePipeName).setTilePos(container);
 		MainProxy.sendToPlayerList(packet, localModeWatchers);
-		MainProxy.sendPacketToAllWatchingChunk(this.getContainer(), packet);
+		MainProxy.sendPacketToAllWatchingChunk(container, packet);
 	}
 
 	@Override

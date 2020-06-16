@@ -21,7 +21,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import network.rs485.logisticspipes.module.Gui;
 
-public class ModuleFluidSupplier extends LogisticsModule implements IClientInformationProvider, Gui {
+public class ModuleFluidSupplier extends AbstractModule implements IClientInformationProvider, Gui {
 
 	private final ItemIdentifierInventory _filterInventory = new ItemIdentifierInventory(9, "Requested liquids", 1);
 
@@ -43,7 +43,7 @@ public class ModuleFluidSupplier extends LogisticsModule implements IClientInfor
 			return null;
 		}
 		if (_filterInventory.containsItem(item)) {
-			_service.spawnParticle(Particles.VioletParticle, 2);
+			pipe.spawnParticle(Particles.VioletParticle, 2);
 			return _sinkReply;
 		}
 		return null;
@@ -55,8 +55,8 @@ public class ModuleFluidSupplier extends LogisticsModule implements IClientInfor
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
-		_filterInventory.writeToNBT(nbttagcompound, "");
+	public void writeToNBT(@Nonnull NBTTagCompound tag) {
+		_filterInventory.writeToNBT(tag, "");
 	}
 
 	@Override

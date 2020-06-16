@@ -11,7 +11,7 @@ import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
 import logisticspipes.utils.item.ItemIdentifier;
 
-public class ModulePolymorphicItemSink extends LogisticsModule {
+public class ModulePolymorphicItemSink extends AbstractModule {
 
 	public ModulePolymorphicItemSink() {}
 
@@ -32,7 +32,7 @@ public class ModulePolymorphicItemSink extends LogisticsModule {
 		if (bestPriority > _sinkReply.fixedPriority.ordinal() || (bestPriority == _sinkReply.fixedPriority.ordinal() && bestCustomPriority >= _sinkReply.customPriority)) {
 			return null;
 		}
-		IInventoryUtil targetInventory = _service.getSneakyInventory(slot, positionInt);
+		IInventoryUtil targetInventory = pipe.getSneakyInventory(slot, positionInt);
 		if (targetInventory == null) {
 			return null;
 		}
@@ -41,7 +41,7 @@ public class ModulePolymorphicItemSink extends LogisticsModule {
 			return null;
 		}
 
-		if (_service.canUseEnergy(3)) {
+		if (pipe.canUseEnergy(3)) {
 			return _sinkReply;
 		}
 		return null;
@@ -51,7 +51,7 @@ public class ModulePolymorphicItemSink extends LogisticsModule {
 	public void readFromNBT(@Nonnull NBTTagCompound nbttagcompound) {}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {}
+	public void writeToNBT(@Nonnull NBTTagCompound tag) {}
 
 	@Override
 	public void tick() {}

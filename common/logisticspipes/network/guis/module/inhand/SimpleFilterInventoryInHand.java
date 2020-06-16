@@ -3,12 +3,12 @@ package logisticspipes.network.guis.module.inhand;
 import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.gui.modules.GuiSimpleFilter;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.abstractguis.GuiProvider;
 import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
 import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.DummyModuleContainer;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.module.SimpleFilter;
 

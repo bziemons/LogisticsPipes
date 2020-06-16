@@ -52,7 +52,6 @@ import logisticspipes.config.Configs;
 import logisticspipes.interfaces.IRoutingDebugAdapter;
 import logisticspipes.interfaces.ISubSystemPowerProvider;
 import logisticspipes.interfaces.routing.IFilter;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipefxhandlers.Particles;
 import logisticspipes.pipes.PipeItemsFirewall;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
@@ -73,9 +72,10 @@ import logisticspipes.utils.StackTraceUtil.Info;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Quartet;
+import network.rs485.logisticspipes.api.LogisticsRouter;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
-public class ServerRouter implements IRouter, Comparable<ServerRouter> {
+public class ServerRouter implements IRouter, Comparable<ServerRouter>, LogisticsRouter {
 
 	public static final int REFRESH_TIME = 20;
 
@@ -1149,15 +1149,6 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 	}
 
 	@Override
-	public LogisticsModule getLogisticsModule() {
-		CoreRoutedPipe pipe = getPipe();
-		if (pipe == null) {
-			return null;
-		}
-		return pipe.getLogisticsModule();
-	}
-
-	@Override
 	public List<Pair<ILogisticsPowerProvider, List<IFilter>>> getPowerProvider() {
 		return _LPPowerTable;
 	}
@@ -1300,6 +1291,16 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 	@Override
 	public void queueTask(int i, IRouterQueuedTask callable) {
 		queue.add(new Pair<>(i + MainProxy.getGlobalTick(), callable));
+	}
+
+	@Override
+	public boolean canUseEnergy(int amount) {
+		return false;
+	}
+
+	@Override
+	public boolean useEnergy(int energy) {
+		return false;
 	}
 
 	protected static class LSA {

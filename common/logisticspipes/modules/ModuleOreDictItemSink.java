@@ -40,7 +40,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import network.rs485.logisticspipes.module.Gui;
 
-public class ModuleOreDictItemSink extends LogisticsModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, Gui {
+public class ModuleOreDictItemSink extends AbstractModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, Gui {
 
 	public final List<String> oreList = new LinkedList<>();
 	//map of Item:<set of damagevalues>, empty set if wildcard damage
@@ -137,10 +137,10 @@ public class ModuleOreDictItemSink extends LogisticsModule implements IClientInf
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
-		nbttagcompound.setInteger("listSize", oreList.size());
+	public void writeToNBT(@Nonnull NBTTagCompound tag) {
+		tag.setInteger("listSize", oreList.size());
 		for (int i = 0; i < oreList.size(); i++) {
-			nbttagcompound.setString("Ore" + i, oreList.get(i));
+			tag.setString("Ore" + i, oreList.get(i));
 		}
 	}
 
@@ -179,7 +179,7 @@ public class ModuleOreDictItemSink extends LogisticsModule implements IClientInf
 	}
 
 	public void OreListChanged() {
-		if (MainProxy.isServer(_world.getWorld())) {
+		if (MainProxy.isServer(pipe.getWorld())) {
 			NBTTagCompound nbt = new NBTTagCompound();
 			writeToNBT(nbt);
 			MainProxy.sendToPlayerList(PacketHandler.getPacket(OreDictItemSinkList.class).setTag(nbt).setModulePos(this), localModeWatchers);

@@ -7,14 +7,14 @@ import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.LogisticsPipes;
-import logisticspipes.modules.LogisticsModule;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.AbstractModule.ModulePositionType;
 import logisticspipes.network.exception.TargetNotFoundException;
 import logisticspipes.pipes.PipeLogisticsChassi;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.DummyModuleContainer;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 
@@ -53,11 +53,7 @@ public abstract class ModuleCoordinatesPacket extends CoordinatesPacket {
 	}
 
 	public ModuleCoordinatesPacket setModulePos(LogisticsModule module) {
-		type = module.getSlot();
-		positionInt = module.getPositionInt();
-		if (type.isInWorld()) {
-			setBlockPos(module.getBlockPos());
-		}
+		setBlockPos(module.getPipe().getPos());
 		return this;
 	}
 

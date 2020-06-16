@@ -8,7 +8,6 @@ import net.minecraft.nbt.NBTTagCompound;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.routing.IFilter;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.pipe.FireWallFlag;
@@ -21,6 +20,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 public class PipeItemsFirewall extends CoreRoutedPipe {

@@ -9,7 +9,7 @@ import net.minecraft.util.EnumFacing;
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.ISendRoutedItem;
 import logisticspipes.interfaces.ISlotUpgradeManager;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.AbstractModule;
 import logisticspipes.routing.order.LogisticsItemOrderManager;
 import logisticspipes.utils.item.ItemIdentifier;
 import network.rs485.logisticspipes.connection.NeighborTileEntity;
@@ -23,7 +23,7 @@ public interface IInventoryProvider extends ISendRoutedItem {
 	IInventoryUtil getPointedInventory(ExtractionMode mode);
 
 	@Nullable
-	IInventoryUtil getSneakyInventory(ModulePositionType slot, int positionInt);
+	IInventoryUtil getSneakyInventory(AbstractModule.ModulePositionType slot, int positionInt);
 
 	@Nullable
 	IInventoryUtil getSneakyInventory(@Nonnull EnumFacing direction);
@@ -39,7 +39,7 @@ public interface IInventoryProvider extends ISendRoutedItem {
 
 	void queueRoutedItem(IRoutedItem routedItem, EnumFacing from);
 
-	ISlotUpgradeManager getUpgradeManager(ModulePositionType slot, int positionInt);
+	ISlotUpgradeManager getUpgradeManager(AbstractModule.ModulePositionType slot, int positionInt);
 
 	int countOnRoute(ItemIdentifier item);
 }

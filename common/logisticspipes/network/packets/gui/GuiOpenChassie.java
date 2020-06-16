@@ -2,7 +2,7 @@ package logisticspipes.network.packets.gui;
 
 import net.minecraft.entity.player.EntityPlayer;
 
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.AbstractModule.ModulePositionType;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;

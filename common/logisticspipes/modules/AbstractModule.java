@@ -1,24 +1,23 @@
 package logisticspipes.modules;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.IPipeServiceProvider;
 import logisticspipes.interfaces.IQueueCCEvent;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.interfaces.IWorldProvider;
-import logisticspipes.interfaces.routing.ISaveState;
+import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.computers.interfaces.CCCommand;
 import logisticspipes.proxy.computers.interfaces.CCType;
 import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
@@ -26,13 +25,14 @@ import logisticspipes.proxy.computers.objects.CCSinkResponder;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.api.LogisticsModule;
+import network.rs485.logisticspipes.api.RoutedLogisticsPipe;
 import network.rs485.logisticspipes.module.Gui;
 
 @CCType(name = "LogisticsModule")
-public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
+public abstract class AbstractModule implements LogisticsModule, ILPCCTypeHolder {
 
-	protected IWorldProvider _world;
-	protected IPipeServiceProvider _service;
+	public final UUID moduleId = UUID.randomUUID();
 
 	/**
 	 * Registers the Inventory and ItemSender to the module
@@ -42,8 +42,6 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 	 *                pipe
 	 */
 	public void registerHandler(IWorldProvider world, IPipeServiceProvider service) {
-		_world = world;
-		_service = service;
 	}
 
 	protected ModulePositionType slot;
@@ -60,7 +58,7 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 	@Nonnull
 	public BlockPos getBlockPos() {
 		if (slot.isInWorld()) {
-			return _service.getPos();
+			return getPipe().getPos();
 		} else {
 			if (LogisticsPipes.isDEBUG()) {
 				throw new IllegalStateException("Module is not in world, but getBlockPos was called");
@@ -69,16 +67,18 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 		}
 	}
 
-	public World getWorld() {
-		return _world.getWorld();
-	}
-
 	public ModulePositionType getSlot() {
 		return this.slot;
 	}
 
 	public int getPositionInt() {
 		return this.positionInt;
+	}
+
+	@NotNull
+	@Override
+	public RoutedLogisticsPipe getPipe() {
+		return (CoreRoutedPipe) pipe;
 	}
 
 	public enum ModulePositionType {
@@ -154,8 +154,8 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 		return false;
 	}
 
-	public List<CCSinkResponder> queueCCSinkEvent(ItemIdentifierStack item) {
-		return new ArrayList<>(0);
+	public Stream<CCSinkResponder> queueCCSinkEvent(ItemIdentifierStack item) {
+		return Stream.empty();
 	}
 
 	public void registerCCEventQueuer(IQueueCCEvent eventQueuer) {}
@@ -166,16 +166,16 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 	}
 
 	@Nonnull
-	public LogisticsModule getModule() {
+	public AbstractModule getModule() {
 		return this;
 	}
 
 	@Nullable
 	protected ISlotUpgradeManager getUpgradeManager() {
-		if (_service == null) {
+		if (pipe == null) {
 			return null;
 		}
-		return _service.getUpgradeManager(slot, positionInt);
+		return pipe.getUpgradeManager(slot, positionInt);
 	}
 
 	/**
@@ -185,15 +185,11 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder {
 
 	@Override
 	public String toString() {
-		String at = "{service is null}";
-		if (_service != null) {
-			at = Objects.toString(_service.getPos());
+		try {
+			return getClass().getName() + " at " + getPipe().getPos() + " in " + getPipe().getWorld();
+		} catch (NullPointerException e) {
+			return super.toString();
 		}
-		String in = "{world is null}";
-		if (_world != null) {
-			in = Objects.toString(_world.getWorld());
-		}
-		return String.format("%s at %s in %s", getClass().getName(), at, in);
 	}
 
 }

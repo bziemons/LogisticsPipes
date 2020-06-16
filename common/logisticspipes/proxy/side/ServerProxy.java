@@ -21,7 +21,6 @@ import net.minecraftforge.fml.server.FMLServerHandler;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.items.ItemLogisticsPipe;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.UpdateName;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
@@ -30,6 +29,7 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.proxy.interfaces.IProxy;
 import logisticspipes.utils.item.ItemIdentifier;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class ServerProxy implements IProxy {
 

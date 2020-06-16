@@ -28,7 +28,7 @@ import logisticspipes.interfaces.routing.ICraftItems;
 import logisticspipes.interfaces.routing.IFilter;
 import logisticspipes.interfaces.routing.IRequestItems;
 import logisticspipes.interfaces.routing.IRequireReliableTransport;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.AbstractModule.ModulePositionType;
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.hud.HUDStartWatchingPacket;
@@ -55,6 +55,7 @@ import logisticspipes.utils.IHavePriority;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 @CCType(name = "LogisticsPipes:Crafting")
 public class PipeItemsCraftingLogistics extends CoreRoutedPipe implements ICraftItems, IRequireReliableTransport, IHeadUpDisplayRendererProvider, IChangeListener, IOrderManagerContentReceiver, IHavePriority {
@@ -149,7 +150,7 @@ public class PipeItemsCraftingLogistics extends CoreRoutedPipe implements ICraft
 	}
 
 	@Override
-	public ModuleCrafter getLogisticsModule() {
+	public LogisticsModule getLogisticsModule() {
 		return craftingModule;
 	}
 

@@ -8,13 +8,13 @@ import net.minecraft.item.Item;
 import net.minecraft.nbt.NBTTagCompound;
 
 import logisticspipes.LogisticsPipes;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.pipefxhandlers.Particles;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.utils.item.ItemIdentifierInventory;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class PipeItemsSystemDestinationLogistics extends CoreRoutedPipe {
 

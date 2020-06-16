@@ -1,9 +1,9 @@
 package logisticspipes.pipes.upgrades;
 
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleActiveSupplier;
 import logisticspipes.pipes.PipeItemsSupplierLogistics;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class PatternUpgrade implements IPipeUpgrade {
 

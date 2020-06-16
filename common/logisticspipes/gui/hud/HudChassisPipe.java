@@ -10,13 +10,13 @@ import org.lwjgl.opengl.GL11;
 import logisticspipes.interfaces.IHUDButton;
 import logisticspipes.interfaces.IHUDConfig;
 import logisticspipes.interfaces.IHUDModuleHandler;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.PipeLogisticsChassi;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.hud.BasicHUDButton;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemStackRenderer;
 import logisticspipes.utils.item.ItemStackRenderer.DisplayAmount;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class HudChassisPipe extends BasicHUDGui {
 

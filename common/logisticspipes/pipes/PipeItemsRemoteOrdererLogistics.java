@@ -9,12 +9,12 @@ import net.minecraft.util.text.TextComponentTranslation;
 import logisticspipes.LPItems;
 import logisticspipes.interfaces.routing.IRequestItems;
 import logisticspipes.items.RemoteOrderer;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.security.SecuritySettings;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class PipeItemsRemoteOrdererLogistics extends CoreRoutedPipe implements IRequestItems {
 

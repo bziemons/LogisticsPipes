@@ -1,6 +1,7 @@
 package logisticspipes.items;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,8 +31,7 @@ import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.IPipeServiceProvider;
 import logisticspipes.interfaces.IWorldProvider;
 import logisticspipes.logisticspipes.ItemModuleInformationManager;
-import logisticspipes.modules.LogisticsModule;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.AbstractModule;
 import logisticspipes.modules.ModuleActiveSupplier;
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.modules.ModuleCreativeTabBasedItemSink;
@@ -51,6 +51,7 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.string.StringUtils;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.module.AsyncAdvancedExtractor;
 import network.rs485.logisticspipes.module.AsyncExtractorModule;
 import network.rs485.logisticspipes.module.AsyncQuicksortModule;
@@ -58,34 +59,25 @@ import network.rs485.logisticspipes.module.Gui;
 
 public class ItemModule extends LogisticsItem {
 
-	private static class Module {
+	private static class ModuleFactory<T extends LogisticsModule> {
 
-		private Supplier<? extends LogisticsModule> moduleConstructor;
-		private Class<? extends LogisticsModule> moduleClass;
+		private final Supplier<T> moduleConstructor;
 
-		private Module(Supplier<? extends LogisticsModule> moduleConstructor) {
-			this.moduleConstructor = moduleConstructor;
-			this.moduleClass = moduleConstructor.get().getClass();
+		private ModuleFactory(@Nonnull Supplier<T> moduleConstructor) {
+			this.moduleConstructor = Objects.requireNonNull(moduleConstructor);
 		}
 
-		private LogisticsModule getILogisticsModule() {
-			if (moduleConstructor == null) {
-				return null;
-			}
+		private LogisticsModule construct() {
 			return moduleConstructor.get();
-		}
-
-		private Class<? extends LogisticsModule> getILogisticsModuleClass() {
-			return moduleClass;
 		}
 
 	}
 
-	private Module moduleType;
+	private final ModuleFactory<?> moduleFactory;
 
-	public ItemModule(Module moduleType) {
+	public ItemModule(ModuleFactory<?> moduleType) {
 		super();
-		this.moduleType = moduleType;
+		this.moduleFactory = moduleType;
 		setHasSubtypes(false);
 	}
 
@@ -114,7 +106,7 @@ public class ItemModule extends LogisticsItem {
 	}
 
 	public static void registerModule(IForgeRegistry<Item> registry, String name, @Nonnull Supplier<? extends LogisticsModule> moduleConstructor, String modID) {
-		ItemModule module = LogisticsPipes.setName(new ItemModule(new Module(moduleConstructor)), String.format("module_%s", name), modID);
+		ItemModule module = LogisticsPipes.setName(new ItemModule(new ModuleFactory<>(moduleConstructor)), String.format("module_%s", name), modID);
 		LPItems.modules.put(name, module.getRegistryName());
 		registry.register(module);
 	}
@@ -123,18 +115,17 @@ public class ItemModule extends LogisticsItem {
 		LogisticsModule module = getModuleForItem(stack, null, null, null);
 		if (module instanceof Gui && !stack.isEmpty()) {
 			ItemModuleInformationManager.readInformation(stack, module);
-			module.registerPosition(ModulePositionType.IN_HAND, player.inventory.currentItem);
+			//module.registerPosition(ModulePositionType.IN_HAND, player.inventory.currentItem);
 			Gui.getInHandGuiProvider((Gui) module).open(player);
 		}
 	}
 
 	@Override
 	public boolean hasEffect(@Nonnull ItemStack stack) {
+		if (stack.isEmpty()) return false;
 		LogisticsModule module = getModuleForItem(stack, null, null, null);
-		if (module != null) {
-			if (stack.getCount() > 0) {
-				return module.hasEffect();
-			}
+		if (module instanceof AbstractModule) {
+			return ((AbstractModule) module).hasEffect();
 		}
 		return false;
 	}
@@ -175,16 +166,20 @@ public class ItemModule extends LogisticsItem {
 		if (itemStack.getItem() != this) {
 			return null;
 		}
+		/*
 		if (currentModule != null) {
-			if (moduleType.getILogisticsModuleClass().equals(currentModule.getClass())) {
+			if (moduleFactory.getILogisticsModuleClass().equals(currentModule.getClass())) {
 				return currentModule;
 			}
 		}
-		LogisticsModule newmodule = moduleType.getILogisticsModule();
+		*/
+		LogisticsModule newmodule = moduleFactory.construct();
+		/*
 		if (newmodule == null) {
 			return null;
 		}
 		newmodule.registerHandler(world, service);
+		 */
 		return newmodule;
 	}
 

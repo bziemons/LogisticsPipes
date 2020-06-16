@@ -1,7 +1,6 @@
 package logisticspipes;
 
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -126,8 +125,8 @@ public class LogisticsEventListener {
 
 	@SubscribeEvent
 	public void onPlayerLeftClickBlock(final PlayerInteractEvent.RightClickBlock event) {
-		if (MainProxy.isServer(event.getEntityPlayer().world)) {
-			WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(event.getEntityPlayer().world, event.getPos());
+		if (event.getSide() == Side.SERVER) {
+			WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(event.getWorld(), event.getPos());
 			TileEntity tileEntity = worldCoordinates.getTileEntity();
 			if (tileEntity instanceof TileEntityChest || SimpleServiceLocator.ironChestProxy.isIronChest(tileEntity)) {
 				List<WeakReference<AsyncQuicksortModule>> list = worldCoordinates.allNeighborTileEntities()
@@ -136,7 +135,7 @@ public class LogisticsEventListener {
 						.filter(adjacent -> ((PipeLogisticsChassi) ((LogisticsTileGenericPipe) adjacent.getTileEntity()).pipe).getPointedOrientation()
 								== adjacent.getOurDirection())
 						.map(adjacent -> (PipeLogisticsChassi) ((LogisticsTileGenericPipe) adjacent.getTileEntity()).pipe)
-						.flatMap(pipeLogisticsChassi -> Arrays.stream(pipeLogisticsChassi.getModules().getModules()))
+						.flatMap(PipeLogisticsChassi::modules)
 						.filter(logisticsModule -> logisticsModule instanceof AsyncQuicksortModule)
 						.map(logisticsModule -> new WeakReference<>((AsyncQuicksortModule) logisticsModule))
 						.collect(Collectors.toList());

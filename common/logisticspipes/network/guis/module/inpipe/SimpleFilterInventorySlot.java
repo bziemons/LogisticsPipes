@@ -5,7 +5,7 @@ import javax.annotation.Nullable;
 import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.gui.modules.GuiSimpleFilter;
-import logisticspipes.modules.LogisticsModule;
+import logisticspipes.modules.AbstractModule;
 import logisticspipes.network.abstractguis.GuiProvider;
 import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider;
 import logisticspipes.utils.StaticResolve;
@@ -21,7 +21,7 @@ public class SimpleFilterInventorySlot extends ModuleCoordinatesGuiProvider {
 
 	@Override
 	public Object getClientGui(EntityPlayer player) {
-		LogisticsModule module = this.getLogisticsModule(player.getEntityWorld(), LogisticsModule.class);
+		AbstractModule module = this.getLogisticsModule(player.getEntityWorld(), AbstractModule.class);
 		if (module == null) {
 			return null;
 		}

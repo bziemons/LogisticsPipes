@@ -36,7 +36,6 @@ import logisticspipes.gui.modules.ModuleBaseGui;
 import logisticspipes.gui.popup.SelectItemOutOfList;
 import logisticspipes.interfaces.ILogisticsItem;
 import logisticspipes.items.ItemLogisticsPipe;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.gui.DummyContainerSlotClick;
 import logisticspipes.pipefxhandlers.Particles;
@@ -68,6 +67,7 @@ import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
 import logisticspipes.utils.gui.SubGuiScreen;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 @SideOnly(Side.CLIENT)
 public class ClientProxy implements IProxy {

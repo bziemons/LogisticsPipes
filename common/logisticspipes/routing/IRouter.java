@@ -15,7 +15,6 @@ import net.minecraft.util.EnumFacing;
 import logisticspipes.api.ILogisticsPowerProvider;
 import logisticspipes.interfaces.ISubSystemPowerProvider;
 import logisticspipes.interfaces.routing.IFilter;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.tuples.Pair;
@@ -52,8 +51,6 @@ public interface IRouter extends LPFinalSerializable {
 	boolean isAt(int dimension, int xCoord, int yCoord, int zCoord);
 
 	UUID getId();
-
-	LogisticsModule getLogisticsModule();
 
 	void clearPipeCache();
 

@@ -11,8 +11,8 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
 
 import logisticspipes.interfaces.IClientInformationProvider;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.proxy.MainProxy;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class ItemModuleInformationManager {
 

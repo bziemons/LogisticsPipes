@@ -37,12 +37,12 @@
 
 package network.rs485.logisticspipes.module
 
-import logisticspipes.modules.LogisticsModule
+import logisticspipes.modules.AbstractModule
 import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider
 import logisticspipes.network.abstractguis.ModuleInHandGuiProvider
 
 interface Gui {
-    val module: LogisticsModule
+    val module: AbstractModule
     val pipeGuiProvider: ModuleCoordinatesGuiProvider
     val inHandGuiProvider: ModuleInHandGuiProvider
 

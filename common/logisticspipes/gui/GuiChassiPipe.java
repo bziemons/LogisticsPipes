@@ -18,7 +18,6 @@ import net.minecraft.item.ItemStack;
 
 import logisticspipes.config.Configs;
 import logisticspipes.items.ItemModule;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.guis.pipe.ChassiGuiProvider;
@@ -33,6 +32,7 @@ import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
 import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.string.StringUtils;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.module.Gui;
 
 public class GuiChassiPipe extends LogisticsBaseGuiScreen {

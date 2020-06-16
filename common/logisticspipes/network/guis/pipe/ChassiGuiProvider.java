@@ -8,7 +8,6 @@ import net.minecraft.item.ItemStack;
 
 import logisticspipes.gui.GuiChassiPipe;
 import logisticspipes.items.ItemUpgrade;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.abstractguis.BooleanModuleCoordinatesGuiProvider;
 import logisticspipes.network.abstractguis.GuiProvider;
 import logisticspipes.pipes.PipeLogisticsChassi;
@@ -16,6 +15,7 @@ import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.pipes.upgrades.ModuleUpgradeManager;
 import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.gui.DummyContainer;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 @StaticResolve
 public class ChassiGuiProvider extends BooleanModuleCoordinatesGuiProvider {
@@ -66,7 +66,7 @@ public class ChassiGuiProvider extends BooleanModuleCoordinatesGuiProvider {
 		if (stack.isEmpty() || !(stack.getItem() instanceof ItemUpgrade)) {
 			return false;
 		}
-		LogisticsModule module = chassiPipe.getModules().getModule(moduleSlot);
+		LogisticsModule module = chassiPipe.getSubModule(moduleSlot);
 		if (module == null) {
 			return false;
 		}

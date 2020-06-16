@@ -6,12 +6,8 @@ import net.minecraft.inventory.Container;
 
 import lombok.Getter;
 
-import logisticspipes.modules.LogisticsModule;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
-import logisticspipes.network.PacketHandler;
-import logisticspipes.network.packets.gui.GuiOpenChassie;
-import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public abstract class ModuleBaseGui extends LogisticsBaseGuiScreen {
 
@@ -31,9 +27,9 @@ public abstract class ModuleBaseGui extends LogisticsBaseGuiScreen {
 		}
 		if (i == 1 || c == 'e') {
 			super.keyTyped(c, i);
-			if (module.getSlot() == ModulePositionType.SLOT) {
-				MainProxy.sendPacketToServer(PacketHandler.getPacket(GuiOpenChassie.class).setBlockPos(module.getBlockPos()));
-			}
+//			if (module.getSlot() == AbstractModule.ModulePositionType.SLOT) {
+//				MainProxy.sendPacketToServer(PacketHandler.getPacket(GuiOpenChassie.class).setBlockPos(module.getBlockPos()));
+//			}
 		}
 	}
 }

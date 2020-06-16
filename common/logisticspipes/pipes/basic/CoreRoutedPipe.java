@@ -15,12 +15,10 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.function.BiFunction;
@@ -40,7 +38,6 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.world.World;
 
 import lombok.Getter;
 
@@ -76,8 +73,8 @@ import logisticspipes.logisticspipes.ITrackStatistics;
 import logisticspipes.logisticspipes.PipeTransportLayer;
 import logisticspipes.logisticspipes.RouteLayer;
 import logisticspipes.logisticspipes.TransportLayer;
-import logisticspipes.modules.LogisticsModule;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.AbstractModule;
+import logisticspipes.modules.AbstractModule.ModulePositionType;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.PacketHandler;
@@ -126,7 +123,10 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.logisticspipes.api.LogisticsModule;
+import network.rs485.logisticspipes.api.RoutedLogisticsPipe;
 import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.logistics.Network;
 import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
@@ -134,8 +134,7 @@ import network.rs485.logisticspipes.world.DoubleCoordinates;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 @CCType(name = "LogisticsPipes:Normal")
-public abstract class CoreRoutedPipe extends CoreUnroutedPipe
-		implements IClientState, IRequestItems, ITrackStatistics, IWorldProvider, IWatchingHandler, IPipeServiceProvider, IQueueCCEvent, ILPPositionProvider {
+public abstract class CoreRoutedPipe extends CoreUnroutedPipe implements IClientState, IRequestItems, ITrackStatistics, IWorldProvider, IWatchingHandler, IPipeServiceProvider, IQueueCCEvent, ILPPositionProvider, RoutedLogisticsPipe {
 
 	private static int pipecount = 0;
 	public final PlayerCollectionList watchers = new PlayerCollectionList();
@@ -445,7 +444,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		if (getLogisticsModule() == null) {
 			return;
 		}
-		getLogisticsModule().tick();
+		((AbstractModule) getLogisticsModule()).tick();
 	}
 
 	protected void onAllowedRemoval() {}
@@ -561,6 +560,9 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 	public void invalidate() {
 		super.invalidate();
 		if (router != null) {
+			if (MainProxy.isServer(getWorld())) {
+				Network.Companion.getDefaultNetwork().removeEdge((ServerRouter) router);
+			}
 			router.destroy();
 			router = null;
 		}
@@ -811,6 +813,12 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 					routerIntId = UUID.fromString(routerId);
 				}
 				router = SimpleServiceLocator.routerManager.getOrCreateRouter(routerIntId, getWorld(), getX(), getY(), getZ());
+
+				if (MainProxy.isServer(getWorld())) {
+					Network net = Network.Companion.getDefaultNetwork();
+					ServerRouter serverRouter = (ServerRouter) router;
+					net.addEdge(serverRouter);
+				}
 			}
 		}
 		return router;
@@ -959,11 +967,6 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		stat_session_relayed += count;
 		stat_lifetime_relayed += count;
 		updateStats();
-	}
-
-	@Override
-	public World getWorld() {
-		return container.getWorld();
 	}
 
 	@Override
@@ -1541,7 +1544,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 	public NeighborTileEntity<TileEntity> getPointedItemHandlerCustom(@Nonnull BiFunction<TileEntity, EnumFacing, NeighborTileEntity<TileEntity>> neighbourFactory) {
 		final EnumFacing pointedOrientation = getPointedOrientation();
 		if (pointedOrientation == null) return null;
-		final TileEntity tile = getContainer().getTile(pointedOrientation);
+		final TileEntity tile = container.getTile(pointedOrientation);
 		if (tile == null) return null;
 		final NeighborTileEntity<TileEntity> neighbor = neighbourFactory.apply(tile, pointedOrientation);
 		if (!neighbor.isItemHandler()) return null;

@@ -7,7 +7,7 @@ import net.minecraft.util.ResourceLocation;
 
 import logisticspipes.LPItems;
 import logisticspipes.items.ItemModule;
-import logisticspipes.modules.LogisticsModule;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class CraftingRecipes implements IRecipeProvider {
 

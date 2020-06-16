@@ -1,8 +1,8 @@
 package logisticspipes.pipes.upgrades.power;
 
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.upgrades.IPipeUpgrade;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public abstract class IC2PowerSupplierUpgrade implements IPipeUpgrade {
 

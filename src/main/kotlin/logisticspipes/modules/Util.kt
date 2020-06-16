@@ -39,6 +39,6 @@ package logisticspipes.modules
 
 import logisticspipes.routing.ServerRouter
 
-fun LogisticsModule.getServerRouter(): ServerRouter {
-    return this._service.router as? ServerRouter ?: error("Router was not set or not a ServerRouter")
+fun AbstractModule.getServerRouter(): ServerRouter {
+    return this.pipe.router as? ServerRouter ?: error("Router was not set or not a ServerRouter")
 }

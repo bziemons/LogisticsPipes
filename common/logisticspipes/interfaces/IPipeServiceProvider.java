@@ -1,9 +1,5 @@
 package logisticspipes.interfaces;
 
-import javax.annotation.Nonnull;
-
-import net.minecraft.util.math.BlockPos;
-
 import logisticspipes.api.IRoutedPowerProvider;
 import logisticspipes.logisticspipes.IInventoryProvider;
 import logisticspipes.pipes.basic.debug.DebugLogController;
@@ -17,7 +13,4 @@ public interface IPipeServiceProvider extends IRoutedPowerProvider, IInventoryPr
 	DebugLogController getDebug();
 
 	CacheHolder getCacheHolder();
-
-	@Nonnull
-	BlockPos getPos();
 }

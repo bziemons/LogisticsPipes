@@ -37,7 +37,7 @@
 
 package network.rs485.logisticspipes.logistics
 
-import logisticspipes.modules.LogisticsModule
+import logisticspipes.modules.AbstractModule
 import logisticspipes.pipefxhandlers.Particles
 import logisticspipes.proxy.SimpleServiceLocator
 import logisticspipes.routing.AsyncRouting
@@ -79,18 +79,16 @@ object LogisticsManager {
                     !routersToExclude.contains(it.destination.simpleID) &&
                     it.containsFlag(PipeRoutingConnectionType.canRouteTo) &&
                     it.filters.none { filter -> filter.blockRouting() || filter.isBlocked == filter.isFilteredItem(itemid) } &&
-                    it.destination.logisticsModule != null &&
-                    it.destination.logisticsModule.recievePassive() &&
+                    it.destination.pipe.logisticsModule is AbstractModule &&
+                    (it.destination.pipe.logisticsModule as AbstractModule).recievePassive() &&
                     it.destination.pipe != null &&
                     it.destination.pipe.isEnabled &&
                     !it.destination.pipe.sharesInterestWith(sourceRouter.pipe)
         }.sorted().forEachOrdered {
-            val reply: SinkReply?
-            val module: LogisticsModule = it.destination.logisticsModule
-            reply = when {
-                result == null -> module.sinksItem(stack, itemid, -1, 0, canBeDefault, true, true)
+            val reply = when {
+                result == null -> (it.destination.pipe.logisticsModule as AbstractModule).sinksItem(stack, itemid, -1, 0, canBeDefault, true, true)
                 result!!.maxNumberOfItems < 0 -> null
-                else -> module.sinksItem(stack, itemid, result!!.fixedPriority.ordinal, result!!.customPriority, canBeDefault, true, true)
+                else -> (it.destination.pipe.logisticsModule as AbstractModule).sinksItem(stack, itemid, result!!.fixedPriority.ordinal, result!!.customPriority, canBeDefault, true, true)
             }
 
             if (reply != null && (result == null ||

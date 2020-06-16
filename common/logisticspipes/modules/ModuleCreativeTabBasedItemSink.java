@@ -34,7 +34,7 @@ import logisticspipes.utils.SinkReply.FixedPriority;
 import logisticspipes.utils.item.ItemIdentifier;
 import network.rs485.logisticspipes.module.Gui;
 
-public class ModuleCreativeTabBasedItemSink extends LogisticsModule implements IStringBasedModule, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, Gui {
+public class ModuleCreativeTabBasedItemSink extends AbstractModule implements IStringBasedModule, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, Gui {
 
 	public final List<String> tabList = new LinkedList<>();
 	private final Set<String> tabSet = new HashSet<>();
@@ -64,7 +64,7 @@ public class ModuleCreativeTabBasedItemSink extends LogisticsModule implements I
 			tabSet.addAll(tabList);
 		}
 		if (tabSet.contains(item.getCreativeTabName())) {
-			if (_service.canUseEnergy(5)) {
+			if (pipe.canUseEnergy(5)) {
 				return _sinkReply;
 			}
 		}
@@ -83,10 +83,10 @@ public class ModuleCreativeTabBasedItemSink extends LogisticsModule implements I
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
-		nbttagcompound.setInteger("listSize", tabList.size());
+	public void writeToNBT(@Nonnull NBTTagCompound tag) {
+		tag.setInteger("listSize", tabList.size());
 		for (int i = 0; i < tabList.size(); i++) {
-			nbttagcompound.setString("Mod" + i, tabList.get(i));
+			tag.setString("Mod" + i, tabList.get(i));
 		}
 	}
 
@@ -126,7 +126,7 @@ public class ModuleCreativeTabBasedItemSink extends LogisticsModule implements I
 
 	@Override
 	public void listChanged() {
-		if (MainProxy.isServer(_world.getWorld())) {
+		if (MainProxy.isServer(pipe.getWorld())) {
 			NBTTagCompound nbt = new NBTTagCompound();
 			writeToNBT(nbt);
 			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this), localModeWatchers);

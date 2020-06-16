@@ -5,12 +5,12 @@ import net.minecraft.entity.player.EntityPlayer;
 import lombok.Getter;
 import lombok.Setter;
 
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.PipeLogisticsChassi;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.utils.StaticResolve;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;

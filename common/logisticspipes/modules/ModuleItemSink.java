@@ -49,7 +49,7 @@ import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.module.SimpleFilter;
 
 @CCType(name = "ItemSink Module")
-public class ModuleItemSink extends LogisticsModule implements SimpleFilter, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, ISimpleInventoryEventHandler, IModuleInventoryReceive, Gui {
+public class ModuleItemSink extends AbstractModule implements SimpleFilter, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, ISimpleInventoryEventHandler, IModuleInventoryReceive, Gui {
 
 	private final ItemIdentifierInventory _filterInventory = new ItemIdentifierInventory(9, "Requested items", 1);
 	private boolean _isDefaultRoute;
@@ -108,7 +108,7 @@ public class ModuleItemSink extends LogisticsModule implements SimpleFilter, ICl
 			return null;
 		}
 		if (_filterInventory.containsUndamagedItem(item.getUndamaged())) {
-			if (_service.canUseEnergy(1)) {
+			if (pipe.canUseEnergy(1)) {
 				return _sinkReply;
 			}
 			return null;
@@ -133,7 +133,7 @@ public class ModuleItemSink extends LogisticsModule implements SimpleFilter, ICl
 					ident2 = ident2.getIgnoringNBT();
 				}
 				if (ident1.equals(ident2)) {
-					if (_service.canUseEnergy(5)) {
+					if (pipe.canUseEnergy(5)) {
 						return _sinkReply;
 					}
 					return null;
@@ -144,7 +144,7 @@ public class ModuleItemSink extends LogisticsModule implements SimpleFilter, ICl
 			if (bestPriority > _sinkReplyDefault.fixedPriority.ordinal() || (bestPriority == _sinkReplyDefault.fixedPriority.ordinal() && bestCustomPriority >= _sinkReplyDefault.customPriority)) {
 				return null;
 			}
-			if (_service.canUseEnergy(1)) {
+			if (pipe.canUseEnergy(1)) {
 				return _sinkReplyDefault;
 			}
 			return null;
@@ -163,11 +163,11 @@ public class ModuleItemSink extends LogisticsModule implements SimpleFilter, ICl
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
-		_filterInventory.writeToNBT(nbttagcompound, "");
-		nbttagcompound.setBoolean("defaultdestination", isDefaultRoute());
-		nbttagcompound.setByteArray("ignoreData", ignoreData.toByteArray());
-		nbttagcompound.setByteArray("ignoreNBT", ignoreNBT.toByteArray());
+	public void writeToNBT(@Nonnull NBTTagCompound tag) {
+		_filterInventory.writeToNBT(tag, "");
+		tag.setBoolean("defaultdestination", isDefaultRoute());
+		tag.setByteArray("ignoreData", ignoreData.toByteArray());
+		tag.setByteArray("ignoreNBT", ignoreNBT.toByteArray());
 	}
 
 	@Override
@@ -207,7 +207,7 @@ public class ModuleItemSink extends LogisticsModule implements SimpleFilter, ICl
 
 	@Override
 	public void InventoryChanged(IInventory inventory) {
-		if (MainProxy.isServer(_world.getWorld())) {
+		if (MainProxy.isServer(pipe.getWorld())) {
 			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(inventory)).setModulePos(this), localModeWatchers);
 		}
 	}
@@ -290,7 +290,7 @@ public class ModuleItemSink extends LogisticsModule implements SimpleFilter, ICl
 		if (slot < 0 || slot >= 9) {
 			return;
 		}
-		if (MainProxy.isClient(_world.getWorld())) {
+		if (MainProxy.isClient(pipe.getWorld())) {
 			if (player == null) {
 				MainProxy.sendPacketToServer(PacketHandler.getPacket(ItemSinkFuzzy.class).setPos(slot).setNBT(false).setModulePos(this));
 			}
@@ -303,7 +303,7 @@ public class ModuleItemSink extends LogisticsModule implements SimpleFilter, ICl
 		if (slot < 0 || slot >= 9) {
 			return;
 		}
-		if (MainProxy.isClient(_world.getWorld())) {
+		if (MainProxy.isClient(pipe.getWorld())) {
 			if (player == null) {
 				MainProxy.sendPacketToServer(PacketHandler.getPacket(ItemSinkFuzzy.class).setPos(slot).setNBT(true).setModulePos(this));
 			}
@@ -322,10 +322,10 @@ public class ModuleItemSink extends LogisticsModule implements SimpleFilter, ICl
 	}
 
 	public void importFromInventory() {
-		if (_service == null) {
+		if (pipe == null) {
 			return;
 		}
-		IInventoryUtil inv = _service.getPointedInventory();
+		IInventoryUtil inv = pipe.getPointedInventory();
 		if (inv == null) {
 			return;
 		}

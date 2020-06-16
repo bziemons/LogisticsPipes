@@ -114,8 +114,8 @@ class AsyncExtractorModule(val filterOutMethod: (ItemStack) -> Boolean = { stack
 
     @ExperimentalCoroutinesApi
     override fun tickSetup(): Channel<Pair<Int, ItemStack>>? {
-        val direction = sneakyDirection ?: _service.pointedOrientation?.opposite ?: return null
-        val inventory = _service.getSneakyInventory(direction) ?: return null
+        val connected = sneakyDirection?.let { direction -> direction to pipe.getConnectedEntity(direction) } ?: pipe.connectedEntities.firstOrNull() ?: return null
+        val inventory = connected.cap
         if (inventory.sizeInventory == 0) return null
         // run item sequence as far as possible and return the channel
         return ChunkedItemChannel(inventory).also(ChunkedItemChannel::run).channel
@@ -173,7 +173,7 @@ class AsyncExtractorModule(val filterOutMethod: (ItemStack) -> Boolean = { stack
         var itemsLeft = itemsToExtract
         return setupObject.consumeAsFlow().flatMapConcat { pair ->
             if (itemsLeft <= 0) return@flatMapConcat emptyFlow<ExtractorAsyncResult>()
-            val serverRouter = this._service.router as? ServerRouter ?: return@flatMapConcat emptyFlow<ExtractorAsyncResult>()
+            val serverRouter = this.pipe.router as? ServerRouter ?: return@flatMapConcat emptyFlow<ExtractorAsyncResult>()
             var stackLeft = pair.second.count
             val itemid = ItemIdentifier.get(pair.second)
             AsyncRouting.updateRoutingTable(serverRouter)
@@ -191,8 +191,8 @@ class AsyncExtractorModule(val filterOutMethod: (ItemStack) -> Boolean = { stack
     override fun completeTick(task: Deferred<List<ExtractorAsyncResult>?>) {
         // always get result, fast exit if it is null or throw on error
         val result = task.getCompleted() ?: return
-        val direction = sneakyDirection ?: _service.pointedOrientation?.opposite ?: return
-        val inventory = _service.getSneakyInventory(direction) ?: return
+        val direction = sneakyDirection ?: pipe.pointedOrientation?.opposite ?: return
+        val inventory = pipe.getSneakyInventory(direction) ?: return
         var itemsLeft = itemsToExtract
         result.filter { it.slot < inventory.sizeInventory }
                 .asSequence()
@@ -208,25 +208,25 @@ class AsyncExtractorModule(val filterOutMethod: (ItemStack) -> Boolean = { stack
     private fun extractAndSend(slot: Int, count: Int, inventory: IInventoryUtil, destRouterId: Int, sinkReply: SinkReply, itemsLeft: Int): Int {
         var extract = getExtractionMax(count, itemsLeft, sinkReply)
         if (extract < 1) return 0
-        while (!_service.useEnergy(energyPerItem * extract)) {
-            _service.spawnParticle(Particles.OrangeParticle, 2)
+        while (!pipe.useEnergy(energyPerItem * extract)) {
+            pipe.spawnParticle(Particles.OrangeParticle, 2)
             if (extract < 2) return 0
             extract /= 2
         }
         val toSend = inventory.decrStackSize(slot, extract)
         if (toSend.isEmpty) return 0
-        _service.sendStack(toSend, destRouterId, sinkReply, itemSendMode)
+        pipe.sendStack(toSend, destRouterId, sinkReply, itemSendMode)
         return toSend.count
     }
 
     override fun recievePassive(): Boolean = false
 
-    override fun readFromNBT(nbttagcompound: NBTTagCompound) {
-        _sneakyDirection = SneakyDirection.readSneakyDirection(nbttagcompound)
+    override fun readFromNBT(tag: NBTTagCompound) {
+        _sneakyDirection = SneakyDirection.readSneakyDirection(tag)
     }
 
-    override fun writeToNBT(nbttagcompound: NBTTagCompound) {
-        SneakyDirection.writeSneakyDirection(_sneakyDirection, nbttagcompound)
+    override fun writeToNBT(tag: NBTTagCompound) {
+        SneakyDirection.writeSneakyDirection(_sneakyDirection, tag)
     }
 
     override fun hasGenericInterests(): Boolean = false

@@ -54,7 +54,7 @@ import network.rs485.logisticspipes.connection.NeighborTileEntity;
 import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
-public class ModuleActiveSupplier extends LogisticsModule implements IRequestItems, IRequireReliableTransport, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, IModuleInventoryReceive, ISimpleInventoryEventHandler, Gui {
+public class ModuleActiveSupplier extends AbstractModule implements IRequestItems, IRequireReliableTransport, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, IModuleInventoryReceive, ISimpleInventoryEventHandler, Gui {
 
 	private final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
 	private final HashMap<ItemIdentifier, Integer> _requestedItems = new HashMap<>();
@@ -118,7 +118,7 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 
 	@Override
 	public void InventoryChanged(IInventory inventory) {
-		if (MainProxy.isServer(_world.getWorld())) {
+		if (MainProxy.isServer(pipe.getWorld())) {
 			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(dummyInventory)).setModulePos(this), localModeWatchers);
 		}
 	}
@@ -159,13 +159,13 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 
 	@Override
 	public void tick() {
-		if (!_service.isNthTick(100)) {
+		if (!pipe.isNthTick(100)) {
 			return;
 		}
 
-		_requestedItems.values().stream().filter(amount -> amount > 0).forEach(amount -> _service.spawnParticle(Particles.VioletParticle, 2));
+		_requestedItems.values().stream().filter(amount -> amount > 0).forEach(amount -> pipe.spawnParticle(Particles.VioletParticle, 2));
 
-		WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(_world.getWorld(), getBlockPos());
+		WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(getPipe().getWorld(), getBlockPos());
 
 		worldCoordinates.connectedTileEntities(ConnectionPipeType.ITEM)
 				.filter(adjacent -> !adjacent.isLogisticsPipe())
@@ -183,7 +183,7 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 	}
 
 	private void createPatternRequest(IInventoryUtil invUtil) {
-		_service.getDebug().log("Supplier: Start calculating pattern request");
+		pipe.getDebug().log("Supplier: Start calculating pattern request");
 		setRequestFailed(false);
 		for (int i = 0; i < 9; i++) {
 			ItemIdentifierStack needed = dummyInventory.getIDStackInSlot(i);
@@ -201,7 +201,7 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 			int haveCount = 0;
 			if (have != null) {
 				if (!have.getItem().equals(needed.getItem())) {
-					_service.getDebug().log("Supplier: Slot for " + i + ", " + needed + " already taken by " + have);
+					pipe.getDebug().log("Supplier: Slot for " + i + ", " + needed + " already taken by " + have);
 					setRequestFailed(true);
 					continue;
 				}
@@ -223,9 +223,9 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 
 			ItemIdentifierStack toRequest = new ItemIdentifierStack(needed.getItem(), neededCount);
 
-			_service.getDebug().log("Supplier: Missing for slot " + i + ": " + toRequest);
+			pipe.getDebug().log("Supplier: Missing for slot " + i + ": " + toRequest);
 
-			if (!_service.useEnergy(10)) {
+			if (!pipe.useEnergy(10)) {
 				break;
 			}
 
@@ -234,19 +234,19 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 			IAdditionalTargetInformation targetInformation = new PatternSupplierTargetInformation(slotArray[i], needed.getStackSize());
 
 			if (_patternMode != PatternMode.Full) {
-				_service.getDebug().log("Supplier: Requesting partial: " + toRequest);
+				pipe.getDebug().log("Supplier: Requesting partial: " + toRequest);
 				neededCount = RequestTree.requestPartial(toRequest, this, targetInformation);
-				_service.getDebug().log("Supplier: Requested: " + toRequest.getItem().makeStack(neededCount));
+				pipe.getDebug().log("Supplier: Requested: " + toRequest.getItem().makeStack(neededCount));
 				if (neededCount > 0) {
 					success = true;
 				}
 			} else {
-				_service.getDebug().log("Supplier: Requesting: " + toRequest);
+				pipe.getDebug().log("Supplier: Requesting: " + toRequest);
 				success = RequestTree.request(toRequest, this, null, targetInformation);
 				if (success) {
-					_service.getDebug().log("Supplier: Request success");
+					pipe.getDebug().log("Supplier: Request success");
 				} else {
-					_service.getDebug().log("Supplier: Request failed");
+					pipe.getDebug().log("Supplier: Request failed");
 				}
 			}
 
@@ -264,14 +264,14 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 	}
 
 	private void createSupplyRequest(IInventoryUtil invUtil) {
-		_service.getDebug().log("Supplier: Start calculating supply request");
+		pipe.getDebug().log("Supplier: Start calculating supply request");
 		//How many do I want?
 		HashMap<ItemIdentifier, Integer> needed = new HashMap<>(dummyInventory.getItemsAndCount());
-		_service.getDebug().log("Supplier: Needed: " + needed);
+		pipe.getDebug().log("Supplier: Needed: " + needed);
 
 		//How many do I have?
 		Map<ItemIdentifier, Integer> have = invUtil.getItemsAndCount();
-		_service.getDebug().log("Supplier: Have:   " + have);
+		pipe.getDebug().log("Supplier: Have:   " + have);
 
 		//How many do I have?
 		HashMap<ItemIdentifier, Integer> haveUndamaged = new HashMap<>();
@@ -309,7 +309,7 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 			}
 		}
 
-		_service.getDebug().log("Supplier: Missing:   " + needed);
+		pipe.getDebug().log("Supplier: Missing:   " + needed);
 
 		setRequestFailed(false);
 
@@ -320,7 +320,7 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 				continue;
 			}
 			int neededCount = amountRequested;
-			if (!_service.useEnergy(10)) {
+			if (!pipe.useEnergy(10)) {
 				break;
 			}
 
@@ -329,19 +329,19 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 			IAdditionalTargetInformation targetInformation = new SupplierTargetInformation();
 
 			if (_requestMode != SupplyMode.Full) {
-				_service.getDebug().log("Supplier: Requesting partial: " + need.getKey().makeStack(neededCount));
+				pipe.getDebug().log("Supplier: Requesting partial: " + need.getKey().makeStack(neededCount));
 				neededCount = RequestTree.requestPartial(need.getKey().makeStack(neededCount), this, targetInformation);
-				_service.getDebug().log("Supplier: Requested: " + need.getKey().makeStack(neededCount));
+				pipe.getDebug().log("Supplier: Requested: " + need.getKey().makeStack(neededCount));
 				if (neededCount > 0) {
 					success = true;
 				}
 			} else {
-				_service.getDebug().log("Supplier: Requesting: " + need.getKey().makeStack(neededCount));
+				pipe.getDebug().log("Supplier: Requesting: " + need.getKey().makeStack(neededCount));
 				success = RequestTree.request(need.getKey().makeStack(neededCount), this, null, targetInformation);
 				if (success) {
-					_service.getDebug().log("Supplier: Request success");
+					pipe.getDebug().log("Supplier: Request success");
 				} else {
-					_service.getDebug().log("Supplier: Request failed");
+					pipe.getDebug().log("Supplier: Request failed");
 				}
 			}
 
@@ -349,10 +349,10 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 				Integer currentRequest = _requestedItems.get(need.getKey());
 				if (currentRequest == null) {
 					_requestedItems.put(need.getKey(), neededCount);
-					_service.getDebug().log("Supplier: Inserting Requested Items: " + neededCount);
+					pipe.getDebug().log("Supplier: Inserting Requested Items: " + neededCount);
 				} else {
 					_requestedItems.put(need.getKey(), currentRequest + neededCount);
-					_service.getDebug().log("Supplier: Raising Requested Items from: " + currentRequest + " to: " + currentRequest + neededCount);
+					pipe.getDebug().log("Supplier: Raising Requested Items from: " + currentRequest + " to: " + currentRequest + neededCount);
 				}
 			} else {
 				setRequestFailed(true);
@@ -387,13 +387,13 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
-		dummyInventory.writeToNBT(nbttagcompound, "");
-		nbttagcompound.setShort("requestmode", (short) _requestMode.ordinal());
-		nbttagcompound.setShort("patternmode", (short) _patternMode.ordinal());
-		nbttagcompound.setBoolean("limited", isLimited());
+	public void writeToNBT(@Nonnull NBTTagCompound tag) {
+		dummyInventory.writeToNBT(tag, "");
+		tag.setShort("requestmode", (short) _requestMode.ordinal());
+		tag.setShort("patternmode", (short) _patternMode.ordinal());
+		tag.setBoolean("limited", isLimited());
 		for (int i = 0; i < 9; i++) {
-			nbttagcompound.setInteger("slotArray_" + i, slotArray[i]);
+			tag.setInteger("slotArray_" + i, slotArray[i]);
 		}
 	}
 
@@ -402,7 +402,7 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 		//see if we can get an exact match
 		Integer count = _requestedItems.get(item.getItem());
 		if (count != null) {
-			_service.getDebug().log("Supplier: Exact match. Still missing: " + Math.max(0, count - remaining));
+			pipe.getDebug().log("Supplier: Exact match. Still missing: " + Math.max(0, count - remaining));
 			if (count - remaining > 0) {
 				_requestedItems.put(item.getItem(), count - remaining);
 			} else {
@@ -419,7 +419,7 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 			Entry<ItemIdentifier, Integer> e = it.next();
 			if (e.getKey().equalsWithoutNBT(item.getItem())) {
 				int expected = e.getValue();
-				_service.getDebug().log("Supplier: Fuzzy match with" + e + ". Still missing: " + Math.max(0, expected - remaining));
+				pipe.getDebug().log("Supplier: Fuzzy match with" + e + ". Still missing: " + Math.max(0, expected - remaining));
 				if (expected - remaining > 0) {
 					e.setValue(expected - remaining);
 				} else {
@@ -432,18 +432,18 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 			}
 		}
 		//we have no idea what this is, log it.
-		_service.getDebug().log("Supplier: supplier got unexpected item " + item.toString());
+		pipe.getDebug().log("Supplier: supplier got unexpected item " + item.toString());
 	}
 
 	@Override
 	public void itemLost(ItemIdentifierStack item, IAdditionalTargetInformation info) {
-		_service.getDebug().log("Supplier: Registered Item Lost: " + item);
+		pipe.getDebug().log("Supplier: Registered Item Lost: " + item);
 		decreaseRequested(item);
 	}
 
 	@Override
 	public void itemArrived(ItemIdentifierStack item, IAdditionalTargetInformation info) {
-		_service.getDebug().log("Supplier: Registered Item Arrived: " + item);
+		pipe.getDebug().log("Supplier: Registered Item Arrived: " + item);
 		decreaseRequested(item);
 	}
 
@@ -520,7 +520,7 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 	@Override
 	@Nonnull
 	public IRouter getRouter() {
-		return _service.getRouter();
+		return pipe.getRouter();
 	}
 
 	@Override
@@ -530,7 +530,7 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 
 	@Override
 	public int getID() {
-		return _service.getRouter().getSimpleID();
+		return pipe.getRouter().getSimpleID();
 	}
 
 	@Override

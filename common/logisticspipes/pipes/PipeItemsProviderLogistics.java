@@ -44,7 +44,6 @@ import logisticspipes.logistics.LogisticsManager;
 import logisticspipes.logisticspipes.ExtractionMode;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.logisticspipes.IRoutedItem.TransportMode;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleProvider;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.network.PacketHandler;
@@ -78,6 +77,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.connection.NeighborTileEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 

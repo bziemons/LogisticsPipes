@@ -38,7 +38,7 @@ import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.module.SimpleFilter;
 
 @CCType(name = "EnchantmentSink Module MK2")
-public class ModuleEnchantmentSinkMK2 extends LogisticsModule implements SimpleFilter, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, ISimpleInventoryEventHandler, IModuleInventoryReceive, Gui {
+public class ModuleEnchantmentSinkMK2 extends AbstractModule implements SimpleFilter, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, ISimpleInventoryEventHandler, IModuleInventoryReceive, Gui {
 
 	private final ItemIdentifierInventory _filterInventory = new ItemIdentifierInventory(9, "Requested Enchanted items", 1);
 
@@ -89,8 +89,8 @@ public class ModuleEnchantmentSinkMK2 extends LogisticsModule implements SimpleF
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
-		_filterInventory.writeToNBT(nbttagcompound, "");
+	public void writeToNBT(@Nonnull NBTTagCompound tag) {
+		_filterInventory.writeToNBT(tag, "");
 	}
 
 	@Override
@@ -128,7 +128,7 @@ public class ModuleEnchantmentSinkMK2 extends LogisticsModule implements SimpleF
 
 	@Override
 	public void InventoryChanged(IInventory inventory) {
-		if (MainProxy.isServer(_world.getWorld())) {
+		if (MainProxy.isServer(pipe.getWorld())) {
 			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(inventory)).setModulePos(this), localModeWatchers);
 		}
 	}
@@ -146,7 +146,7 @@ public class ModuleEnchantmentSinkMK2 extends LogisticsModule implements SimpleF
 	@Override
 	/*
 	 * (non-Javadoc)
-	 * @see logisticspipes.modules.LogisticsModule#hasGenericInterests()
+	 * @see network.rs485.logisticspipes.api.LogisticsModule#hasGenericInterests()
 	 * Only looking for items in filter
 	 */
 	public boolean hasGenericInterests() {

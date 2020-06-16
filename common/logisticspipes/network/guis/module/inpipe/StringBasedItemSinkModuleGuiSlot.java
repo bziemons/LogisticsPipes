@@ -4,7 +4,7 @@ import net.minecraft.entity.player.EntityPlayer;
 
 import logisticspipes.gui.modules.GuiStringBasedItemSink;
 import logisticspipes.interfaces.IStringBasedModule;
-import logisticspipes.modules.LogisticsModule;
+import logisticspipes.modules.AbstractModule;
 import logisticspipes.network.abstractguis.GuiProvider;
 import logisticspipes.network.abstractguis.NBTModuleCoordinatesGuiProvider;
 import logisticspipes.utils.StaticResolve;
@@ -20,7 +20,7 @@ public class StringBasedItemSinkModuleGuiSlot extends NBTModuleCoordinatesGuiPro
 
 	@Override
 	public Object getClientGui(EntityPlayer player) {
-		LogisticsModule module = this.getLogisticsModule(player.getEntityWorld(), LogisticsModule.class);
+		AbstractModule module = this.getLogisticsModule(player.getEntityWorld(), AbstractModule.class);
 		if (!(module instanceof IStringBasedModule)) {
 			return null;
 		}

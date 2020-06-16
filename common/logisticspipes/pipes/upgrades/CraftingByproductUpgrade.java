@@ -1,9 +1,9 @@
 package logisticspipes.pipes.upgrades;
 
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.pipes.PipeItemsCraftingLogistics;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class CraftingByproductUpgrade implements IPipeUpgrade {
 

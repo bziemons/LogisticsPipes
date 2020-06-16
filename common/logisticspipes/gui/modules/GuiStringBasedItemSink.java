@@ -7,13 +7,13 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.inventory.IInventory;
 
 import logisticspipes.interfaces.IStringBasedModule;
-import logisticspipes.modules.LogisticsModule;
 import logisticspipes.utils.Color;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.SimpleGraphics;
 import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.item.ItemIdentifierInventory;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class GuiStringBasedItemSink extends ModuleBaseGui {
 

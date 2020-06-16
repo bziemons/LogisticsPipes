@@ -60,7 +60,7 @@ class AsyncComputerQuicksort : AsyncModule<Pair<Int, ItemStack>?, QuicksortAsync
         get() = _timeout
         set(value) {
             _timeout = if (value == 0) 100 else value
-            if (MainProxy.isServer(_world.world)) {
+            if (MainProxy.isServer(pipe.world)) {
 //                MainProxy.sendToPlayerList(PacketHandler.getPacket(CCBasedQuickSortMode::class.java).setTimeOut(timeout).setModulePos(this), localModeWatchers)
             }
         }
@@ -70,7 +70,7 @@ class AsyncComputerQuicksort : AsyncModule<Pair<Int, ItemStack>?, QuicksortAsync
         get() = _sinkSize
         set(value) {
             _sinkSize = value
-            if (MainProxy.isServer(_world.world)) {
+            if (MainProxy.isServer(pipe.world)) {
 //                MainProxy.sendToPlayerList(PacketHandler.getPacket(CCBasedQuickSortSinkSize::class.java).setSinkSize(sinkSize).setModulePos(this), localModeWatchers)
             }
         }
@@ -102,14 +102,19 @@ class AsyncComputerQuicksort : AsyncModule<Pair<Int, ItemStack>?, QuicksortAsync
     @ExperimentalCoroutinesApi
     override fun completeTick(task: Deferred<QuicksortAsyncResult?>) = quicksort.completeTick(task)
 
-    override fun readFromNBT(nbttagcompound: NBTTagCompound) {
-        quicksort.readFromNBT(nbttagcompound)
-        timeout = nbttagcompound.getInteger("Timeout")
+    override fun readFromNBT(tag: NBTTagCompound) {
+        if (tag.hasKey("quicksort")) {
+            val quicksortTag = tag.getCompoundTag("quicksort")
+            quicksort.readFromNBT(quicksortTag)
+        }
+        timeout = tag.getInteger("Timeout")
     }
 
-    override fun writeToNBT(nbttagcompound: NBTTagCompound) {
-        quicksort.writeToNBT(nbttagcompound)
-        nbttagcompound.setInteger("Timeout", timeout)
+    override fun writeToNBT(tag: NBTTagCompound) {
+        val quicksortTag = NBTTagCompound()
+        quicksort.writeToNBT(quicksortTag)
+        tag.setTag("quicksort", quicksortTag)
+        tag.setInteger("Timeout", timeout)
     }
 
     override fun recievePassive(): Boolean = false

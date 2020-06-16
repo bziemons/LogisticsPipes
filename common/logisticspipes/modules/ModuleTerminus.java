@@ -38,7 +38,7 @@ import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.module.SimpleFilter;
 
 @CCType(name = "Terminus Module")
-public class ModuleTerminus extends LogisticsModule implements SimpleFilter, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, ISimpleInventoryEventHandler, IModuleInventoryReceive, Gui {
+public class ModuleTerminus extends AbstractModule implements SimpleFilter, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, ISimpleInventoryEventHandler, IModuleInventoryReceive, Gui {
 
 	private final ItemIdentifierInventory _filterInventory = new ItemIdentifierInventory(9, "Terminated items", 1);
 
@@ -67,8 +67,8 @@ public class ModuleTerminus extends LogisticsModule implements SimpleFilter, ICl
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
-		_filterInventory.writeToNBT(nbttagcompound, "");
+	public void writeToNBT(@Nonnull NBTTagCompound tag) {
+		_filterInventory.writeToNBT(tag, "");
 	}
 
 	private SinkReply _sinkReply;
@@ -85,7 +85,7 @@ public class ModuleTerminus extends LogisticsModule implements SimpleFilter, ICl
 			return null;
 		}
 		if (_filterInventory.containsUndamagedItem(item.getUndamaged())) {
-			if (_service.canUseEnergy(2)) {
+			if (pipe.canUseEnergy(2)) {
 				return _sinkReply;
 			}
 		}
@@ -133,7 +133,7 @@ public class ModuleTerminus extends LogisticsModule implements SimpleFilter, ICl
 
 	@Override
 	public void InventoryChanged(IInventory inventory) {
-		if (MainProxy.isServer(_world.getWorld())) {
+		if (MainProxy.isServer(pipe.getWorld())) {
 			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(inventory)).setModulePos(this), localModeWatchers);
 		}
 	}

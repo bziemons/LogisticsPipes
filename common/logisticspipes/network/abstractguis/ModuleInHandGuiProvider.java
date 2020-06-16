@@ -5,9 +5,8 @@ import net.minecraft.item.ItemStack;
 
 import logisticspipes.items.ItemModule;
 import logisticspipes.logisticspipes.ItemModuleInformationManager;
-import logisticspipes.modules.LogisticsModule;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
 import logisticspipes.utils.DummyWorldProvider;
+import network.rs485.logisticspipes.api.LogisticsModule;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 
@@ -37,7 +36,7 @@ public abstract class ModuleInHandGuiProvider extends GuiProvider {
 			return null;
 		}
 		LogisticsModule module = ((ItemModule) item.getItem()).getModuleForItem(item, null, new DummyWorldProvider(player.getEntityWorld()), null);
-		module.registerPosition(ModulePositionType.IN_HAND, invSlot);
+		//module.registerPosition(ModulePositionType.IN_HAND, invSlot);
 		ItemModuleInformationManager.readInformation(item, module);
 		return module;
 	}

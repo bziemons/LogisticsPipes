@@ -35,7 +35,7 @@ import logisticspipes.utils.item.ItemIdentifierStack;
 import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.module.SimpleFilter;
 
-public class ModulePassiveSupplier extends LogisticsModule implements Gui, SimpleFilter, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, IModuleInventoryReceive, ISimpleInventoryEventHandler {
+public class ModulePassiveSupplier extends AbstractModule implements Gui, SimpleFilter, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, IModuleInventoryReceive, ISimpleInventoryEventHandler {
 
 	private final ItemIdentifierInventory _filterInventory = new ItemIdentifierInventory(9, "Requested items", 64);
 	private final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
@@ -68,7 +68,7 @@ public class ModulePassiveSupplier extends LogisticsModule implements Gui, Simpl
 			return null;
 		}
 
-		IInventoryUtil targetUtil = _service.getSneakyInventory(slot, positionInt);
+		IInventoryUtil targetUtil = pipe.getSneakyInventory(slot, positionInt);
 		if (targetUtil == null) {
 			return null;
 		}
@@ -83,7 +83,7 @@ public class ModulePassiveSupplier extends LogisticsModule implements Gui, Simpl
 			return null;
 		}
 
-		if (_service.canUseEnergy(2)) {
+		if (pipe.canUseEnergy(2)) {
 			return new SinkReply(_sinkReply, targetCount - haveCount);
 		}
 		return null;
@@ -95,8 +95,8 @@ public class ModulePassiveSupplier extends LogisticsModule implements Gui, Simpl
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
-		_filterInventory.writeToNBT(nbttagcompound, "");
+	public void writeToNBT(@Nonnull NBTTagCompound tag) {
+		_filterInventory.writeToNBT(tag, "");
 	}
 
 	@Override
@@ -144,7 +144,7 @@ public class ModulePassiveSupplier extends LogisticsModule implements Gui, Simpl
 
 	@Override
 	public void InventoryChanged(IInventory inventory) {
-		if (MainProxy.isServer(_world.getWorld())) {
+		if (MainProxy.isServer(pipe.getWorld())) {
 			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(_filterInventory)).setModulePos(this), localModeWatchers);
 		}
 	}

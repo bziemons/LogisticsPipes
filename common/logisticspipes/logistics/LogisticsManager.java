@@ -26,7 +26,7 @@ import logisticspipes.interfaces.routing.IProvideItems;
 import logisticspipes.items.LogisticsFluidContainer;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.logisticspipes.IRoutedItem.TransportMode;
-import logisticspipes.modules.LogisticsModule;
+import logisticspipes.modules.AbstractModule;
 import logisticspipes.pipefxhandlers.Particles;
 import logisticspipes.pipes.PipeItemsCraftingLogistics;
 import logisticspipes.pipes.PipeItemsProviderLogistics;
@@ -43,6 +43,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class LogisticsManager implements ILogisticsManager {
 
@@ -112,15 +113,18 @@ public class LogisticsManager implements ILogisticsManager {
 	public static SinkReply canSink(@Nonnull ItemStack stack, @Nonnull IRouter destination, IRouter sourceRouter, boolean excludeSource, ItemIdentifier item, SinkReply result, boolean activeRequest, boolean allowDefault) {
 
 		SinkReply reply;
-		LogisticsModule module = destination.getLogisticsModule();
-		CoreRoutedPipe crp = destination.getPipe();
-		if (module == null) {
+		LogisticsModule module = null;
+		CoreRoutedPipe pipe = destination.getPipe();
+		if (pipe != null) {
+			module = pipe.getLogisticsModule();
+		}
+		if (!(module instanceof AbstractModule)) {
 			return null;
 		}
-		if (!(module.recievePassive() || activeRequest)) {
+		if (!(((AbstractModule) module).recievePassive() || activeRequest)) {
 			return null;
 		}
-		if (crp == null || !crp.isEnabled()) {
+		if (!pipe.isEnabled()) {
 			return null;
 		}
 		if (excludeSource && sourceRouter != null) {
@@ -129,9 +133,9 @@ public class LogisticsManager implements ILogisticsManager {
 			}
 		}
 		if (result == null) {
-			reply = module.sinksItem(stack, item, -1, 0, allowDefault, true, true);
+			reply = ((AbstractModule) module).sinksItem(stack, item, -1, 0, allowDefault, true, true);
 		} else {
-			reply = module.sinksItem(stack, item, result.fixedPriority.ordinal(), result.customPriority, allowDefault, true, true);
+			reply = ((AbstractModule) module).sinksItem(stack, item, result.fixedPriority.ordinal(), result.customPriority, allowDefault, true, true);
 		}
 		if (result != null && result.maxNumberOfItems < 0) {
 			return null;

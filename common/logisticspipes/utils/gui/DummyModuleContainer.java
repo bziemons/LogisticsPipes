@@ -9,9 +9,8 @@ import net.minecraft.item.ItemStack;
 
 import logisticspipes.items.ItemModule;
 import logisticspipes.logisticspipes.ItemModuleInformationManager;
-import logisticspipes.modules.LogisticsModule;
-import logisticspipes.modules.LogisticsModule.ModulePositionType;
 import logisticspipes.utils.DummyWorldProvider;
+import network.rs485.logisticspipes.api.LogisticsModule;
 
 public class DummyModuleContainer extends DummyContainer {
 
@@ -24,7 +23,7 @@ public class DummyModuleContainer extends DummyContainer {
 		ItemStack moduleStack = player.inventory.mainInventory.get(slot);
 		if (moduleStack.isEmpty()) throw new IllegalStateException("Module stack is empty");
 		module = ((ItemModule) moduleStack.getItem()).getModuleForItem(moduleStack, null, new DummyWorldProvider(player.world), null);
-		module.registerPosition(ModulePositionType.IN_HAND, slot);
+		//module.registerPosition(ModulePositionType.IN_HAND, slot);
 		ItemModuleInformationManager.readInformation(moduleStack, module);
 	}
 

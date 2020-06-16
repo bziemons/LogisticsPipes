@@ -35,15 +35,15 @@ import net.minecraft.world.World;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.IClientInformationProvider;
-import logisticspipes.interfaces.routing.ISaveState;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
 import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.ISimpleInventoryEventHandler;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.logisticspipes.api.LogisticsStateful;
 import network.rs485.logisticspipes.util.items.ItemStackLoader;
 
-public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTypeHolder, Iterable<Pair<ItemIdentifierStack, Integer>>, IClientInformationProvider {
+public class ItemIdentifierInventory implements IInventory, LogisticsStateful, ILPCCTypeHolder, Iterable<Pair<ItemIdentifierStack, Integer>>, IClientInformationProvider {
 
 	private final ItemIdentifierStack[] _contents;
 	private final String _name;

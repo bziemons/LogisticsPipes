@@ -113,12 +113,8 @@ public class ChannelManager implements IChannelManager {
 
 		List<ChannelInformation> channels = new ArrayList<>();
 
-		public SavedData(String name) {
-			super(name);
-		}
-
 		public SavedData() {
-			this(DATA_NAME);
+			super(DATA_NAME);
 		}
 
 		@Override

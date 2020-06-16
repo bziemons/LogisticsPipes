@@ -88,7 +88,7 @@ class AsyncQuicksortModule : AsyncModule<Pair<Int, ItemStack>?, QuicksortAsyncRe
 
     override fun tickSetup(): Pair<Int, ItemStack>? {
         val serverRouter = this.getServerRouter()
-        val inventory = _service.pointedInventory ?: return null
+        val inventory = pipe.pointedInventory ?: return null
         if (inventory.sizeInventory == 0) return null
         if (currentSlot >= inventory.sizeInventory) currentSlot = 0
         val slot = currentSlot++
@@ -117,7 +117,7 @@ class AsyncQuicksortModule : AsyncModule<Pair<Int, ItemStack>?, QuicksortAsyncRe
     @ExperimentalCoroutinesApi
     override fun completeTick(task: Deferred<QuicksortAsyncResult?>) {
         val result = task.getCompleted() ?: return
-        val inventory = _service.pointedInventory ?: return
+        val inventory = pipe.pointedInventory ?: return
         if (result.slot >= inventory.sizeInventory) return
         val stack = inventory.getStackInSlot(result.slot)
         if (result.itemid.equalsWithNBT(stack)) {
@@ -128,20 +128,20 @@ class AsyncQuicksortModule : AsyncModule<Pair<Int, ItemStack>?, QuicksortAsyncRe
     private fun extractAndSend(slot: Int, stack: ItemStack, inventory: IInventoryUtil, destRouterId: Int, sinkReply: SinkReply) {
         val toExtract = getExtractionMax(stack.count, stack.maxStackSize, sinkReply)
         if (toExtract <= 0) return
-        if (!_service.useEnergy(energyPerStack)) return
+        if (!pipe.useEnergy(energyPerStack)) return
         stalled = false
         stallSlot = slot
         val extracted = inventory.decrStackSize(slot, toExtract)
         if (extracted.isEmpty) return
-        _service.sendStack(extracted, destRouterId, sinkReply, CoreRoutedPipe.ItemSendMode.Fast)
-        _service.spawnParticle(Particles.OrangeParticle, 8)
+        pipe.sendStack(extracted, destRouterId, sinkReply, CoreRoutedPipe.ItemSendMode.Fast)
+        pipe.spawnParticle(Particles.OrangeParticle, 8)
     }
 
     override fun recievePassive(): Boolean = false
 
-    override fun readFromNBT(nbttagcompound: NBTTagCompound) {}
+    override fun readFromNBT(tag: NBTTagCompound) {}
 
-    override fun writeToNBT(nbttagcompound: NBTTagCompound) {}
+    override fun writeToNBT(tag: NBTTagCompound) {}
 
     override fun hasGenericInterests(): Boolean = false
 
