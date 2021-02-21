@@ -34,7 +34,7 @@ import logisticspipes.blocks.crafting.LogisticsCraftingTableTileEntity;
 import logisticspipes.interfaces.IGuiOpenControler;
 import logisticspipes.interfaces.IHUDModuleHandler;
 import logisticspipes.interfaces.IHUDModuleRenderer;
-import logisticspipes.interfaces.IInventoryUtil;
+import network.rs485.logisticspipes.api.IInventoryUtil;
 import logisticspipes.interfaces.IModuleWatchReciver;
 import logisticspipes.interfaces.IPipeServiceProvider;
 import logisticspipes.interfaces.ISlotUpgradeManager;
@@ -109,9 +109,10 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
+import network.rs485.util.StreamUtilsKt;
 
 public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDModuleHandler, IModuleWatchReciver, IGuiOpenControler, Gui {
 
@@ -142,7 +143,7 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 	private IRequestItems _invRequester;
 	private WeakReference<TileEntity> lastAccessedCrafter = new WeakReference<TileEntity>(null);
 	private boolean cachedAreAllOrderesToBuffer;
-	private List<NeighborTileEntity<TileEntity>> cachedCrafters = null;
+	private List<NeighborInteractableEntity<TileEntity>> cachedCrafters = null;
 	private UpgradeSatelliteFromIDs updateSatelliteFromIDs = null;
 
 	public ModuleCrafter() {
@@ -212,10 +213,8 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 		final ItemStack finalStack = stack;
 		int count = worldCoordinates
 				.connectedTileEntities(ConnectionPipeType.ITEM)
-				.map(neighbor -> neighbor.sneakyInsertion().from(getUpgradeManager()))
-				.filter(NeighborTileEntity::isItemHandler)
-				.map(NeighborTileEntity::getUtilForItemHandler)
-				.map(invUtil -> invUtil.roomForItem(finalStack))
+				.flatMap(neighbor -> StreamUtilsKt.stream(neighbor.sneakyInsertion().from(getUpgradeManager()).getInventory()))
+				.map(invUtil -> invUtil.roomForStack(finalStack))
 				.reduce(Integer::sum).orElse(0);
 
 		_service.getCacheHolder().setCache(CacheTypes.Inventory, key, count);
@@ -870,11 +869,11 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 		} else {
 			WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(_world.getWorld(), getBlockPos());
 
-			for (NeighborTileEntity adjacent : worldCoordinates.connectedTileEntities(ConnectionPipeType.ITEM).collect(Collectors.toList())) {
+			for (NeighborInteractableEntity adjacent : worldCoordinates.connectedTileEntities(ConnectionPipeType.ITEM).collect(Collectors.toList())) {
 				for (ICraftingRecipeProvider provider : SimpleServiceLocator.craftingRecipeProviders) {
-					if (provider.importRecipe(adjacent.getTileEntity(), _dummyInventory)) {
+					if (provider.importRecipe(adjacent.getEntity(), _dummyInventory)) {
 						if (provider instanceof IFuzzyRecipeProvider) {
-							((IFuzzyRecipeProvider) provider).importFuzzyFlags(adjacent.getTileEntity(), _dummyInventory, fuzzyCraftingFlagArray, outputFuzzyFlags);
+							((IFuzzyRecipeProvider) provider).importFuzzyFlags(adjacent.getEntity(), _dummyInventory, fuzzyCraftingFlagArray, outputFuzzyFlags);
 						}
 						// ToDo: break only out of the inner loop?
 						break;
@@ -1000,17 +999,17 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 
 		worldCoordinates.connectedTileEntities(ConnectionPipeType.ITEM).anyMatch(adjacent -> {
 			boolean found = SimpleServiceLocator.craftingRecipeProviders.stream()
-					.anyMatch(provider -> provider.canOpenGui(adjacent.getTileEntity()));
+					.anyMatch(provider -> provider.canOpenGui(adjacent.getEntity()));
 
 			if (!found) {
 				found = SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(adjacent) != null;
 			}
 
 			if (found) {
-				final BlockPos pos = adjacent.getTileEntity().getPos();
+				final BlockPos pos = adjacent.getEntity().getPos();
 				IBlockState blockState = _world.getWorld().getBlockState(pos);
 				return !blockState.getBlock().isAir(blockState, _world.getWorld(), pos) && blockState.getBlock()
-						.onBlockActivated(_world.getWorld(), pos, adjacent.getTileEntity().getWorld().getBlockState(pos),
+						.onBlockActivated(_world.getWorld(), pos, adjacent.getEntity().getWorld().getBlockState(pos),
 								player, EnumHand.MAIN_HAND, EnumFacing.UP, 0, 0, 0);
 			}
 			return false;
@@ -1044,9 +1043,9 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 		if ((!_service.getItemOrderManager().hasOrders(ResourceType.CRAFTING, ResourceType.EXTRA))) {
 			final ISlotUpgradeManager upgradeManager = Objects.requireNonNull(getUpgradeManager());
 			if (upgradeManager.getCrafterCleanup() > 0) {
-				final List<NeighborTileEntity<TileEntity>> crafters = locateCraftersForExtraction();
+				final List<NeighborInteractableEntity<TileEntity>> crafters = locateCraftersForExtraction();
 				ItemStack extracted = ItemStack.EMPTY;
-				for (NeighborTileEntity<TileEntity> adjacentCrafter : crafters) {
+				for (NeighborInteractableEntity<TileEntity> adjacentCrafter : crafters) {
 					extracted = extractFiltered(adjacentCrafter, _cleanupInventory, cleanupModeIsExclude, upgradeManager.getCrafterCleanup() * 3);
 					if (!extracted.isEmpty()) {
 						break;
@@ -1062,7 +1061,7 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 
 		waitingForCraft = true;
 
-		List<NeighborTileEntity<TileEntity>> adjacentCrafters = locateCraftersForExtraction();
+		List<NeighborInteractableEntity<TileEntity>> adjacentCrafters = locateCraftersForExtraction();
 		if (adjacentCrafters.size() < 1) {
 			if (_service.getItemOrderManager().hasOrders(ResourceType.CRAFTING, ResourceType.EXTRA)) {
 				_service.getItemOrderManager().sendFailed();
@@ -1085,8 +1084,8 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 			maxtosend = Math.min(nextOrder.getResource().getItem().getMaxStackSize(), maxtosend);
 			// retrieve the new crafted items
 			ItemStack extracted = ItemStack.EMPTY;
-			NeighborTileEntity<TileEntity> adjacent = null; // there has to be at least one adjacentCrafter at this point; adjacent wont stay null
-			for (NeighborTileEntity<TileEntity> adjacentCrafter : adjacentCrafters) {
+			NeighborInteractableEntity<TileEntity> adjacent = null; // there has to be at least one adjacentCrafter at this point; adjacent wont stay null
+			for (NeighborInteractableEntity<TileEntity> adjacentCrafter : adjacentCrafters) {
 				adjacent = adjacentCrafter;
 				extracted = extract(adjacent, nextOrder.getResource(), maxtosend);
 				if (!extracted.isEmpty()) {
@@ -1099,7 +1098,7 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 			}
 			_service.getCacheHolder().trigger(CacheTypes.Inventory);
 			Objects.requireNonNull(adjacent);
-			lastAccessedCrafter = new WeakReference<>(adjacent.getTileEntity());
+			lastAccessedCrafter = new WeakReference<>(adjacent.getEntity());
 			// send the new crafted items to the destination
 			ItemIdentifier extractedID = ItemIdentifier.get(extracted);
 			while (!extracted.isEmpty()) {
@@ -1183,26 +1182,26 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 	}
 
 	@Nonnull
-	private ItemStack extract(NeighborTileEntity<TileEntity> adjacent, IResource item, int amount) {
+	private ItemStack extract(NeighborInteractableEntity<TileEntity> adjacent, IResource item, int amount) {
 		return adjacent.getJavaInstanceOf(LogisticsCraftingTableTileEntity.class)
 				.map(adjacentCraftingTable -> extractFromLogisticsCraftingTable(adjacentCraftingTable, item, amount))
-				.orElseGet(() -> adjacent.isItemHandler() ? extractFromInventory(adjacent.getUtilForItemHandler(), item, amount) : ItemStack.EMPTY);
+				.orElseGet(() -> adjacent.isItemHandler() ? extractFromInventory(adjacent.getInventoryForItemHandler().getUtil(), item, amount) : ItemStack.EMPTY);
 	}
 
 	@Nonnull
-	private ItemStack extractFiltered(NeighborTileEntity<TileEntity> adjacent, ItemIdentifierInventory inv, boolean isExcluded, int filterInvLimit) {
-		return adjacent.isItemHandler() ? extractFromInventoryFiltered(adjacent.getUtilForItemHandler(), inv, isExcluded, filterInvLimit) : ItemStack.EMPTY;
+	private ItemStack extractFiltered(NeighborInteractableEntity<TileEntity> adjacent, ItemIdentifierInventory inv, boolean isExcluded, int filterInvLimit) {
+		return adjacent.isItemHandler() ? extractFromInventoryFiltered(adjacent.getInventoryForItemHandler().getUtil(), inv, isExcluded, filterInvLimit) : ItemStack.EMPTY;
 	}
 
 	@Nonnull
-	private ItemStack extractFromInventory(@Nonnull IInventoryUtil invUtil, IResource wanteditem, int count) {
+	private ItemStack extractFromInventory(@Nonnull IInventoryUtil inventory, IResource wanteditem, int count) {
 		ItemIdentifier itemToExtract = null;
 		if (wanteditem instanceof ItemResource) {
 			itemToExtract = ((ItemResource) wanteditem).getItem();
 		} else if (wanteditem instanceof DictResource) {
 			int max = Integer.MIN_VALUE;
 			ItemIdentifier toExtract = null;
-			for (Map.Entry<ItemIdentifier, Integer> content : invUtil.getItemsAndCount().entrySet()) {
+			for (Map.Entry<ItemIdentifier, Integer> content : inventory.getItemsAndCount().entrySet()) {
 				if (wanteditem.matches(content.getKey(), IResource.MatchSettings.NORMAL)) {
 					if (content.getValue() > max) {
 						max = content.getValue();
@@ -1215,11 +1214,11 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 			}
 			itemToExtract = toExtract;
 		}
-		int available = invUtil.itemCount(itemToExtract);
+		int available = inventory.itemCount(itemToExtract);
 		if (available == 0 || !_service.canUseEnergy(neededEnergy() * Math.min(count, available))) {
 			return ItemStack.EMPTY;
 		}
-		ItemStack extracted = invUtil.getMultipleItems(itemToExtract, Math.min(count, available));
+		ItemStack extracted = inventory.getMultipleItems(itemToExtract, Math.min(count, available));
 		_service.useEnergy(neededEnergy() * extracted.getCount());
 		return extracted;
 	}
@@ -1263,7 +1262,7 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 
 	@Nonnull
 	private ItemStack extractFromLogisticsCraftingTable(
-			NeighborTileEntity<LogisticsCraftingTableTileEntity> adjacentCraftingTable,
+			NeighborInteractableEntity<LogisticsCraftingTableTileEntity> adjacentCraftingTable,
 			IResource wanteditem, int count) {
 		ItemStack extracted = extractFromInventory(
 				Objects.requireNonNull(adjacentCraftingTable.getInventoryUtil()),
@@ -1273,7 +1272,7 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 		}
 		ItemStack retstack = ItemStack.EMPTY;
 		while (count > 0) {
-			ItemStack stack = adjacentCraftingTable.getTileEntity().getOutput(wanteditem, _service);
+			ItemStack stack = adjacentCraftingTable.getEntity().getOutput(wanteditem, _service);
 			if (stack.isEmpty()) {
 				break;
 			}
@@ -1318,7 +1317,7 @@ public class ModuleCrafter extends LogisticsModule implements ICraftItems, IHUDM
 		return 1 + getUpgradeManager().getItemStackExtractionUpgrade();
 	}
 
-	public List<NeighborTileEntity<TileEntity>> locateCraftersForExtraction() {
+	public List<NeighborInteractableEntity<TileEntity>> locateCraftersForExtraction() {
 		if (cachedCrafters == null) {
 			cachedCrafters = new WorldCoordinatesWrapper(_world.getWorld(), getBlockPos())
 					.connectedTileEntities(ConnectionPipeType.ITEM)

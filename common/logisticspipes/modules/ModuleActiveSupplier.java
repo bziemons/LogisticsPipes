@@ -21,7 +21,7 @@ import lombok.Setter;
 import logisticspipes.interfaces.IClientInformationProvider;
 import logisticspipes.interfaces.IHUDModuleHandler;
 import logisticspipes.interfaces.IHUDModuleRenderer;
-import logisticspipes.interfaces.IInventoryUtil;
+import network.rs485.logisticspipes.api.IInventoryUtil;
 import logisticspipes.interfaces.IModuleInventoryReceive;
 import logisticspipes.interfaces.IModuleWatchReciver;
 import logisticspipes.interfaces.ISlotUpgradeManager;
@@ -50,7 +50,7 @@ import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
@@ -170,7 +170,7 @@ public class ModuleActiveSupplier extends LogisticsModule implements IRequestIte
 		worldCoordinates.connectedTileEntities(ConnectionPipeType.ITEM)
 				.filter(adjacent -> !adjacent.isLogisticsPipe())
 				.map(neighbor -> neighbor.sneakyInsertion().from(getUpgradeManager()))
-				.map(NeighborTileEntity::getInventoryUtil)
+				.map(NeighborInteractableEntity::getInventoryUtil)
 				.filter(Objects::nonNull)
 				.filter(invUtil -> invUtil.getSizeInventory() > 0)
 				.forEach(invUtil -> {

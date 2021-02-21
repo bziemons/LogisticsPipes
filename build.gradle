@@ -77,6 +77,8 @@ ext.sharedManifest = manifest {
 
 sourceSets {
     api {
+        compileClasspath += configurations.compileClasspath
+        runtimeClasspath += configurations.runtimeClasspath
         java {
             srcDirs = ['src/api/java']
         }

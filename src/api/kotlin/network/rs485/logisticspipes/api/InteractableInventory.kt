@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019  RS485
+ * Copyright (c) 2020  RS485
  *
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0.1, or MMPL. Please check the contents of the license located in
@@ -8,7 +8,7 @@
  * This file can instead be distributed under the license terms of the
  * MIT license:
  *
- * Copyright (c) 2019  RS485
+ * Copyright (c) 2020  RS485
  *
  * This MIT license was reworded to only match this file. If you use the regular
  * MIT license in your project, replace this copyright notice (this line and any
@@ -35,27 +35,31 @@
  * SOFTWARE.
  */
 
-package network.rs485.logisticspipes.connection
+package network.rs485.logisticspipes.api
 
-import logisticspipes.interfaces.ISlotUpgradeManager
-import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.EnumFacing
+import net.minecraft.item.ItemStack
+import net.minecraftforge.items.IItemHandlerModifiable
 
-class NeighborTileEntitySneakyInsertion<T : TileEntity>(tileEntity: T, direction: EnumFacing) :
-        NeighborTileEntity<T>(tileEntity, direction) {
-    private var sneakyDirection: EnumFacing = super.getOurDirection()
+interface InteractableInventory : IItemHandlerModifiable {
 
-    override fun getOurDirection(): EnumFacing {
-        return sneakyDirection
-    }
+    fun roomForStack(stack: ItemStack): Int
 
-    fun from(direction: EnumFacing): NeighborTileEntitySneakyInsertion<T> {
-        sneakyDirection = direction
-        return this
-    }
+    fun <T> getUtil(): T
 
-    fun from(upgradeManager: ISlotUpgradeManager?): NeighborTileEntitySneakyInsertion<T> {
-        if (upgradeManager?.hasSneakyUpgrade() == true) sneakyDirection = upgradeManager.sneakyOrientation
-        return this
-    }
+//    fun getSizeInventory(): Int
+//
+//    fun isEmpty(): Boolean = (0..getSizeInventory()).map { getStackInSlot(it) }.all { it.isEmpty }
+//
+//    fun getStackInSlot(index: Int): ItemStack
+//
+//    fun decrStackSize(index: Int, count: Int): ItemStack
+//
+//    fun removeStackFromSlot(index: Int): ItemStack = decrStackSize(index, getStackInSlot(index).count)
+//
+//    fun setInventorySlotContents(index: Int, stack: ItemStack)
+//
+//    fun getInventoryStackLimit(): Int
+//
+//    fun isItemValidForSlot(index: Int, stack: ItemStack): Boolean
+
 }

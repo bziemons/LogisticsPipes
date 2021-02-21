@@ -46,7 +46,7 @@ import logisticspipes.routing.ServerRouter;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 @CCType(name = "LogisticsPowerProvider")
@@ -90,8 +90,8 @@ public abstract class LogisticsPowerProviderTileEntity extends LogisticsSolidTil
 		if (globalRequest > 0) {
 			final double fullfillRatio = Math.min(1, Math.min(internalStorage, getMaxProvidePerTick()) / globalRequest);
 			if (fullfillRatio > 0) {
-				final Function<NeighborTileEntity<LogisticsTileGenericPipe>, CoreRoutedPipe> getPipe =
-						(NeighborTileEntity<LogisticsTileGenericPipe> neighbor) -> (CoreRoutedPipe) neighbor.getTileEntity().pipe;
+				final Function<NeighborInteractableEntity<LogisticsTileGenericPipe>, CoreRoutedPipe> getPipe =
+						(NeighborInteractableEntity<LogisticsTileGenericPipe> neighbor) -> (CoreRoutedPipe) neighbor.getEntity().pipe;
 				orders.entrySet().stream()
 						.map(routerIdToOrderCount -> new Pair<>(SimpleServiceLocator.routerManager.getRouter(routerIdToOrderCount.getKey()),
 								Math.min(internalStorage, routerIdToOrderCount.getValue() * fullfillRatio)))
@@ -99,7 +99,7 @@ public abstract class LogisticsPowerProviderTileEntity extends LogisticsSolidTil
 						.forEach(destinationToPower -> new WorldCoordinatesWrapper(this)
 								.allNeighborTileEntities()
 								.flatMap(neighbor -> neighbor.getJavaInstanceOf(LogisticsTileGenericPipe.class).map(Stream::of).orElseGet(Stream::empty))
-								.filter(neighbor -> neighbor.getTileEntity().pipe instanceof CoreRoutedPipe &&
+								.filter(neighbor -> neighbor.getEntity().pipe instanceof CoreRoutedPipe &&
 										!getPipe.apply(neighbor).stillNeedReplace())
 								.flatMap(neighbor -> getPipe.apply(neighbor).getRouter().getDistanceTo(destinationToPower.getValue1()).stream()
 										.map(exitRoute -> new Pair<>(neighbor, exitRoute)))

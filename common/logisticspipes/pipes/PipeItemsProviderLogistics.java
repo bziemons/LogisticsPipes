@@ -35,7 +35,7 @@ import logisticspipes.interfaces.IChangeListener;
 import logisticspipes.interfaces.IChestContentReceiver;
 import logisticspipes.interfaces.IHeadUpDisplayRenderer;
 import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
-import logisticspipes.interfaces.IInventoryUtil;
+import network.rs485.logisticspipes.api.IInventoryUtil;
 import logisticspipes.interfaces.IOrderManagerContentReceiver;
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.interfaces.routing.IFilter;
@@ -79,7 +79,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 public class PipeItemsProviderLogistics extends CoreRoutedPipe implements IProvideItems, IHeadUpDisplayRendererProvider, IChestContentReceiver, IChangeListener, IOrderManagerContentReceiver {
@@ -128,7 +128,7 @@ public class PipeItemsProviderLogistics extends CoreRoutedPipe implements IProvi
 		}
 
 		return new WorldCoordinatesWrapper(container).connectedTileEntities(ConnectionPipeType.ITEM)
-				.filter(adjacent -> !SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.getTileEntity()))
+				.filter(adjacent -> !SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.getEntity()))
 				.map(this::getAdaptedInventoryUtil)
 				.filter(Objects::nonNull)
 				.map(util -> util.itemCount(item))
@@ -152,7 +152,7 @@ public class PipeItemsProviderLogistics extends CoreRoutedPipe implements IProvi
 
 		final Iterator<Pair<IInventoryUtil, EnumFacing>> iterator = new WorldCoordinatesWrapper(container)
 				.connectedTileEntities(ConnectionPipeType.ITEM)
-				.filter(adjacent -> !SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.getTileEntity()))
+				.filter(adjacent -> !SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.getEntity()))
 				.flatMap(adjacent -> {
 					final IInventoryUtil invUtil = getAdaptedInventoryUtil(adjacent);
 					return invUtil == null ? Stream.empty() : Stream.of(new Pair<>(invUtil, adjacent.getDirection()));
@@ -211,7 +211,7 @@ public class PipeItemsProviderLogistics extends CoreRoutedPipe implements IProvi
 	}
 
 	@Nullable
-	private IInventoryUtil getAdaptedInventoryUtil(NeighborTileEntity<TileEntity> adjacent) {
+	private IInventoryUtil getAdaptedInventoryUtil(NeighborInteractableEntity<TileEntity> adjacent) {
 		return CoreRoutedPipe.getInventoryForExtractionMode(getExtractionMode(), adjacent);
 	}
 
@@ -320,7 +320,7 @@ public class PipeItemsProviderLogistics extends CoreRoutedPipe implements IProvi
 
 		final Iterator<Map<ItemIdentifier, Integer>> iterator = new WorldCoordinatesWrapper(container)
 				.connectedTileEntities(ConnectionPipeType.ITEM)
-				.filter(adjacent -> !SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.getTileEntity()))
+				.filter(adjacent -> !SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.getEntity()))
 				.map(this::getAdaptedInventoryUtil)
 				.filter(Objects::nonNull)
 				.map(IInventoryUtil::getItemsAndCount)
@@ -455,7 +455,7 @@ public class PipeItemsProviderLogistics extends CoreRoutedPipe implements IProvi
 	public void collectSpecificInterests(@Nonnull Collection<ItemIdentifier> itemidCollection) {
 		new WorldCoordinatesWrapper(container).connectedTileEntities(ConnectionPipeType.ITEM)
 				.flatMap(adjacent -> {
-					if (!SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.getTileEntity())) {
+					if (!SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.getEntity())) {
 						final IInventoryUtil adjacentInventoryUtil = this.getAdaptedInventoryUtil(adjacent);
 						if (adjacentInventoryUtil != null) {
 							return adjacentInventoryUtil.getItems().stream();

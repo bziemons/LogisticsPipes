@@ -69,6 +69,7 @@ import net.minecraft.util.EnumFacing
 import net.minecraftforge.fml.client.FMLClientHandler
 import network.rs485.grow.ChunkedChannel
 import network.rs485.grow.takeWhileTimeRemains
+import network.rs485.logisticspipes.api.IInventoryUtil
 import network.rs485.logisticspipes.logistics.LogisticsManager
 import network.rs485.logisticspipes.util.equalsWithNBT
 import network.rs485.logisticspipes.util.getExtractionMax

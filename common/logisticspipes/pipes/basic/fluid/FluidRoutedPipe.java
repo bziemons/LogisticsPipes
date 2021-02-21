@@ -37,7 +37,7 @@ import logisticspipes.utils.FluidIdentifierStack;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 public abstract class FluidRoutedPipe extends CoreRoutedPipe {
@@ -77,9 +77,9 @@ public abstract class FluidRoutedPipe extends CoreRoutedPipe {
 	}
 
 	private boolean isFluidSidedTexture(EnumFacing connection) {
-		final NeighborTileEntity<TileEntity> neighbor = new WorldCoordinatesWrapper(container).getNeighbor(connection);
+		final NeighborInteractableEntity<TileEntity> neighbor = new WorldCoordinatesWrapper(container).getNeighbor(connection);
 		if (neighbor == null) return false;
-		TileEntity tileEntity = neighbor.getTileEntity();
+		TileEntity tileEntity = neighbor.getEntity();
 		ITankUtil liq = SimpleServiceLocator.tankUtilFactory.getTankUtilForTE(tileEntity, connection.getOpposite());
 		return (liq != null && liq.containsTanks());
 	}
@@ -96,8 +96,8 @@ public abstract class FluidRoutedPipe extends CoreRoutedPipe {
 
 	public final List<ITankUtil> getAdjacentTanks(boolean flag) {
 		return new WorldCoordinatesWrapper(container).allNeighborTileEntities()
-				.filter(adjacent -> isConnectableTank(adjacent.getTileEntity(), adjacent.getDirection(), flag))
-				.map(adjacent -> SimpleServiceLocator.tankUtilFactory.getTankUtilForTE(adjacent.getTileEntity(), adjacent.getDirection()))
+				.filter(adjacent -> isConnectableTank(adjacent.getEntity(), adjacent.getDirection(), flag))
+				.map(adjacent -> SimpleServiceLocator.tankUtilFactory.getTankUtilForTE(adjacent.getEntity(), adjacent.getDirection()))
 				.filter(Objects::nonNull)
 				.collect(Collectors.toList());
 	}
@@ -109,10 +109,10 @@ public abstract class FluidRoutedPipe extends CoreRoutedPipe {
 
 	public final List<Triplet<ITankUtil, TileEntity, EnumFacing>> getAdjacentTanksAdvanced(boolean flag) {
 		return new WorldCoordinatesWrapper(container).allNeighborTileEntities()
-				.filter(adjacent -> isConnectableTank(adjacent.getTileEntity(), adjacent.getDirection(), flag))
+				.filter(adjacent -> isConnectableTank(adjacent.getEntity(), adjacent.getDirection(), flag))
 				.map(adjacent -> new Triplet<>(
-						SimpleServiceLocator.tankUtilFactory.getTankUtilForTE(adjacent.getTileEntity(), adjacent.getDirection()),
-						adjacent.getTileEntity(),
+						SimpleServiceLocator.tankUtilFactory.getTankUtilForTE(adjacent.getEntity(), adjacent.getDirection()),
+						adjacent.getEntity(),
 						adjacent.getDirection()))
 				.filter(triplet -> triplet.getValue1() != null)
 				.collect(Collectors.toList());

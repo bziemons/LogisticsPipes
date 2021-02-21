@@ -15,12 +15,10 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.function.BiFunction;
@@ -53,7 +51,7 @@ import logisticspipes.asm.te.ILPTEInformation;
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.config.Configs;
 import logisticspipes.interfaces.IClientState;
-import logisticspipes.interfaces.IInventoryUtil;
+import network.rs485.logisticspipes.api.IInventoryUtil;
 import logisticspipes.interfaces.ILPPositionProvider;
 import logisticspipes.interfaces.IPipeServiceProvider;
 import logisticspipes.interfaces.IPipeUpgradeManager;
@@ -126,7 +124,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
@@ -320,7 +318,7 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 			_cachedAdjacentInventories = new WorldCoordinatesWrapper(container)
 					.connectedTileEntities(ConnectionPipeType.ITEM)
 					.filter(adjacent -> adjacent.isItemHandler() && !adjacent.isLogisticsPipe())
-					.map(NeighborTileEntity::getTileEntity)
+					.map(NeighborInteractableEntity::getEntity)
 					.collect(Collectors.toList());
 		}
 		return _cachedAdjacentInventories;
@@ -1470,15 +1468,15 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 	@Nullable
 	@Override
 	public IInventoryUtil getPointedInventory() {
-		final NeighborTileEntity<TileEntity> pointedItemHandler = getPointedItemHandler();
+		final NeighborInteractableEntity<TileEntity> pointedItemHandler = getPointedItemHandler();
 		if (pointedItemHandler == null) return null;
-		return pointedItemHandler.getUtilForItemHandler();
+		return pointedItemHandler.getInventoryForItemHandler();
 	}
 
 	@Nullable
 	@Override
 	public IInventoryUtil getPointedInventory(ExtractionMode mode) {
-		final NeighborTileEntity<TileEntity> neighborItemHandler = getPointedItemHandler();
+		final NeighborInteractableEntity<TileEntity> neighborItemHandler = getPointedItemHandler();
 		if (neighborItemHandler == null) {
 			return null;
 		}
@@ -1490,69 +1488,69 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		switch (mode) {
 			case LeaveFirst:
 				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(
-						neighborItemHandler.getTileEntity(), neighborItemHandler.getOurDirection(),
+						neighborItemHandler.getEntity(), neighborItemHandler.getOurDirection(),
 						false, false, 1, 0);
 			case LeaveLast:
 				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(
-						neighborItemHandler.getTileEntity(), neighborItemHandler.getOurDirection(),
+						neighborItemHandler.getEntity(), neighborItemHandler.getOurDirection(),
 						false, false, 0, 1);
 			case LeaveFirstAndLast:
 				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(
-						neighborItemHandler.getTileEntity(), neighborItemHandler.getOurDirection(),
+						neighborItemHandler.getEntity(), neighborItemHandler.getOurDirection(),
 						false, false, 1, 1);
 			case Leave1PerStack:
 				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(
-						neighborItemHandler.getTileEntity(), neighborItemHandler.getOurDirection(),
+						neighborItemHandler.getEntity(), neighborItemHandler.getOurDirection(),
 						true, false, 0, 0);
 			case Leave1PerType:
 				return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(
-						neighborItemHandler.getTileEntity(), neighborItemHandler.getOurDirection(),
+						neighborItemHandler.getEntity(), neighborItemHandler.getOurDirection(),
 						false, true, 0, 0);
 			default:
 				break;
 		}
 		return SimpleServiceLocator.inventoryUtilFactory.getHidingInventoryUtil(
-				neighborItemHandler.getTileEntity(), neighborItemHandler.getOurDirection(),
+				neighborItemHandler.getEntity(), neighborItemHandler.getOurDirection(),
 				false, false, 0, 0);
 	}
 
 	@Nullable
 	@Override
 	public IInventoryUtil getSneakyInventory(ModulePositionType slot, int positionInt) {
-		final NeighborTileEntity<TileEntity> pointedItemHandler = getPointedItemHandlerCustom(
-				(tile, pointed) -> new NeighborTileEntity<>(tile, pointed).sneakyInsertion().from(getUpgradeManager(slot, positionInt)));
+		final NeighborInteractableEntity<TileEntity> pointedItemHandler = getPointedItemHandlerCustom(
+				(tile, pointed) -> new NeighborInteractableEntity<>(tile, pointed).sneakyInsertion().from(getUpgradeManager(slot, positionInt)));
 		if (pointedItemHandler == null) {
 			return null;
 		}
-		return pointedItemHandler.getUtilForItemHandler();
+		return pointedItemHandler.getInventoryForItemHandler();
 	}
 
 	@Nullable
 	@Override
 	public IInventoryUtil getSneakyInventory(@Nonnull EnumFacing direction) {
-		final NeighborTileEntity<TileEntity> pointedItemHandler = getPointedItemHandlerCustom(
-				(tile, pointed) -> new NeighborTileEntity<>(tile, pointed).sneakyInsertion().from(direction));
+		final NeighborInteractableEntity<TileEntity> pointedItemHandler = getPointedItemHandlerCustom(
+				(tile, pointed) -> new NeighborInteractableEntity<>(tile, pointed).sneakyInsertion().from(direction));
 		if (pointedItemHandler == null) {
 			return null;
 		}
-		return pointedItemHandler.getUtilForItemHandler();
+		return pointedItemHandler.getInventoryForItemHandler();
 	}
 
 	@Nullable
-	public NeighborTileEntity<TileEntity> getPointedItemHandlerCustom(@Nonnull BiFunction<TileEntity, EnumFacing, NeighborTileEntity<TileEntity>> neighbourFactory) {
+	public NeighborInteractableEntity<TileEntity> getPointedItemHandlerCustom(@Nonnull BiFunction<TileEntity, EnumFacing, NeighborInteractableEntity<TileEntity>> neighbourFactory) {
 		final EnumFacing pointedOrientation = getPointedOrientation();
 		if (pointedOrientation == null) return null;
 		final TileEntity tile = getContainer().getTile(pointedOrientation);
 		if (tile == null) return null;
-		final NeighborTileEntity<TileEntity> neighbor = neighbourFactory.apply(tile, pointedOrientation);
+		final NeighborInteractableEntity<TileEntity> neighbor = neighbourFactory.apply(tile, pointedOrientation);
 		if (!neighbor.isItemHandler()) return null;
 		return neighbor;
 	}
 
 	@Nullable
 	@Override
-	public NeighborTileEntity<TileEntity> getPointedItemHandler() {
-		return getPointedItemHandlerCustom(NeighborTileEntity::new);
+	public NeighborInteractableEntity<TileEntity> getPointedItemHandler() {
+		return getPointedItemHandlerCustom(NeighborInteractableEntity::new);
 	}
 
 	/* ISendRoutedItem */
@@ -1589,8 +1587,8 @@ public abstract class CoreRoutedPipe extends CoreUnroutedPipe
 		if (pointedDirection == null) {
 			final Optional<EnumFacing> firstDirection = new WorldCoordinatesWrapper(container)
 					.connectedTileEntities(ConnectionPipeType.ITEM)
-					.filter(adjacent -> !SimpleServiceLocator.pipeInformationManager.isPipe(adjacent.getTileEntity()))
-					.map(NeighborTileEntity::getDirection)
+					.filter(adjacent -> !SimpleServiceLocator.pipeInformationManager.isPipe(adjacent.getEntity()))
+					.map(NeighborInteractableEntity::getDirection)
 					.findFirst();
 			firstDirection.ifPresent(enumFacing -> pointedDirection = enumFacing);
 		}

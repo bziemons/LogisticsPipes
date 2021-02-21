@@ -6,13 +6,13 @@ import javax.annotation.Nullable;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 
-import logisticspipes.interfaces.IInventoryUtil;
+import network.rs485.logisticspipes.api.IInventoryUtil;
 import logisticspipes.interfaces.ISendRoutedItem;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.modules.LogisticsModule.ModulePositionType;
 import logisticspipes.routing.order.LogisticsItemOrderManager;
 import logisticspipes.utils.item.ItemIdentifier;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 
 public interface IInventoryProvider extends ISendRoutedItem {
 
@@ -29,7 +29,7 @@ public interface IInventoryProvider extends ISendRoutedItem {
 	IInventoryUtil getSneakyInventory(@Nonnull EnumFacing direction);
 
 	@Nullable
-	NeighborTileEntity<TileEntity> getPointedItemHandler();
+	NeighborInteractableEntity<TileEntity> getPointedItemHandler();
 
 	@Nullable
 	EnumFacing getPointedOrientation();

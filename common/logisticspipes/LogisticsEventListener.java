@@ -71,7 +71,7 @@ import logisticspipes.utils.string.ChatColor;
 import logisticspipes.utils.string.StringUtils;
 import network.rs485.logisticspipes.config.ClientConfiguration;
 import network.rs485.logisticspipes.config.PlayerConfiguration;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.module.AsyncQuicksortModule;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
@@ -131,11 +131,11 @@ public class LogisticsEventListener {
 			TileEntity tileEntity = worldCoordinates.getTileEntity();
 			if (tileEntity instanceof TileEntityChest || SimpleServiceLocator.ironChestProxy.isIronChest(tileEntity)) {
 				List<WeakReference<AsyncQuicksortModule>> list = worldCoordinates.allNeighborTileEntities()
-						.filter(NeighborTileEntity::isLogisticsPipe)
-						.filter(adjacent -> ((LogisticsTileGenericPipe) adjacent.getTileEntity()).pipe instanceof PipeLogisticsChassi)
-						.filter(adjacent -> ((PipeLogisticsChassi) ((LogisticsTileGenericPipe) adjacent.getTileEntity()).pipe).getPointedOrientation()
+						.filter(NeighborInteractableEntity::isLogisticsPipe)
+						.filter(adjacent -> ((LogisticsTileGenericPipe) adjacent.getEntity()).pipe instanceof PipeLogisticsChassi)
+						.filter(adjacent -> ((PipeLogisticsChassi) ((LogisticsTileGenericPipe) adjacent.getEntity()).pipe).getPointedOrientation()
 								== adjacent.getOurDirection())
-						.map(adjacent -> (PipeLogisticsChassi) ((LogisticsTileGenericPipe) adjacent.getTileEntity()).pipe)
+						.map(adjacent -> (PipeLogisticsChassi) ((LogisticsTileGenericPipe) adjacent.getEntity()).pipe)
 						.flatMap(pipeLogisticsChassi -> Arrays.stream(pipeLogisticsChassi.getModules().getModules()))
 						.filter(logisticsModule -> logisticsModule instanceof AsyncQuicksortModule)
 						.map(logisticsModule -> new WeakReference<>((AsyncQuicksortModule) logisticsModule))

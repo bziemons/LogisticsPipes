@@ -13,7 +13,7 @@ import net.minecraftforge.items.CapabilityItemHandler;
 import lombok.Getter;
 import lombok.Setter;
 
-import logisticspipes.interfaces.IInventoryUtil;
+import network.rs485.logisticspipes.api.IInventoryUtil;
 import logisticspipes.modules.ModuleActiveSupplier;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;

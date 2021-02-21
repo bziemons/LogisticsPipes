@@ -16,9 +16,8 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 
 import logisticspipes.LogisticsPipes;
-import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.proxy.specialinventoryhandler.SpecialInventoryHandler;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 
 public class InventoryUtilFactory {
 
@@ -44,8 +43,8 @@ public class InventoryUtilFactory {
 	}
 
 	@Nullable
-	public IInventoryUtil getInventoryUtil(@Nonnull NeighborTileEntity<TileEntity> adj) {
-		return getHidingInventoryUtil(adj.getTileEntity(), adj.getOurDirection(), false, false, 0, 0);
+	public IInventoryUtil getInventoryUtil(@Nonnull NeighborInteractableEntity<TileEntity> adj) {
+		return getHidingInventoryUtil(adj.getEntity(), adj.getOurDirection(), false, false, 0, 0);
 	}
 
 	@Nullable

@@ -151,8 +151,8 @@ public class PipeItemsFluidSupplier extends CoreRoutedPipe implements IRequestIt
 		super.throttledUpdateEntity();
 
 		Iterator<ITankUtil> iterator = new WorldCoordinatesWrapper(container).connectedTileEntities()
-				.filter(adjacent -> !SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.getTileEntity()))
-				.map(adjacent -> SimpleServiceLocator.tankUtilFactory.getTankUtilForTE(adjacent.getTileEntity(), adjacent.getDirection()))
+				.filter(adjacent -> !SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.getEntity()))
+				.map(adjacent -> SimpleServiceLocator.tankUtilFactory.getTankUtilForTE(adjacent.getEntity(), adjacent.getDirection()))
 				.filter(Objects::nonNull)
 				.iterator();
 

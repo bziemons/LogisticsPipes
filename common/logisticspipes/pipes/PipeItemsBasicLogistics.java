@@ -17,7 +17,7 @@ import net.minecraft.util.EnumFacing;
 import logisticspipes.blocks.LogisticsProgramCompilerTileEntity;
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
-import logisticspipes.interfaces.IInventoryUtil;
+import network.rs485.logisticspipes.api.IInventoryUtil;
 import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.LogisticsModule.ModulePositionType;
 import logisticspipes.modules.ModuleItemSink;
@@ -28,7 +28,7 @@ import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.transport.PipeTransportLogistics;
 import logisticspipes.utils.OrientationsUtil;
 import logisticspipes.utils.item.ItemIdentifier;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 public class PipeItemsBasicLogistics extends CoreRoutedPipe {
@@ -131,9 +131,9 @@ public class PipeItemsBasicLogistics extends CoreRoutedPipe {
 		if (invUtil == null) {
 			invUtil = new WorldCoordinatesWrapper(container)
 					.connectedTileEntities(ConnectionPipeType.ITEM)
-					.filter(NeighborTileEntity::isItemHandler)
+					.filter(NeighborInteractableEntity::isItemHandler)
 					.findFirst()
-					.map(NeighborTileEntity::getUtilForItemHandler)
+					.map(NeighborInteractableEntity::getInventoryForItemHandler)
 					.orElse(null);
 		}
 		return invUtil;

@@ -13,7 +13,7 @@ import logisticspipes.network.guis.block.StatisticsGui;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 public class LogisticsStatisticsTileEntity extends LogisticsSolidTileEntity implements IGuiTileEntity {
@@ -76,9 +76,9 @@ public class LogisticsStatisticsTileEntity extends LogisticsSolidTileEntity impl
 	public CoreRoutedPipe getConnectedPipe() {
 		if (cachedConnectedPipe == null) {
 			new WorldCoordinatesWrapper(this).allNeighborTileEntities()
-					.filter(NeighborTileEntity::isLogisticsPipe)
-					.filter(adjacent -> ((LogisticsTileGenericPipe) adjacent.getTileEntity()).pipe instanceof CoreRoutedPipe)
-					.map(adjacent -> (CoreRoutedPipe) (((LogisticsTileGenericPipe) adjacent.getTileEntity()).pipe))
+					.filter(NeighborInteractableEntity::isLogisticsPipe)
+					.filter(adjacent -> ((LogisticsTileGenericPipe) adjacent.getEntity()).pipe instanceof CoreRoutedPipe)
+					.map(adjacent -> (CoreRoutedPipe) (((LogisticsTileGenericPipe) adjacent.getEntity()).pipe))
 					.findFirst()
 					.ifPresent(coreRoutedPipe -> cachedConnectedPipe = coreRoutedPipe);
 		}

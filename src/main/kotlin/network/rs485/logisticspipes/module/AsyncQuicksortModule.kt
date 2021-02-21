@@ -40,7 +40,7 @@ package network.rs485.logisticspipes.module
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import logisticspipes.config.Configs.ASYNC_THRESHOLD
-import logisticspipes.interfaces.IInventoryUtil
+import network.rs485.logisticspipes.api.IInventoryUtil
 import logisticspipes.network.PacketHandler
 import logisticspipes.network.packets.modules.QuickSortState
 import logisticspipes.pipefxhandlers.Particles

@@ -12,7 +12,7 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.IRouter;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 /**
@@ -38,15 +38,15 @@ public class PipeTransportLayer extends TransportLayer {
 			_trackStatistics.recievedItem(item.getItemIdentifierStack().getStackSize());
 		}
 
-		final List<NeighborTileEntity<TileEntity>> adjacentEntities = new WorldCoordinatesWrapper(routedPipe.container)
+		final List<NeighborInteractableEntity<TileEntity>> adjacentEntities = new WorldCoordinatesWrapper(routedPipe.container)
 				.connectedTileEntities(IPipeInformationProvider.ConnectionPipeType.ITEM)
 				.collect(Collectors.toList());
 		LinkedList<EnumFacing> possibleEnumFacing = new LinkedList<>();
 
 		// 1st prio, deliver to adjacent IInventories
 
-		for (NeighborTileEntity<TileEntity> adjacent : adjacentEntities) {
-			if (SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.getTileEntity())) {
+		for (NeighborInteractableEntity<TileEntity> adjacent : adjacentEntities) {
+			if (SimpleServiceLocator.pipeInformationManager.isItemPipe(adjacent.getEntity())) {
 				continue;
 			}
 			if (_router.isRoutedExit(adjacent.getDirection())) {
@@ -70,7 +70,7 @@ public class PipeTransportLayer extends TransportLayer {
 		}
 
 		// 2nd prio, deliver to non-routed exit
-		for (NeighborTileEntity<TileEntity> adjacent : adjacentEntities) {
+		for (NeighborInteractableEntity<TileEntity> adjacent : adjacentEntities) {
 			if (_router.isRoutedExit(adjacent.getDirection())) {
 				continue;
 			}

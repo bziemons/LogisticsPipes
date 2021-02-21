@@ -17,7 +17,7 @@ import net.minecraft.item.ItemStack;
 
 import net.minecraftforge.items.IItemHandler;
 
-import logisticspipes.interfaces.IInventoryUtil;
+import network.rs485.logisticspipes.api.IInventoryUtil;
 import logisticspipes.interfaces.ISpecialInsertion;
 import logisticspipes.utils.item.ItemIdentifier;
 

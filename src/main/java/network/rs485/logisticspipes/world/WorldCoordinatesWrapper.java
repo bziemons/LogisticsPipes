@@ -54,7 +54,7 @@ import logisticspipes.LogisticsPipes;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 
 @Data
 public class WorldCoordinatesWrapper {
@@ -75,20 +75,20 @@ public class WorldCoordinatesWrapper {
 		this(tileEntity.getWorld(), tileEntity.getPos());
 	}
 
-	public Stream<NeighborTileEntity<TileEntity>> allNeighborTileEntities() {
+	public Stream<NeighborInteractableEntity<TileEntity>> allNeighborTileEntities() {
 		return Arrays.stream(EnumFacing.VALUES).map(this::getNeighbor).filter(Objects::nonNull);
 	}
 
-	public Stream<NeighborTileEntity<TileEntity>> connectedTileEntities() {
+	public Stream<NeighborInteractableEntity<TileEntity>> connectedTileEntities() {
 		TileEntity pipe = getTileEntity();
 		if (SimpleServiceLocator.pipeInformationManager.isNotAPipe(pipe)) {
 			LogisticsPipes.log.warn("The coordinates didn't hold a pipe at all", new Throwable("Stack trace"));
 			return Stream.empty();
 		}
-		return allNeighborTileEntities().filter(adjacent -> MainProxy.checkPipesConnections(pipe, adjacent.getTileEntity(), adjacent.getDirection()));
+		return allNeighborTileEntities().filter(adjacent -> MainProxy.checkPipesConnections(pipe, adjacent.getEntity(), adjacent.getDirection()));
 	}
 
-	public Stream<NeighborTileEntity<TileEntity>> connectedTileEntities(ConnectionPipeType pipeType) {
+	public Stream<NeighborInteractableEntity<TileEntity>> connectedTileEntities(ConnectionPipeType pipeType) {
 		TileEntity pipe = getTileEntity();
 		if (!SimpleServiceLocator.pipeInformationManager.isPipe(pipe, true, pipeType)) {
 			if (LogisticsPipes.isDEBUG()) {
@@ -96,7 +96,7 @@ public class WorldCoordinatesWrapper {
 			}
 			return Stream.empty();
 		}
-		return allNeighborTileEntities().filter(neighbor -> MainProxy.checkPipesConnections(pipe, neighbor.getTileEntity(), neighbor.getDirection()));
+		return allNeighborTileEntities().filter(neighbor -> MainProxy.checkPipesConnections(pipe, neighbor.getEntity(), neighbor.getDirection()));
 	}
 
 	@Nullable
@@ -105,10 +105,10 @@ public class WorldCoordinatesWrapper {
 	}
 
 	@Nullable
-	public NeighborTileEntity<TileEntity> getNeighbor(@Nonnull EnumFacing direction) {
+	public NeighborInteractableEntity<TileEntity> getNeighbor(@Nonnull EnumFacing direction) {
 		TileEntity tileEntity = world.getTileEntity(pos.offset(direction));
 		if (tileEntity == null) return null;
-		return new NeighborTileEntity<>(tileEntity, direction);
+		return new NeighborInteractableEntity<>(tileEntity, direction);
 	}
 
 }

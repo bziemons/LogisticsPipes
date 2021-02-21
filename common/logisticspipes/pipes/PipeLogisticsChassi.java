@@ -37,7 +37,7 @@ import logisticspipes.gui.hud.HudChassisPipe;
 import logisticspipes.interfaces.IBufferItems;
 import logisticspipes.interfaces.IHeadUpDisplayRenderer;
 import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
-import logisticspipes.interfaces.IInventoryUtil;
+import network.rs485.logisticspipes.api.IInventoryUtil;
 import logisticspipes.interfaces.ILegacyActiveModule;
 import logisticspipes.interfaces.ISendQueueContentRecieiver;
 import logisticspipes.interfaces.ISendRoutedItem;
@@ -89,7 +89,7 @@ import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
@@ -126,11 +126,11 @@ public abstract class PipeLogisticsChassi extends CoreRoutedPipe implements ICra
 		if (_cachedAdjacentInventories != null) {
 			return _cachedAdjacentInventories;
 		}
-		final NeighborTileEntity<TileEntity> pointedItemHandler = getPointedItemHandler();
+		final NeighborInteractableEntity<TileEntity> pointedItemHandler = getPointedItemHandler();
 		if (pointedItemHandler == null) {
 			_cachedAdjacentInventories = Collections.emptyList();
 		} else {
-			_cachedAdjacentInventories = Collections.singletonList(pointedItemHandler.getTileEntity());
+			_cachedAdjacentInventories = Collections.singletonList(pointedItemHandler.getEntity());
 		}
 		return _cachedAdjacentInventories;
 	}

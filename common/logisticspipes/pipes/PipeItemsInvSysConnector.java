@@ -27,7 +27,7 @@ import logisticspipes.gui.hud.HUDInvSysConnector;
 import logisticspipes.interfaces.IGuiOpenControler;
 import logisticspipes.interfaces.IHeadUpDisplayRenderer;
 import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
-import logisticspipes.interfaces.IInventoryUtil;
+import network.rs485.logisticspipes.api.IInventoryUtil;
 import logisticspipes.interfaces.IOrderManagerContentReceiver;
 import logisticspipes.interfaces.routing.IChannelManager;
 import logisticspipes.interfaces.routing.IChannelRoutingConnection;
@@ -131,8 +131,8 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 		if (!itemsOnRoute.isEmpty()) { // don't check the inventory if you don't want anything
 			final boolean shouldUpdate = new WorldCoordinatesWrapper(container).connectedTileEntities(ConnectionPipeType.ITEM)
 					.anyMatch(neighbor -> neighbor.isItemHandler() &&
-							container.canPipeConnect(neighbor.getTileEntity(), neighbor.getDirection()) &&
-							checkOneConnectedInv(neighbor.getUtilForItemHandler(), neighbor.getDirection()));
+							container.canPipeConnect(neighbor.getEntity(), neighbor.getDirection()) &&
+							checkOneConnectedInv(neighbor.getInventoryForItemHandler(), neighbor.getDirection()));
 
 			if (shouldUpdate) updateContentListener();
 		}
@@ -287,9 +287,9 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 	private boolean isInventoryConnected(@Nullable TileEntity tileEntityFilter) {
 		return new WorldCoordinatesWrapper(this.container)
 				.allNeighborTileEntities()
-				.anyMatch(neighbor -> (tileEntityFilter == null || neighbor.getTileEntity() == tileEntityFilter) &&
+				.anyMatch(neighbor -> (tileEntityFilter == null || neighbor.getEntity() == tileEntityFilter) &&
 						neighbor.isItemHandler() &&
-						this.container.canPipeConnect(neighbor.getTileEntity(), neighbor.getDirection()));
+						this.container.canPipeConnect(neighbor.getEntity(), neighbor.getDirection()));
 	}
 
 	@Override

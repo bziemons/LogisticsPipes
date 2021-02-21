@@ -26,6 +26,9 @@ import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.items.CapabilityItemHandler;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -34,7 +37,7 @@ import logisticspipes.LogisticsPipes;
 import logisticspipes.api.ILogisticsPowerProvider;
 import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
 import logisticspipes.interfaces.IBufferItems;
-import logisticspipes.interfaces.IInventoryUtil;
+import network.rs485.logisticspipes.api.IInventoryUtil;
 import logisticspipes.interfaces.IItemAdvancedExistance;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.interfaces.ISpecialInsertion;
@@ -62,10 +65,11 @@ import logisticspipes.routing.pathfinder.IPipeInformationProvider;
 import logisticspipes.transport.LPTravelingItem.LPTravelingItemClient;
 import logisticspipes.transport.LPTravelingItem.LPTravelingItemServer;
 import logisticspipes.utils.CacheHolder.CacheTypes;
-import logisticspipes.utils.InventoryHelper;
 import logisticspipes.utils.OrientationsUtil;
 import logisticspipes.utils.SyncList;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import logisticspipes.utils.transactor.ITransactor;
+import logisticspipes.utils.transactor.Transactor;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
 import network.rs485.logisticspipes.util.items.ItemStackLoader;
@@ -565,7 +569,23 @@ public class PipeTransportLogistics {
 	 * @return true, if every item has been inserted and otherwise false.
 	 */
 	private boolean insertArrivingItem(LPTravelingItemServer arrivingItem, TileEntity tile, EnumFacing insertion) {
-		ItemStack added = InventoryHelper.getTransactorFor(tile, insertion).add(arrivingItem.getItemIdentifierStack().makeNormalStack(), insertion, true);
+		ITransactor result = null;
+		boolean finished = false;
+		if (tile instanceof TileEntity) {
+			ITransactor t = SimpleServiceLocator.inventoryUtilFactory.getUtilForInv((TileEntity) tile, insertion, false, false, 0, 0);
+			if (t != null) {
+				result = t;
+				finished = true;
+			}
+		}
+		if (!finished) {
+			if (tile instanceof ICapabilityProvider && ((ICapabilityProvider) tile).hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, insertion)) {
+				result = new Transactor(((ICapabilityProvider) tile).getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, insertion));
+			}
+
+		}
+
+		ItemStack added = result.add(arrivingItem.getItemIdentifierStack().makeNormalStack(), insertion, true);
 
 		arrivingItem.getItemIdentifierStack().lowerStackSize(added.getCount());
 

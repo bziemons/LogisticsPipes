@@ -95,12 +95,6 @@ public final class SimpleServiceLocator {
 		SimpleServiceLocator.logisticsFluidManager = logisticsMngr;
 	}
 
-	public static InventoryUtilFactory inventoryUtilFactory;
-
-	public static void setInventoryUtilFactory(final InventoryUtilFactory invUtilFactory) {
-		SimpleServiceLocator.inventoryUtilFactory = invUtilFactory;
-	}
-
 	public static TankUtilFactory tankUtilFactory;
 
 	public static void setTankUtilFactory(final TankUtilFactory tankUtilFactory) {

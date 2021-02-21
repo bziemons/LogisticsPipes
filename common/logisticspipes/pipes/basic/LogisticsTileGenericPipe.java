@@ -351,7 +351,7 @@ public class LogisticsTileGenericPipe extends LPDuctHolderTileEntity
 		blockNeighborChange = true;
 		boolean[] connected = new boolean[6];
 		new WorldCoordinatesWrapper(this).allNeighborTileEntities()
-				.filter(adjacent -> SimpleServiceLocator.ccProxy.isTurtle(adjacent.getTileEntity()))
+				.filter(adjacent -> SimpleServiceLocator.ccProxy.isTurtle(adjacent.getEntity()))
 				.forEach(adjacent -> connected[adjacent.getDirection().ordinal()] = true);
 		for (int i = 0; i < 6; i++) {
 			if (!connected[i]) {

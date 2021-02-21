@@ -2,6 +2,7 @@ package logisticspipes.modules;
 
 import java.util.Collection;
 import java.util.Objects;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import net.minecraft.item.ItemStack;
@@ -12,7 +13,7 @@ import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipe
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
 import logisticspipes.utils.item.ItemIdentifier;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 //IHUDModuleHandler,
@@ -43,10 +44,9 @@ public class ModuleSatellite extends LogisticsModule {
 		WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(pipe.container);
 
 		int count = worldCoordinates.connectedTileEntities(ConnectionPipeType.ITEM)
-				.map(adjacent -> adjacent.sneakyInsertion().from(getUpgradeManager()))
-				.map(NeighborTileEntity::getInventoryUtil)
-				.filter(Objects::nonNull)
-				.map(util -> util.roomForItem(stack))
+				.flatMap(adjacent -> adjacent.sneakyInsertion().from(getUpgradeManager()).getInventory()
+						.map(Stream::of).orElse(Stream.empty()))
+				.map(util -> util.roomForStack(stack))
 				.reduce(Integer::sum).orElse(0);
 
 		if (includeInTransit) {

@@ -31,13 +31,13 @@ public class SneakyUpgradeConfigGuiProvider extends UpgradeCoordinatesGuiProvide
 		}
 
 		List<DoubleCoordinates> list = new WorldCoordinatesWrapper(bPipe).connectedTileEntities()
-				.filter(in -> SimpleServiceLocator.pipeInformationManager.isNotAPipe(in.getTileEntity()))
-				.map(in -> new DoubleCoordinates(in.getTileEntity()))
+				.filter(in -> SimpleServiceLocator.pipeInformationManager.isNotAPipe(in.getEntity()))
+				.map(in -> new DoubleCoordinates(in.getEntity()))
 				.collect(Collectors.toList());
 
 		if (list.isEmpty()) {
 			list = new WorldCoordinatesWrapper(bPipe).connectedTileEntities()
-					.map(in -> new DoubleCoordinates(in.getTileEntity()))
+					.map(in -> new DoubleCoordinates(in.getEntity()))
 					.collect(Collectors.toList());
 		}
 

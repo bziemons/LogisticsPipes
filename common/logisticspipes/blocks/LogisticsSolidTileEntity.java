@@ -37,7 +37,7 @@ import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
 import logisticspipes.proxy.computers.wrapper.CCObjectWrapper;
 import logisticspipes.proxy.opencomputers.IOCTile;
 import logisticspipes.proxy.opencomputers.asm.BaseWrapperClass;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
@@ -183,8 +183,8 @@ public class LogisticsSolidTileEntity extends TileEntity implements ITickable, I
 	@Override
 	@ModDependentMethod(modId = LPConstants.openComputersModID)
 	public Node sidedNode(EnumFacing side) {
-		final NeighborTileEntity<TileEntity> neighbor = new WorldCoordinatesWrapper(this).getNeighbor(side);
-		if (neighbor == null || neighbor.isLogisticsPipe() || neighbor.getTileEntity() instanceof LogisticsSolidTileEntity) {
+		final NeighborInteractableEntity<TileEntity> neighbor = new WorldCoordinatesWrapper(this).getNeighbor(side);
+		if (neighbor == null || neighbor.isLogisticsPipe() || neighbor.getEntity() instanceof LogisticsSolidTileEntity) {
 			return null;
 		} else {
 			return node();
@@ -195,8 +195,8 @@ public class LogisticsSolidTileEntity extends TileEntity implements ITickable, I
 	@SideOnly(Side.CLIENT)
 	@ModDependentMethod(modId = LPConstants.openComputersModID)
 	public boolean canConnect(EnumFacing side) {
-		final NeighborTileEntity<TileEntity> neighbor = new WorldCoordinatesWrapper(this).getNeighbor(side);
-		return neighbor != null && !neighbor.isLogisticsPipe() && !(neighbor.getTileEntity() instanceof LogisticsSolidTileEntity);
+		final NeighborInteractableEntity<TileEntity> neighbor = new WorldCoordinatesWrapper(this).getNeighbor(side);
+		return neighbor != null && !neighbor.isLogisticsPipe() && !(neighbor.getEntity() instanceof LogisticsSolidTileEntity);
 	}
 
 	@Override

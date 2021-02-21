@@ -23,7 +23,7 @@ import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.proxy.interfaces.ICraftingRecipeProvider;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
 import logisticspipes.utils.StaticResolve;
-import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.connection.NeighborInteractableEntity;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
@@ -70,11 +70,11 @@ public class SlotFinderOpenGuiPacket extends ModuleCoordinatesPacket {
 		}
 
 		WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(player.world, new BlockPos(getPosX(), getPosY(), getPosZ()));
-		Iterator<NeighborTileEntity<TileEntity>> adjacentIter = worldCoordinates.connectedTileEntities(ConnectionPipeType.ITEM).iterator();
+		Iterator<NeighborInteractableEntity<TileEntity>> adjacentIter = worldCoordinates.connectedTileEntities(ConnectionPipeType.ITEM).iterator();
 
 		boolean found = false;
 		while (adjacentIter.hasNext()) {
-			NeighborTileEntity<TileEntity> adjacent = adjacentIter.next();
+			NeighborInteractableEntity<TileEntity> adjacent = adjacentIter.next();
 
 			if (adjacent.isItemHandler()) {
 				if (!(adjacent.getInventoryUtil() instanceof ISpecialInsertion)) {
@@ -83,7 +83,7 @@ public class SlotFinderOpenGuiPacket extends ModuleCoordinatesPacket {
 			}
 
 			for (ICraftingRecipeProvider provider : SimpleServiceLocator.craftingRecipeProviders) {
-				if (provider.canOpenGui(adjacent.getTileEntity())) {
+				if (provider.canOpenGui(adjacent.getEntity())) {
 					found = true;
 					break;
 				}
@@ -94,8 +94,8 @@ public class SlotFinderOpenGuiPacket extends ModuleCoordinatesPacket {
 			}
 
 			if (found) {
-				Block block = adjacent.getTileEntity().getBlockType();
-				final BlockPos blockPos = adjacent.getTileEntity().getPos();
+				Block block = adjacent.getEntity().getBlockType();
+				final BlockPos blockPos = adjacent.getEntity().getPos();
 				DoubleCoordinates pos = new DoubleCoordinates(blockPos);
 				int xCoord = blockPos.getX();
 				int yCoord = blockPos.getY();
