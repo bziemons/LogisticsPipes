@@ -27,7 +27,7 @@ apply plugin: 'net.minecraftforge.gradle'
 
 archivesBaseName = "logisticspipes"
 group = "network.rs485"
-version = "0.10.3"
+version = "0.10.3.114+fbos+gui"
 ext.vendor = "unknown"
 ext.target = "Forge $forge_version"
 
@@ -36,13 +36,6 @@ targetCompatibility = JavaVersion.VERSION_1_8
 
 def ENV = System.getenv()
 
-if (ENV.BUILD_NUMBER) {
-    version = "$version.${ENV.BUILD_NUMBER}"
-} else if (ENV.VERSION) {
-    version = "$version.${ENV.VERSION}"
-} else {
-    version = "$version-SNAPSHOT"
-}
 
 if (ENV.JENKINS_URL) {
     ext.vendor = ENV.JENKINS_URL
