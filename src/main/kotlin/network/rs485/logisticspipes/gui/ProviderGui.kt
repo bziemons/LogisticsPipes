@@ -78,7 +78,7 @@ class ProviderGui(
         xSize = FullSize(6),
         textColor = helper.TEXT_DARK,
         textGetter = {
-            "${TextUtil.translate("${prefix}ExcessInventory")} ${providerMode.get().extractionModeString}"
+            "${TextUtil.translate("${prefix}ExcessInventory")} ${TextUtil.translate(providerMode.get().extractionModeTranslationKey)}"
         })
         .setExtendable(true, helper.BACKGROUND_LIGHT)
     private val extractionModeButton: TextButton = TextButton(

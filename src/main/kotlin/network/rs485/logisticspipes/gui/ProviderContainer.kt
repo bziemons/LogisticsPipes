@@ -44,7 +44,7 @@ import net.minecraft.item.ItemStack
 import network.rs485.logisticspipes.gui.widget.GhostItemSlot
 import network.rs485.logisticspipes.gui.widget.GhostSlot
 
-class ProviderContainer(playerInventoryIn: IInventory, providerModule: ModuleProvider, moduleInHand: ItemStack) : LPBaseContainer() {
+class ProviderContainer(playerInventoryIn: IInventory, providerModule: ModuleProvider, moduleInHand: ItemStack) : LPBaseContainer(providerModule) {
 
     val playerSlots = addPlayerSlotsToContainer(playerInventoryIn, 0, 0, moduleInHand)
     val filterSlots = addDummySlotsToContainer(providerModule.filterInventory, 0, 0)

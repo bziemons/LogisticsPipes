@@ -617,6 +617,7 @@ class TheOneProbeIntegration : Function<ITheOneProbe, Void?> {
          * Only for clients.
          */
         override fun getWidth(): Int {
+            @Suppress("UNNECESSARY_SAFE_CALL") // its not
             return Minecraft.getMinecraft()?.fontRenderer?.getStringWidth(translated) ?: 0
         }
 
