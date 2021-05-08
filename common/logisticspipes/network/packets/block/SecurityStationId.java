@@ -10,10 +10,9 @@ import lombok.Setter;
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
+import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class SecurityStationId extends CoordinatesPacket {
@@ -33,7 +32,7 @@ public class SecurityStationId extends CoordinatesPacket {
 
 	@Override
 	public void processPacket(EntityPlayer player) {
-		LogisticsSecurityTileEntity tile = this.getTile(player.world, LogisticsSecurityTileEntity.class);
+		LogisticsSecurityTileEntity tile = this.getTileAs(player.world, LogisticsSecurityTileEntity.class);
 		if (tile != null) {
 			tile.setClientUUID(getUuid());
 		}

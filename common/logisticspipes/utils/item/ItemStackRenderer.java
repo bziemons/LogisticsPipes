@@ -8,8 +8,9 @@
 
 package logisticspipes.utils.item;
 
-import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Objects;
+import javax.annotation.Nonnull;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockPane;
@@ -43,7 +44,7 @@ import logisticspipes.utils.Color;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.IItemSearch;
 import logisticspipes.utils.gui.SimpleGraphics;
-import logisticspipes.utils.string.StringUtils;
+import network.rs485.logisticspipes.util.TextUtil;
 
 @Data
 @Accessors(chain = true)
@@ -56,7 +57,8 @@ public class ItemStackRenderer {
 	private FontRenderer fontRenderer;
 	private RenderEntityItem itemEntityRenderer;
 
-	@Nonnull private ItemStack itemstack = ItemStack.EMPTY;
+	@Nonnull
+	private ItemStack itemstack = ItemStack.EMPTY;
 	private ItemIdentifierStack itemIdentStack;
 	private int posX;
 	private int posY;
@@ -230,8 +232,7 @@ public class ItemStackRenderer {
 			}
 
 			GlStateManager.disableLighting();
-			String amountString = StringUtils.getFormatedStackSize(itemIdentStack != null ? itemIdentStack.getStackSize() : itemstack.getCount(), displayAmount == DisplayAmount.ALWAYS);
-
+			String amountString = TextUtil.getThreeDigitFormattedNumber(itemIdentStack != null ? itemIdentStack.getStackSize() : itemstack.getCount(), displayAmount == DisplayAmount.ALWAYS);
 			GlStateManager.translate(0.0F, 0.0F, zLevel + 130.0F);
 
 			// using a translated shadow does not hurt and works with the HUD
@@ -264,16 +265,14 @@ public class ItemStackRenderer {
 		assert scaleZ != 0.0F;
 
 		if (entityitem == null || !ItemStack.areItemStacksEqual(entityitem.getItem(), itemstack)) {
+			Objects.requireNonNull(world, "World is needed for EntityItem creation");
 			if (itemstack.isEmpty()) {
-				throw new RuntimeException("No EntityItem and no ItemStack, I do not know what to render!");
-			} else {
-				if (world == null) {
-					throw new NullPointerException("World object is null");
-				}
-				entityitem = new EntityItem(world, 0.0D, 0.0D, 0.0D, itemstack);
-				entityitem.getItem().setCount(1);
-				entityitem.hoverStart = 0.0F;
+				// :itemcard: 🤷
+				itemstack = new ItemStack(LPItems.itemCard);
 			}
+			entityitem = new EntityItem(world, 0.0D, 0.0D, 0.0D, itemstack);
+			entityitem.getItem().setCount(1);
+			entityitem.hoverStart = 0.0F;
 		}
 
 		Item item = itemstack.getItem();
@@ -287,6 +286,26 @@ public class ItemStackRenderer {
 		}
 
 		itemEntityRenderer.doRender(entityitem, posX, posY, zLevel, 0.0F, partialTickTime);
+	}
+
+	public void renderItemInGui(float x, float y, Item item, float zLevel, float scale) {
+		this.setPosX(0);
+		this.setPosY(0);
+		this.setScaleX(1f);
+		this.setScaleY(1f);
+		this.itemstack = new ItemStack(item);
+		GlStateManager.pushMatrix();
+		GlStateManager.translate(x, y, -100.0);
+		GlStateManager.scale(scale, scale, 1f);
+		GlStateManager.disableDepth();
+		float previousZ = renderItem.zLevel;
+		renderItem.zLevel = zLevel;
+		this.renderInGui();
+		renderItem.zLevel = previousZ;
+		GlStateManager.enableDepth();
+		GlStateManager.scale(1 / scale, 1 / scale, 1f);
+		GlStateManager.translate(-x, -y, 100.0);
+		GlStateManager.popMatrix();
 	}
 
 	public enum DisplayAmount {

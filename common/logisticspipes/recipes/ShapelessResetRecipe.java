@@ -1,13 +1,11 @@
 package logisticspipes.recipes;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 
 import net.minecraftforge.registries.IForgeRegistryEntry;
@@ -28,11 +26,11 @@ public class ShapelessResetRecipe extends IForgeRegistryEntry.Impl<IRecipe> impl
 	public boolean matches(InventoryCrafting var1, World var2) {
 		int nmatches = 0;
 		for (int i = 0; i < var1.getSizeInventory(); i++) {
-			ItemStack slot = var1.getStackInSlot(i);
-			if (slot == null) {
+			ItemStack stack = var1.getStackInSlot(i);
+			if (stack.isEmpty()) {
 				continue;
 			}
-			if (slot.getItem() != item || slot.getItemDamage() != meta) {
+			if (stack.getItem() != item || stack.getItemDamage() != meta) {
 				return false;
 			}
 			nmatches++;
@@ -40,11 +38,12 @@ public class ShapelessResetRecipe extends IForgeRegistryEntry.Impl<IRecipe> impl
 		return (nmatches > 0);
 	}
 
+	@Nonnull
 	@Override
 	public ItemStack getCraftingResult(InventoryCrafting var1) {
 		int nmatches = 0;
 		for (int i = 0; i < var1.getSizeInventory(); i++) {
-			if (var1.getStackInSlot(i) == null) {
+			if (var1.getStackInSlot(i).isEmpty()) {
 				continue;
 			}
 			nmatches++;
@@ -57,6 +56,7 @@ public class ShapelessResetRecipe extends IForgeRegistryEntry.Impl<IRecipe> impl
 		return true;
 	}
 
+	@Nonnull
 	@Override
 	public ItemStack getRecipeOutput() {
 		return output;

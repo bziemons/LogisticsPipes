@@ -2,11 +2,12 @@ package logisticspipes.modules;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
-import net.minecraft.nbt.NBTTagCompound;
 
 import logisticspipes.gui.hud.modules.HUDSimpleFilterModule;
 import logisticspipes.interfaces.IClientInformationProvider;
@@ -14,13 +15,13 @@ import logisticspipes.interfaces.IHUDModuleHandler;
 import logisticspipes.interfaces.IHUDModuleRenderer;
 import logisticspipes.interfaces.IModuleInventoryReceive;
 import logisticspipes.interfaces.IModuleWatchReciver;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.modules.abstractmodules.LogisticsSimpleFilterModule;
 import logisticspipes.network.PacketHandler;
+import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider;
+import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
 import logisticspipes.network.packets.hud.HUDStartModuleWatchingPacket;
 import logisticspipes.network.packets.hud.HUDStopModuleWatchingPacket;
 import logisticspipes.network.packets.module.ModuleInventory;
-import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
+import logisticspipes.pipes.PipeLogisticsChassis.ChassiTargetInformation;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.computers.interfaces.CCCommand;
 import logisticspipes.proxy.computers.interfaces.CCType;
@@ -30,54 +31,63 @@ import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.inventory.IItemIdentifierInventory;
+import network.rs485.logisticspipes.module.Gui;
+import network.rs485.logisticspipes.module.SimpleFilter;
+import network.rs485.logisticspipes.property.InventoryProperty;
+import network.rs485.logisticspipes.property.Property;
 
 @CCType(name = "EnchantmentSink Module MK2")
-public class ModuleEnchantmentSinkMK2 extends LogisticsSimpleFilterModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, ISimpleInventoryEventHandler, IModuleInventoryReceive {
+public class ModuleEnchantmentSinkMK2 extends LogisticsModule
+		implements SimpleFilter, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver,
+		ISimpleInventoryEventHandler, IModuleInventoryReceive, Gui {
 
-	private final ItemIdentifierInventory _filterInventory = new ItemIdentifierInventory(9, "Requested Enchanted items", 1);
-
-	public ModuleEnchantmentSinkMK2() {
-		_filterInventory.addListener(this);
-	}
-
-	private IHUDModuleRenderer HUD = new HUDSimpleFilterModule(this);
+	public final InventoryProperty filterInventory = new InventoryProperty(
+			new ItemIdentifierInventory(9, "Requested Enchanted items", 1), "");
 
 	private final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
+	private final IHUDModuleRenderer HUD = new HUDSimpleFilterModule(this);
+	private SinkReply _sinkReply;
+
+	public ModuleEnchantmentSinkMK2() {
+		filterInventory.addListener(this);
+	}
+
+	public static String getName() {
+		return "enchantment_sink_mk2";
+	}
+
+	@Nonnull
+	@Override
+	public String getLPName() {
+		return getName();
+	}
+
+	@Nonnull
+	@Override
+	public List<Property<?>> getProperties() {
+		return Collections.singletonList(filterInventory);
+	}
 
 	@Override
 	@CCCommand(description = "Returns the FilterInventory of this Module")
-	public ItemIdentifierInventory getFilterInventory() {
-		return _filterInventory;
+	@Nonnull
+	public IItemIdentifierInventory getFilterInventory() {
+		return filterInventory;
 	}
 
-	private SinkReply _sinkReply;
-
 	@Override
-	public void registerPosition(ModulePositionType slot, int positionInt) {
+	public void registerPosition(@Nonnull ModulePositionType slot, int positionInt) {
 		super.registerPosition(slot, positionInt);
 		_sinkReply = new SinkReply(FixedPriority.EnchantmentItemSink, 1, 1, 0, new ChassiTargetInformation(getPositionInt()));
-	}
-
-	@Override
-	public LogisticsModule getSubModule(int slot) {
-		return null;
-	}
-
-	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		_filterInventory.readFromNBT(nbttagcompound, "");
-	}
-
-	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		_filterInventory.writeToNBT(nbttagcompound, "");
 	}
 
 	@Override
 	public void tick() {}
 
 	@Override
-	public List<String> getClientInformation() {
+	public @Nonnull
+	List<String> getClientInformation() {
 		List<String> list = new ArrayList<>();
 		list.add("Filter: ");
 		list.add("<inventory>");
@@ -98,7 +108,8 @@ public class ModuleEnchantmentSinkMK2 extends LogisticsSimpleFilterModule implem
 	@Override
 	public void startWatching(EntityPlayer player) {
 		localModeWatchers.add(player);
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(_filterInventory)).setModulePos(this), player);
+		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(ModuleInventory.class)
+				.setIdentList(ItemIdentifierStack.getListFromInventory(filterInventory)).setModulePos(this), player);
 	}
 
 	@Override
@@ -108,9 +119,14 @@ public class ModuleEnchantmentSinkMK2 extends LogisticsSimpleFilterModule implem
 
 	@Override
 	public void InventoryChanged(IInventory inventory) {
-		if (MainProxy.isServer(_world.getWorld())) {
-			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(inventory)).setModulePos(this), localModeWatchers);
-		}
+		MainProxy.runOnServer(getWorld(), () -> () ->
+				MainProxy.sendToPlayerList(
+						PacketHandler.getPacket(ModuleInventory.class)
+								.setIdentList(ItemIdentifierStack.getListFromInventory(inventory))
+								.setModulePos(this),
+						localModeWatchers
+				)
+		);
 	}
 
 	@Override
@@ -119,8 +135,8 @@ public class ModuleEnchantmentSinkMK2 extends LogisticsSimpleFilterModule implem
 	}
 
 	@Override
-	public void handleInvContent(Collection<ItemIdentifierStack> list) {
-		_filterInventory.handleItemIdentifierList(list);
+	public void handleInvContent(@Nonnull Collection<ItemIdentifierStack> list) {
+		filterInventory.handleItemIdentifierList(list);
 	}
 
 	@Override
@@ -132,4 +148,17 @@ public class ModuleEnchantmentSinkMK2 extends LogisticsSimpleFilterModule implem
 	public boolean hasEffect() {
 		return true;
 	}
+
+	@Nonnull
+	@Override
+	public ModuleCoordinatesGuiProvider getPipeGuiProvider() {
+		return SimpleFilter.getPipeGuiProvider();
+	}
+
+	@Nonnull
+	@Override
+	public ModuleInHandGuiProvider getInHandGuiProvider() {
+		return SimpleFilter.getInHandGuiProvider();
+	}
+
 }

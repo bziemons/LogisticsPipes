@@ -4,18 +4,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import logisticspipes.config.Configs;
-import logisticspipes.network.PacketHandler;
-import logisticspipes.network.packets.block.PowerPacketLaser;
-import logisticspipes.pipefxhandlers.PipeFXLaserPowerBall;
-import logisticspipes.pipefxhandlers.PipeFXLaserPowerBeam;
-import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
-import logisticspipes.proxy.MainProxy;
-import network.rs485.logisticspipes.world.DoubleCoordinates;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.tileentity.TileEntity;
-
 import net.minecraft.util.EnumFacing;
 
 import net.minecraftforge.fml.relauncher.Side;
@@ -25,16 +15,26 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 
+import logisticspipes.config.Configs;
+import logisticspipes.network.PacketHandler;
+import logisticspipes.network.packets.block.PowerPacketLaser;
+import logisticspipes.pipefxhandlers.PipeFXLaserPowerBall;
+import logisticspipes.pipefxhandlers.PipeFXLaserPowerBeam;
+import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
+import logisticspipes.proxy.MainProxy;
+import network.rs485.logisticspipes.world.DoubleCoordinates;
+
 public class LogisticsTileRenderController {
 
+	private static final int LASER_TIMEOUT_TICKS = 4;
+
 	private final LogisticsTileGenericPipe pipe;
-	private final int LASER_TIMEOUT_TICKS = 4;
 	private final Map<LaserKey, LaserBeamData> powerLasersBeam = new HashMap<>();
 	private final Map<Integer, LaserBallData> powerLasersBall = new HashMap<>();
 
 	@Data
 	@AllArgsConstructor
-	private class LaserKey {
+	private static class LaserKey {
 
 		final EnumFacing dir;
 		final int color;
@@ -42,7 +42,7 @@ public class LogisticsTileRenderController {
 
 	@Data
 	@AllArgsConstructor
-	private class LaserBeamData {
+	private static class LaserBeamData {
 
 		final float length;
 		int timeout;
@@ -99,7 +99,7 @@ public class LogisticsTileRenderController {
 
 	@Data
 	@AllArgsConstructor
-	private class LaserBallData {
+	private static class LaserBallData {
 
 		final float length;
 		int timeout;
@@ -166,7 +166,7 @@ public class LogisticsTileRenderController {
 				if (data.timeout < 0 || data.isDeadEntity()) {
 					data.setDead();
 					if (data.sendPacket()) {
-						MainProxy.sendPacketToAllWatchingChunk(pipe.getX(), pipe.getZ(), pipe.getWorld().provider.getDimension(), PacketHandler.getPacket(PowerPacketLaser.class).setColor(key.color).setRenderBall(false).setDir(key.dir).setRemove(true).setTilePos(pipe));
+						MainProxy.sendPacketToAllWatchingChunk(pipe, PacketHandler.getPacket(PowerPacketLaser.class).setColor(key.color).setRenderBall(false).setDir(key.dir).setRemove(true).setTilePos(pipe));
 					}
 					iter.remove();
 				}
@@ -181,7 +181,7 @@ public class LogisticsTileRenderController {
 				if (data.timeout < 0 || data.isDeadEntity()) {
 					data.setDead();
 					if (data.sendPacket()) {
-						MainProxy.sendPacketToAllWatchingChunk(pipe.getX(), pipe.getZ(), pipe.getWorld().provider.getDimension(), PacketHandler.getPacket(PowerPacketLaser.class).setColor(key).setRenderBall(true).setDir(null).setRemove(true).setTilePos(pipe));
+						MainProxy.sendPacketToAllWatchingChunk(pipe, PacketHandler.getPacket(PowerPacketLaser.class).setColor(key).setRenderBall(true).setDir(null).setRemove(true).setTilePos(pipe));
 					}
 					iter.remove();
 				}
@@ -217,7 +217,7 @@ public class LogisticsTileRenderController {
 			}
 		}
 		if (sendPacket) {
-			MainProxy.sendPacketToAllWatchingChunk(pipe.getX(), pipe.getZ(), pipe.getWorld().provider.getDimension(), PacketHandler.getPacket(PowerPacketLaser.class).setColor(color).setRenderBall(renderBall).setDir(dir).setLength(length).setReverse(reverse).setTilePos(pipe));
+			MainProxy.sendPacketToAllWatchingChunk(pipe, PacketHandler.getPacket(PowerPacketLaser.class).setColor(color).setRenderBall(renderBall).setDir(dir).setLength(length).setReverse(reverse).setTilePos(pipe));
 		}
 	}
 
@@ -251,9 +251,8 @@ public class LogisticsTileRenderController {
 		for (LaserKey key : powerLasersBeam.keySet()) {
 			LaserBeamData data = powerLasersBeam.get(key);
 			boolean isBall = powerLasersBall.containsKey(key.color);
-			MainProxy.sendPacketToAllWatchingChunk(pipe.getX(), pipe.getZ(), pipe.getWorld().provider.getDimension(), PacketHandler.getPacket(PowerPacketLaser.class)
-					.setColor(key.color).setRenderBall(isBall).setDir(key.dir).setLength(data.length)
-					.setReverse(data.reverse).setTilePos(pipe));
+			MainProxy.sendPacketToAllWatchingChunk(pipe, PacketHandler.getPacket(PowerPacketLaser.class)
+					.setColor(key.color).setRenderBall(isBall).setDir(key.dir).setLength(data.length).setReverse(data.reverse).setTilePos(pipe));
 		}
 	}
 }

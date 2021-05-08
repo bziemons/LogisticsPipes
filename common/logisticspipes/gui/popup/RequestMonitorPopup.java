@@ -34,8 +34,8 @@ import logisticspipes.utils.gui.SimpleGraphics;
 import logisticspipes.utils.gui.SubGuiScreen;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.string.ChatColor;
-import logisticspipes.utils.string.StringUtils;
 import network.rs485.logisticspipes.logistic.TempOrders;
+import network.rs485.logisticspipes.util.TextUtil;
 
 public class RequestMonitorPopup extends SubGuiScreen {
 
@@ -44,7 +44,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		LEVEL_1(0.5F, 330, 465, 1, 50, -200, 100),
 		LEVEL_2(0.25F, 660, 950, 2, 100, -400, -100);
 
-		private ZOOM_LEVEL(float zoom, int bottom, int right, int line, int moveY, int maxX, int maxY) {
+		ZOOM_LEVEL(float zoom, int bottom, int right, int line, int moveY, int maxX, int maxY) {
 			this.zoom = zoom;
 			bottomRenderBorder = bottom;
 			rightRenderBorder = right;
@@ -81,7 +81,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		}
 	}
 
-	private static final ResourceLocation achievementTextures = new ResourceLocation("logisticspipes","textures/gui/gui_border.png");
+	private static final ResourceLocation achievementTextures = new ResourceLocation("logisticspipes", "textures/gui/gui_border.png");
 	private final PipeBlockRequestTable _table;
 	private final int orderId;
 
@@ -117,7 +117,6 @@ public class RequestMonitorPopup extends SubGuiScreen {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public void initGui() {
 		super.initGui();
 		buttonList.clear();
@@ -245,7 +244,6 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		BufferedImage bufferedimage = new BufferedImage(imgPosX, imgPosY, 1);
 
 		imgPosX = 0;
-		imgPosY = 0;
 
 		//Clear everything
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
@@ -275,7 +273,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 	private void saveImage(BufferedImage bufferedimage) {
 		File screenShotsFolder = new File(Minecraft.getMinecraft().mcDataDir, "screenshots");
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
-		String s = dateFormat.format(new Date()).toString();
+		String s = dateFormat.format(new Date());
 		int i = 1;
 		while (true) {
 			File canidate = new File(screenShotsFolder, s + (i == 1 ? "" : "_" + i) + ".png");
@@ -390,7 +388,6 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		GL11.glEnable(GL12.GL_RESCALE_NORMAL);
 		GL11.glEnable(GL11.GL_COLOR_MATERIAL);
 
-
 		int moveBackgroundX = (mapX - minX) % 16;
 		int moveBackgroundY = (mapY - minY) % 16;
 		GL11.glColor4f(0.7F, 0.7F, 0.7F, 1.0F);
@@ -484,8 +481,8 @@ public class RequestMonitorPopup extends SubGuiScreen {
 					List<String> tooltipList = new ArrayList<>();
 					tooltipList.add(ChatColor.BLUE + "Request Type: " + ChatColor.YELLOW + order.getType().name());
 					tooltipList.add(ChatColor.BLUE + "Send to Router ID: " + ChatColor.YELLOW + order.getRouterId());
-					tooltip = new Object[]{(int) (par1 * zoom.zoom - 10), (int) (par2 * zoom.zoom), order
-							.getAsDisplayItem().makeNormalStack(), true, tooltipList};
+					tooltip = new Object[] { (int) (par1 * zoom.zoom - 10), (int) (par2 * zoom.zoom), order
+							.getAsDisplayItem().makeNormalStack(), true, tooltipList };
 				}
 			}
 			startLeft += 30;
@@ -577,10 +574,10 @@ public class RequestMonitorPopup extends SubGuiScreen {
 	}
 
 	private void renderItemAt(ItemIdentifierStack item, int x, int y) {
-		itemRender.renderItemAndEffectIntoGUI(item.makeNormalStack(), x, y);
 		if (guiLeft < x && x < guiLeft + xSize - 16 && guiTop < y && y < guiTop + ySize - 16) {
-			itemRender.renderItemOverlayIntoGUI(fontRenderer, item.makeNormalStack(), x, y, "");
-			String s = StringUtils.getFormatedStackSize(item.getStackSize(), false);
+			itemRender.renderItemAndEffectIntoGUI(item.getItem().makeNormalStack(1), x, y);
+			itemRender.renderItemOverlayIntoGUI(fontRenderer, item.getItem().makeNormalStack(1), x, y, "");
+			String s = TextUtil.getThreeDigitFormattedNumber(item.getStackSize(), false);
 			GL11.glDisable(GL11.GL_LIGHTING);
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
 			itemRender.zLevel = 0.0F;

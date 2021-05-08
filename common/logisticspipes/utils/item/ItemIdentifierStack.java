@@ -1,6 +1,5 @@
-/**
+/*
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -8,8 +7,8 @@
 
 package logisticspipes.utils.item;
 
-import javax.annotation.Nonnull;
 import java.util.LinkedList;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.inventory.IInventory;
@@ -24,17 +23,21 @@ import logisticspipes.utils.tuples.Triplet;
 
 public final class ItemIdentifierStack implements Comparable<ItemIdentifierStack>, ILPCCTypeHolder {
 
-	private Object ccType;
+	private final Object[] ccTypeHolder = new Object[1];
 	private final ItemIdentifier _item;
 	private int stackSize;
 
-	public static ItemIdentifierStack getFromStack(ItemStack stack) {
+	public static ItemIdentifierStack getFromStack(@Nonnull ItemStack stack) {
 		return new ItemIdentifierStack(ItemIdentifier.get(stack), stack.getCount());
 	}
 
 	public ItemIdentifierStack(ItemIdentifier item, int stackSize) {
 		_item = item;
 		setStackSize(stackSize);
+	}
+
+	public ItemIdentifierStack(ItemIdentifierStack copy) {
+		this(copy._item, copy.stackSize);
 	}
 
 	public ItemIdentifier getItem() {
@@ -60,6 +63,7 @@ public final class ItemIdentifierStack implements Comparable<ItemIdentifierStack
 		this.stackSize -= stackSize;
 	}
 
+	@Nonnull
 	public ItemStack unsafeMakeNormalStack() {
 		return _item.unsafeMakeNormalStack(stackSize);
 	}
@@ -95,11 +99,6 @@ public final class ItemIdentifierStack implements Comparable<ItemIdentifierStack
 	@Override
 	public String toString() {
 		return String.format("%dx %s", getStackSize(), _item.toString());
-	}
-
-	@Override
-	public ItemIdentifierStack clone() {
-		return new ItemIdentifierStack(_item, getStackSize());
 	}
 
 	public String getFriendlyName() {
@@ -139,7 +138,7 @@ public final class ItemIdentifierStack implements Comparable<ItemIdentifierStack
 					}
 				}
 				if (!added) {
-					list.add(part.getValue1().getItemIdentifierStack().clone());
+					list.add(new ItemIdentifierStack(part.getValue1().getItemIdentifierStack()));
 				}
 			}
 		}
@@ -156,12 +155,8 @@ public final class ItemIdentifierStack implements Comparable<ItemIdentifierStack
 	}
 
 	@Override
-	public void setCCType(Object type) {
-		ccType = type;
+	public Object[] getTypeHolder() {
+		return ccTypeHolder;
 	}
 
-	@Override
-	public Object getCCType() {
-		return ccType;
-	}
 }

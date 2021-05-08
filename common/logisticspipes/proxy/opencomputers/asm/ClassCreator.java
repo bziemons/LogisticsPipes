@@ -5,9 +5,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import logisticspipes.proxy.computers.wrapper.CCWrapperInformation;
-import logisticspipes.utils.tuples.Pair;
-
 import net.minecraft.launchwrapper.Launch;
 
 import org.objectweb.asm.AnnotationVisitor;
@@ -15,6 +12,9 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+
+import logisticspipes.proxy.computers.wrapper.CCWrapperInformation;
+import logisticspipes.utils.tuples.Pair;
 
 public class ClassCreator {
 
@@ -89,7 +89,7 @@ public class ClassCreator {
 		if (ClassCreator.createdClasses.contains(className)) {
 			try {
 				return (Class<? extends BaseWrapperClass>) Class.forName(newClassName_DOT);
-			} catch (ClassNotFoundException e) {}
+			} catch (ClassNotFoundException ignored) {}
 		}
 		byte[] bytes = ClassCreator.getWrappedClassAsBytes(info, className);
 		return (Class<? extends BaseWrapperClass>) ClassCreator.loadClass(bytes, newClassName_DOT);

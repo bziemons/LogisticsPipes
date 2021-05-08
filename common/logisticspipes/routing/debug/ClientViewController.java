@@ -6,7 +6,6 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import logisticspipes.interfaces.IDebugHUDProvider;
@@ -123,9 +122,8 @@ public class ClientViewController implements IDebugHUDProvider {
 
 	public void updateList(RoutingUpdateDebugCanidateList routingUpdateDebugCanidateList) {
 		debugWindow.clear();
-		ExitRoute[] e = routingUpdateDebugCanidateList.getMsg();
 		int i = 0;
-		for (ExitRoute exit : e) {
+		for (ExitRoute exit : routingUpdateDebugCanidateList.getExitRoutes()) {
 			i++;
 			Color color = Color.BLACK;
 			if (exit.debug.isNewlyAddedCanidate) {

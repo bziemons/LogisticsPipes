@@ -1,6 +1,7 @@
 package logisticspipes.pipes;
 
 import java.util.HashMap;
+import java.util.Objects;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -11,7 +12,7 @@ import net.minecraft.util.EnumFacing;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.ITankUtil;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
@@ -24,6 +25,7 @@ import logisticspipes.utils.CacheHolder.CacheTypes;
 import logisticspipes.utils.FluidIdentifierStack;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
+import network.rs485.logisticspipes.inventory.IItemIdentifierInventory;
 
 public class PipeItemsFluidSupplier extends CoreRoutedPipe {
 
@@ -96,7 +98,7 @@ public class PipeItemsFluidSupplier extends CoreRoutedPipe {
 			data.getItemIdentifierStack().lowerStackSize(1);
 			Item item = data.getItemIdentifierStack().getItem().item;
 			if (item.hasContainerItem(data.getItemIdentifierStack().makeNormalStack())) {
-				Item containerItem = item.getContainerItem();
+				Item containerItem = Objects.requireNonNull(item.getContainerItem());
 				transport.sendItem(new ItemStack(containerItem, 1));
 			}
 		}
@@ -151,7 +153,7 @@ public class PipeItemsFluidSupplier extends CoreRoutedPipe {
 	}
 
 	/*** GUI ***/
-	public ItemIdentifierInventory getDummyInventory() {
+	public IItemIdentifierInventory getDummyInventory() {
 		return dummyInventory;
 	}
 }

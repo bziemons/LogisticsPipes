@@ -20,17 +20,13 @@
 
 package network.rs485.logisticspipes.proxy.mcmp;
 
-import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nonnull;
 
-import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockAccess;
 
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -40,12 +36,13 @@ import network.rs485.logisticspipes.proxy.mcmp.subproxy.IMCMPBlockAccess;
 import network.rs485.logisticspipes.proxy.mcmp.subproxy.IMCMPLTGPCompanion;
 
 public interface IMCMPProxy {
+
 	IMCMPLTGPCompanion createMCMPCompanionFor(LogisticsTileGenericPipe pipe);
 
 	IMCMPBlockAccess createMCMPBlockAccess();
 
 	@SideOnly(Side.CLIENT)
-	List<BakedQuad> addQuads(List<BakedQuad> list, IBlockState state, EnumFacing side, long rand);
+	void addQuads(@Nonnull List<BakedQuad> list, IBlockState state, EnumFacing side, long rand);
 
 	void registerTileEntities();
 

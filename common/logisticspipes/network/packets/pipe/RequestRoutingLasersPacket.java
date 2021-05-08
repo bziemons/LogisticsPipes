@@ -9,7 +9,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import logisticspipes.LPConstants;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.BlockPos;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+import logisticspipes.LogisticsPipes;
 import logisticspipes.config.Configs;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
@@ -22,30 +29,19 @@ import logisticspipes.routing.IRouter;
 import logisticspipes.routing.LaserData;
 import logisticspipes.routing.PipeRoutingConnectionType;
 import logisticspipes.routing.pathfinder.PathFinder;
-
-import network.rs485.logisticspipes.world.CoordinateUtils;
-import network.rs485.logisticspipes.world.IntegerCoordinates;
-
-import net.minecraft.entity.player.EntityPlayer;
-
-import net.minecraft.util.EnumFacing;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
 import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class RequestRoutingLasersPacket extends CoordinatesPacket {
 
-	private abstract class Log {
+	private abstract static class Log {
 
 		abstract void log(String log);
 	}
 
 	@Data
 	@AllArgsConstructor
-	private class DataEntry {
+	private static class DataEntry {
 
 		final LogisticsTileGenericPipe pipe;
 		final EnumFacing dir;
@@ -98,7 +94,7 @@ public class RequestRoutingLasersPacket extends CoordinatesPacket {
 
 					@Override
 					void log(String log) {
-						if (LPConstants.DEBUG) {
+						if (LogisticsPipes.isDEBUG()) {
 							System.out.println(dir.name() + ": " + log);
 						}
 					}
@@ -120,7 +116,7 @@ public class RequestRoutingLasersPacket extends CoordinatesPacket {
 			final List<LaserData> lasers = entry.lasers;
 			final EnumSet<PipeRoutingConnectionType> connectionType = entry.connectionType;
 			final Log log = entry.log;
-			if (LPConstants.DEBUG) {
+			if (LogisticsPipes.isDEBUG()) {
 				log.log("Size: " + connectedRouters.size());
 			}
 			lasers.add(new LaserData(pipe.getX(), pipe.getY(), pipe.getZ(), dir, connectionType).setStartPipe(firstPipe));
@@ -184,7 +180,7 @@ public class RequestRoutingLasersPacket extends CoordinatesPacket {
 
 						@Override
 						void log(String logString) {
-							if (LPConstants.DEBUG) {
+							if (LogisticsPipes.isDEBUG()) {
 								log.log(exitDir.name() + ": " + logString);
 							}
 						}
@@ -195,24 +191,22 @@ public class RequestRoutingLasersPacket extends CoordinatesPacket {
 	}
 
 	private ArrayList<LaserData> compressLasers(ArrayList<LaserData> lasers) {
-		ArrayList<LaserData> options = new ArrayList<>();
-		options.addAll(lasers);
+		ArrayList<LaserData> options = new ArrayList<>(lasers);
 		Iterator<LaserData> iLasers = lasers.iterator();
 		while (iLasers.hasNext()) {
 			boolean compressed = false;
 			LaserData data = iLasers.next();
-			IntegerCoordinates next = new IntegerCoordinates(data.getPosX(), data.getPosY(), data.getPosZ());
-			CoordinateUtils.add(next, data.getDir(), data.getLength());
-			boolean found = false;
+			BlockPos next = new BlockPos(data.getPosX(), data.getPosY(), data.getPosZ()).offset(data.getDir(), data.getLength());
+			boolean found;
 			do {
 				found = false;
 				Iterator<LaserData> iOptions = options.iterator();
 				while (iOptions.hasNext()) {
 					LaserData d = iOptions.next();
-					if (d.getPosX() == next.getXCoord() && d.getPosY() == next.getYCoord() && d.getPosZ() == next.getZCoord()) {
+					if (d.getPosX() == next.getX() && d.getPosY() == next.getY() && d.getPosZ() == next.getZ()) {
 						if (data.getDir().equals(d.getDir()) && data.getConnectionType().equals(d.getConnectionType())) {
 							data.setLength(data.getLength() + d.getLength());
-							CoordinateUtils.add(next, data.getDir(), d.getLength());
+							next = next.offset(data.getDir(), data.getLength());
 							found = true;
 							iOptions.remove();
 							lasers.remove(d);

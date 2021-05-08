@@ -25,10 +25,10 @@ import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.IRouter;
-import logisticspipes.routing.IRouterManager;
 import logisticspipes.routing.ItemRoutingInformation;
 import logisticspipes.routing.order.IDistanceTracker;
 import logisticspipes.utils.EnumFacingUtil;
+import logisticspipes.utils.FluidIdentifierStack;
 import logisticspipes.utils.SlidingWindowBitSet;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
@@ -178,7 +178,7 @@ public abstract class LPTravelingItem {
 			LPTravelingItemClient copy = new LPTravelingItemClient(id, position, input, output, yaw);
 			copy.speed = speed;
 			copy.hoverStart = hoverStart;
-			copy.item = item.clone();
+			copy.item = new ItemIdentifierStack(item);
 			copy.age = age;
 			copy.container = container;
 			return copy;
@@ -220,12 +220,12 @@ public abstract class LPTravelingItem {
 		public void readFromNBT(NBTTagCompound data) {
 			setPosition(data.getFloat("position"));
 			setSpeed(data.getFloat("speed"));
-			if(data.hasKey("input")) {
+			if (data.hasKey("input")) {
 				input = EnumFacingUtil.getOrientation(data.getInteger("input"));
 			} else {
 				input = null;
 			}
-			if(data.hasKey("output")) {
+			if (data.hasKey("output")) {
 				output = EnumFacingUtil.getOrientation(data.getInteger("output"));
 			} else {
 				output = null;
@@ -327,6 +327,20 @@ public abstract class LPTravelingItem {
 			if (info.destinationint >= 0 && SimpleServiceLocator.routerManager.isRouter(info.destinationint)) {
 				IRouter destinationRouter = SimpleServiceLocator.routerManager.getRouter(info.destinationint);
 				// TODO PROVIDE REFACTOR: lost item, retry or cancel request
+				if (destinationRouter != null) {
+					if (destinationRouter.getPipe() != null) {
+						destinationRouter.getPipe().notifyOfReroute(info);
+						if (destinationRouter.getPipe() instanceof IRequireReliableTransport) {
+							((IRequireReliableTransport) destinationRouter.getPipe()).itemLost(new ItemIdentifierStack(info.getItem()), info.targetInfo);
+						}
+						if (destinationRouter.getPipe() instanceof IRequireReliableFluidTransport) {
+							if (info.getItem().getItem().isFluidContainer()) {
+								FluidIdentifierStack liquid = SimpleServiceLocator.logisticsFluidManager.getFluidFromContainer(info.getItem());
+								((IRequireReliableFluidTransport) destinationRouter.getPipe()).liquidLost(liquid.getFluid(), liquid.getAmount());
+							}
+						}
+					}
+				}
 			}
 		}
 
@@ -372,7 +386,7 @@ public abstract class LPTravelingItem {
 				throw new UnsupportedOperationException("Can't split up a FluidContainer");
 			}
 			ItemIdentifierStack stackToKeep = getItemIdentifierStack();
-			ItemIdentifierStack stackToSend = stackToKeep.clone();
+			ItemIdentifierStack stackToSend = new ItemIdentifierStack(stackToKeep);
 			stackToKeep.setStackSize(itemsToTake);
 			stackToSend.setStackSize(stackToSend.getStackSize() - itemsToTake);
 
@@ -427,10 +441,9 @@ public abstract class LPTravelingItem {
 
 		@Override
 		public void checkIDFromUUID() {
-			IRouterManager rm = SimpleServiceLocator.routerManager;
-			IRouter router = rm.getRouter(info.destinationint);
+			IRouter router = SimpleServiceLocator.routerManager.getRouter(info.destinationint);
 			if (router == null || info.destinationUUID != router.getId()) {
-				info.destinationint = rm.getIDforUUID(info.destinationUUID);
+				info.destinationint = SimpleServiceLocator.routerManager.getIDforUUID(info.destinationUUID);
 			}
 		}
 

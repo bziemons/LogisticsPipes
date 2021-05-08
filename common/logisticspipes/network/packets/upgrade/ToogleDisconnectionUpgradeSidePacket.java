@@ -1,5 +1,7 @@
 package logisticspipes.network.packets.upgrade;
 
+import java.util.Objects;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -11,11 +13,10 @@ import lombok.Setter;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.abstractpackets.SlotPacket;
 import logisticspipes.pipes.upgrades.ConnectionUpgradeConfig;
+import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.gui.UpgradeSlot;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class ToogleDisconnectionUpgradeSidePacket extends SlotPacket {
@@ -32,16 +33,17 @@ public class ToogleDisconnectionUpgradeSidePacket extends SlotPacket {
 	public void processPacket(EntityPlayer player) {
 		UpgradeSlot slot = getSlot(player, UpgradeSlot.class);
 		ItemStack stack = slot.getStack();
+		if (stack.isEmpty()) return;
 
 		if (!stack.hasTagCompound()) {
 			stack.setTagCompound(new NBTTagCompound());
 		}
 
-		NBTTagCompound nbt = stack.getTagCompound();
+		NBTTagCompound tag = Objects.requireNonNull(stack.getTagCompound());
 		String sideName = ConnectionUpgradeConfig.Sides.getNameForDirection(side);
-		nbt.setBoolean(sideName, !nbt.getBoolean(sideName));
+		tag.setBoolean(sideName, !tag.getBoolean(sideName));
 
-		stack.setTagCompound(nbt);
+		stack.setTagCompound(tag);
 
 		slot.putStack(stack);
 	}

@@ -1,14 +1,13 @@
 package logisticspipes.network.packets.block;
 
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.tileentity.TileEntity;
+
 import logisticspipes.logic.interfaces.ILogicControllerTile;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.guis.logic.LogicControllerGuiProvider;
-
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.tileentity.TileEntity;
-
 import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
@@ -20,7 +19,7 @@ public class LogicControllerPacket extends CoordinatesPacket {
 
 	@Override
 	public void processPacket(EntityPlayer player) {
-		ILogicControllerTile tile = this.getTile(player.getEntityWorld(), ILogicControllerTile.class);
+		ILogicControllerTile tile = this.getTileAs(player.getEntityWorld(), ILogicControllerTile.class);
 		if (tile == null) {
 			return;
 		}

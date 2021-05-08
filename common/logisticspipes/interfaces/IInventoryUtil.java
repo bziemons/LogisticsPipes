@@ -2,6 +2,7 @@ package logisticspipes.interfaces;
 
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nonnull;
 
 import net.minecraft.item.ItemStack;
 
@@ -9,13 +10,17 @@ import logisticspipes.utils.item.ItemIdentifier;
 
 public interface IInventoryUtil {
 
-	int itemCount(ItemIdentifier item);
+	int itemCount(@Nonnull ItemIdentifier item);
 
+	@Nonnull
 	Map<ItemIdentifier, Integer> getItemsAndCount();
 
+	@Deprecated
+	@Nonnull
 	ItemStack getSingleItem(ItemIdentifier item);
 
-	ItemStack getMultipleItems(ItemIdentifier item, int count);
+	@Nonnull
+	ItemStack getMultipleItems(@Nonnull ItemIdentifier item, int count);
 
 	/**
 	 * Checks to see if the item is inside the inventory. Used by the PolymorphicItemSink
@@ -24,29 +29,27 @@ public interface IInventoryUtil {
 	 * @param item The item to check
 	 * @return true if the item is inside the inventory
 	 */
-	boolean containsUndamagedItem(ItemIdentifier item);
-
-	int roomForItem(ItemIdentifier item);
+	boolean containsUndamagedItem(@Nonnull ItemIdentifier item);
 
 	/**
 	 * Inventory space count which terminates when space for max items are
 	 * found.
 	 *
-	 * @param item
-	 * @param max
 	 * @return spaces found. If this is less than max, then there are only
 	 * spaces for that amount.
+	 * @param stack
 	 */
-	int roomForItem(ItemIdentifier item, int count);
+	int roomForItem(@Nonnull ItemStack stack);
 
-	boolean isSpecialInventory();
-
+	@Nonnull
 	Set<ItemIdentifier> getItems();
 
 	//IInventory adapter
 	int getSizeInventory();
 
+	@Nonnull
 	ItemStack getStackInSlot(int slot);
 
+	@Nonnull
 	ItemStack decrStackSize(int slot, int amount);
 }

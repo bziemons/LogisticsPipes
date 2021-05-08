@@ -1,6 +1,5 @@
 package logisticspipes.network.packets.gui;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 
 import lombok.Getter;
@@ -47,9 +46,9 @@ public class ChannelInformationPacket extends GuiPacket {
 	@Override
 	public void processPacket(EntityPlayer player) {
 		IGUIChannelInformationReceiver screen = this.getGui(IGUIChannelInformationReceiver.class);
-		if(screen != null) {
+		if (screen != null) {
 			screen.handleChannelInformation(information, targeted);
-		} else if(targeted) {
+		} else if (targeted) {
 			throw new TargetNotFoundException("GuiDoesNotWantPacket", this);
 		}
 	}

@@ -1,12 +1,6 @@
 package logisticspipes.pipes;
 
-import logisticspipes.LPItems;
-import logisticspipes.LogisticsPipes;
-import logisticspipes.network.GuiIDs;
-import logisticspipes.proxy.MainProxy;
-import logisticspipes.security.SecuritySettings;
-import logisticspipes.textures.Textures;
-import logisticspipes.textures.Textures.TextureType;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
@@ -16,11 +10,19 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.text.TextComponentTranslation;
 
+import logisticspipes.LPItems;
+import logisticspipes.LogisticsPipes;
+import logisticspipes.network.GuiIDs;
+import logisticspipes.proxy.MainProxy;
+import logisticspipes.security.SecuritySettings;
+import logisticspipes.textures.Textures;
+import logisticspipes.textures.Textures.TextureType;
 import network.rs485.logisticspipes.util.items.ItemStackLoader;
 
 public class PipeItemsRequestLogisticsMk2 extends PipeItemsRequestLogistics {
 
-	private ItemStack disk;
+	@Nonnull
+	private ItemStack disk = ItemStack.EMPTY;
 
 	public PipeItemsRequestLogisticsMk2(Item item) {
 		super(item);
@@ -45,10 +47,10 @@ public class PipeItemsRequestLogisticsMk2 extends PipeItemsRequestLogistics {
 	@Override
 	public void openGui(EntityPlayer entityplayer) {
 		boolean flag = true;
-		if (disk == null) {
-			if (entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem().equals(LPItems.disk)) {
+		if (disk.isEmpty()) {
+			if (!entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).isEmpty() && entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem().equals(LPItems.disk)) {
 				disk = entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
-				entityplayer.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, null);
+				entityplayer.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, ItemStack.EMPTY);
 				flag = false;
 			}
 		}
@@ -60,7 +62,7 @@ public class PipeItemsRequestLogisticsMk2 extends PipeItemsRequestLogistics {
 	@Override
 	public void writeToNBT(NBTTagCompound nbttagcompound) {
 		super.writeToNBT(nbttagcompound);
-		if (disk != null) {
+		if (!disk.isEmpty()) {
 			NBTTagCompound itemNBT = new NBTTagCompound();
 			disk.writeToNBT(itemNBT);
 			nbttagcompound.setTag("Disk", itemNBT);
@@ -81,6 +83,7 @@ public class PipeItemsRequestLogisticsMk2 extends PipeItemsRequestLogistics {
 		return Textures.LOGISTICSPIPE_REQUESTERMK2_TEXTURE;
 	}
 
+	@Nonnull
 	public ItemStack getDisk() {
 		return disk;
 	}
@@ -93,14 +96,14 @@ public class PipeItemsRequestLogisticsMk2 extends PipeItemsRequestLogistics {
 	}
 
 	public void dropDisk() {
-		if (disk != null) {
+		if (!disk.isEmpty()) {
 			EntityItem item = new EntityItem(getWorld(), getX(), getY(), getZ(), disk);
 			getWorld().spawnEntity(item);
-			disk = null;
+			disk = ItemStack.EMPTY;
 		}
 	}
 
-	public void setDisk(ItemStack itemstack) {
+	public void setDisk(@Nonnull ItemStack itemstack) {
 		disk = itemstack;
 	}
 }

@@ -8,10 +8,10 @@ import lombok.Setter;
 import logisticspipes.modules.ModuleProvider;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
+import logisticspipes.utils.StaticResolve;
+import network.rs485.logisticspipes.inventory.ProviderMode;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class ProviderModuleMode extends ModuleCoordinatesPacket {
@@ -35,7 +35,7 @@ public class ProviderModuleMode extends ModuleCoordinatesPacket {
 		if (module == null) {
 			return;
 		}
-		module.setExtractionMode(mode);
+		module.providerMode.setValue(ProviderMode.modeFromIntSafe(mode));
 	}
 
 	@Override

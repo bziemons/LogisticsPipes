@@ -1,14 +1,11 @@
 package logisticspipes.commands.commands;
 
-import logisticspipes.LPConstants;
-import logisticspipes.LogisticsPipes;
-import logisticspipes.commands.abstracts.ICommandHandler;
-import logisticspipes.ticks.VersionChecker;
-
 import net.minecraft.command.ICommandSender;
 import net.minecraft.util.text.TextComponentString;
 
-import net.minecraftforge.fml.common.Mod;
+import logisticspipes.LogisticsPipes;
+import logisticspipes.commands.abstracts.ICommandHandler;
+import logisticspipes.ticks.VersionChecker;
 
 public class VersionCommand implements ICommandHandler {
 
@@ -29,7 +26,7 @@ public class VersionCommand implements ICommandHandler {
 
 	@Override
 	public void executeCommand(ICommandSender sender, String[] args) {
-		sender.sendMessage(new TextComponentString(String.format("LogisticsPipes %s for Minecraft %s.", LogisticsPipes.class.getAnnotation(Mod.class).version(), LPConstants.MCVersion)));
+		sender.sendMessage(new TextComponentString(LogisticsPipes.getVersionString()));
 
 		VersionChecker versionChecker = LogisticsPipes.versionChecker;
 		sender.sendMessage(new TextComponentString(versionChecker.getVersionCheckerStatus()));

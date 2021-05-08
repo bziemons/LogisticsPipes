@@ -9,9 +9,9 @@ import logisticspipes.utils.tuples.Pair;
 
 public interface ILogisticsFluidManager {
 
-	public Pair<Integer, Integer> getBestReply(FluidIdentifierStack stack, IRouter sourceRouter, List<Integer> jamList);
+	Pair<Integer, Integer> getBestReply(FluidIdentifierStack stack, IRouter sourceRouter, List<Integer> jamList);
 
-	public ItemIdentifierStack getFluidContainer(FluidIdentifierStack stack);
+	ItemIdentifierStack getFluidContainer(FluidIdentifierStack stack);
 
-	public FluidIdentifierStack getFluidFromContainer(ItemIdentifierStack stack);
+	FluidIdentifierStack getFluidFromContainer(ItemIdentifierStack stack);
 }

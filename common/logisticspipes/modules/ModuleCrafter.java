@@ -1,36 +1,41 @@
 package logisticspipes.modules;
 
+import java.lang.ref.WeakReference;
+import java.util.BitSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.DelayQueue;
-import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
-import net.minecraft.world.World;
+import net.minecraft.util.math.BlockPos;
 
 import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.items.CapabilityItemHandler;
 
+import com.google.common.collect.ImmutableList;
+import lombok.Getter;
+
+import logisticspipes.LogisticsPipes;
+import logisticspipes.interfaces.IGuiOpenControler;
 import logisticspipes.interfaces.IHUDModuleHandler;
 import logisticspipes.interfaces.IHUDModuleRenderer;
-import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.IModuleWatchReciver;
 import logisticspipes.interfaces.IPipeServiceProvider;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.interfaces.IWorldProvider;
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.items.ItemUpgrade;
-import logisticspipes.modules.abstractmodules.LogisticsGuiModule;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider;
@@ -39,38 +44,22 @@ import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.guis.module.inhand.CraftingModuleInHand;
 import logisticspipes.network.guis.module.inpipe.CraftingModuleSlot;
-import logisticspipes.network.packets.block.CraftingPipeNextAdvancedSatellitePacket;
-import logisticspipes.network.packets.block.CraftingPipePrevAdvancedSatellitePacket;
-import logisticspipes.network.packets.cpipe.CPipeNextSatellite;
-import logisticspipes.network.packets.cpipe.CPipePrevSatellite;
-import logisticspipes.network.packets.cpipe.CPipeSatelliteId;
 import logisticspipes.network.packets.cpipe.CPipeSatelliteImport;
 import logisticspipes.network.packets.cpipe.CPipeSatelliteImportBack;
-import logisticspipes.network.packets.cpipe.CraftingAdvancedSatelliteId;
 import logisticspipes.network.packets.cpipe.CraftingPipeOpenConnectedGuiPacket;
 import logisticspipes.network.packets.hud.HUDStartModuleWatchingPacket;
 import logisticspipes.network.packets.hud.HUDStopModuleWatchingPacket;
-import logisticspipes.network.packets.pipe.CraftingPipePriorityDownPacket;
-import logisticspipes.network.packets.pipe.CraftingPipePriorityUpPacket;
 import logisticspipes.network.packets.pipe.CraftingPipeUpdatePacket;
-import logisticspipes.network.packets.pipe.CraftingPriority;
-import logisticspipes.network.packets.pipe.FluidCraftingAdvancedSatelliteId;
 import logisticspipes.network.packets.pipe.FluidCraftingAmount;
-import logisticspipes.network.packets.pipe.FluidCraftingPipeAdvancedSatelliteNextPacket;
-import logisticspipes.network.packets.pipe.FluidCraftingPipeAdvancedSatellitePrevPacket;
 import logisticspipes.pipes.PipeFluidSatellite;
-import logisticspipes.pipes.PipeItemsCraftingLogistics;
 import logisticspipes.pipes.PipeItemsSatelliteLogistics;
-import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
+import logisticspipes.pipes.PipeLogisticsChassis.ChassiTargetInformation;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.proxy.interfaces.ICraftingRecipeProvider;
 import logisticspipes.proxy.interfaces.IFuzzyRecipeProvider;
-import logisticspipes.request.resources.DictResource;
 import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.IRouter;
-import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
 import logisticspipes.utils.CacheHolder.CacheTypes;
 import logisticspipes.utils.DelayedGeneric;
 import logisticspipes.utils.FluidIdentifier;
@@ -80,47 +69,86 @@ import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
-import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
-import network.rs485.logisticspipes.world.WorldCoordinatesWrapper.AdjacentTileEntity;
+import network.rs485.logisticspipes.connection.AdjacentUtilKt;
+import network.rs485.logisticspipes.module.Gui;
+import network.rs485.logisticspipes.property.BitSetProperty;
+import network.rs485.logisticspipes.property.BooleanProperty;
+import network.rs485.logisticspipes.property.IBitSet;
+import network.rs485.logisticspipes.property.IntListProperty;
+import network.rs485.logisticspipes.property.IntegerProperty;
+import network.rs485.logisticspipes.property.InventoryProperty;
+import network.rs485.logisticspipes.property.Property;
+import network.rs485.logisticspipes.property.UUIDListProperty;
+import network.rs485.logisticspipes.property.UUIDProperty;
+import network.rs485.logisticspipes.property.UUIDPropertyKt;
+import network.rs485.logisticspipes.util.FuzzyUtil;
 
-public class ModuleCrafter extends LogisticsGuiModule implements IHUDModuleHandler, IModuleWatchReciver {
+public class ModuleCrafter extends LogisticsModule
+		implements IHUDModuleHandler, IModuleWatchReciver, IGuiOpenControler, Gui {
+
+	public final InventoryProperty dummyInventory = new InventoryProperty(
+			new ItemIdentifierInventory(11, "Requested items", 127), "");
+	public final InventoryProperty liquidInventory = new InventoryProperty(
+			new ItemIdentifierInventory(ItemUpgrade.MAX_LIQUID_CRAFTER, "Fluid items", 1, true), "FluidInv");
+	public final InventoryProperty cleanupInventory = new InventoryProperty(
+			new ItemIdentifierInventory(ItemUpgrade.MAX_CRAFTING_CLEANUP * 3, "Cleanup Filter Items", 1), "CleanupInv");
+	public final UUIDProperty satelliteUUID = new UUIDProperty(null, "satelliteUUID");
+	public final UUIDListProperty advancedSatelliteUUIDList = new UUIDListProperty("advancedSatelliteUUIDList");
+	public final UUIDProperty liquidSatelliteUUID = new UUIDProperty(null, "liquidSatelliteId");
+	public final UUIDListProperty liquidSatelliteUUIDList = new UUIDListProperty("liquidSatelliteUUIDList");
+	public final IntegerProperty priority = new IntegerProperty(0, "priority");
+	public final IntListProperty liquidAmounts = new IntListProperty("FluidAmount");
+	public final BooleanProperty cleanupModeIsExclude = new BooleanProperty(true, "cleanupModeIsExclude");
+	public final BitSetProperty fuzzyFlags = new BitSetProperty(new BitSet(4 * (9 + 1)), "fuzzyBitSet");
+	private final List<Property<?>> properties = ImmutableList.<Property<?>>builder()
+			.add(dummyInventory)
+			.add(liquidInventory)
+			.add(cleanupInventory)
+			.add(satelliteUUID)
+			.add(advancedSatelliteUUIDList)
+			.add(liquidSatelliteUUID)
+			.add(liquidSatelliteUUIDList)
+			.add(priority)
+			.add(liquidAmounts)
+			.add(cleanupModeIsExclude)
+			.add(fuzzyFlags)
+			.build();
 
 	// for reliable transport
 	protected final DelayQueue<DelayedGeneric<Pair<ItemIdentifierStack, IAdditionalTargetInformation>>> _lostItems = new DelayQueue<>();
 	protected final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
-	public int satelliteId = 0;
-	public int[] advancedSatelliteIdArray = new int[9];
-	public DictResource[] fuzzyCraftingFlagArray = new DictResource[9];
-	public DictResource outputFuzzyFlags = new DictResource((ItemIdentifierStack) null);
-	public int priority = 0;
-	public int[] liquidSatelliteIdArray = new int[ItemUpgrade.MAX_LIQUID_CRAFTER];
-	public int liquidSatelliteId = 0;
-	public boolean[] craftingSigns = new boolean[6];
-	public boolean cleanupModeIsExclude = true;
-	// from PipeItemsCraftingLogistics
-	protected ItemIdentifierInventory _dummyInventory = new ItemIdentifierInventory(11, "Requested items", 127);
-	protected ItemIdentifierInventory _liquidInventory = new ItemIdentifierInventory(ItemUpgrade.MAX_LIQUID_CRAFTER, "Fluid items", 1, true);
-	protected ItemIdentifierInventory _cleanupInventory = new ItemIdentifierInventory(ItemUpgrade.MAX_CRAFTING_CLEANUP * 3, "Cleanup Filer Items", 1);
-	protected int[] amount = new int[ItemUpgrade.MAX_LIQUID_CRAFTER];
+	protected final PlayerCollectionList guiWatcher = new PlayerCollectionList();
+
+	public ClientSideSatelliteNames clientSideSatelliteNames = new ClientSideSatelliteNames();
+
 	protected SinkReply _sinkReply;
-	private PipeItemsCraftingLogistics _pipe;
+
+	@Nullable
+	private IRequestItems _invRequester;
+	private WeakReference<TileEntity> lastAccessedCrafter = new WeakReference<>(null);
 	private boolean cachedAreAllOrderesToBuffer;
-	private List<AdjacentTileEntity> cachedCrafters = null;
+	private UpgradeSatelliteFromIDs updateSatelliteFromIDs = null;
 
 	public ModuleCrafter() {
-		for (int i = 0; i < fuzzyCraftingFlagArray.length; i++) {
-			fuzzyCraftingFlagArray[i] = new DictResource((ItemIdentifierStack) null);
-		}
+		advancedSatelliteUUIDList.ensureSize(9);
+		liquidAmounts.ensureSize(ItemUpgrade.MAX_LIQUID_CRAFTER);
+		liquidSatelliteUUIDList.ensureSize(ItemUpgrade.MAX_LIQUID_CRAFTER);
 	}
 
-	public ModuleCrafter(PipeItemsCraftingLogistics parent) {
-		_pipe = parent;
-		_service = parent;
-		_world = parent;
-		registerPosition(ModulePositionType.IN_PIPE, 0);
-		for (int i = 0; i < fuzzyCraftingFlagArray.length; i++) {
-			fuzzyCraftingFlagArray[i] = new DictResource((ItemIdentifierStack) null);
-		}
+	public static String getName() {
+		return "crafter";
+	}
+
+	@Nonnull
+	@Override
+	public String getLPName() {
+		return getName();
+	}
+
+	@Nonnull
+	@Override
+	public List<Property<?>> getProperties() {
+		return properties;
 	}
 
 	/**
@@ -132,53 +160,53 @@ public class ModuleCrafter extends LogisticsGuiModule implements IHUDModuleHandl
 	}
 
 	@Override
-	public void registerPosition(ModulePositionType slot, int positionInt) {
+	public void registerPosition(@Nonnull ModulePositionType slot, int positionInt) {
 		super.registerPosition(slot, positionInt);
-		_sinkReply = new SinkReply(FixedPriority.ItemSink, 0, 1, 0, new ChassiTargetInformation(getPositionInt()));
+		_sinkReply = new SinkReply(FixedPriority.ItemSink, 0, true, false, 1, 0,
+				new ChassiTargetInformation(getPositionInt()));
 	}
 
-	protected int spaceFor(ItemIdentifier item, boolean includeInTransit) {
+	protected int spaceFor(@Nonnull ItemStack stack, ItemIdentifier item, boolean includeInTransit) {
 		Pair<String, ItemIdentifier> key = new Pair<>("spaceFor", item);
-		Object cache = _service.getCacheHolder().getCacheFor(CacheTypes.Inventory, key);
-		if (cache != null) {
-			int count = (Integer) cache;
-			if (includeInTransit) {
-				count -= _service.countOnRoute(item);
-			}
-			return count;
-		}
-		WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(getWorld(), _service.getX(), _service.getY(), _service.getZ());
-
-		//@formatter:off
-		int count = worldCoordinates.getConnectedAdjacentTileEntities(ConnectionPipeType.ITEM)
-				.filter(adjacent -> adjacent.tileEntity.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, adjacent.direction.getOpposite()))
-		//@formatter:on
-				.map(adjacentTileEntity -> {
-					EnumFacing dir = adjacentTileEntity.direction.getOpposite();
-					if (getUpgradeManager().hasSneakyUpgrade()) {
-						dir = getUpgradeManager().getSneakyOrientation();
-					}
-					IInventoryUtil inv = SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(adjacentTileEntity.tileEntity, dir);
-					return inv.roomForItem(item, 9999); // ToDo: Magic number
-				}).reduce(Integer::sum).orElse(0);
-
-		_service.getCacheHolder().setCache(CacheTypes.Inventory, key, count);
+		final IPipeServiceProvider service = _service;
+		if (service == null) return 0;
+		Object cache = service.getCacheHolder().getCacheFor(CacheTypes.Inventory, key);
+		int onRoute = 0;
 		if (includeInTransit) {
-			count -= _service.countOnRoute(item);
+			onRoute = service.countOnRoute(item);
 		}
-		return count;
+		if (cache != null) {
+			return ((Integer) cache) - onRoute;
+		}
+
+		if (includeInTransit) {
+			stack = stack.copy();
+			stack.grow(onRoute);
+		}
+		final ISlotUpgradeManager upgradeManager = Objects.requireNonNull(getUpgradeManager());
+		final ItemStack finalStack = stack;
+		final Integer count = AdjacentUtilKt.sneakyInventoryUtils(service.getAvailableAdjacent(), upgradeManager)
+				.stream().map(invUtil -> invUtil.roomForItem(finalStack)).reduce(Integer::sum).orElse(0);
+
+		service.getCacheHolder().setCache(CacheTypes.Inventory, key, count);
+		return count - onRoute;
 	}
 
-	public int getPriority() {
-		return priority;
+	private UUID getUUIDForSatelliteName(String name) {
+		for (PipeItemsSatelliteLogistics pipe : PipeItemsSatelliteLogistics.AllSatellites) {
+			if (pipe.getSatellitePipeName().equals(name)) {
+				return pipe.getRouter().getId();
+			}
+		}
+		return null;
 	}
 
-	public void setPriority(int amount) {
-		priority = amount;
-	}
-
-	@Override
-	public LogisticsModule getSubModule(int slot) {
+	private UUID getUUIDForFluidSatelliteName(String name) {
+		for (PipeFluidSatellite pipe : PipeFluidSatellite.AllSatellites) {
+			if (pipe.getSatellitePipeName().equals(name)) {
+				return pipe.getRouter().getId();
+			}
+		}
 		return null;
 	}
 
@@ -208,7 +236,7 @@ public class ModuleCrafter extends LogisticsGuiModule implements IHUDModuleHandl
 	}
 
 	public ItemIdentifierStack getCraftedItem() {
-		return _dummyInventory.getIDStackInSlot(9);
+		return dummyInventory.getIDStackInSlot(9);
 	}
 
 	protected int getNextConnectSatelliteId(boolean prev, int x) {
@@ -336,375 +364,222 @@ public class ModuleCrafter extends LogisticsGuiModule implements IHUDModuleHandl
 		}
 	}
 
-	public IRouter getSatelliteRouter(int x) {
-		if (x == -1) {
-			for (final PipeItemsSatelliteLogistics satellite : PipeItemsSatelliteLogistics.AllSatellites) {
-				if (satellite.satelliteId == satelliteId) {
-					CoreRoutedPipe satPipe = satellite;
-					if (satPipe == null || satPipe.stillNeedReplace() || satPipe.getRouter() == null) {
-						continue;
-					}
-					return satPipe.getRouter();
-				}
-			}
-		} else {
-			for (final PipeItemsSatelliteLogistics satellite : PipeItemsSatelliteLogistics.AllSatellites) {
-				if (satellite.satelliteId == advancedSatelliteIdArray[x]) {
-					CoreRoutedPipe satPipe = satellite;
-					if (satPipe == null || satPipe.stillNeedReplace() || satPipe.getRouter() == null) {
-						continue;
-					}
-					return satPipe.getRouter();
-				}
-			}
-		}
-		return null;
+	private IRouter getSatelliteRouter(int x) {
+		final UUID satelliteUUID = x == -1 ? this.satelliteUUID.getValue() : advancedSatelliteUUIDList.get(x);
+		final int satelliteRouterId = SimpleServiceLocator.routerManager.getIDforUUID(satelliteUUID);
+		return SimpleServiceLocator.routerManager.getRouter(satelliteRouterId);
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		//		super.readFromNBT(nbttagcompound);
-		_dummyInventory.readFromNBT(nbttagcompound, "");
-		_liquidInventory.readFromNBT(nbttagcompound, "FluidInv");
-		_cleanupInventory.readFromNBT(nbttagcompound, "CleanupInv");
-		satelliteId = nbttagcompound.getInteger("satelliteid");
+	public void readFromNBT(@Nonnull NBTTagCompound tag) {
+		super.readFromNBT(tag);
 
-		priority = nbttagcompound.getInteger("priority");
+		// FIXME: remove after 1.12
 		for (int i = 0; i < 9; i++) {
-			advancedSatelliteIdArray[i] = nbttagcompound.getInteger("advancedSatelliteId" + i);
-		}
-		if (nbttagcompound.hasKey("fuzzyCraftingFlag0")) {
-			for (int i = 0; i < 9; i++) {
-				int flags = nbttagcompound.getByte("fuzzyCraftingFlag" + i);
-				DictResource dict = fuzzyCraftingFlagArray[i];
-				if ((flags & 0x1) != 0) {
-					dict.use_od = true;
-				}
-				if ((flags & 0x2) != 0) {
-					dict.ignore_dmg = true;
-				}
-				if ((flags & 0x4) != 0) {
-					dict.ignore_nbt = true;
-				}
-				if ((flags & 0x8) != 0) {
-					dict.use_category = true;
-				}
+			String advancedSatelliteUUIDArrayString = tag.getString("advancedSatelliteUUID" + i);
+			if (!advancedSatelliteUUIDArrayString.isEmpty()) {
+				advancedSatelliteUUIDList.set(i, UUID.fromString(advancedSatelliteUUIDArrayString));
 			}
 		}
-		if (nbttagcompound.hasKey("fuzzyFlags")) {
-			NBTTagList lst = nbttagcompound.getTagList("fuzzyFlags", Constants.NBT.TAG_COMPOUND);
-			for (int i = 0; i < 9; i++) {
-				NBTTagCompound comp = lst.getCompoundTagAt(i);
-				fuzzyCraftingFlagArray[i].ignore_dmg = comp.getBoolean("ignore_dmg");
-				fuzzyCraftingFlagArray[i].ignore_nbt = comp.getBoolean("ignore_nbt");
-				fuzzyCraftingFlagArray[i].use_od = comp.getBoolean("use_od");
-				fuzzyCraftingFlagArray[i].use_category = comp.getBoolean("use_category");
+
+		// FIXME: remove after 1.12
+		for (int i = 0; i < ItemUpgrade.MAX_LIQUID_CRAFTER; i++) {
+			String liquidSatelliteUUIDArrayString = tag.getString("liquidSatelliteUUIDArray" + i);
+			if (!liquidSatelliteUUIDArrayString.isEmpty()) {
+				liquidSatelliteUUIDList.set(i, UUID.fromString(liquidSatelliteUUIDArrayString));
 			}
 		}
-		if (nbttagcompound.hasKey("outputFuzzyFlags")) {
-			NBTTagCompound comp = nbttagcompound.getCompoundTag("outputFuzzyFlags");
-			outputFuzzyFlags.ignore_dmg = comp.getBoolean("ignore_dmg");
-			outputFuzzyFlags.ignore_nbt = comp.getBoolean("ignore_nbt");
-			outputFuzzyFlags.use_od = comp.getBoolean("use_od");
-			outputFuzzyFlags.use_category = comp.getBoolean("use_category");
+
+		// FIXME: remove after 1.12
+		if (tag.hasKey("fuzzyFlags")) {
+			NBTTagList lst = tag.getTagList("fuzzyFlags", Constants.NBT.TAG_COMPOUND);
+			for (int i = 0; i < 9; i++) {
+				FuzzyUtil.INSTANCE.readFromNBT(inputFuzzy(i), lst.getCompoundTagAt(i));
+			}
 		}
-		for (int i = 0; i < 6; i++) {
-			craftingSigns[i] = nbttagcompound.getBoolean("craftingSigns" + i);
+		// FIXME: remove after 1.12
+		if (tag.hasKey("outputFuzzyFlags")) {
+			FuzzyUtil.INSTANCE.readFromNBT(outputFuzzy(), tag.getCompoundTag("outputFuzzyFlags"));
 		}
-		if (nbttagcompound.hasKey("FluidAmount")) {
-			amount = nbttagcompound.getIntArray("FluidAmount");
+
+		// FIXME: remove after 1.12
+		if (tag.hasKey("satelliteid")) {
+			updateSatelliteFromIDs = new UpgradeSatelliteFromIDs();
+			updateSatelliteFromIDs.satelliteId = tag.getInteger("satelliteid");
+			for (int i = 0; i < 9; i++) {
+				updateSatelliteFromIDs.advancedSatelliteIdArray[i] = tag.getInteger("advancedSatelliteId" + i);
+			}
+			for (int i = 0; i < ItemUpgrade.MAX_LIQUID_CRAFTER; i++) {
+				updateSatelliteFromIDs.liquidSatelliteIdArray[i] = tag.getInteger("liquidSatelliteIdArray" + i);
+			}
+			updateSatelliteFromIDs.liquidSatelliteId = tag.getInteger("liquidSatelliteId");
 		}
-		if (amount.length < ItemUpgrade.MAX_LIQUID_CRAFTER) {
-			amount = new int[ItemUpgrade.MAX_LIQUID_CRAFTER];
-		}
-		for (int i = 0; i < ItemUpgrade.MAX_LIQUID_CRAFTER; i++) {
-			liquidSatelliteIdArray[i] = nbttagcompound.getInteger("liquidSatelliteIdArray" + i);
-		}
-		for (int i = 0; i < ItemUpgrade.MAX_LIQUID_CRAFTER; i++) {
-			liquidSatelliteIdArray[i] = nbttagcompound.getInteger("liquidSatelliteIdArray" + i);
-		}
-		liquidSatelliteId = nbttagcompound.getInteger("liquidSatelliteId");
-		cleanupModeIsExclude = nbttagcompound.getBoolean("cleanupModeIsExclude");
 	}
 
-	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		//	super.writeToNBT(nbttagcompound);
-		_dummyInventory.writeToNBT(nbttagcompound, "");
-		_liquidInventory.writeToNBT(nbttagcompound, "FluidInv");
-		_cleanupInventory.writeToNBT(nbttagcompound, "CleanupInv");
-		nbttagcompound.setInteger("satelliteid", satelliteId);
+	public IBitSet outputFuzzy() {
+		final int startIdx = 4 * 9; // after the 9th slot
+		return fuzzyFlags.get(startIdx, startIdx + 3);
+	}
 
-		nbttagcompound.setInteger("priority", priority);
-		for (int i = 0; i < 9; i++) {
-			nbttagcompound.setInteger("advancedSatelliteId" + i, advancedSatelliteIdArray[i]);
-		}
-		NBTTagList lst = new NBTTagList();
-		for (int i = 0; i < 9; i++) {
-			NBTTagCompound comp = new NBTTagCompound();
-			comp.setBoolean("ignore_dmg", fuzzyCraftingFlagArray[i].ignore_dmg);
-			comp.setBoolean("ignore_nbt", fuzzyCraftingFlagArray[i].ignore_nbt);
-			comp.setBoolean("use_od", fuzzyCraftingFlagArray[i].use_od);
-			comp.setBoolean("use_category", fuzzyCraftingFlagArray[i].use_category);
-			lst.appendTag(comp);
-		}
-		nbttagcompound.setTag("fuzzyFlags", lst);
-		{
-			NBTTagCompound comp = new NBTTagCompound();
-			comp.setBoolean("ignore_dmg", outputFuzzyFlags.ignore_dmg);
-			comp.setBoolean("ignore_nbt", outputFuzzyFlags.ignore_nbt);
-			comp.setBoolean("use_od", outputFuzzyFlags.use_od);
-			comp.setBoolean("use_category", outputFuzzyFlags.use_category);
-			nbttagcompound.setTag("outputFuzzyFlags", comp);
-		}
-		for (int i = 0; i < 6; i++) {
-			nbttagcompound.setBoolean("craftingSigns" + i, craftingSigns[i]);
-		}
-		for (int i = 0; i < ItemUpgrade.MAX_LIQUID_CRAFTER; i++) {
-			nbttagcompound.setInteger("liquidSatelliteIdArray" + i, liquidSatelliteIdArray[i]);
-		}
-		nbttagcompound.setIntArray("FluidAmount", amount);
-		nbttagcompound.setInteger("liquidSatelliteId", liquidSatelliteId);
-		nbttagcompound.setBoolean("cleanupModeIsExclude", cleanupModeIsExclude);
+	public IBitSet inputFuzzy(int slot) {
+		final int startIdx = 4 * slot;
+		return fuzzyFlags.get(startIdx, startIdx + 3);
 	}
 
 	public ModernPacket getCPipePacket() {
-		return PacketHandler.getPacket(CraftingPipeUpdatePacket.class).setAmount(amount).setLiquidSatelliteIdArray(liquidSatelliteIdArray).setLiquidSatelliteId(liquidSatelliteId).setSatelliteId(satelliteId).setAdvancedSatelliteIdArray(advancedSatelliteIdArray)
-				.setPriority(priority).setModulePos(this);
+		return PacketHandler.getPacket(CraftingPipeUpdatePacket.class).setAmount(liquidAmounts.getArray())
+				.setLiquidSatelliteNameArray(getSatelliteNamesForUUIDs(liquidSatelliteUUIDList))
+				.setLiquidSatelliteName(getSatelliteNameForUUID(liquidSatelliteUUID.getValue()))
+				.setSatelliteName(getSatelliteNameForUUID(satelliteUUID.getValue()))
+				.setAdvancedSatelliteNameArray(getSatelliteNamesForUUIDs(advancedSatelliteUUIDList))
+				.setPriority(priority.getValue()).setModulePos(this);
+	}
+
+	private String getSatelliteNameForUUID(UUID uuid) {
+		if (UUIDPropertyKt.isZero(uuid)) {
+			return "";
+		}
+		int simpleId = SimpleServiceLocator.routerManager.getIDforUUID(uuid);
+		IRouter router = SimpleServiceLocator.routerManager.getRouter(simpleId);
+		if (router != null) {
+			CoreRoutedPipe pipe = router.getPipe();
+			if (pipe instanceof PipeItemsSatelliteLogistics) {
+				return ((PipeItemsSatelliteLogistics) pipe).getSatellitePipeName();
+			} else if (pipe instanceof PipeFluidSatellite) {
+				return ((PipeFluidSatellite) pipe).getSatellitePipeName();
+			}
+		}
+		return "UNKNOWN NAME";
+	}
+
+	private String[] getSatelliteNamesForUUIDs(UUIDListProperty list) {
+		return list.stream().map(this::getSatelliteNameForUUID).toArray(String[]::new);
 	}
 
 	public void handleCraftingUpdatePacket(CraftingPipeUpdatePacket packet) {
-		amount = packet.getAmount();
-		liquidSatelliteIdArray = packet.getLiquidSatelliteIdArray();
-		liquidSatelliteId = packet.getLiquidSatelliteId();
-		satelliteId = packet.getSatelliteId();
-		advancedSatelliteIdArray = packet.getAdvancedSatelliteIdArray();
-		priority = packet.getPriority();
+		if (MainProxy.isClient(getWorld())) {
+			liquidAmounts.replaceContent(packet.getAmount());
+			clientSideSatelliteNames.liquidSatelliteNameArray = packet.getLiquidSatelliteNameArray();
+			clientSideSatelliteNames.liquidSatelliteName = packet.getLiquidSatelliteName();
+			clientSideSatelliteNames.satelliteName = packet.getSatelliteName();
+			clientSideSatelliteNames.advancedSatelliteNameArray = packet.getAdvancedSatelliteNameArray();
+			priority.setValue(packet.getPriority());
+		} else {
+			throw new UnsupportedOperationException();
+		}
 	}
 
+	@Nonnull
 	@Override
-	protected ModuleCoordinatesGuiProvider getPipeGuiProvider() {
-		return NewGuiHandler.getGui(CraftingModuleSlot.class).setAdvancedSat(getUpgradeManager().isAdvancedSatelliteCrafter()).setLiquidCrafter(getUpgradeManager().getFluidCrafter()).setAmount(amount).setHasByproductExtractor(getUpgradeManager().hasByproductExtractor()).setFuzzy(
-				getUpgradeManager().isFuzzyUpgrade())
-				.setCleanupSize(getUpgradeManager().getCrafterCleanup()).setCleanupExclude(cleanupModeIsExclude);
+	public ModuleCoordinatesGuiProvider getPipeGuiProvider() {
+		return NewGuiHandler.getGui(CraftingModuleSlot.class)
+				.setAdvancedSat(getUpgradeManager().isAdvancedSatelliteCrafter())
+				.setLiquidCrafter(getUpgradeManager().getFluidCrafter())
+				.setAmount(liquidAmounts.getArray())
+				.setHasByproductExtractor(getUpgradeManager().hasByproductExtractor())
+				.setFuzzy(getUpgradeManager().isFuzzyUpgrade())
+				.setCleanupSize(getUpgradeManager().getCrafterCleanup())
+				.setCleanupExclude(cleanupModeIsExclude.getValue());
 	}
 
+	@Nonnull
 	@Override
-	protected ModuleInHandGuiProvider getInHandGuiProvider() {
-		return NewGuiHandler.getGui(CraftingModuleInHand.class).setAmount(amount).setCleanupExclude(cleanupModeIsExclude);
+	public ModuleInHandGuiProvider getInHandGuiProvider() {
+		return NewGuiHandler.getGui(CraftingModuleInHand.class).setAmount(liquidAmounts.getArray())
+				.setCleanupExclude(cleanupModeIsExclude.getValue());
 	}
 
-	/**
-	 * Simply get the dummy inventory
-	 *
-	 * @return the dummy inventory
-	 */
-	public ItemIdentifierInventory getDummyInventory() {
-		return _dummyInventory;
-	}
-
-	public ItemIdentifierInventory getFluidInventory() {
-		return _liquidInventory;
-	}
-
-	public IInventory getCleanupInventory() {
-		return _cleanupInventory;
-	}
-
-	public void setDummyInventorySlot(int slot, ItemStack itemstack) {
-		_dummyInventory.setInventorySlotContents(slot, itemstack);
-	}
-
-	public void importFromCraftingTable(EntityPlayer player) {
+	public void importFromCraftingTable(@Nullable EntityPlayer player) {
 		if (MainProxy.isClient(getWorld())) {
 			// Send packet asking for import
 			final CoordinatesPacket packet = PacketHandler.getPacket(CPipeSatelliteImport.class).setModulePos(this);
 			MainProxy.sendPacketToServer(packet);
 		} else {
-			WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(getWorld(), getX(), getY(), getZ());
-
-			for (AdjacentTileEntity adjacent : worldCoordinates.getConnectedAdjacentTileEntities(ConnectionPipeType.ITEM).collect(Collectors.toList())) {
-				for (ICraftingRecipeProvider provider : SimpleServiceLocator.craftingRecipeProviders) {
-					if (provider.importRecipe(adjacent.tileEntity, _dummyInventory)) {
-						if (provider instanceof IFuzzyRecipeProvider) {
-							((IFuzzyRecipeProvider) provider).importFuzzyFlags(adjacent.tileEntity, _dummyInventory, fuzzyCraftingFlagArray, outputFuzzyFlags);
+			final IPipeServiceProvider service = _service;
+			if (service == null) return;
+			service.getAvailableAdjacent().neighbors().keySet().stream().flatMap(
+					neighbor -> SimpleServiceLocator.craftingRecipeProviders.stream()
+							.filter(provider -> provider.importRecipe(neighbor.getTileEntity(), dummyInventory))
+							.map(provider1 -> new Pair<>(neighbor, provider1))).findFirst()
+					.ifPresent(neighborProviderPair -> {
+						if (neighborProviderPair.getValue2() instanceof IFuzzyRecipeProvider) {
+							((IFuzzyRecipeProvider) neighborProviderPair.getValue2())
+									.importFuzzyFlags(neighborProviderPair.getValue1().getTileEntity(),
+											dummyInventory.getSlotAccess(), fuzzyFlags);
 						}
-						// ToDo: break only out of the inner loop?
-						break;
-					}
-				}
-			}
+					});
+
 			// Send inventory as packet
-			final CoordinatesPacket packet = PacketHandler.getPacket(CPipeSatelliteImportBack.class).setInventory(_dummyInventory).setModulePos(this);
+			final CoordinatesPacket packet = PacketHandler.getPacket(CPipeSatelliteImportBack.class)
+					.setInventory(dummyInventory).setModulePos(this);
 			if (player != null) {
 				MainProxy.sendPacketToPlayer(packet, player);
 			}
-			MainProxy.sendPacketToAllWatchingChunk(getX(), getZ(), getWorld().provider.getDimension(), packet);
-		}
-	}
-
-	protected World getWorld() {
-		return _world.getWorld();
-	}
-
-	public void priorityUp(EntityPlayer player) {
-		priority++;
-		if (MainProxy.isClient(player.world)) {
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(CraftingPipePriorityUpPacket.class).setModulePos(this));
-		} else if (player != null && MainProxy.isServer(player.world)) {
-			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(CraftingPriority.class).setInteger(priority).setModulePos(this), player);
-		}
-	}
-
-	public void priorityDown(EntityPlayer player) {
-		priority--;
-		if (MainProxy.isClient(player.world)) {
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(CraftingPipePriorityDownPacket.class).setModulePos(this));
-		} else if (player != null && MainProxy.isServer(player.world)) {
-			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(CraftingPriority.class).setInteger(priority).setModulePos(this), player);
+			MainProxy.sendPacketToAllWatchingChunk(this, packet);
 		}
 	}
 
 	public ItemIdentifierStack getByproductItem() {
-		return _dummyInventory.getIDStackInSlot(10);
-	}
-
-	public ItemIdentifierStack getMaterials(int slotnr) {
-		return _dummyInventory.getIDStackInSlot(slotnr);
+		return dummyInventory.getIDStackInSlot(10);
 	}
 
 	public FluidIdentifier getFluidMaterial(int slotnr) {
-		ItemIdentifierStack stack = _liquidInventory.getIDStackInSlot(slotnr);
+		ItemIdentifierStack stack = liquidInventory.getIDStackInSlot(slotnr);
 		if (stack == null) {
 			return null;
 		}
 		return FluidIdentifier.get(stack.getItem());
 	}
 
-	public void setNextSatellite(EntityPlayer player, int i) {
-		if (MainProxy.isClient(player.world)) {
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(CraftingPipeNextAdvancedSatellitePacket.class).setInteger(i).setModulePos(this));
-		} else {
-			advancedSatelliteIdArray[i] = getNextConnectSatelliteId(false, i);
-			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(CraftingAdvancedSatelliteId.class).setInteger2(i).setInteger(advancedSatelliteIdArray[i]).setModulePos(this), player);
-		}
-	}
-
-	public void setPrevSatellite(EntityPlayer player, int i) {
-		if (MainProxy.isClient(player.world)) {
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(CraftingPipePrevAdvancedSatellitePacket.class).setInteger(i).setModulePos(this));
-		} else {
-			advancedSatelliteIdArray[i] = getNextConnectSatelliteId(true, i);
-			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(CraftingAdvancedSatelliteId.class).setInteger2(i).setInteger(advancedSatelliteIdArray[i]).setModulePos(this), player);
-		}
-	}
-
 	public void changeFluidAmount(int change, int slot, EntityPlayer player) {
 		if (MainProxy.isClient(player.world)) {
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(FluidCraftingAmount.class).setInteger2(slot).setInteger(change).setModulePos(this));
+			MainProxy.sendPacketToServer(
+					PacketHandler.getPacket(FluidCraftingAmount.class).setInteger2(slot).setInteger(change)
+							.setModulePos(this));
 		} else {
-			amount[slot] += change;
-			if (amount[slot] <= 0) {
-				amount[slot] = 0;
+			liquidAmounts.increase(slot, change);
+			if (liquidAmounts.get(slot) <= 0) {
+				liquidAmounts.set(slot, 0);
 			}
-			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(FluidCraftingAmount.class).setInteger2(slot).setInteger(amount[slot]).setModulePos(this), player);
+			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(FluidCraftingAmount.class).setInteger2(slot)
+					.setInteger(liquidAmounts.get(slot)).setModulePos(this), player);
 		}
 	}
 
-	public void setPrevFluidSatellite(EntityPlayer player, int i) {
-		if (MainProxy.isClient(player.world)) {
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(FluidCraftingPipeAdvancedSatellitePrevPacket.class).setInteger(i).setModulePos(this));
-		} else {
-			if (i == -1) {
-				liquidSatelliteId = getNextConnectFluidSatelliteId(true, i);
-				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(FluidCraftingAdvancedSatelliteId.class).setInteger2(i).setInteger(liquidSatelliteId).setModulePos(this), player);
-			} else {
-				liquidSatelliteIdArray[i] = getNextConnectFluidSatelliteId(true, i);
-				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(FluidCraftingAdvancedSatelliteId.class).setInteger2(i).setInteger(liquidSatelliteIdArray[i]).setModulePos(this), player);
-			}
-		}
+	private IRouter getFluidSatelliteRouter(int x) {
+		final UUID liquidSatelliteUUID = x == -1 ? this.liquidSatelliteUUID.getValue() : liquidSatelliteUUIDList.get(x);
+		final int satelliteRouterId = SimpleServiceLocator.routerManager.getIDforUUID(liquidSatelliteUUID);
+		return SimpleServiceLocator.routerManager.getRouter(satelliteRouterId);
 	}
 
-	public void setNextFluidSatellite(EntityPlayer player, int i) {
-		if (MainProxy.isClient(player.world)) {
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(FluidCraftingPipeAdvancedSatelliteNextPacket.class).setInteger(i).setModulePos(this));
-		} else {
-			if (i == -1) {
-				liquidSatelliteId = getNextConnectFluidSatelliteId(false, i);
-				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(FluidCraftingAdvancedSatelliteId.class).setInteger2(i).setInteger(liquidSatelliteId).setModulePos(this), player);
-			} else {
-				liquidSatelliteIdArray[i] = getNextConnectFluidSatelliteId(false, i);
-				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(FluidCraftingAdvancedSatelliteId.class).setInteger2(i).setInteger(liquidSatelliteIdArray[i]).setModulePos(this), player);
-			}
-		}
-	}
-
-	public void defineFluidAmount(int integer, int slot) {
-		if (MainProxy.isClient(getWorld())) {
-			amount[slot] = integer;
-		}
-	}
-
-	public int[] getFluidAmount() {
-		return amount;
-	}
-
-	public void setFluidAmount(int[] amount) {
-		if (MainProxy.isClient(getWorld())) {
-			this.amount = amount;
-		}
-	}
-
-	public void setFluidSatelliteId(int integer, int slot) {
-		if (slot == -1) {
-			liquidSatelliteId = integer;
-		} else {
-			liquidSatelliteIdArray[slot] = integer;
-		}
-	}
-
-	public IRouter getFluidSatelliteRouter(int x) {
-		if (x == -1) {
-			for (final PipeFluidSatellite satellite : PipeFluidSatellite.AllSatellites) {
-				if (satellite.satelliteId == liquidSatelliteId) {
-					CoreRoutedPipe satPipe = satellite;
-					if (satPipe == null || satPipe.stillNeedReplace() || satPipe.getRouter() == null) {
-						continue;
-					}
-					return satPipe.getRouter();
-				}
-			}
-		} else {
-			for (final PipeFluidSatellite satellite : PipeFluidSatellite.AllSatellites) {
-				if (satellite.satelliteId == liquidSatelliteIdArray[x]) {
-					CoreRoutedPipe satPipe = satellite;
-					if (satPipe == null || satPipe.stillNeedReplace() || satPipe.getRouter() == null) {
-						continue;
-					}
-					return satPipe.getRouter();
-				}
-			}
-		}
-		return null;
-	}
-
-	public void openAttachedGui(EntityPlayer player) {
+	/**
+	 * Triggers opening the first possible crafting provider or inventory GUI by using onBlockActivated.
+	 *
+	 * @return true, if a GUI was opened (server-side only)
+	 */
+	public boolean openAttachedGui(EntityPlayer player) {
 		if (MainProxy.isClient(player.world)) {
 			if (player instanceof EntityPlayerMP) {
 				player.closeScreen();
 			} else if (player instanceof EntityPlayerSP) {
 				player.closeScreen();
 			}
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(CraftingPipeOpenConnectedGuiPacket.class).setModulePos(this));
-			return;
+			MainProxy.sendPacketToServer(
+					PacketHandler.getPacket(CraftingPipeOpenConnectedGuiPacket.class).setModulePos(this));
+			return false;
 		}
+
+		final IPipeServiceProvider service = _service;
+		if (service == null) return false;
+		final IWorldProvider worldProvider = _world;
+		if (worldProvider == null) return false;
 
 		// hack to avoid wrenching blocks
 		int savedEquipped = player.inventory.currentItem;
 		boolean foundSlot = false;
 		// try to find a empty slot
 		for (int i = 0; i < 9; i++) {
-			if (player.inventory.getStackInSlot(i) == null) {
+			if (player.inventory.getStackInSlot(i).isEmpty()) {
 				foundSlot = true;
 				player.inventory.currentItem = i;
 				break;
@@ -726,26 +601,24 @@ public class ModuleCrafter extends LogisticsGuiModule implements IHUDModuleHandl
 			player.inventory.currentItem = (player.inventory.currentItem + 1) % 9;
 		}
 
-		WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(getWorld(), getX(), getY(), getZ());
-
-		worldCoordinates.getConnectedAdjacentTileEntities(ConnectionPipeType.ITEM).anyMatch(adjacent -> {
-			boolean found = SimpleServiceLocator.craftingRecipeProviders.stream().anyMatch(provider -> provider.canOpenGui(adjacent.tileEntity));
-
-			if (!found) {
-				found = (adjacent.tileEntity instanceof IInventory);
+		final boolean guiOpened = service.getAvailableAdjacent().neighbors().keySet().stream().anyMatch(neighbor -> {
+			if (neighbor.canHandleItems() || SimpleServiceLocator.craftingRecipeProviders.stream()
+					.anyMatch(provider -> provider.canOpenGui(neighbor.getTileEntity()))) {
+				final BlockPos pos = neighbor.getTileEntity().getPos();
+				IBlockState blockState = worldProvider.getWorld().getBlockState(pos);
+				return !blockState.getBlock().isAir(blockState, worldProvider.getWorld(), pos) && blockState.getBlock()
+						.onBlockActivated(worldProvider.getWorld(), pos,
+								neighbor.getTileEntity().getWorld().getBlockState(pos), player, EnumHand.MAIN_HAND,
+								EnumFacing.UP, 0, 0, 0);
+			} else {
+				return false;
 			}
-
-			if (found) {
-				Block block = getWorld().getBlockState(adjacent.tileEntity.getPos()).getBlock();
-				if (block != null && block
-						.onBlockActivated(getWorld(), adjacent.tileEntity.getPos(), adjacent.tileEntity.getWorld().getBlockState(adjacent.tileEntity.getPos()), player,
-								EnumHand.MAIN_HAND, EnumFacing.UP, 0, 0, 0)) {
-					return true;
-				}
-			}
-			return false;
 		});
+		if (!guiOpened) {
+			LogisticsPipes.log.warn("Ignored open attached GUI request at " + player.world + " @ " + getBlockPos());
+		}
 		player.inventory.currentItem = savedEquipped;
+		return guiOpened;
 	}
 
 	public boolean areAllOrderesToBuffer() {
@@ -753,7 +626,8 @@ public class ModuleCrafter extends LogisticsGuiModule implements IHUDModuleHandl
 	}
 
 	protected int neededEnergy() {
-		return (int) (10 * Math.pow(1.1, getUpgradeManager().getItemExtractionUpgrade()) * Math.pow(1.2, getUpgradeManager().getItemStackExtractionUpgrade()))	;
+		return (int) (10 * Math.pow(1.1, getUpgradeManager().getItemExtractionUpgrade()) * Math
+				.pow(1.2, getUpgradeManager().getItemStackExtractionUpgrade()));
 	}
 
 	protected int itemsToExtract() {
@@ -764,44 +638,21 @@ public class ModuleCrafter extends LogisticsGuiModule implements IHUDModuleHandl
 		return 1 + getUpgradeManager().getItemStackExtractionUpgrade();
 	}
 
-	public List<AdjacentTileEntity> locateCrafters() {
-		if (cachedCrafters == null) {
-			//@formatter:off
-			cachedCrafters = new WorldCoordinatesWrapper(getWorld(), getX(), getY(), getZ())
-					.getConnectedAdjacentTileEntities(ConnectionPipeType.ITEM)
-					.filter(adjacent ->
-							adjacent.tileEntity instanceof IInventory
-							|| SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(adjacent.tileEntity, adjacent.direction.getOpposite()) != null
-					).collect(Collectors.toList());
-			//formatter:on
-		}
-
-		return cachedCrafters;
-	}
-
-	public void clearCraftersCache() {
-		cachedCrafters = null;
-	}
-
-	@Override
-	public void clearCache() {
-		clearCraftersCache();
-	}
-
 	public void importCleanup() {
 		for (int i = 0; i < 10; i++) {
-			_cleanupInventory.setInventorySlotContents(i, _dummyInventory.getStackInSlot(i));
+			final ItemIdentifierStack identStack = dummyInventory.getIDStackInSlot(i);
+			if (identStack == null) {
+				cleanupInventory.clearInventorySlotContents(i);
+			} else {
+				cleanupInventory.setInventorySlotContents(i, new ItemIdentifierStack(identStack));
+			}
 		}
-		for (int i = 10; i < _cleanupInventory.getSizeInventory(); i++) {
-			_cleanupInventory.setInventorySlotContents(i, (ItemStack) null);
+		for (int i = 10; i < cleanupInventory.getSizeInventory(); i++) {
+			cleanupInventory.clearInventorySlotContents(i);
 		}
-		_cleanupInventory.compactFirst(10);
-		_cleanupInventory.recheckStackLimit();
-		cleanupModeIsExclude = false;
-	}
-
-	public void toogleCleaupMode() {
-		cleanupModeIsExclude = !cleanupModeIsExclude;
+		cleanupInventory.getSlotAccess().compactFirst(10);
+		cleanupInventory.recheckStackLimit();
+		cleanupModeIsExclude.setValue(false);
 	}
 
 	@Override
@@ -829,4 +680,96 @@ public class ModuleCrafter extends LogisticsGuiModule implements IHUDModuleHandl
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	private void updateSatellitesOnClient() {
+		MainProxy.sendToPlayerList(getCPipePacket(), guiWatcher);
+	}
+
+	public void setSatelliteUUID(@Nullable UUID pipeID) {
+		if (pipeID == null) {
+			satelliteUUID.zero();
+		} else {
+			satelliteUUID.setValue(pipeID);
+		}
+		updateSatellitesOnClient();
+		updateSatelliteFromIDs = null;
+	}
+
+	public void setAdvancedSatelliteUUID(int i, @Nullable UUID pipeID) {
+		if (pipeID == null) {
+			advancedSatelliteUUIDList.zero(i);
+		} else {
+			advancedSatelliteUUIDList.set(i, pipeID);
+		}
+		updateSatellitesOnClient();
+		updateSatelliteFromIDs = null;
+	}
+
+	public void setFluidSatelliteUUID(@Nullable UUID pipeID) {
+		if (pipeID == null) {
+			liquidSatelliteUUID.zero();
+		} else {
+			liquidSatelliteUUID.setValue(pipeID);
+		}
+		updateSatellitesOnClient();
+		updateSatelliteFromIDs = null;
+	}
+
+	public void setAdvancedFluidSatelliteUUID(int i, @Nullable UUID pipeID) {
+		if (pipeID == null) {
+			liquidSatelliteUUIDList.zero(i);
+		} else {
+			liquidSatelliteUUIDList.set(i, pipeID);
+		}
+		updateSatellitesOnClient();
+		updateSatelliteFromIDs = null;
+	}
+
+	@Override
+	public void guiOpenedByPlayer(EntityPlayer player) {
+		guiWatcher.add(player);
+	}
+
+	@Override
+	public void guiClosedByPlayer(EntityPlayer player) {
+		guiWatcher.remove(player);
+	}
+
+	public static class CraftingChassisInformation extends ChassiTargetInformation {
+
+		@Getter
+		private final int craftingSlot;
+
+		public CraftingChassisInformation(int craftingSlot, int moduleSlot) {
+			super(moduleSlot);
+			this.craftingSlot = craftingSlot;
+		}
+	}
+
+	// FIXME: Remove after 1.12
+	private static class UpgradeSatelliteFromIDs {
+
+		public int satelliteId;
+		public int[] advancedSatelliteIdArray = new int[9];
+		public int[] liquidSatelliteIdArray = new int[ItemUpgrade.MAX_LIQUID_CRAFTER];
+		public int liquidSatelliteId;
+	}
+
+	public static class ClientSideSatelliteNames {
+
+		public @Nonnull
+		String satelliteName = "";
+		public @Nonnull
+		String[] advancedSatelliteNameArray = {};
+		public @Nonnull
+		String liquidSatelliteName = "";
+		public @Nonnull
+		String[] liquidSatelliteNameArray = {};
+	}
+
+	public boolean hasByproductUpgrade() {
+		return getUpgradeManager().hasByproductExtractor();
+	}
+
+	public boolean hasFuzzyUpgrade() { return getUpgradeManager().isFuzzyUpgrade(); }
 }

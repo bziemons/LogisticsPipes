@@ -1,6 +1,5 @@
 /**
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -19,6 +18,11 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.world.World;
 
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.interfaces.ISecurityStationManager;
@@ -29,12 +33,10 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.routing.channels.ChannelConnection;
 
-import net.minecraft.entity.player.EntityPlayer;
-
-public class RouterManager implements IRouterManager, IChannelConnectionManager, ISecurityStationManager {
+public class RouterManager implements IChannelConnectionManager, ISecurityStationManager {
 
 	private final ArrayList<IRouter> _routersClient = new ArrayList<>();
-	private final ArrayList<IRouter> _routersServer = new ArrayList<>();
+	private final ArrayList<ServerRouter> _routersServer = new ArrayList<>();
 	private final Map<UUID, Integer> _uuidMap = new HashMap<>();
 
 	private final WeakHashMap<LogisticsSecurityTileEntity, Void> _security = new WeakHashMap<>();
@@ -42,7 +44,7 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 
 	private final ArrayList<ChannelConnection> channelConnectedPipes = new ArrayList<>();
 
-	@Override
+	@Nullable
 	public IRouter getRouter(int id) {
 		//TODO: isClient without a world is expensive
 		if (id <= 0 || MainProxy.isClient()) {
@@ -52,16 +54,15 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 		}
 	}
 
-	@Override
-	public IRouter getRouterUnsafe(Integer id, boolean side) {
-		if (side || id <= 0) {
+	@Nullable
+	public ServerRouter getServerRouter(int id) {
+		if (id <= 0) {
 			return null;
 		} else {
 			return _routersServer.get(id);
 		}
 	}
 
-	@Override
 	public int getIDforUUID(UUID id) {
 		if (id == null) {
 			return -1;
@@ -73,7 +74,6 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 		return iId;
 	}
 
-	@Override
 	public void removeRouter(int id) {
 		//TODO: isClient without a world is expensive
 		if (!MainProxy.isClient()) {
@@ -81,71 +81,56 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 		}
 	}
 
-	@Override
-	public IRouter getOrCreateRouter(UUID UUid, int dimension, int xCoord, int yCoord, int zCoord, boolean forceCreateDuplicate) {
-		IRouter r = null;
+	@Nonnull
+	public IRouter getOrCreateRouter(UUID UUid, World world, int xCoord, int yCoord, int zCoord) {
+		IRouter r;
 		int id = getIDforUUID(UUid);
 		if (id > 0) {
 			getRouter(id);
 		}
-		if (r == null || !r.isAt(dimension, xCoord, yCoord, zCoord)) {
-			if (MainProxy.isClient()) {
-				synchronized (_routersClient) {
-					for (IRouter r2 : _routersClient) {
-						if (r2.isAt(dimension, xCoord, yCoord, zCoord)) {
-							return r2;
-						}
+		if (MainProxy.isClient(world)) {
+			synchronized (_routersClient) {
+				for (IRouter r2 : _routersClient) {
+					if (r2.isAt(world.provider.getDimension(), xCoord, yCoord, zCoord)) {
+						return r2;
 					}
-					r = new ClientRouter(UUid, dimension, xCoord, yCoord, zCoord);
-					_routersClient.add(r);
 				}
-			} else {
-				synchronized (_routersServer) {
-					if (!forceCreateDuplicate) {
-						for (IRouter r2 : _routersServer) {
-							if (r2 != null && r2.isAt(dimension, xCoord, yCoord, zCoord)) {
-								return r2;
-							}
-						}
+				r = new ClientRouter(UUid, world.provider.getDimension(), xCoord, yCoord, zCoord);
+				_routersClient.add(r);
+			}
+		} else {
+			synchronized (_routersServer) {
+				for (IRouter r2 : _routersServer) {
+					if (r2 != null && r2.isAt(world.provider.getDimension(), xCoord, yCoord, zCoord)) {
+						return r2;
 					}
-					r = new ServerRouter(UUid, dimension, xCoord, yCoord, zCoord);
+				}
+				final ServerRouter serverRouter = new ServerRouter(UUid, world.provider.getDimension(), xCoord, yCoord, zCoord);
 
-					int rId = r.getSimpleID();
-					if (_routersServer.size() > rId) {
-						_routersServer.set(rId, r);
-					} else {
-						_routersServer.ensureCapacity(rId + 1);
-						while (_routersServer.size() <= rId) {
-							_routersServer.add(null);
-						}
-						_routersServer.set(rId, r);
+				int rId = serverRouter.getSimpleID();
+				if (_routersServer.size() <= rId) {
+					_routersServer.ensureCapacity(rId + 1);
+					while (_routersServer.size() <= rId) {
+						_routersServer.add(null);
 					}
-					_uuidMap.put(r.getId(), r.getSimpleID());
 				}
+				_routersServer.set(rId, serverRouter);
+				_uuidMap.put(serverRouter.getId(), serverRouter.getSimpleID());
+				r = serverRouter;
 			}
 		}
 		return r;
 	}
 
-	@Override
-	public boolean isRouter(int id) {
-		if (MainProxy.isClient()) {
-			return true;
-		} else {
-			return _routersServer.get(id) != null;
-		}
-	}
-
 	/**
 	 * This assumes you know what you are doing. expect exceptions to be thrown
 	 * if you pass the wrong side.
-	 * 
+	 *
 	 * @param id
 	 * @param side
 	 *            false for server, true for client.
 	 * @return is this a router for the side.
 	 */
-	@Override
 	public boolean isRouterUnsafe(int id, boolean side) {
 		if (side) {
 			return true;
@@ -154,7 +139,6 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 		}
 	}
 
-	@Override
 	public List<IRouter> getRouters() {
 		if (MainProxy.isClient()) {
 			return Collections.unmodifiableList(_routersClient);
@@ -178,7 +162,7 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 		int routerSimpleID = router.getSimpleID();
 		channelConnectedPipes.forEach(con -> con.routers.remove(routerSimpleID));
 		Optional<ChannelConnection> channel = channelConnectedPipes.stream().filter(con -> con.identifier.equals(ident)).findFirst();
-		if(channel.isPresent()) {
+		if (channel.isPresent()) {
 			channel.get().routers.add(routerSimpleID);
 		} else {
 			ChannelConnection newChannel = new ChannelConnection();
@@ -198,8 +182,8 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 				map(channelConnection ->
 						channelConnection.routers.stream()
 								.filter(r -> r != router.getSimpleID())
-								.map(r -> getRouter(r).getPipe())
-								.filter(Objects::nonNull)
+								.map(this::getRouter).filter(Objects::nonNull)
+								.map(IRouter::getPipe).filter(Objects::nonNull)
 								.collect(Collectors.toList())
 				)
 				.orElse(Collections.emptyList());
@@ -214,12 +198,11 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 				.filter(con -> con.routers.contains(router.getSimpleID()))
 				.findFirst();
 		channel.ifPresent(chan -> chan.routers.remove(router.getSimpleID()));
-		if(channel.filter(chan -> chan.routers.isEmpty()).isPresent()) {
+		if (channel.filter(chan -> chan.routers.isEmpty()).isPresent()) {
 			channelConnectedPipes.remove(channel.get());
 		}
 	}
 
-	@Override
 	public void serverStopClean() {
 		channelConnectedPipes.clear();
 		_routersServer.clear();
@@ -227,7 +210,6 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 		_security.clear();
 	}
 
-	@Override
 	public void clearClientRouters() {
 		synchronized (_routersClient) {
 			_routersClient.clear();
@@ -259,7 +241,6 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 		deauthorizeUUID(tile.getSecId());
 	}
 
-	@Override
 	public void dimensionUnloaded(int dim) {
 		synchronized (_routersServer) {
 			_routersServer.stream().filter(r -> r != null && r.isInDim(dim)).forEach(r -> {
@@ -270,9 +251,7 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 
 	@Override
 	public void deauthorizeUUID(UUID id) {
-		if (_authorized.contains(id.toString())) {
-			_authorized.remove(id.toString());
-		}
+		_authorized.remove(id.toString());
 		sendClientAuthorizationList();
 	}
 
@@ -315,7 +294,6 @@ public class RouterManager implements IRouterManager, IChannelConnectionManager,
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(SecurityStationAuthorizedList.class).setStringList(_authorized), player);
 	}
 
-	@Override
 	public void printAllRouters() {
 		_routersServer.stream().filter(router -> router != null).forEach(router -> System.out.println(router.toString()));
 	}

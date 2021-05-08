@@ -2,6 +2,14 @@ package logisticspipes.gui.popup;
 
 import java.io.IOException;
 
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+
+import org.lwjgl.input.Keyboard;
+
 import logisticspipes.interfaces.IDiskProvider;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.orderer.DiscContent;
@@ -14,14 +22,6 @@ import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.gui.SubGuiScreen;
 import logisticspipes.utils.gui.TextListDisplay;
 
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-
-import org.lwjgl.input.Keyboard;
-
 public class GuiDiskPopup extends SubGuiScreen {
 
 	private boolean editname = false;
@@ -32,7 +32,7 @@ public class GuiDiskPopup extends SubGuiScreen {
 	private final IDiskProvider diskProvider;
 	private final TextListDisplay textList;
 
-	private final int searchWidth = 120;
+	private static final int SEARCH_WIDTH = 120;
 
 	public GuiDiskPopup(IDiskProvider diskProvider) {
 		super(150, 200, 0, 0);
@@ -44,6 +44,7 @@ public class GuiDiskPopup extends SubGuiScreen {
 			name1 = "Disk";
 		}
 		textList = new TextListDisplay(this, 6, 46, 6, 30, 12, new TextListDisplay.List() {
+
 			@Override
 			public int getSize() {
 				NBTTagCompound nbt = diskProvider.getDisk().getTagCompound();
@@ -57,7 +58,7 @@ public class GuiDiskPopup extends SubGuiScreen {
 					nbt.setTag("macroList", list);
 				}
 				NBTTagList list = nbt.getTagList("macroList", 10);
-				return  list.tagCount();
+				return list.tagCount();
 			}
 
 			@Override
@@ -113,7 +114,6 @@ public class GuiDiskPopup extends SubGuiScreen {
 		MainProxy.sendPacketToServer(PacketHandler.getPacket(DiscContent.class).setStack(diskProvider.getDisk()).setPosX(diskProvider.getX()).setPosY(diskProvider.getY()).setPosZ(diskProvider.getZ()));
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void initGui() {
 		super.initGui();
@@ -248,7 +248,7 @@ public class GuiDiskPopup extends SubGuiScreen {
 				}
 				return;
 			} else if (Character.isLetterOrDigit(c) || c == ' ') {
-				if (mc.fontRenderer.getStringWidth(name1 + c + name2) <= searchWidth) {
+				if (mc.fontRenderer.getStringWidth(name1 + c + name2) <= SEARCH_WIDTH) {
 					name1 += c;
 				}
 				return;

@@ -2,25 +2,6 @@ package logisticspipes.proxy.td;
 
 import java.util.List;
 
-import codechicken.lib.render.CCRenderState;
-import codechicken.lib.render.pipeline.IVertexOperation;
-import codechicken.lib.texture.TextureUtils;
-import codechicken.lib.vec.Translation;
-import codechicken.lib.vec.uv.IconTransformation;
-
-import cofh.thermaldynamics.duct.tiles.TileDuctItem;
-import cofh.thermaldynamics.render.RenderDuct;
-
-import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
-import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.proxy.interfaces.ITDProxy;
-import logisticspipes.proxy.object3d.interfaces.I3DOperation;
-import logisticspipes.proxy.object3d.interfaces.TextureTransformation;
-import logisticspipes.proxy.object3d.operation.LPTranslation;
-import logisticspipes.proxy.td.subproxies.ITDPart;
-import logisticspipes.proxy.td.subproxies.TDPart;
-import logisticspipes.renderer.newpipe.RenderEntry;
-
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
@@ -28,6 +9,18 @@ import net.minecraft.util.ResourceLocation;
 
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+
+import cofh.thermaldynamics.duct.tiles.TileDuctItem;
+import cofh.thermaldynamics.render.RenderDuct;
+
+import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
+import logisticspipes.proxy.SimpleServiceLocator;
+import logisticspipes.proxy.interfaces.ITDProxy;
+import logisticspipes.proxy.object3d.interfaces.TextureTransformation;
+import logisticspipes.proxy.object3d.operation.LPTranslation;
+import logisticspipes.proxy.td.subproxies.ITDPart;
+import logisticspipes.proxy.td.subproxies.TDPart;
+import logisticspipes.renderer.newpipe.RenderEntry;
 
 public class ThermalDynamicsProxy implements ITDProxy {
 

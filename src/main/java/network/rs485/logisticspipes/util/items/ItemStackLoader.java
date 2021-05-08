@@ -37,6 +37,8 @@
 
 package network.rs485.logisticspipes.util.items;
 
+import javax.annotation.Nonnull;
+
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.datafix.FixTypes;
@@ -44,6 +46,8 @@ import net.minecraft.util.datafix.FixTypes;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
 public class ItemStackLoader {
+
+	@Nonnull
 	public static ItemStack loadAndFixItemStackFromNBT(NBTTagCompound nbt) {
 		NBTTagCompound fixed = FMLCommonHandler.instance().getDataFixer().process(FixTypes.ITEM_INSTANCE, nbt);
 		return new ItemStack(fixed);

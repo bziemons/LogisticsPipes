@@ -1,15 +1,26 @@
 package logisticspipes.pipes;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import net.minecraft.item.Item;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
+
+import net.minecraftforge.fluids.FluidStack;
 
 import logisticspipes.pipes.basic.fluid.FluidRoutedPipe;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
+import logisticspipes.utils.FluidIdentifier;
+import logisticspipes.utils.FluidIdentifierStack;
+import logisticspipes.utils.item.ItemIdentifierStack;
+import logisticspipes.utils.tuples.Triplet;
 
-public class PipeFluidProvider extends FluidRoutedPipe {
+public class PipeFluidProvider extends FluidRoutedPipe implements IProvideFluids {
 
 	public PipeFluidProvider(Item item) {
 		super(item);

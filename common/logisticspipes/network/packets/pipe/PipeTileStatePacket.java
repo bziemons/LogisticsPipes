@@ -9,11 +9,10 @@ import logisticspipes.interfaces.IClientState;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
+import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataIOWrapper;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class PipeTileStatePacket extends CoordinatesPacket {
@@ -50,14 +49,14 @@ public class PipeTileStatePacket extends CoordinatesPacket {
 		if (pipe == null) {
 			return;
 		}
-		if(pipe.statePacketId < statePacketId) {
+		if (pipe.statePacketId < statePacketId) {
 			LPDataIOWrapper.provideData(bytesRenderState, pipe.renderState::readData);
 			LPDataIOWrapper.provideData(bytesCoreState, pipe.coreState::readData);
 			pipe.afterStateUpdated();
-			if(pipe.pipe != null) {
+			if (pipe.pipe != null && bytesPipe.length != 0) {
 				LPDataIOWrapper.provideData(bytesPipe, pipe.pipe::readData);
-				pipe.statePacketId = statePacketId;
 			}
+			pipe.statePacketId = statePacketId;
 		}
 	}
 

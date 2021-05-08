@@ -1,10 +1,26 @@
 package logisticspipes.blocks.powertile;
 
+import java.util.List;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import net.minecraft.crash.CrashReportCategory;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumFacing;
+
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.CapabilityInject;
+import net.minecraftforge.energy.CapabilityEnergy;
+import net.minecraftforge.energy.IEnergyStorage;
+
 import buildcraft.api.mj.IMjConnector;
 import buildcraft.api.mj.IMjReceiver;
 import ic2.api.energy.tile.IEnergyEmitter;
 import ic2.api.energy.tile.IEnergySink;
+
 import logisticspipes.LPConstants;
+import logisticspipes.LogisticsPipes;
 import logisticspipes.api.ILogisticsPowerProvider;
 import logisticspipes.asm.ModDependentInterface;
 import logisticspipes.asm.ModDependentMethod;
@@ -30,19 +46,8 @@ import logisticspipes.proxy.computers.interfaces.CCCommand;
 import logisticspipes.proxy.computers.interfaces.CCType;
 import logisticspipes.renderer.LogisticsHUDRenderer;
 import logisticspipes.utils.PlayerCollectionList;
-import net.minecraft.crash.CrashReportCategory;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityInject;
-import net.minecraftforge.energy.CapabilityEnergy;
-import net.minecraftforge.energy.IEnergyStorage;
 
-import javax.annotation.Nullable;
-import java.util.List;
-
-@ModDependentInterface(modId = {LPConstants.ic2ModID}, interfacePath = {"ic2.api.energy.tile.IEnergySink"})
+@ModDependentInterface(modId = { LPConstants.ic2ModID }, interfacePath = { "ic2.api.energy.tile.IEnergySink" })
 @CCType(name = "LogisticsPowerJunction")
 public class LogisticsPowerJunctionTileEntity extends LogisticsSolidTileEntity implements IGuiTileEntity, ILogisticsPowerProvider, IPowerLevelDisplay, IGuiOpenControler, IHeadUpDisplayBlockRendererProvider, IBlockWatchingHandler, IEnergySink {
 
@@ -75,7 +80,6 @@ public class LogisticsPowerJunctionTileEntity extends LogisticsSolidTileEntity i
 	private PlayerCollectionList guiListener = new PlayerCollectionList();
 	private PlayerCollectionList watcherList = new PlayerCollectionList();
 	private IHeadUpDisplayRenderer HUD;
-
 
 	private IEnergyStorage energyInterface = new IEnergyStorage() {
 
@@ -136,6 +140,7 @@ public class LogisticsPowerJunctionTileEntity extends LogisticsSolidTileEntity i
 			return false;
 		}
 		if (canUseEnergy(amount, null)) {
+			this.markDirty();
 			internalStorage -= (int) ((amount * Configs.POWER_USAGE_MULTIPLIER) + 0.5D);
 			if (internalStorage < LogisticsPowerJunctionTileEntity.MAX_STORAGE / 2) {
 				needMorePowerTriggerCheck = true;
@@ -184,6 +189,7 @@ public class LogisticsPowerJunctionTileEntity extends LogisticsSolidTileEntity i
 		if (internalStorage == LogisticsPowerJunctionTileEntity.MAX_STORAGE) {
 			needMorePowerTriggerCheck = false;
 		}
+		this.markDirty();
 	}
 
 	@Override
@@ -351,7 +357,7 @@ public class LogisticsPowerJunctionTileEntity extends LogisticsSolidTileEntity i
 	@Override
 	public void addInfoToCrashReport(CrashReportCategory par1CrashReportCategory) {
 		super.addInfoToCrashReport(par1CrashReportCategory);
-		par1CrashReportCategory.addCrashSection("LP-Version", LPConstants.VERSION);
+		par1CrashReportCategory.addCrashSection("LP-Version", LogisticsPipes.getVersionString());
 	}
 
 	@Override
@@ -399,7 +405,7 @@ public class LogisticsPowerJunctionTileEntity extends LogisticsSolidTileEntity i
 	}
 
 	@Override
-	public boolean hasCapability(Capability<?> capability, @Nullable EnumFacing facing) {
+	public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing) {
 		if (capability == CapabilityEnergy.ENERGY) {
 			return true;
 		}
@@ -411,7 +417,7 @@ public class LogisticsPowerJunctionTileEntity extends LogisticsSolidTileEntity i
 
 	@Nullable
 	@Override
-	public <T> T getCapability(Capability<T> capability, @Nullable EnumFacing facing) {
+	public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing) {
 		if (capability == CapabilityEnergy.ENERGY) {
 			return (T) energyInterface;
 		}

@@ -2,8 +2,6 @@ package logisticspipes.pipefxhandlers;
 
 import java.util.Random;
 
-import network.rs485.logisticspipes.world.DoubleCoordinates;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -19,6 +17,8 @@ import net.minecraftforge.fml.client.FMLClientHandler;
 import lombok.experimental.Accessors;
 import org.lwjgl.opengl.GL11;
 
+import network.rs485.logisticspipes.world.DoubleCoordinates;
+
 @Accessors(chain = true)
 public class PipeFXLaserPowerBall extends Particle {
 
@@ -27,7 +27,7 @@ public class PipeFXLaserPowerBall extends Particle {
 	private static final int ROTATIONSPEED = 5;
 	private static final Random RAND = new Random();
 
-	private float random = 0;
+	private float random;
 	private TileEntity tile;
 
 	public PipeFXLaserPowerBall(World par1World, DoubleCoordinates pos, int color, TileEntity tile) {

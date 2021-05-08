@@ -1,13 +1,17 @@
 package logisticspipes.pipes.upgrades;
 
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.modules.ModuleItemSink;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.pipes.PipeItemsBasicLogistics;
 import logisticspipes.pipes.PipeItemsCraftingLogistics;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 
 public class FuzzyUpgrade implements IPipeUpgrade {
+
+	public static String getName() {
+		return "fuzzy";
+	}
 
 	@Override
 	public boolean needsUpdate() {

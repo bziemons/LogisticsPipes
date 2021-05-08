@@ -15,8 +15,6 @@ import java.util.zip.GZIPOutputStream;
 
 import net.minecraft.entity.player.EntityPlayer;
 
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.packets.BufferTransfer;
@@ -47,7 +45,7 @@ public class ServerPacketBufferHandlerThread {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
 			GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(contentBytes));
-			int buffer = 0;
+			int buffer;
 			while ((buffer = gzip.read()) != -1) {
 				out.write(buffer);
 			}
@@ -57,10 +55,7 @@ public class ServerPacketBufferHandlerThread {
 		return out.toByteArray();
 	}
 
-	public void serverTick(TickEvent.ServerTickEvent event) {
-		if (event.phase != TickEvent.Phase.END) {
-			return;
-		}
+	public void serverTick() {
 		serverDecompressorThread.serverTickEnd();
 	}
 
@@ -87,7 +82,7 @@ public class ServerPacketBufferHandlerThread {
 		}.start();
 	}
 
-	private class ServerCompressorThread extends Thread {
+	private static class ServerCompressorThread extends Thread {
 
 		//Map of Players to lists of S->C packets to be serialized and compressed
 		private final HashMap<EntityPlayer, LinkedList<ModernPacket>> serverList = new HashMap<>();
@@ -155,7 +150,7 @@ public class ServerPacketBufferHandlerThread {
 					}
 				}
 				synchronized (playersToClear) {
-					EntityPlayer player = null;
+					EntityPlayer player;
 					do {
 						player = playersToClear.poll();
 						if (player != null) {
@@ -199,7 +194,7 @@ public class ServerPacketBufferHandlerThread {
 		}
 	}
 
-	private class ServerDecompressorThread extends Thread {
+	private static class ServerDecompressorThread extends Thread {
 
 		//Map of Player to received compressed C->S data
 		private final HashMap<EntityPlayer, LinkedList<byte[]>> queue = new HashMap<>();
@@ -247,14 +242,14 @@ public class ServerPacketBufferHandlerThread {
 		@Override
 		public void run() {
 			while (true) {
-				boolean flag = false;
+				boolean flag;
 				do {
 					flag = false;
 					byte[] buffer = null;
 					EntityPlayer player = null;
 					synchronized (queue) {
 						if (queue.size() > 0) {
-							for (Iterator<Entry<EntityPlayer, LinkedList<byte[]>>> it = queue.entrySet().iterator(); it.hasNext();) {
+							for (Iterator<Entry<EntityPlayer, LinkedList<byte[]>>> it = queue.entrySet().iterator(); it.hasNext(); ) {
 								Entry<EntityPlayer, LinkedList<byte[]>> lPlayer = it.next();
 								if (lPlayer.getValue().size() > 0) {
 									flag = true;
@@ -304,7 +299,7 @@ public class ServerPacketBufferHandlerThread {
 						}
 					}
 				}
-				for (Iterator<byte[]> it = ByteBuffer.values().iterator(); it.hasNext();) {
+				for (Iterator<byte[]> it = ByteBuffer.values().iterator(); it.hasNext(); ) {
 					byte[] ByteBufferForPlayer = it.next();
 					if (ByteBufferForPlayer.length == 0) {
 						it.remove();
@@ -319,7 +314,7 @@ public class ServerPacketBufferHandlerThread {
 					}
 				}
 				synchronized (playersToClear) {
-					EntityPlayer player = null;
+					EntityPlayer player;
 					do {
 						player = playersToClear.poll();
 						if (player != null) {

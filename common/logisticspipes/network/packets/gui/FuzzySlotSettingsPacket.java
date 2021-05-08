@@ -9,10 +9,9 @@ import lombok.Setter;
 
 import logisticspipes.interfaces.IFuzzySlot;
 import logisticspipes.network.abstractpackets.ModernPacket;
+import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class FuzzySlotSettingsPacket extends ModernPacket {
@@ -38,7 +37,7 @@ public class FuzzySlotSettingsPacket extends ModernPacket {
 	@Override
 	public void processPacket(EntityPlayer player) {
 		if (player.openContainer != null && player.openContainer.getSlot(slotNumber) instanceof IFuzzySlot) {
-			((IFuzzySlot) player.openContainer.getSlot(slotNumber)).getFuzzyFlags().loadFromBitSet(flags);
+			((IFuzzySlot) player.openContainer.getSlot(slotNumber)).getFuzzyFlags().replaceWith(flags);
 		}
 	}
 
@@ -52,4 +51,5 @@ public class FuzzySlotSettingsPacket extends ModernPacket {
 	public ModernPacket template() {
 		return new FuzzySlotSettingsPacket(getId());
 	}
+
 }

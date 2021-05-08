@@ -1,11 +1,10 @@
 package logisticspipes.network.packets.block;
 
+import net.minecraft.entity.player.EntityPlayer;
+
 import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
-
-import net.minecraft.entity.player.EntityPlayer;
-
 import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
@@ -22,7 +21,7 @@ public class PowerJunctionLevel extends IntegerCoordinatesPacket {
 
 	@Override
 	public void processPacket(EntityPlayer player) {
-		LogisticsPowerJunctionTileEntity tile = this.getTile(player.world, LogisticsPowerJunctionTileEntity.class);
+		LogisticsPowerJunctionTileEntity tile = this.getTileAs(player.world, LogisticsPowerJunctionTileEntity.class);
 		if (tile != null) {
 			tile.handlePowerPacket(getInteger());
 		}

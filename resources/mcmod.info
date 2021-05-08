@@ -3,7 +3,6 @@
     "name": "Logistics Pipes",
     "description": "Logistics Pipes is an extensive overhaul of the Buildcraft pipe system. It allows for better distribution of items via pipes, more organised stockkeeping and easier automated crafting.",
     "version": "${version}",
-    "mcversion": "${mcversion}",
     "url": "http://www.minecraftforum.net/topic/1831791-",
     "updateUrl": "",
     "authorList": [ "RS485", "LP Team" ],
@@ -12,13 +11,11 @@
     "screenshots": [],
     "requiredMods": [
         "forge@[10.12.1.1079,)",
-        "codechickenlib",
-        "forgelin"
+        "codechickenlib@[3.1.7.340,)"
     ],
     "dependencies": [
         "forge@[10.12.1.1079,)",
-        "codechickenlib",
-        "forgelin",
+        "codechickenlib@[3.1.7.340,)",
         "buildcraftcore",
         "buildcrafttransport",
         "buildcraftsilicon",

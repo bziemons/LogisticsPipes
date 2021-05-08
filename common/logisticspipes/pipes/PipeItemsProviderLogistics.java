@@ -1,6 +1,5 @@
-/**
+/*
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -8,31 +7,25 @@
 
 package logisticspipes.pipes;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Objects;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.NBTTagCompound;
 
-import logisticspipes.LogisticsPipes;
 import logisticspipes.gui.hud.HUDProvider;
-import logisticspipes.interfaces.IChangeListener;
 import logisticspipes.interfaces.IChestContentReceiver;
 import logisticspipes.interfaces.IHeadUpDisplayRenderer;
 import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
-import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.IOrderManagerContentReceiver;
+import logisticspipes.interfaces.routing.IProvideItems;
 import logisticspipes.logisticspipes.ExtractionMode;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.modules.ModuleProvider;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.network.PacketHandler;
-import logisticspipes.network.packets.hud.ChestContent;
 import logisticspipes.network.packets.hud.HUDStartWatchingPacket;
 import logisticspipes.network.packets.hud.HUDStopWatchingPacket;
 import logisticspipes.network.packets.modules.ProviderPipeInclude;
@@ -44,22 +37,13 @@ import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
-import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifier;
-import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper.AdjacentTileEntity;
 
-public class PipeItemsProviderLogistics extends CoreRoutedPipe implements IOrderManagerContentReceiver, IHeadUpDisplayRendererProvider, IChestContentReceiver, IChangeListener {
+public class PipeItemsProviderLogistics extends CoreRoutedPipe implements IProvideItems, IHeadUpDisplayRendererProvider, IChestContentReceiver, IOrderManagerContentReceiver {
 
-	public final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
-
-	private final Map<ItemIdentifier, Integer> displayMap = new TreeMap<>();
-	public final ArrayList<ItemIdentifierStack> displayList = new ArrayList<>();
-	private final ArrayList<ItemIdentifierStack> oldList = new ArrayList<>();
-
-	public final LinkedList<ItemIdentifierStack> oldManagerList = new LinkedList<>();
 	public final LinkedList<ItemIdentifierStack> itemListOrderer = new LinkedList<>();
 	private final HUDProvider HUD = new HUDProvider(this);
 
@@ -143,13 +127,13 @@ public class PipeItemsProviderLogistics extends CoreRoutedPipe implements IOrder
 	}
 
 	@Override
-	public LogisticsModule getLogisticsModule() {
-		return null;
+	public ModuleProvider getLogisticsModule() {
+		return providerModule;
 	}
 
 	@Override
 	public ItemSendMode getItemSendMode() {
-		return ItemSendMode.Normal;
+		return providerModule.itemSendMode();
 	}
 
 	@Override
@@ -205,9 +189,7 @@ public class PipeItemsProviderLogistics extends CoreRoutedPipe implements IOrder
 	@Override
 	public void playerStartWatching(EntityPlayer player, int mode) {
 		if (mode == 1) {
-			localModeWatchers.add(player);
-			updateInv(player);
-			checkContentUpdate(player);
+			providerModule.startWatching(player);
 		} else {
 			super.playerStartWatching(player, mode);
 		}
@@ -215,15 +197,18 @@ public class PipeItemsProviderLogistics extends CoreRoutedPipe implements IOrder
 
 	@Override
 	public void playerStopWatching(EntityPlayer player, int mode) {
-		super.playerStopWatching(player, mode);
-		localModeWatchers.remove(player);
+		if (mode == 1) {
+			providerModule.stopWatching(player);
+		} else {
+			super.playerStopWatching(player, mode);
+		}
 	}
 
 	@Override
 	public void setReceivedChestContent(Collection<ItemIdentifierStack> list) {
-		displayList.clear();
-		displayList.ensureCapacity(list.size());
-		displayList.addAll(list);
+		providerModule.displayList.clear();
+		providerModule.displayList.ensureCapacity(list.size());
+		providerModule.displayList.addAll(list);
 	}
 
 	@Override

@@ -1,13 +1,13 @@
 package logisticspipes.config;
 
 import java.io.File;
-
-import logisticspipes.LPConstants;
+import java.util.Arrays;
 
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
-
 import net.minecraftforge.fml.common.Loader;
+
+import logisticspipes.LogisticsPipes;
 
 //@formatter:off
 //CHECKSTYLE:OFF
@@ -15,7 +15,7 @@ import net.minecraftforge.fml.common.Loader;
 public class Configs {
 
 	public static final String CATEGORY_MULTITHREAD = "multithread";
-	public static final String CATEGORY_DEBUG 		= "debug";
+	public static final String CATEGORY_ASYNC = "async";
 
 	private static Configuration CONFIGURATION;
 
@@ -36,8 +36,10 @@ public class Configs {
 	public static boolean LOGISTICS_POWER_USAGE_DISABLED = false;
 	public static boolean ENABLE_RESEARCH_SYSTEM = false;
 
-	public static boolean TOOLTIP_INFO = LPConstants.DEBUG;
+	public static boolean TOOLTIP_INFO = LogisticsPipes.isDEBUG();
 	public static boolean ENABLE_PARTICLE_FX = true;
+
+	public static int[] CHASSIS_SLOTS_ARRAY = {1,2,3,4,8};
 
 	// GuiOrderer Popup setting
 	public static boolean DISPLAY_POPUP = true;
@@ -45,6 +47,7 @@ public class Configs {
 	// MultiThread
 	public static int MULTI_THREAD_NUMBER = 4;
 	public static int MULTI_THREAD_PRIORITY = Thread.NORM_PRIORITY;
+	public static int ASYNC_THRESHOLD = 100;
 
 	public static double POWER_USAGE_MULTIPLIER = 1;
 	public static int LOGISTICS_CRAFTING_TABLE_POWER_USAGE = 250;
@@ -137,7 +140,7 @@ public class Configs {
 
 		if(Configs.CONFIGURATION.hasKey(Configs.CATEGORY_MULTITHREAD, "enabled")) {
 			//ConfigCategory.remove is deprecated, but there's no other way to remove a key-value pair without completely recreating the config...
-			Configs.CONFIGURATION.getCategory(Configs.CATEGORY_MULTITHREAD).remove(new String("enabled"));
+			Configs.CONFIGURATION.getCategory(Configs.CATEGORY_MULTITHREAD).remove("enabled");
 		}
 		Configs.MULTI_THREAD_NUMBER = Configs.CONFIGURATION.get(Configs.CATEGORY_MULTITHREAD, "count",
 				Configs.MULTI_THREAD_NUMBER, "Number of routing table update Threads, 0 to disable.").getInt();
@@ -159,6 +162,8 @@ public class Configs {
 					"Priority of the multiThread Threads. 10 is highest, 5 normal, 1 lowest").set(Integer
 							.toString(Thread.NORM_PRIORITY));
 		}
+		Configs.ASYNC_THRESHOLD = Configs.CONFIGURATION.get(Configs.CATEGORY_ASYNC, "threshold", Configs.ASYNC_THRESHOLD,
+				"Threshold for running asynchronous code. A lower value will make async calls with small networks where the impact is low. Low values might hurt performance").getInt();
 
 
 		Configs.POWER_USAGE_MULTIPLIER = Configs.CONFIGURATION.get(
@@ -201,6 +206,26 @@ public class Configs {
 						Configs.EASTER_EGGS,
 						"Do you fancy easter eggs?")
 						.getBoolean(false);
+
+		Configs.CHASSIS_SLOTS_ARRAY = Configs.CONFIGURATION
+				.get(Configuration.CATEGORY_GENERAL, "chassisSlots",
+						Configs.CHASSIS_SLOTS_ARRAY,
+						"The number of slots in a chassis pipe starting from MK1 to MK5. Because there are 5 tiers, there need to be 5 values (positive integers, zero is allowed).")
+						.getIntList();
+
+		if (Configs.CHASSIS_SLOTS_ARRAY.length != 5) {
+			throw new RuntimeException(
+					"The config file of Logistics Pipes needs to have 5 values (positive integers, zero is allowed) in ascending order in chassisSlots. \nThe configuration contains "
+							+ Configs.CHASSIS_SLOTS_ARRAY.length + " values.");
+		}
+
+		for (int i = 0; i < Configs.CHASSIS_SLOTS_ARRAY.length; i++) {
+			if (Configs.CHASSIS_SLOTS_ARRAY[i] < 0)
+				throw new RuntimeException(
+						"The config file of Logistics Pipes needs to have 5 values (positive integers, zero is allowed) in ascending order in chassisSlots. \nThe configuration contains "
+								+ Configs.CHASSIS_SLOTS_ARRAY[i] + " as one of the values.");
+		}
+		Arrays.sort(Configs.CHASSIS_SLOTS_ARRAY);
 
 		Configs.CONFIGURATION.save();
 	}

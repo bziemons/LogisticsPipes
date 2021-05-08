@@ -5,6 +5,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
+
+import org.lwjgl.input.Keyboard;
+
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.IItemSearch;
 import logisticspipes.utils.gui.InputBar;
@@ -13,17 +19,13 @@ import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.gui.SubGuiScreen;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
-import logisticspipes.utils.string.StringUtils;
-
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
+import network.rs485.logisticspipes.util.TextUtil;
 
 public class SelectItemOutOfList extends SubGuiScreen implements IItemSearch {
 
-	public static interface IHandleItemChoice {
+	public interface IHandleItemChoice {
 
-		public void handleItemChoice(int slot);
+		void handleItemChoice(int slot);
 	}
 
 	private final List<ItemIdentifierStack> candidate;
@@ -38,8 +40,8 @@ public class SelectItemOutOfList extends SubGuiScreen implements IItemSearch {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public void initGui() {
+		Keyboard.enableRepeatEvents(true);
 		super.initGui();
 		buttonList.clear();
 		buttonList.add(new SmallGuiButton(0, guiLeft + 70, guiTop + 5, 10, 10, "<"));
@@ -56,7 +58,13 @@ public class SelectItemOutOfList extends SubGuiScreen implements IItemSearch {
 			itemDisplay.setItemList(candidate);
 		}
 		itemDisplay.reposition(guiLeft + 8, guiTop + 18, xSize - 16, ySize - 48, 0, 0);
+	}
 
+	@Override
+	public void exitGui() {
+		super.exitGui();
+		Keyboard.enableRepeatEvents(false);
+		getBaseScreen().initGui();
 	}
 
 	@Override
@@ -72,12 +80,12 @@ public class SelectItemOutOfList extends SubGuiScreen implements IItemSearch {
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
 		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
-		fontRenderer.drawString(StringUtils.translate("misc.selectType"), guiLeft + 8, guiTop + 6, 0x404040, false); //TODO
+		fontRenderer.drawString(TextUtil.translate("misc.selectType"), guiLeft + 8, guiTop + 6, 0x404040, false); //TODO
 
 		itemDisplay.renderPageNumber(right - 47, guiTop + 6);
 
 		//SearchInput
-		search.renderSearchBar();
+		search.drawTextBox();
 
 		//itemDisplay.renderSortMode(xCenter, bottom - 52);
 		itemDisplay.renderItemArea(zLevel);
@@ -93,7 +101,9 @@ public class SelectItemOutOfList extends SubGuiScreen implements IItemSearch {
 		} else if (id == 2) {
 			ItemIdentifierStack stack = itemDisplay.getSelectedItem();
 			int index = candidate.indexOf(stack);
-			handler.handleItemChoice(index);
+			if (index >= 0) {
+				handler.handleItemChoice(index);
+			}
 			exitGui();
 		}
 	}
@@ -115,18 +125,17 @@ public class SelectItemOutOfList extends SubGuiScreen implements IItemSearch {
 
 	@Override
 	protected void mouseClicked(int mouseX, int mouseY, int button) throws IOException {
-		if(itemDisplay.handleClick(mouseX, mouseY, button)) return;
-		if(search.handleClick(mouseX, mouseY, button)) return;
+		if (itemDisplay.handleClick(mouseX, mouseY, button)) return;
+		if (search.handleClick(mouseX, mouseY, button)) return;
 		super.mouseClicked(mouseX, mouseY, button);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public boolean itemSearched(ItemIdentifier item) {
 		if (search.isEmpty()) {
 			return true;
 		}
-		if (isSearched(item.getFriendlyName().toLowerCase(Locale.US), search.getContent().toLowerCase(Locale.US))) {
+		if (isSearched(item.getFriendlyName().toLowerCase(Locale.US), search.getText().toLowerCase(Locale.US))) {
 			return true;
 		}
 		//if(isSearched(String.valueOf(Item.getIdFromItem(item.item)), search.getContent())) return true;
@@ -135,7 +144,7 @@ public class SelectItemOutOfList extends SubGuiScreen implements IItemSearch {
 		for (Map.Entry<Enchantment, Integer> e : enchantIdLvlMap.entrySet()) {
 			String enchantname = e.getKey().getName();
 			if (enchantname != null) {
-				if (isSearched(enchantname.toLowerCase(Locale.US), search.getContent().toLowerCase(Locale.US))) {
+				if (isSearched(enchantname.toLowerCase(Locale.US), search.getText().toLowerCase(Locale.US))) {
 					return true;
 				}
 			}
@@ -148,6 +157,7 @@ public class SelectItemOutOfList extends SubGuiScreen implements IItemSearch {
 		for (String s : search.split(" ")) {
 			if (!value.contains(s)) {
 				flag = false;
+				break;
 			}
 		}
 		return flag;

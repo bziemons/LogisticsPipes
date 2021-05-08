@@ -2,17 +2,17 @@ package logisticspipes.utils;
 
 import java.util.Set;
 
-import logisticspipes.asm.te.LPTileEntityObject;
-
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
+
+import logisticspipes.asm.te.LPTileEntityObject;
 
 /**
  * Cache is cleared every 200 ticks when used on Routed Pipes.
  */
 public class CacheHolder {
 
-	public static enum CacheTypes {
+	public enum CacheTypes {
 		/**
 		 * <p>
 		 * Cleared when pipes [every supported type] are added to the network.

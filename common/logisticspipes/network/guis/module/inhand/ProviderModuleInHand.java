@@ -1,15 +1,15 @@
 package logisticspipes.network.guis.module.inhand;
 
-import logisticspipes.modules.ModuleProvider;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.network.abstractguis.GuiProvider;
-import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
-import logisticspipes.utils.gui.DummyContainer;
-import logisticspipes.utils.gui.DummyModuleContainer;
-
 import net.minecraft.entity.player.EntityPlayer;
 
+import logisticspipes.items.ItemModule;
+import logisticspipes.modules.LogisticsModule;
+import logisticspipes.modules.ModuleProvider;
+import logisticspipes.network.abstractguis.GuiProvider;
+import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
 import logisticspipes.utils.StaticResolve;
+import logisticspipes.utils.gui.DummyContainer;
+import logisticspipes.utils.gui.DummyModuleContainer;
 
 @StaticResolve
 public class ProviderModuleInHand extends ModuleInHandGuiProvider {
@@ -20,7 +20,7 @@ public class ProviderModuleInHand extends ModuleInHandGuiProvider {
 
 	@Override
 	public Object getClientGui(EntityPlayer player) {
-		LogisticsModule module = getLogisticsModule(player);
+		final LogisticsModule module = ItemModule.getLogisticsModule(player, getInvSlot());
 		if (!(module instanceof ModuleProvider)) {
 			return null;
 		}
@@ -33,7 +33,7 @@ public class ProviderModuleInHand extends ModuleInHandGuiProvider {
 		if (!(dummy.getModule() instanceof ModuleProvider)) {
 			return null;
 		}
-		dummy.setInventory(((ModuleProvider) dummy.getModule()).getFilterInventory());
+		dummy.setInventory(((ModuleProvider) dummy.getModule()).filterInventory);
 		dummy.addNormalSlotsForPlayerInventory(18, 97);
 
 		int xOffset = 72;

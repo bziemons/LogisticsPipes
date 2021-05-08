@@ -1,33 +1,39 @@
 package logisticspipes.modules;
 
-import net.minecraft.nbt.NBTTagCompound;
+import java.util.Collections;
+import javax.annotation.Nonnull;
 
-import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
+import org.jetbrains.annotations.NotNull;
+
+import logisticspipes.pipes.PipeLogisticsChassis.ChassiTargetInformation;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
+import network.rs485.logisticspipes.property.Property;
 
 public class ModulePolymorphicItemSink extends LogisticsModule {
 
-	public ModulePolymorphicItemSink() {}
-
 	private SinkReply _sinkReply;
 
+	public static String getName() {
+		return "item_sink_polymorphic";
+	}
+
+	@Nonnull
 	@Override
-	public void registerPosition(ModulePositionType slot, int positionInt) {
-		super.registerPosition(slot, positionInt);
-		_sinkReply = new SinkReply(FixedPriority.ItemSink, 0, 3, 0, new ChassiTargetInformation(getPositionInt()));
+	public String getLPName() {
+		return getName();
+	}
+
+	@NotNull
+	@Override
+	public List<Property<?>> getProperties() {
+		return Collections.emptyList();
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {}
-
-	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {}
-
-	@Override
-	public LogisticsModule getSubModule(int slot) {
-		return null;
+	public void registerPosition(@Nonnull ModulePositionType slot, int positionInt) {
+		super.registerPosition(slot, positionInt);
+		_sinkReply = new SinkReply(FixedPriority.ItemSink, 0, 3, 0, new ChassiTargetInformation(getPositionInt()));
 	}
 
 	@Override

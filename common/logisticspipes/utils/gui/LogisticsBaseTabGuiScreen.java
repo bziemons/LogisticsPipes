@@ -7,6 +7,7 @@ import java.util.List;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.inventory.Slot;
 
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
 public class LogisticsBaseTabGuiScreen extends LogisticsBaseGuiScreen {
@@ -27,6 +28,13 @@ public class LogisticsBaseTabGuiScreen extends LogisticsBaseGuiScreen {
 		super.initGui();
 		buttonList.clear();
 		tabList.forEach(TabSubGui::initTab);
+	}
+
+	@Override
+	public void closeGui() throws IOException {
+		super.closeGui();
+		Keyboard.enableRepeatEvents(false);
+		initGui();
 	}
 
 	protected int getFreeButtonId() {
@@ -68,7 +76,7 @@ public class LogisticsBaseTabGuiScreen extends LogisticsBaseGuiScreen {
 		if (par3 == 0 && par1 > guiLeft && par1 < guiLeft + 220 && par2 > guiTop && par2 < guiTop + 20) {
 			par1 -= guiLeft + 3;
 			int select = Math.max(0, Math.min(par1 / 25, tabList.size() - 1));
-			if(current_Tab != select) {
+			if (current_Tab != select) {
 				tabList.get(current_Tab).leavingTab();
 				tabList.get(select).enteringTab();
 			}
@@ -112,7 +120,7 @@ public class LogisticsBaseTabGuiScreen extends LogisticsBaseGuiScreen {
 
 	@Override
 	protected void drawSlot(Slot slot) {
-		if(hiddenSlots.contains(slot)) return;
+		if (hiddenSlots.contains(slot)) return;
 		for (int i = 0; i < tabList.size(); i++) {
 			if (tabList.get(i).isSlotForTab(slot)) {
 				if (current_Tab != i || !tabList.get(i).showSlot(slot)) {
@@ -128,7 +136,7 @@ public class LogisticsBaseTabGuiScreen extends LogisticsBaseGuiScreen {
 		if (!super.isMouseOverSlot(slot, par2, par3)) {
 			return false;
 		}
-		if(hiddenSlots.contains(slot)) return false;
+		if (hiddenSlots.contains(slot)) return false;
 		for (int i = 0; i < tabList.size(); i++) {
 			if (tabList.get(i).isSlotForTab(slot)) {
 				if (current_Tab != i || !tabList.get(i).showSlot(slot)) {
@@ -140,10 +148,9 @@ public class LogisticsBaseTabGuiScreen extends LogisticsBaseGuiScreen {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected void checkButtons() {
 		super.checkButtons();
-		for (GuiButton button : (List<GuiButton>) buttonList) {
+		for (GuiButton button : buttonList) {
 			for (int i = 0; i < tabList.size(); i++) {
 				if (tabList.get(i).isButtonFromGui(button)) {
 					tabList.get(i).checkButton(button, current_Tab == i);

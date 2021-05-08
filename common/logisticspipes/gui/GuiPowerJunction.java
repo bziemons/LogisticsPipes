@@ -2,20 +2,20 @@ package logisticspipes.gui;
 
 import java.io.IOException;
 
-import logisticspipes.LPConstants;
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.ResourceLocation;
+
+import org.lwjgl.opengl.GL11;
+
+import logisticspipes.LogisticsPipes;
 import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.block.PowerJunctionCheatPacket;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
-import logisticspipes.utils.string.StringUtils;
-
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.ResourceLocation;
-
-import org.lwjgl.opengl.GL11;
+import network.rs485.logisticspipes.util.TextUtil;
 
 public class GuiPowerJunction extends LogisticsBaseGuiScreen {
 
@@ -48,21 +48,20 @@ public class GuiPowerJunction extends LogisticsBaseGuiScreen {
 		drawTexturedModalRect(j, k, 0, 0, xSize, ySize);
 		int level = 100 - junction.getChargeState();
 		drawTexturedModalRect(j + 10, k + 11 + (level * 59 / 100), 176, level * 59 / 100, 5, 59 - (level * 59 / 100));
-		mc.fontRenderer.drawString(StringUtils.translate(GuiPowerJunction.PREFIX + "LogisticsPowerJunction"), guiLeft + 30, guiTop + 8, 0x404040);
-		mc.fontRenderer.drawString(StringUtils.translate(GuiPowerJunction.PREFIX + "StoredEnergy") + ":", guiLeft + 40, guiTop + 23, 0x404040);
-		mc.fontRenderer.drawString(StringUtils.getStringWithSpacesFromInteger(junction.getPowerLevel()) + " LP", guiLeft + 40, guiTop + 33, 0x404040);
-		mc.fontRenderer.drawString("/ " + StringUtils.getStringWithSpacesFromInteger(LogisticsPowerJunctionTileEntity.MAX_STORAGE) + " LP", guiLeft + 40, guiTop + 43, 0x404040);
+		mc.fontRenderer.drawString(TextUtil.translate(GuiPowerJunction.PREFIX + "LogisticsPowerJunction"), guiLeft + 30, guiTop + 8, 0x404040);
+		mc.fontRenderer.drawString(TextUtil.translate(GuiPowerJunction.PREFIX + "StoredEnergy") + ":", guiLeft + 40, guiTop + 23, 0x404040);
+		mc.fontRenderer.drawString(TextUtil.formatNumberWithCommas(junction.getPowerLevel()) + " LP", guiLeft + 40, guiTop + 33, 0x404040);
+		mc.fontRenderer.drawString("/ " + TextUtil.formatNumberWithCommas(LogisticsPowerJunctionTileEntity.MAX_STORAGE) + " LP", guiLeft + 40, guiTop + 43, 0x404040);
 		mc.fontRenderer.drawString("1 MJ = 5 LP", guiLeft + 30, guiTop + 58, 0x404040);
 		mc.fontRenderer.drawString("1 EU = 2 LP", guiLeft + 100, guiTop + 58, 0x404040);
 		mc.fontRenderer.drawString("10 RF = 5 LP", guiLeft + 24, guiTop + 68, 0x404040);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void initGui() {
 		super.initGui();
 		buttonList.clear();
-		if (LPConstants.DEBUG) {
+		if (LogisticsPipes.isDEBUG()) {
 			buttonList.add(new GuiButton(0, guiLeft + 140, guiTop + 20, 20, 20, "+"));
 		}
 	}

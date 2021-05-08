@@ -1,11 +1,7 @@
 package logisticspipes.utils;
 
-import net.minecraft.item.ItemStack;
-
-import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 
-import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 
 public class FluidIdentifierStack implements Comparable<FluidIdentifierStack> {
@@ -21,13 +17,13 @@ public class FluidIdentifierStack implements Comparable<FluidIdentifierStack> {
 
 	public static FluidIdentifierStack getFromStack(FluidStack stack) {
 		FluidIdentifier fluid = FluidIdentifier.get(stack);
-		if(fluid == null) return null;
+		if (fluid == null) return null;
 		return new FluidIdentifierStack(fluid, stack.amount);
 	}
 
 	public static FluidIdentifierStack getFromStack(ItemIdentifierStack stack) {
 		FluidIdentifier fluid = FluidIdentifier.get(stack);
-		if(fluid == null) return null;
+		if (fluid == null) return null;
 		return new FluidIdentifierStack(fluid, stack.getStackSize());
 	}
 
@@ -43,8 +39,7 @@ public class FluidIdentifierStack implements Comparable<FluidIdentifierStack> {
 	}
 
 	/**
-	 * @param stackSize
-	 *            the stackSize to set
+	 * @param stackSize the stackSize to set
 	 */
 	public void setAmount(int stackSize) {
 		this.amount = stackSize;

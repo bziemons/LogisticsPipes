@@ -1,13 +1,14 @@
 package logisticspipes.items;
 
+import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
+import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.World;
 
 import net.minecraftforge.fml.relauncher.Side;
@@ -19,7 +20,6 @@ import logisticspipes.interfaces.IItemAdvancedExistance;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.utils.FluidIdentifierStack;
 import logisticspipes.utils.item.ItemIdentifierStack;
-import logisticspipes.utils.string.StringUtils;
 
 public class LogisticsFluidContainer extends LogisticsItem implements IItemAdvancedExistance {
 
@@ -30,17 +30,18 @@ public class LogisticsFluidContainer extends LogisticsItem implements IItemAdvan
 	}
 
 	@Override
-	public boolean canExistInNormalInventory(ItemStack stack) {
+	public boolean canExistInNormalInventory(@Nonnull ItemStack stack) {
 		return false;
 	}
 
 	@Override
-	public boolean canExistInWorld(ItemStack stack) {
+	public boolean canExistInWorld(@Nonnull ItemStack stack) {
 		return false;
 	}
 
 	@Override
-	public String getUnlocalizedName(ItemStack stack) {
+	@Nonnull
+	public String getUnlocalizedName(@Nonnull ItemStack stack) {
 		FluidIdentifierStack fluidStack = SimpleServiceLocator.logisticsFluidManager.getFluidFromContainer(ItemIdentifierStack.getFromStack(stack));
 		if (fluidStack != null) {
 			String s = fluidStack.makeFluidStack().getFluid().getUnlocalizedName();
@@ -52,15 +53,16 @@ public class LogisticsFluidContainer extends LogisticsItem implements IItemAdvan
 	}
 
 	@Override
-	public String getItemStackDisplayName(ItemStack itemstack) {
+	@Nonnull
+	public String getItemStackDisplayName(@Nonnull ItemStack itemstack) {
 		String unlocalizedName = getUnlocalizedName(itemstack);
 		String unlocalizedNameInefficiently = getUnlocalizedNameInefficiently(itemstack); // Fix for Logistics fluid container naming
-		return StringUtils.translate(unlocalizedName + (unlocalizedName.equals(unlocalizedNameInefficiently) ? ".name" : "")).trim();
+		return I18n.translateToLocal(unlocalizedName + (unlocalizedName.equals(unlocalizedNameInefficiently) ? ".name" : "")).trim();
 	}
 
 	@Override
 	@SideOnly(Side.CLIENT)
-	public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
+	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
 		super.addInformation(stack, worldIn, tooltip, flagIn);
 		if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
 			FluidIdentifierStack fluidStack = SimpleServiceLocator.logisticsFluidManager.getFluidFromContainer(ItemIdentifierStack.getFromStack(stack));

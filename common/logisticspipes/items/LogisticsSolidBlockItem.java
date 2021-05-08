@@ -1,13 +1,17 @@
 package logisticspipes.items;
 
+import javax.annotation.Nonnull;
+
+import net.minecraft.item.ItemBlock;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.text.translation.I18n;
+
+import lombok.Getter;
+
 import logisticspipes.LogisticsPipes;
 import logisticspipes.blocks.BlockDummy;
 import logisticspipes.blocks.LogisticsSolidBlock;
 import logisticspipes.interfaces.ILogisticsItem;
-import logisticspipes.utils.string.StringUtils;
-import lombok.Getter;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
 
 public class LogisticsSolidBlockItem extends ItemBlock implements ILogisticsItem {
 
@@ -21,9 +25,10 @@ public class LogisticsSolidBlockItem extends ItemBlock implements ILogisticsItem
 		BlockDummy.updateItemMap.put(type.getMeta(), this);
 	}
 
+	@Nonnull
 	@Override
-	public String getItemStackDisplayName(ItemStack itemstack) {
-		return StringUtils.translate(getUnlocalizedName(itemstack) + ".name");
+	public String getItemStackDisplayName(@Nonnull ItemStack itemstack) {
+		return I18n.translateToLocal(getUnlocalizedName(itemstack) + ".name");
 	}
 
 }

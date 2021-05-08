@@ -2,10 +2,7 @@ package logisticspipes.utils;
 
 import java.util.function.Consumer;
 
-import net.minecraft.util.EnumFacing;
-
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidTank;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidTankProperties;
 
@@ -43,9 +40,9 @@ public class TankUtil implements ITankUtil {
 	@Override
 	public void forEachFluid(Consumer<FluidIdentifierStack> fluidStackConsumer) {
 		IFluidTankProperties[] tanks = fluidhandler.getTankProperties();
-		if(tanks != null) {
-			for(IFluidTankProperties tank : tanks) {
-				if(tank.getContents() != null) {
+		if (tanks != null) {
+			for (IFluidTankProperties tank : tanks) {
+				if (tank.getContents() != null) {
 					fluidStackConsumer.accept(FluidIdentifierStack.getFromStack(tank.getContents()));
 				}
 			}
@@ -55,9 +52,9 @@ public class TankUtil implements ITankUtil {
 	@Override
 	public boolean canDrain(FluidIdentifier fluid) {
 		IFluidTankProperties[] tanks = fluidhandler.getTankProperties();
-		if(tanks != null) {
-			for(IFluidTankProperties tank : tanks) {
-				if(tank.canDrainFluidType(fluid.makeFluidStack(1))) {
+		if (tanks != null) {
+			for (IFluidTankProperties tank : tanks) {
+				if (tank.canDrainFluidType(fluid.makeFluidStack(1))) {
 					return true;
 				}
 			}
@@ -71,7 +68,7 @@ public class TankUtil implements ITankUtil {
 		if (tanks != null && tanks.length > 0) {
 			for (IFluidTankProperties tank : tanks) {
 				FluidStack content = tank.getContents();
-				if(content == null || FluidIdentifier.get(content) == type) {
+				if (content == null || FluidIdentifier.get(content) == type) {
 					free += getFreeSpaceInsideTank(tank);
 				}
 			}
@@ -84,12 +81,9 @@ public class TankUtil implements ITankUtil {
 			return 0;
 		}
 		FluidStack liquid = tanks.getContents();
-		if (liquid == null || liquid.getFluid() != null) {
+		if (liquid == null || liquid.getFluid() == null) {
 			return tanks.getCapacity();
 		}
-		if (FluidIdentifier.get(liquid).equals(this)) {
-			return tanks.getCapacity() - liquid.amount;
-		}
-		return 0;
+		return tanks.getCapacity() - liquid.amount;
 	}
 }

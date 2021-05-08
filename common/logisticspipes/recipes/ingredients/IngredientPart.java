@@ -1,16 +1,19 @@
 package logisticspipes.recipes.ingredients;
 
-import com.google.gson.JsonObject;
-import logisticspipes.recipes.CraftingPartRecipes;
-import logisticspipes.recipes.CraftingParts;
+import javax.annotation.Nonnull;
+
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.Ingredient;
+
 import net.minecraftforge.common.crafting.IIngredientFactory;
 import net.minecraftforge.common.crafting.JsonContext;
 
-import javax.annotation.Nonnull;
+import com.google.gson.JsonObject;
 
-@SuppressWarnings("unused")
+import logisticspipes.recipes.CraftingPartRecipes;
+import logisticspipes.recipes.CraftingParts;
+
+@SuppressWarnings("unused") // used in recipes
 public class IngredientPart implements IIngredientFactory {
 
 	public enum PartType {
@@ -19,6 +22,7 @@ public class IngredientPart implements IIngredientFactory {
 		chip_fpga,
 		;
 
+		@Nonnull
 		public ItemStack getStack(CraftingParts parts) {
 			switch (this) {
 				case chip_basic:

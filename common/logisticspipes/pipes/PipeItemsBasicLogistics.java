@@ -1,4 +1,4 @@
-/**
+/*
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -17,13 +17,10 @@ import net.minecraftforge.items.CapabilityItemHandler;
 import logisticspipes.blocks.LogisticsProgramCompilerTileEntity;
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
-import logisticspipes.interfaces.IInventoryUtil;
+import logisticspipes.modules.LogisticsModule;
+import logisticspipes.modules.LogisticsModule.ModulePositionType;
 import logisticspipes.modules.ModuleItemSink;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
-import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.transport.PipeTransportLogistics;
@@ -32,7 +29,7 @@ import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
 public class PipeItemsBasicLogistics extends CoreRoutedPipe {
 
-	private ModuleItemSink itemSinkModule;
+	private final ModuleItemSink itemSinkModule;
 
 	public PipeItemsBasicLogistics(Item item) {
 		super(new PipeTransportLogistics(true) {
@@ -44,23 +41,18 @@ public class PipeItemsBasicLogistics extends CoreRoutedPipe {
 				}
 				if (tile instanceof LogisticsSecurityTileEntity) {
 					EnumFacing ori = OrientationsUtil.getOrientationOfTilewithTile(container, tile);
-					if (ori == null || ori == EnumFacing.DOWN || ori == EnumFacing.UP) {
-						return false;
-					}
-					return true;
+					return ori != null && ori != EnumFacing.DOWN && ori != EnumFacing.UP;
 				}
 				if (tile instanceof LogisticsProgramCompilerTileEntity) {
 					EnumFacing ori = OrientationsUtil.getOrientationOfTilewithTile(container, tile);
-					if (ori == null || ori == EnumFacing.DOWN) {
-						return false;
-					}
-					return true;
+					return ori != null && ori != EnumFacing.DOWN;
 				}
 				return false;
 			}
 		}, item);
 		itemSinkModule = new ModuleItemSink();
 		itemSinkModule.registerHandler(this, this);
+		itemSinkModule.registerPosition(LogisticsModule.ModulePositionType.IN_PIPE, 0);
 	}
 
 	@Override
@@ -85,10 +77,7 @@ public class PipeItemsBasicLogistics extends CoreRoutedPipe {
 			return false;
 		}
 
-		if (tilePipe instanceof LogisticsPowerJunctionTileEntity) {
-			return true;
-		}
-		return false;
+		return tilePipe instanceof LogisticsPowerJunctionTileEntity;
 	}
 
 	private boolean isSecurityProvider(EnumFacing ori) {
@@ -96,10 +85,7 @@ public class PipeItemsBasicLogistics extends CoreRoutedPipe {
 		if (tilePipe == null || !container.canPipeConnect(tilePipe, ori)) {
 			return false;
 		}
-		if (tilePipe instanceof LogisticsSecurityTileEntity) {
-			return true;
-		}
-		return false;
+		return tilePipe instanceof LogisticsSecurityTileEntity;
 	}
 
 	@Override
@@ -108,7 +94,7 @@ public class PipeItemsBasicLogistics extends CoreRoutedPipe {
 	}
 
 	@Override
-	public LogisticsModule getLogisticsModule() {
+	public ModuleItemSink getLogisticsModule() {
 		return itemSinkModule;
 	}
 

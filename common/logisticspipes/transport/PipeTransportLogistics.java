@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Krapht, 2011
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.item.ItemStack;
@@ -21,6 +22,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
@@ -28,6 +30,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import logisticspipes.LPConstants;
+import logisticspipes.LogisticsPipes;
 import logisticspipes.api.ILogisticsPowerProvider;
 import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
 import logisticspipes.interfaces.IBufferItems;
@@ -39,15 +42,15 @@ import logisticspipes.interfaces.ISubSystemPowerProvider;
 import logisticspipes.interfaces.routing.ITargetSlotInformation;
 import logisticspipes.logisticspipes.IRoutedItem;
 import logisticspipes.logisticspipes.IRoutedItem.TransportMode;
-import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
+import logisticspipes.modules.LogisticsModule.ModulePositionType;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.pipe.ItemBufferSyncPacket;
 import logisticspipes.network.packets.pipe.PipeContentPacket;
 import logisticspipes.network.packets.pipe.PipeContentRequest;
 import logisticspipes.network.packets.pipe.PipePositionPacket;
 import logisticspipes.pipes.PipeItemsFluidSupplier;
-import logisticspipes.pipes.PipeLogisticsChassi;
-import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
+import logisticspipes.pipes.PipeLogisticsChassis;
+import logisticspipes.pipes.PipeLogisticsChassis.ChassiTargetInformation;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
@@ -74,8 +77,7 @@ public class PipeTransportLogistics {
 
 	@Data
 	@AllArgsConstructor
-	class RoutingResult {
-
+	static class RoutingResult {
 		private EnumFacing face;
 		private boolean hasRoute;
 	}
@@ -202,12 +204,13 @@ public class PipeTransportLogistics {
 
 		if (MainProxy.isServer(container.getWorld())) {
 			readjustSpeed((LPTravelingItemServer) item);
+			ItemRoutingInformation info1 = ((LPTravelingItemServer) item).getInfo().clone();
 			RoutingResult result = resolveDestination((LPTravelingItemServer) item);
 			item.output = result.getFace();
 			if (!result.hasRoute) {
 				return 0;
 			}
-			getPipe().debug.log("Injected Item: [" + item.input + ", " + item.output + "] (" + ((LPTravelingItemServer) item).getInfo());
+			getPipe().debug.log("Injected Item: [" + item.input + ", " + item.output + "] (" + info1);
 		} else {
 			item.output = null;
 		}
@@ -217,7 +220,7 @@ public class PipeTransportLogistics {
 		} else {
 			items.add(item);
 
-			if (MainProxy.isServer(container.getWorld()) && !getPipe().isOpaque()) {
+			if (MainProxy.isServer(container.getWorld()) && !getPipe().isOpaque() && item.getItemIdentifierStack().getStackSize() > 0) {
 				sendItemPacket((LPTravelingItemServer) item);
 			}
 		}
@@ -347,7 +350,7 @@ public class PipeTransportLogistics {
 		}
 
 		if (value != null && !getRoutedPipe().getRouter().isRoutedExit(value)) {
-			if (!isItemExitable(data.getItemIdentifierStack())) {
+			if (isItemUnwanted(data.getItemIdentifierStack())) {
 				return new RoutingResult(null, false);
 			}
 		}
@@ -416,7 +419,7 @@ public class PipeTransportLogistics {
 	}
 
 	public void readjustSpeed(LPTravelingItemServer item) {
-		float defaultBoost = 1F;
+		float defaultBoost;
 
 		switch (item.getTransportMode()) {
 			case Default:
@@ -461,7 +464,7 @@ public class PipeTransportLogistics {
 		}
 
 		markChunkModified(tile);
-		if (MainProxy.isServer(getWorld()) && arrivingItem.getInfo() != null && arrivingItem.getArrived() && isRouted) {
+		if (arrivingItem.getInfo() != null && arrivingItem.getArrived() && isRouted) {
 			getRoutedPipe().notifyOfItemArival(arrivingItem.getInfo());
 		}
 		if (getPipe() instanceof FluidRoutedPipe) {
@@ -470,11 +473,9 @@ public class PipeTransportLogistics {
 			}
 		}
 		boolean isSpecialConnectionInformationTransition = false;
-		if (MainProxy.isServer(getWorld())) {
-			if (SimpleServiceLocator.specialtileconnection.needsInformationTransition(tile)) {
-				isSpecialConnectionInformationTransition = true;
-				SimpleServiceLocator.specialtileconnection.transmit(tile, arrivingItem);
-			}
+		if (SimpleServiceLocator.specialtileconnection.needsInformationTransition(tile)) {
+			isSpecialConnectionInformationTransition = true;
+			SimpleServiceLocator.specialtileconnection.transmit(tile, arrivingItem);
 		}
 		if (SimpleServiceLocator.pipeInformationManager.isItemPipe(tile)) {
 			if (passToNextPipe(arrivingItem, tile)) {
@@ -487,133 +488,104 @@ public class PipeTransportLogistics {
 				routedPipe.getCacheHolder().trigger(CacheTypes.Inventory);
 
 				// items.scheduleRemoval(arrivingItem);
-				if (MainProxy.isServer(getWorld())) {
-					// destroy the item on exit if it isn't exitable
-					if (!isSpecialConnectionInformationTransition && !isItemExitable(arrivingItem.getItemIdentifierStack())) {
-						return;
-					}
-					// last chance for chassi to back out
-					if (arrivingItem != null) {
-						IDestination destination = routedPipe.handleItem(arrivingItem);
+				// destroy the item on exit if it isn't exitable
+				if (!isSpecialConnectionInformationTransition && isItemUnwanted(arrivingItem.getItemIdentifierStack())) {
+					return;
+				}
+				// last chance for chassi to back out
+				IDestination destination = routedPipe.handleItem(arrivingItem);
 						if (arrivingItem.getTransportMode() != TransportMode.Active && !destination.stillWantItem(arrivingItem)) {
-							reverseItem(arrivingItem);
+					reverseItem(arrivingItem);
+					return;
+				}
+				final ISlotUpgradeManager slotManager;
+				{
+					ModulePositionType slot = null;
+					int positionInt = -1;
+					if (arrivingItem.getInfo().targetInfo instanceof ChassiTargetInformation) {
+						positionInt = ((ChassiTargetInformation) arrivingItem.getInfo().targetInfo).getModuleSlot();
+						slot = ModulePositionType.SLOT;
+					} else if (LogisticsPipes.isDEBUG() && container.pipe instanceof PipeLogisticsChassis) {
+						System.out.println(arrivingItem);
+						new RuntimeException("[ItemInsertion] Information weren't ment for a chassi pipe").printStackTrace();
+					}
+					slotManager = getRoutedPipe().getUpgradeManager(slot, positionInt);
+				}
+				if (arrivingItem.getAdditionalTargetInformation() instanceof ITargetSlotInformation) {
+
+					ITargetSlotInformation information = (ITargetSlotInformation) arrivingItem.getAdditionalTargetInformation();
+					if (util instanceof ISpecialInsertion) {
+						int slot = information.getTargetSlot();
+						int amount = information.getAmount();
+						if (util.getSizeInventory() > slot) {
+							ItemStack content = util.getStackInSlot(slot);
+							ItemStack toAdd = arrivingItem.getItemIdentifierStack().makeNormalStack();
+							final int amountLeft = Math.max(0, amount - content.getCount());
+							toAdd.setCount(Math.min(toAdd.getCount(), amountLeft));
+							if (toAdd.getCount() > 0) {
+								if (util.getSizeInventory() > slot) {
+									int added = ((ISpecialInsertion) util).addToSlot(toAdd, slot);
+									arrivingItem.getItemIdentifierStack().lowerStackSize(added);
+								}
+							}
+						}
+						if (information.isLimited()) {
+							if (arrivingItem.getItemIdentifierStack().getStackSize() > 0) {
+								reverseItem(arrivingItem);
+							}
 							return;
 						}
 					}
-					ISlotUpgradeManager slotManager;
-					{
-						ModulePositionType slot = null;
-						int positionInt = -1;
-						if (arrivingItem.getInfo().targetInfo instanceof ChassiTargetInformation) {
-							positionInt = ((ChassiTargetInformation) arrivingItem.getInfo().targetInfo).getModuleSlot();
-							slot = ModulePositionType.SLOT;
-						} else if (LPConstants.DEBUG && container.pipe instanceof PipeLogisticsChassi) {
-							System.out.println(arrivingItem);
-							new RuntimeException("[ItemInsertion] Information weren't ment for a chassi pipe").printStackTrace();
-						}
-						slotManager = getRoutedPipe().getUpgradeManager(slot, positionInt);
+				}
+				// sneaky insertion
+				if (!getRoutedPipe().getUpgradeManager().hasCombinedSneakyUpgrade() || slotManager.hasOwnSneakyUpgrade()) {
+					EnumFacing insertion = arrivingItem.output.getOpposite();
+					if (slotManager.hasSneakyUpgrade()) {
+						insertion = slotManager.getSneakyOrientation();
 					}
-					boolean tookSome = false;
-					if (arrivingItem.getAdditionalTargetInformation() instanceof ITargetSlotInformation) {
-
-						ITargetSlotInformation information = (ITargetSlotInformation) arrivingItem.getAdditionalTargetInformation();
-						if (util instanceof ISpecialInsertion) {
-							int slot = information.getTargetSlot();
-							int amount = information.getAmount();
-							if (util.getSizeInventory() > slot) {
-								ItemStack content = util.getStackInSlot(slot);
-								ItemStack toAdd = arrivingItem.getItemIdentifierStack().makeNormalStack();
-								toAdd.setCount(Math.min(toAdd.getCount(), Math.max(0, amount - (content != null ? content.getCount() : 0))));
-								if (toAdd.getCount() > 0) {
-									if (util.getSizeInventory() > slot) {
-										int added = ((ISpecialInsertion) util).addToSlot(toAdd, slot);
-										arrivingItem.getItemIdentifierStack().lowerStackSize(added);
-										if (added > 0) {
-											tookSome = true;
-										}
-									}
-								}
-							}
-							if (information.isLimited()) {
-								if (arrivingItem.getItemIdentifierStack().getStackSize() > 0) {
-									reverseItem(arrivingItem);
-								}
-								return;
-							}
+					if (insertArrivingItem(arrivingItem, tile, insertion)) return;
+				} else {
+					EnumFacing[] dirs = getRoutedPipe().getUpgradeManager().getCombinedSneakyOrientation();
+					for (EnumFacing insertion : dirs) {
+						if (insertion == null) {
+							continue;
 						}
+						if (insertArrivingItem(arrivingItem, tile, insertion)) return;
 					}
-					// sneaky insertion
-					if (!getRoutedPipe().getUpgradeManager().hasCombinedSneakyUpgrade() || slotManager.hasOwnSneakyUpgrade()) {
-						EnumFacing insertion = arrivingItem.output.getOpposite();
-						if (slotManager.hasSneakyUpgrade()) {
-							insertion = slotManager.getSneakyOrientation();
-						}
-						ItemStack added = InventoryHelper.getTransactorFor(tile, insertion).add(arrivingItem.getItemIdentifierStack().makeNormalStack(), insertion, true);
+				}
 
-						arrivingItem.getItemIdentifierStack().lowerStackSize(added.getCount());
-
-						if (added.getCount() > 0 && arrivingItem instanceof IRoutedItem) {
-							tookSome = true;
-							arrivingItem.setBufferCounter(0);
-						}
-
-						ItemRoutingInformation info;
-
-						if (arrivingItem.getItemIdentifierStack().getStackSize() > 0) {
-							// we have some leftovers, we are splitting the stack, we need to clone the info
-							info = arrivingItem.getInfo().clone();
-							// For InvSysCon
-							info.getItem().setStackSize(added.getCount());
-							insertedItemStack(info, tile);
-						} else {
-							info = arrivingItem.getInfo();
-							info.getItem().setStackSize(added.getCount());
-							// For InvSysCon
-							insertedItemStack(info, tile);
-
-							// back to normal code, break if we've inserted everything, all items disposed of.
-							return; // every item has been inserted.
-						}
-					} else {
-						EnumFacing[] dirs = getRoutedPipe().getUpgradeManager().getCombinedSneakyOrientation();
-						for (EnumFacing insertion : dirs) {
-							if (insertion == null) {
-								continue;
-							}
-							ItemStack added = InventoryHelper.getTransactorFor(tile, insertion).add(arrivingItem.getItemIdentifierStack().makeNormalStack(), insertion, true);
-
-							arrivingItem.getItemIdentifierStack().lowerStackSize(added.getCount());
-							if (added.getCount() > 0) {
-								tookSome = true;
-								arrivingItem.setBufferCounter(0);
-							}
-							ItemRoutingInformation info;
-
-							if (arrivingItem.getItemIdentifierStack().getStackSize() > 0) {
-								// we have some leftovers, we are splitting the stack, we need to clone the info
-								info = arrivingItem.getInfo().clone();
-								// For InvSysCon
-								info.getItem().setStackSize(added.getCount());
-								insertedItemStack(info, tile);
-							} else {
-								info = arrivingItem.getInfo();
-								info.getItem().setStackSize(added.getCount());
-								// For InvSysCon
-								insertedItemStack(info, tile);
-								// back to normal code, break if we've inserted everything, all items disposed of.
-								return;// every item has been inserted.
-							}
-						}
-					}
-
-					if (arrivingItem.getItemIdentifierStack().getStackSize() > 0) {
-						reverseItem(arrivingItem);
-					}
+				if (arrivingItem.getItemIdentifierStack().getStackSize() > 0) {
+					reverseItem(arrivingItem);
 				}
 				return;// the item is handled
 			}// end of insert into IInventory
 		}
 		dropItem(arrivingItem);
+	}
+
+	/**
+	 * @return true, if every item has been inserted and otherwise false.
+	 */
+	private boolean insertArrivingItem(LPTravelingItemServer arrivingItem, TileEntity tile, EnumFacing insertion) {
+		ItemStack added = InventoryHelper.getTransactorFor(tile, insertion).add(arrivingItem.getItemIdentifierStack().makeNormalStack(), insertion, true);
+
+		arrivingItem.getItemIdentifierStack().lowerStackSize(added.getCount());
+
+		if (added.getCount() > 0) {
+			arrivingItem.setBufferCounter(0);
+		}
+
+		ItemRoutingInformation info = arrivingItem.getInfo();
+		final boolean isSplitStack = arrivingItem.getItemIdentifierStack().getStackSize() > 0;
+		if (isSplitStack) {
+			// we have some leftovers, we are splitting the stack, we need to clone the info
+			info = info.clone();
+		}
+		info.getItem().setStackSize(added.getCount());
+		inventorySystemConnectorHook(info, tile);
+
+		// back to normal code, break if we've inserted everything, all items disposed of.
+		return !isSplitStack;
 	}
 
 	protected void handleTileReachedClient(LPTravelingItemClient arrivingItem, TileEntity tile, EnumFacing dir) {
@@ -623,14 +595,14 @@ public class PipeTransportLogistics {
 		// Just ignore any other case
 	}
 
-	protected boolean isItemExitable(ItemIdentifierStack itemIdentifierStack) {
+	protected boolean isItemUnwanted(ItemIdentifierStack itemIdentifierStack) {
 		if (itemIdentifierStack != null && itemIdentifierStack.makeNormalStack().getItem() instanceof IItemAdvancedExistance) {
-			return ((IItemAdvancedExistance) itemIdentifierStack.makeNormalStack().getItem()).canExistInNormalInventory(itemIdentifierStack.makeNormalStack());
+			return !((IItemAdvancedExistance) itemIdentifierStack.makeNormalStack().getItem()).canExistInNormalInventory(itemIdentifierStack.makeNormalStack());
 		}
-		return true;
+		return false;
 	}
 
-	protected void insertedItemStack(ItemRoutingInformation info, TileEntity tile) {}
+	protected void inventorySystemConnectorHook(ItemRoutingInformation info, TileEntity tile) {}
 
 	public boolean canPipeConnect(TileEntity tile, EnumFacing side) {
 		return canPipeConnect_internal(tile, side);
@@ -646,10 +618,7 @@ public class PipeTransportLogistics {
 			if (tile instanceof ILogisticsPowerProvider || tile instanceof ISubSystemPowerProvider) {
 				EnumFacing ori = OrientationsUtil.getOrientationOfTilewithTile(container, tile);
 				if (ori != null) {
-					if ((tile instanceof LogisticsPowerJunctionTileEntity || tile instanceof ISubSystemPowerProvider) && !OrientationsUtil.isSide(ori)) {
-						return false;
-					}
-					return true;
+					return !((tile instanceof LogisticsPowerJunctionTileEntity || tile instanceof ISubSystemPowerProvider) && ori.getAxis() == EnumFacing.Axis.Y);
 				}
 			}
 			if (SimpleServiceLocator.betterStorageProxy.isBetterStorageCrate(tile) || SimpleServiceLocator.factorizationProxy.isBarral(tile)
@@ -763,8 +732,8 @@ public class PipeTransportLogistics {
 
 	protected void neighborChange() {}
 
-	public List<ItemStack> dropContents() {
-		List<ItemStack> list = new ArrayList<>();
+	public NonNullList<ItemStack> dropContents() {
+		NonNullList<ItemStack> list = NonNullList.create();
 		if (MainProxy.isServer(getWorld())) {
 			for (LPTravelingItem item : items) {
 				list.add(item.getItemIdentifierStack().makeNormalStack());
@@ -817,7 +786,7 @@ public class PipeTransportLogistics {
 		MainProxy.sendPacketToServer(PacketHandler.getPacket(PipeContentRequest.class).setInteger(travelId));
 	}
 
-	public void sendItem(ItemStack stackToSend) {
+	public void sendItem(@Nonnull ItemStack stackToSend) {
 		this.injectItem((LPTravelingItem) SimpleServiceLocator.routedItemHelper.createNewTravelItem(stackToSend), EnumFacing.UP);
 	}
 

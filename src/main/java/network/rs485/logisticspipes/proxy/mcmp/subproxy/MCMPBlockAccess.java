@@ -27,7 +27,7 @@ import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
@@ -39,6 +39,7 @@ import mcmultipart.MCMultiPart;
 import mcmultipart.block.BlockMultipartContainer;
 
 public class MCMPBlockAccess implements IMCMPBlockAccess {
+
 	private final BlockMultipartContainer multipart = (BlockMultipartContainer) MCMultiPart.multipart;
 
 	@Override
@@ -68,7 +69,7 @@ public class MCMPBlockAccess implements IMCMPBlockAccess {
 	}
 
 	@Override
-	public void addDrops(List<ItemStack> list, IBlockAccess world, BlockPos pos, IBlockState state, int fortune) {
+	public void addDrops(NonNullList<ItemStack> list, IBlockAccess world, BlockPos pos, IBlockState state, int fortune) {
 		list.addAll(multipart.getDrops(world, pos, state, fortune));
 	}
 }

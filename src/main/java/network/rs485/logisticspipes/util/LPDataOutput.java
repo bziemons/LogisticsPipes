@@ -41,8 +41,8 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.UUID;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -115,17 +115,19 @@ public interface LPDataOutput {
 
 	void writeBooleanArray(@Nullable boolean[] arr);
 
+	void writeUTFArray(@Nullable String[] arr);
+
 	void writeFacing(@Nullable EnumFacing direction);
 
 	void writeResourceLocation(@Nullable ResourceLocation resource);
 
 	<T extends Enum<T>> void writeEnumSet(EnumSet<T> types, Class<T> clazz);
 
-	void writeBitSet(BitSet bits);
+	void writeBitSet(@Nonnull BitSet bits);
 
 	void writeNBTTagCompound(@Nullable NBTTagCompound tag);
 
-	void writeItemStack(ItemStack itemstack);
+	void writeItemStack(@Nonnull ItemStack itemstack);
 
 	void writeItemIdentifier(@Nullable ItemIdentifier item);
 

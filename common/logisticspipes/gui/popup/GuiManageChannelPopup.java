@@ -17,7 +17,7 @@ import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.gui.SubGuiScreen;
 import logisticspipes.utils.gui.TextListDisplay;
-import logisticspipes.utils.string.StringUtils;
+import network.rs485.logisticspipes.util.TextUtil;
 
 public class GuiManageChannelPopup extends SubGuiScreen implements IGUIChannelInformationReceiver {
 
@@ -50,7 +50,6 @@ public class GuiManageChannelPopup extends SubGuiScreen implements IGUIChannelIn
 		});
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void initGui() {
 		super.initGui();
@@ -73,7 +72,7 @@ public class GuiManageChannelPopup extends SubGuiScreen implements IGUIChannelIn
 
 	protected void drawTitle() {
 		mc.fontRenderer.drawStringWithShadow(
-				StringUtils.translate(GUI_LANG_KEY + "title"), xCenter - (mc.fontRenderer.getStringWidth(StringUtils.translate(GUI_LANG_KEY + "title")) / 2f), guiTop + 6, 0xFFFFFF);
+				TextUtil.translate(GUI_LANG_KEY + "title"), xCenter - (mc.fontRenderer.getStringWidth(TextUtil.translate(GUI_LANG_KEY + "title")) / 2f), guiTop + 6, 0xFFFFFF);
 	}
 
 	@Override
@@ -103,7 +102,7 @@ public class GuiManageChannelPopup extends SubGuiScreen implements IGUIChannelIn
 			MainProxy.sendPacketToServer(PacketHandler.getPacket(OpenAddChannelGUIPacket.class).setBlockPos(position));
 		} else if (guibutton.id == 3) { // Edit
 			int selected = textList.getSelected();
-			if(selected >= 0) {
+			if (selected >= 0) {
 				MainProxy.sendPacketToServer(PacketHandler.getPacket(OpenEditChannelGUIPacket.class).setIdentifier(channelList.get(selected).getChannelIdentifier().toString()).setBlockPos(position));
 			}
 		} else if (guibutton.id == 4) {
@@ -112,10 +111,10 @@ public class GuiManageChannelPopup extends SubGuiScreen implements IGUIChannelIn
 			textList.scrollUp();
 		} else if (guibutton.id == 10) {
 			int selected = textList.getSelected();
-			if(selected >= 0) {
-				this.setSubGui(new ActionChoisePopup(StringUtils.translate(GUI_LANG_KEY + "deletedialog.title"), StringUtils.translate(GUI_LANG_KEY + "deletedialog.yes"), () ->
+			if (selected >= 0) {
+				this.setSubGui(new ActionChoisePopup(TextUtil.translate(GUI_LANG_KEY + "deletedialog.title"), TextUtil.translate(GUI_LANG_KEY + "deletedialog.yes"), () ->
 						MainProxy.sendPacketToServer(PacketHandler.getPacket(DeleteChannelPacket.class).setChannelIdentifier(channelList.get(selected).getChannelIdentifier())),
-						StringUtils.translate(GUI_LANG_KEY + "deletedialog.no"), () -> {}));
+						TextUtil.translate(GUI_LANG_KEY + "deletedialog.no"), () -> {}));
 			}
 		} else {
 			super.actionPerformed(guibutton);

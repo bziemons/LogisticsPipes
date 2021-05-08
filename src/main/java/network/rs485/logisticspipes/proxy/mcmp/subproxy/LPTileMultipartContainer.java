@@ -29,7 +29,6 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
 
 import lombok.SneakyThrows;
 import mcmultipart.api.multipart.IMultipartTile;
@@ -68,7 +67,7 @@ public class LPTileMultipartContainer extends TileMultipartContainer.Ticking {
 
 	private final Set<ITickable> superTickingParts;
 
-	@SneakyThrows({IllegalAccessException.class})
+	@SneakyThrows({ IllegalAccessException.class })
 	public LPTileMultipartContainer(LogisticsTileGenericPipe pipe) {
 		super();
 		this.pipe = pipe;
@@ -107,12 +106,12 @@ public class LPTileMultipartContainer extends TileMultipartContainer.Ticking {
 		return super.getParts();
 	}
 
-	@SneakyThrows({IllegalAccessException.class})
+	@SneakyThrows({ IllegalAccessException.class })
 	private void checkLocalPartsFieldInit() {
-		if(parts == null) {
+		if (parts == null) {
 			parts = (Map<IPartSlot, PartInfo>) partsField.get(this);
 		}
-		if(partInfo == null) {
+		if (partInfo == null) {
 			partInfo = new PartInfo(this, EnumCenterSlot.CENTER, LPMCMPAddon.lpPipeMultipart, this.pipe.getWorld().getBlockState(this.pipe.getBlockPos()), new LPMultipartTile(pipe));
 		}
 		parts.put(EnumCenterSlot.CENTER, partInfo);
@@ -120,32 +119,32 @@ public class LPTileMultipartContainer extends TileMultipartContainer.Ticking {
 
 	@Override
 	protected void updateWorldState() {
-		if(this.superTickingParts.isEmpty()) return; //
+		if (this.superTickingParts.isEmpty()) return; //
 		//super.updateWorldState();
 		LPTickHandler.getWorldInfo(getWorld()).setSkipBlockUpdateForWorld(true);
 		IBlockState prevSt = this.getWorld().getBlockState(this.getPos());
 
 		IBlockState st = this.getWorld().getBlockState(this.getPos());
-		this.getWorld().markAndNotifyBlock(this.getPos(), (Chunk)null, prevSt, st, 1);
+		this.getWorld().markAndNotifyBlock(this.getPos(), null, prevSt, st, 1);
 		this.getWorld().checkLight(this.getPos());
 		LPTickHandler.getWorldInfo(getWorld()).setSkipBlockUpdateForWorld(true);
 	}
 
 	@Override
 	public boolean canAddPart(IPartSlot slot, IBlockState state, IMultipartTile tile) {
-		if(!pipe.isMultipartAllowedInPipe()) return false;
+		if (!pipe.isMultipartAllowedInPipe()) return false;
 		return super.canAddPart(slot, state, tile);
 	}
 
 	@Override
 	public void addPart(IPartSlot slot, IBlockState state, IMultipartTile tile) {
-		if(!pipe.isMultipartAllowedInPipe()) return;
+		if (!pipe.isMultipartAllowedInPipe()) return;
 		super.addPart(slot, state, tile);
 	}
 
 	@Override
 	protected void add(IPartSlot slot, PartInfo partInfo) {
-		if(!pipe.isMultipartAllowedInPipe()) return;
+		if (!pipe.isMultipartAllowedInPipe()) return;
 		super.add(slot, partInfo);
 	}
 }

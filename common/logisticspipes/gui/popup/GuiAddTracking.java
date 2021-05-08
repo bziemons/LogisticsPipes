@@ -6,6 +6,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
+
+import org.lwjgl.input.Keyboard;
+
 import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
 import logisticspipes.blocks.stats.TrackingTask;
 import logisticspipes.config.Configs;
@@ -16,21 +22,17 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.GuiCheckBox;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.IItemSearch;
-import logisticspipes.utils.gui.ItemDisplay;
 import logisticspipes.utils.gui.InputBar;
+import logisticspipes.utils.gui.ItemDisplay;
 import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.gui.SubGuiScreen;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
-import logisticspipes.utils.string.StringUtils;
-
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
+import network.rs485.logisticspipes.util.TextUtil;
 
 public class GuiAddTracking extends SubGuiScreen implements IItemSearch {
 
-	private final String PREFIX = "gui.networkstatistics.add.";
+	private static final String PREFIX = "gui.networkstatistics.add.";
 
 	ItemDisplay itemDisplay;
 	InputBar search;
@@ -41,9 +43,10 @@ public class GuiAddTracking extends SubGuiScreen implements IItemSearch {
 		this.tile = tile;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void initGui() {
+		Keyboard.enableRepeatEvents(true);
+
 		super.initGui();
 
 		buttonList.clear();
@@ -66,6 +69,13 @@ public class GuiAddTracking extends SubGuiScreen implements IItemSearch {
 	}
 
 	@Override
+	public void exitGui() {
+		super.exitGui();
+		Keyboard.enableRepeatEvents(false);
+		getBaseScreen().initGui();
+	}
+
+	@Override
 	protected void renderToolTips(int mouseX, int mouseY, float par3) {
 		if (!super.hasSubGui()) {
 			GuiGraphics.displayItemToolTip(itemDisplay.getToolTip(), this, zLevel, 0, 0);
@@ -80,10 +90,10 @@ public class GuiAddTracking extends SubGuiScreen implements IItemSearch {
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
 		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
-		//mc.fontRenderer.drawString(StringUtils.translate(PREFIX + "title"), guiLeft + 5, guiTop + 6, 0x404040);
+		//mc.fontRenderer.drawString(StringUtil.translate(PREFIX + "title"), guiLeft + 5, guiTop + 6, 0x404040);
 		itemDisplay.renderPageNumber(right - 47, guiTop + 6);
 
-		search.renderSearchBar();
+		search.drawTextBox();
 
 		itemDisplay.renderSortMode(xCenter, bottom - 32);
 	}
@@ -99,7 +109,7 @@ public class GuiAddTracking extends SubGuiScreen implements IItemSearch {
 				}
 			}
 			if (found) {
-				setSubGui(new GuiMessagePopup(StringUtils.translate(PREFIX + "alreadytracked")));
+				setSubGui(new GuiMessagePopup(TextUtil.translate(PREFIX + "alreadytracked")));
 			} else {
 				MainProxy.sendPacketToServer(PacketHandler.getPacket(AddItemToTrackPacket.class).setItem(itemDisplay.getSelectedItem().getItem()).setTilePos(tile));
 				TrackingTask task = new TrackingTask();
@@ -156,13 +166,12 @@ public class GuiAddTracking extends SubGuiScreen implements IItemSearch {
 		itemDisplay.setItemList(identList);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public boolean itemSearched(ItemIdentifier item) {
 		if (search.isEmpty()) {
 			return true;
 		}
-		if (isSearched(item.getFriendlyName().toLowerCase(Locale.US), search.getContent().toLowerCase(Locale.US))) {
+		if (isSearched(item.getFriendlyName().toLowerCase(Locale.US), search.getText().toLowerCase(Locale.US))) {
 			return true;
 		}
 		//if(isSearched(String.valueOf(Item.getIdFromItem(item.item)), search.getContent())) return true;
@@ -171,7 +180,7 @@ public class GuiAddTracking extends SubGuiScreen implements IItemSearch {
 		for (Entry<Enchantment, Integer> e : enchantIdLvlMap.entrySet()) {
 			String enchantname = e.getKey().getName();
 			if (enchantname != null) {
-				if (isSearched(enchantname.toLowerCase(Locale.US), search.getContent().toLowerCase(Locale.US))) {
+				if (isSearched(enchantname.toLowerCase(Locale.US), search.getText().toLowerCase(Locale.US))) {
 					return true;
 				}
 			}
@@ -184,6 +193,7 @@ public class GuiAddTracking extends SubGuiScreen implements IItemSearch {
 		for (String s : search.split(" ")) {
 			if (!value.contains(s)) {
 				flag = false;
+				break;
 			}
 		}
 		return flag;

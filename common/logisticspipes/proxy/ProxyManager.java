@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -27,6 +26,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
@@ -91,17 +91,13 @@ import network.rs485.logisticspipes.proxy.mcmp.MCMPProxy;
 import network.rs485.logisticspipes.proxy.mcmp.subproxy.IMCMPBlockAccess;
 import network.rs485.logisticspipes.proxy.mcmp.subproxy.IMCMPLTGPCompanion;
 
-//import logisticspipes.proxy.nei.NEIProxy;
-
-//@formatter:off
-//CHECKSTYLE:OFF
-
 public class ProxyManager {
+
 	public static <T> T getWrappedProxy(String modId, Class<T> interfaze, Class<? extends T> proxyClazz, T dummyProxy, Class<?>... wrapperInterfaces) {
 		try {
 			return LogisticsWrapperHandler.getWrappedProxy(modId, interfaze, proxyClazz, dummyProxy, wrapperInterfaces);
-		} catch(Exception e) {
-			if(e instanceof RuntimeException) {
+		} catch (Exception e) {
+			if (e instanceof RuntimeException) {
 				throw (RuntimeException) e;
 			}
 			throw new RuntimeException(e);
@@ -109,6 +105,9 @@ public class ProxyManager {
 	}
 
 	public static void load() {
+		//@formatter:off
+		//CHECKSTYLE:OFF
+
 		SimpleServiceLocator.setBuildCraftProxy(ProxyManager.getWrappedProxy(LPConstants.bcTransportModID + "+" + LPConstants.bcSiliconModID, IBCProxy.class, BuildCraftProxy.class, new IBCProxy() {
 			@Override public void registerPipeInformationProvider() {}
 			@Override public void initProxy() {}
@@ -157,8 +156,8 @@ public class ProxyManager {
 			@Override public boolean isTE() {return false;}
 			@Override public CraftingParts getRecipeParts() {return null;}
 			@Override public boolean isToolHammer(Item stack) {return false;}
-			@Override public boolean canHammer(ItemStack stack, EntityPlayer entityplayer, BlockPos pos) {return false;}
-			@Override public void toolUsed(ItemStack stack, EntityPlayer entityplayer, BlockPos pos) {}
+			@Override public boolean canHammer(@Nonnull ItemStack stack, EntityPlayer entityplayer, BlockPos pos) {return false;}
+			@Override public void toolUsed(@Nonnull ItemStack stack, EntityPlayer entityplayer, BlockPos pos) {}
 		}));
 
 		SimpleServiceLocator.setBetterStorageProxy(ProxyManager.getWrappedProxy(LPConstants.betterStorageModID, IBetterStorageProxy.class, BetterStorageProxy.class, new IBetterStorageProxy() {
@@ -167,19 +166,19 @@ public class ProxyManager {
 				return new ICrateStorageProxy() {
 					@Override public Iterable<ItemStack> getContents() {return null;}
 					@Override public int getUniqueItems() {return 0;}
-					@Override public int getItemCount(ItemStack stack) {return 0;}
-					@Override public ItemStack extractItems(ItemStack stack, int count) {return null;}
-					@Override public int getSpaceForItem(ItemStack stack) {return 0;}
-					@Override public ItemStack insertItems(ItemStack stack) {return stack;}
+					@Override public int getItemCount(@Nonnull ItemStack stack) {return 0;}
+					@Override public@Nonnull  ItemStack extractItems(@Nonnull ItemStack stack, int count) {return null;}
+					@Override public int getSpaceForItem(@Nonnull ItemStack stack) {return 0;}
+					@Override public@Nonnull  ItemStack insertItems(@Nonnull ItemStack stack) {return stack;}
 				};
 			}
 		}, ICrateStorageProxy.class));
 
 		SimpleServiceLocator.setNEIProxy(ProxyManager.getWrappedProxy(LPConstants.neiModID, INEIProxy.class, null /*NEIProxy.class*/, new INEIProxy() {
 			@Override public List<String> getInfoForPosition(World world, EntityPlayer player, RayTraceResult objectMouseOver) {return new ArrayList<>(0);}
-			@Override @SideOnly(Side.CLIENT) public boolean renderItemToolTip(int posX, int posY, List<String> msg, TextFormatting rarityColor, ItemStack stack) {return false;}
-			@Override @SideOnly(Side.CLIENT) public List<String> getItemToolTip(ItemStack stack, EntityPlayer thePlayer, ITooltipFlag advancedItemTooltips, GuiContainer screen) {return stack.getTooltip(thePlayer, advancedItemTooltips);}
-			@Override public ItemStack getItemForPosition(World world, EntityPlayer player, RayTraceResult objectMouseOver) {return null;}
+			@Override @SideOnly(Side.CLIENT) public boolean renderItemToolTip(int posX, int posY, List<String> msg, TextFormatting rarityColor, @Nonnull ItemStack stack) {return false;}
+			@Override @SideOnly(Side.CLIENT) public List<String> getItemToolTip(@Nonnull ItemStack stack, EntityPlayer thePlayer, ITooltipFlag advancedItemTooltips, GuiContainer screen) {return stack.getTooltip(thePlayer, advancedItemTooltips);}
+			@Override public@Nonnull  ItemStack getItemForPosition(World world, EntityPlayer player, RayTraceResult objectMouseOver) {return null;}
 		}));
 
 		SimpleServiceLocator.setFactorizationProxy(ProxyManager.getWrappedProxy(LPConstants.factorizationModID, IFactorizationProxy.class, FactorizationProxy.class, tile-> false));
@@ -259,10 +258,10 @@ public class ProxyManager {
 					@Override public void addCollisionBoxToList(IBlockState state, World world, BlockPos pos, AxisAlignedBB entityBox, List<AxisAlignedBB> collidingBoxes, Entity entity, boolean isActualState) {}
 					@Override public RayTraceResult collisionRayTrace(IBlockState state, World world, BlockPos pos, Vec3d start, Vec3d end) {return null;}
 					@Override public Block getBlock() {return null;}
-					@Override public void addDrops(List<ItemStack> list, IBlockAccess world, BlockPos pos, IBlockState state, int fortune) {}
+					@Override public void addDrops(NonNullList<ItemStack> list, IBlockAccess world, BlockPos pos, IBlockState state, int fortune) {}
 				};
 			}
-		    @Override public List<BakedQuad> addQuads(List<BakedQuad> list, IBlockState state, EnumFacing side, long rand) {return list;}
+		    @Override public void addQuads(@Nonnull List<BakedQuad> list, IBlockState state, EnumFacing side, long rand) {}
 		    @Override public void registerTileEntities() {}
 		    @Override public boolean checkIntersectionWith(LogisticsTileGenericPipe logisticsTileGenericPipe, AxisAlignedBB aabb) {return false;}
 		    @Override public boolean hasParts(LogisticsTileGenericPipe pipeTile) {return false;}
@@ -350,7 +349,11 @@ public class ProxyManager {
 			@Override public Object getColourMultiplier(int i) {return null;}
 			@Override public IModelState getDefaultBlockState() {return null;}
 		};
-		Class<?>[] cclSubWrapper = new Class<?>[] {TextureTransformation.class, IRenderState.class, IModel3D.class, ITranslation.class, IVec3.class, IBounds.class};
+
+		//@formatter:on
+		//CHECKSTYLE:ON
+
+		Class<?>[] cclSubWrapper = new Class<?>[] { TextureTransformation.class, IRenderState.class, IModel3D.class, ITranslation.class, IVec3.class, IBounds.class };
 		SimpleServiceLocator.setCCLProxy(ProxyManager.getWrappedProxy("!" + LPConstants.cclrenderModID, ICCLProxy.class, CCLProxy.class, dummyCCLProxy, cclSubWrapper));
 
 		SimpleServiceLocator.setConfigToolHandler(new ConfigToolHandler());

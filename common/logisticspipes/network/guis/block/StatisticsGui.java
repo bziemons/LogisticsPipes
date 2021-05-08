@@ -13,11 +13,10 @@ import logisticspipes.blocks.stats.TrackingTask;
 import logisticspipes.gui.GuiStatistics;
 import logisticspipes.network.abstractguis.CoordinatesGuiProvider;
 import logisticspipes.network.abstractguis.GuiProvider;
+import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.gui.DummyContainer;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class StatisticsGui extends CoordinatesGuiProvider {
@@ -32,25 +31,17 @@ public class StatisticsGui extends CoordinatesGuiProvider {
 
 	@Override
 	public Object getClientGui(EntityPlayer player) {
-		LogisticsStatisticsTileEntity tile = this.getTile(player.getEntityWorld(), LogisticsStatisticsTileEntity.class);
-		if (tile == null) {
-			return null;
-		}
-		tile.tasks = trackingList;
-		GuiStatistics gui = new GuiStatistics(tile);
-
+		LogisticsStatisticsTileEntity statisticsTable = getTileAs(player.world, LogisticsStatisticsTileEntity.class);
+		statisticsTable.tasks = trackingList;
+		GuiStatistics gui = new GuiStatistics(statisticsTable);
 		gui.inventorySlots = new DummyContainer(player.inventory, null);
-
 		return gui;
 	}
 
 	@Override
 	public Container getContainer(EntityPlayer player) {
-		LogisticsStatisticsTileEntity tile = this.getTile(player.getEntityWorld(), LogisticsStatisticsTileEntity.class);
-		if (tile == null) {
-			return null;
-		}
-
+		// ensures tile at position is a statistics table
+		getTileAs(player.world, LogisticsStatisticsTileEntity.class);
 		return new DummyContainer(player, null);
 	}
 

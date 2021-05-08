@@ -2,14 +2,10 @@ package logisticspipes.network.abstractguis;
 
 import net.minecraft.world.World;
 
-import lombok.Getter;
-import lombok.Setter;
-
-import logisticspipes.LPConstants;
 import logisticspipes.LogisticsPipes;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
-import logisticspipes.pipes.PipeLogisticsChassi;
+import logisticspipes.modules.LogisticsModule;
+import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.pipes.PipeLogisticsChassis;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import network.rs485.logisticspipes.util.LPDataInput;
@@ -17,11 +13,7 @@ import network.rs485.logisticspipes.util.LPDataOutput;
 
 public abstract class ModuleCoordinatesGuiProvider extends CoordinatesGuiProvider {
 
-	@Getter
-	@Setter
 	private ModulePositionType slot;
-	@Getter
-	@Setter
 	private int positionInt;
 
 	public ModuleCoordinatesGuiProvider(int id) {
@@ -44,43 +36,61 @@ public abstract class ModuleCoordinatesGuiProvider extends CoordinatesGuiProvide
 
 	@SuppressWarnings("unchecked")
 	public <T> T getLogisticsModule(World world, Class<T> clazz) {
-		LogisticsTileGenericPipe pipe = getPipe(world);
-		if (pipe == null || !(pipe.pipe instanceof CoreRoutedPipe)) {
-			if (LPConstants.DEBUG && (pipe == null || pipe.isInitialized())) {
+		LogisticsTileGenericPipe pipe = getTileAs(world, LogisticsTileGenericPipe.class);
+		if (!(pipe.pipe instanceof CoreRoutedPipe)) {
+			if (LogisticsPipes.isDEBUG() && pipe.isInitialized()) {
 				LogisticsPipes.log.fatal(toString());
 				new RuntimeException("Couldn't find " + clazz.getName() + ", pipe didn't exsist").printStackTrace();
 			}
 			return null;
 		}
-		LogisticsModule module = null;
+		LogisticsModule module;
 		if (slot == ModulePositionType.IN_PIPE) {
 			module = ((CoreRoutedPipe) pipe.pipe).getLogisticsModule();
 		} else if (slot == ModulePositionType.IN_HAND) {
 			throw new UnsupportedOperationException("NO IN_HAND FOR THIS PACKET TYPE");
 		} else {
-			if (!(pipe.pipe instanceof PipeLogisticsChassi)) {
-				if (LPConstants.DEBUG) {
+			if (!(pipe.pipe instanceof PipeLogisticsChassis)) {
+				if (LogisticsPipes.isDEBUG()) {
 					LogisticsPipes.log.fatal(toString());
 					new RuntimeException("Couldn't find " + clazz.getName() + ", pipe wasn't a chassi pipe").printStackTrace();
 				}
 				return null;
 			}
-			module = ((PipeLogisticsChassi) pipe.pipe).getLogisticsModule().getSubModule(positionInt);
+			module = ((PipeLogisticsChassis) pipe.pipe).getSubModule(positionInt);
 		}
 		if (module != null) {
 			if (!(clazz.isAssignableFrom(module.getClass()))) {
-				if (LPConstants.DEBUG) {
+				if (LogisticsPipes.isDEBUG()) {
 					LogisticsPipes.log.fatal(toString());
 					new RuntimeException("Couldn't find " + clazz.getName() + ", found " + module.getClass()).printStackTrace();
 				}
 				return null;
 			}
 		} else {
-			if (LPConstants.DEBUG) {
+			if (LogisticsPipes.isDEBUG()) {
 				LogisticsPipes.log.fatal(toString());
 				new RuntimeException("Couldn't find " + clazz.getName()).printStackTrace();
 			}
 		}
 		return (T) module;
+	}
+
+	public ModulePositionType getSlot() {
+		return this.slot;
+	}
+
+	public ModuleCoordinatesGuiProvider setSlot(ModulePositionType slot) {
+		this.slot = slot;
+		return this;
+	}
+
+	public int getPositionInt() {
+		return this.positionInt;
+	}
+
+	public ModuleCoordinatesGuiProvider setPositionInt(int positionInt) {
+		this.positionInt = positionInt;
+		return this;
 	}
 }

@@ -24,17 +24,18 @@ import logisticspipes.proxy.computers.objects.CCQuartet;
 import logisticspipes.proxy.computers.objects.CCTriplet;
 import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.item.ItemIdentifier;
-import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Quartet;
 import logisticspipes.utils.tuples.Triplet;
+import network.rs485.logisticspipes.inventory.IItemIdentifierInventory;
 
 public class CCObjectWrapper {
 
 	private static Map<Class<?>, CCWrapperInformation> ccMapings = new HashMap<>();
 	private static Map<Object, Object> wrappedObjects = new WeakHashMap<>();
 	private static Map<Class<? extends ILPCCTypeHolder>, ILPCCTypeDefinition> specialMappings = new HashMap<>();
+
 	static {
 		CCObjectWrapper.specialMappings.put(ItemIdentifier.class, new CCItemIdentifier());
 		CCObjectWrapper.specialMappings.put(ItemIdentifierStack.class, new CCItemIdentifierStack());
@@ -50,7 +51,7 @@ public class CCObjectWrapper {
 		if (clazz.getAnnotation(CCType.class) != null) {
 			return clazz.getAnnotation(CCType.class).name();
 		}
-		String result = null;
+		String result;
 		if (!clazz.getSuperclass().equals(Object.class)) {
 			if (!(result = CCObjectWrapper.checkForTypeAnotation(clazz.getSuperclass())).equals("")) {
 				return result;
@@ -69,11 +70,11 @@ public class CCObjectWrapper {
 		Object wrapped = input;
 		if (CCObjectWrapper.specialMappings.containsKey(input.getClass())) {
 			wrapped = CCObjectWrapper.specialMappings.get(input.getClass()).getTypeFor(input);
-		} else if (input instanceof ItemIdentifierInventory) {
-			if (((ItemIdentifierInventory) input).getInventoryStackLimit() == 1) {
-				wrapped = new CCFilterInventory((ItemIdentifierInventory) input);
+		} else if (input instanceof IItemIdentifierInventory) {
+			if (((IItemIdentifierInventory) input).getInventoryStackLimit() == 1) {
+				wrapped = new CCFilterInventory((IItemIdentifierInventory) input);
 			} else {
-				wrapped = new CCItemIdentifierInventory((ItemIdentifierInventory) input);
+				wrapped = new CCItemIdentifierInventory((IItemIdentifierInventory) input);
 			}
 		}
 		CCWrapperInformation info = CCObjectWrapper.getWrapperInformation(wrapped.getClass());

@@ -1,9 +1,11 @@
 package logisticspipes.interfaces;
 
 import java.util.List;
+import javax.annotation.Nonnull;
 
 public interface IClientInformationProvider {
 
-	public abstract List<String> getClientInformation();
+	@Nonnull
+	List<String> getClientInformation();
 
 }

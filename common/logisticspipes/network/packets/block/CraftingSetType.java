@@ -11,11 +11,10 @@ import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.PipeBlockRequestTable;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
+import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.item.ItemIdentifier;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class CraftingSetType extends CoordinatesPacket {
@@ -30,7 +29,7 @@ public class CraftingSetType extends CoordinatesPacket {
 
 	@Override
 	public void processPacket(EntityPlayer player) {
-		TileEntity table = this.getTile(player.getEntityWorld(), TileEntity.class);
+		TileEntity table = this.getTileAs(player.getEntityWorld(), TileEntity.class);
 		if (table instanceof LogisticsCraftingTableTileEntity) {
 			((LogisticsCraftingTableTileEntity) table).targetType = targetType;
 			((LogisticsCraftingTableTileEntity) table).cacheRecipe();

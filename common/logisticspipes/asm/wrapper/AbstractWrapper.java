@@ -2,15 +2,14 @@ package logisticspipes.asm.wrapper;
 
 import java.util.List;
 
-import logisticspipes.LPConstants;
-import logisticspipes.LogisticsPipes;
-import logisticspipes.proxy.MainProxy;
-import logisticspipes.utils.string.ChatColor;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
+
+import logisticspipes.LogisticsPipes;
+import logisticspipes.proxy.MainProxy;
+import logisticspipes.utils.string.ChatColor;
 
 public abstract class AbstractWrapper {
 
@@ -30,12 +29,12 @@ public abstract class AbstractWrapper {
 	@SneakyThrows(Throwable.class)
 	public void handleException(Throwable e) {
 		if (!isEnabled()) {
-			if (LPConstants.DEBUG) {
+			if (LogisticsPipes.isDEBUG()) {
 				e.printStackTrace();
 			}
 			return;
 		}
-		if (LPConstants.DEBUG) {
+		if (LogisticsPipes.isDEBUG()) {
 			throw e;
 		}
 		e.printStackTrace();

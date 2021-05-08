@@ -1,51 +1,46 @@
 package logisticspipes.proxy.specialinventoryhandler;
 
 import java.util.Map;
+import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
 
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.transactor.ITransactor;
-
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-
-import net.minecraft.util.EnumFacing;
+import network.rs485.logisticspipes.inventory.ProviderMode;
 
 public abstract class SpecialInventoryHandler implements IInventoryUtil, ITransactor {
 
-	public abstract boolean init();
-
-	public abstract boolean isType(TileEntity tile, EnumFacing dir);
-
-	public abstract SpecialInventoryHandler getUtilForTile(TileEntity tile, EnumFacing dir, boolean hideOnePerStack, boolean hideOne, int cropStart, int cropEnd);
-
 	@Override
-	public int itemCount(ItemIdentifier itemIdent) {
-		Map<ItemIdentifier, Integer> map = getItemsAndCount();
-		Integer count = map.get(itemIdent);
-		if (count == null) {
-			return 0;
-		}
-		return count;
+	public int itemCount(@Nonnull ItemIdentifier itemIdent) {
+		final Map<ItemIdentifier, Integer> map = getItemsAndCount();
+		return map.getOrDefault(itemIdent, 0);
 	}
 
 	@Override
-	public ItemStack getMultipleItems(ItemIdentifier itemIdent, int count) {
+	@Nonnull
+	public ItemStack getMultipleItems(@Nonnull ItemIdentifier itemIdent, int count) {
 		if (itemCount(itemIdent) < count) {
-			return null;
+			return ItemStack.EMPTY;
 		}
-		ItemStack stack = null;
-		for (int i = 0; i < count; i++) {
-			if (stack == null) {
-				stack = getSingleItem(itemIdent);
-			} else {
-				ItemStack newstack = getSingleItem(itemIdent);
-				if (newstack == null) {
-					break;
-				}
-				stack.grow(newstack.getCount());
-			}
-		}
-		return stack;
+		return IntStream.range(0, count).mapToObj((i) -> getSingleItem(itemIdent)).filter(itemStack -> !itemStack.isEmpty()).reduce((left, right) -> {
+			left.grow(right.getCount());
+			return left;
+		}).orElse(ItemStack.EMPTY);
+	}
+
+	public interface Factory {
+
+		boolean init();
+
+		boolean isType(@Nonnull TileEntity tile, @Nullable EnumFacing dir);
+
+		@Nullable
+		SpecialInventoryHandler getUtilForTile(@Nonnull TileEntity tile, @Nullable EnumFacing direction, @Nonnull ProviderMode mode);
 	}
 }

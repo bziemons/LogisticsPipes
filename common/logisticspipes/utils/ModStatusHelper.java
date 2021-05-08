@@ -4,8 +4,6 @@ import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.ModAPIManager;
 import net.minecraftforge.fml.common.ModContainer;
 import net.minecraftforge.fml.common.versioning.ComparableVersion;
-import net.minecraftforge.fml.common.versioning.VersionParser;
-import net.minecraftforge.fml.common.versioning.VersionRange;
 
 public class ModStatusHelper {
 
@@ -28,9 +26,9 @@ public class ModStatusHelper {
 	}
 
 	public static boolean areModsLoaded(String modIds) {
-		if(modIds.contains("+")) {
-			for(String modId:modIds.split("\\+")) {
-				if(!isModLoaded(modId)) {
+		if (modIds.contains("+")) {
+			for (String modId : modIds.split("\\+")) {
+				if (!isModLoaded(modId)) {
 					return false;
 				}
 			}

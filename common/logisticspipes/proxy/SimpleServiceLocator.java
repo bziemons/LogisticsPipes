@@ -1,6 +1,5 @@
 /**
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -18,7 +17,6 @@ import logisticspipes.proxy.interfaces.IBCProxy;
 import logisticspipes.proxy.interfaces.IBetterStorageProxy;
 import logisticspipes.proxy.interfaces.ICCLProxy;
 import logisticspipes.proxy.interfaces.ICCProxy;
-import logisticspipes.proxy.interfaces.IPowerProxy;
 import logisticspipes.proxy.interfaces.ICraftingRecipeProvider;
 import logisticspipes.proxy.interfaces.IEnderIOProxy;
 import logisticspipes.proxy.interfaces.IEnderStorageProxy;
@@ -27,6 +25,7 @@ import logisticspipes.proxy.interfaces.IIC2Proxy;
 import logisticspipes.proxy.interfaces.IIronChestProxy;
 import logisticspipes.proxy.interfaces.INEIProxy;
 import logisticspipes.proxy.interfaces.IOpenComputersProxy;
+import logisticspipes.proxy.interfaces.IPowerProxy;
 import logisticspipes.proxy.interfaces.ITDProxy;
 import logisticspipes.proxy.interfaces.IThermalExpansionProxy;
 import logisticspipes.proxy.progressprovider.MachineProgressProvider;
@@ -34,7 +33,7 @@ import logisticspipes.proxy.specialconnection.SpecialPipeConnection;
 import logisticspipes.proxy.specialconnection.SpecialTileConnection;
 import logisticspipes.proxy.specialtankhandler.SpecialTankHandler;
 import logisticspipes.renderer.newpipe.GLRenderListHandler;
-import logisticspipes.routing.IRouterManager;
+import logisticspipes.routing.RouterManager;
 import logisticspipes.routing.pathfinder.PipeInformationManager;
 import logisticspipes.ticks.ClientPacketBufferHandlerThread;
 import logisticspipes.ticks.ServerPacketBufferHandlerThread;
@@ -45,7 +44,7 @@ import network.rs485.logisticspipes.proxy.mcmp.IMCMPProxy;
 
 public final class SimpleServiceLocator {
 
-	private SimpleServiceLocator() {};
+	private SimpleServiceLocator() {}
 
 	public static IBCProxy buildCraftProxy = null;
 
@@ -77,9 +76,9 @@ public final class SimpleServiceLocator {
 		SimpleServiceLocator.securityStationManager = secStationMngr;
 	}
 
-	public static IRouterManager routerManager;
+	public static RouterManager routerManager;
 
-	public static void setRouterManager(final IRouterManager routerMngr) {
+	public static void setRouterManager(final RouterManager routerMngr) {
 		SimpleServiceLocator.routerManager = routerMngr;
 	}
 

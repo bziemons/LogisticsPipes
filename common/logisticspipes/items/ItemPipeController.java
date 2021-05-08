@@ -1,8 +1,6 @@
 package logisticspipes.items;
 
-import logisticspipes.network.NewGuiHandler;
-import logisticspipes.network.guis.LogisticsPlayerSettingsGuiProvider;
-import logisticspipes.proxy.MainProxy;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -13,14 +11,19 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+import logisticspipes.network.NewGuiHandler;
+import logisticspipes.network.guis.LogisticsPlayerSettingsGuiProvider;
+import logisticspipes.proxy.MainProxy;
+
 public class ItemPipeController extends LogisticsItem {
 
 	public ItemPipeController() {
 		super();
 	}
 
+	@Nonnull
 	@Override
-	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand handIn) {
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand handIn) {
 		ItemStack stack = player.getHeldItem(handIn);
 		if (MainProxy.isClient(world)) {
 			return new ActionResult<>(EnumActionResult.PASS, stack);
@@ -29,6 +32,7 @@ public class ItemPipeController extends LogisticsItem {
 		return new ActionResult<>(EnumActionResult.SUCCESS, stack);
 	}
 
+	@Nonnull
 	@Override
 	public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
 		if (MainProxy.isClient(world)) {

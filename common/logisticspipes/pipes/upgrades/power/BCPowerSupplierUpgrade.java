@@ -1,10 +1,14 @@
 package logisticspipes.pipes.upgrades.power;
 
-import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.upgrades.IPipeUpgrade;
 
 public class BCPowerSupplierUpgrade implements IPipeUpgrade {
+
+	public static String getName() {
+		return "power_supplier_mj";
+	}
 
 	@Override
 	public boolean needsUpdate() {

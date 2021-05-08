@@ -45,11 +45,11 @@ import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
 
 import io.netty.buffer.ByteBuf;
@@ -125,6 +125,9 @@ public interface LPDataInput {
 	boolean[] readBooleanArray();
 
 	@Nullable
+	String[] readUTFArray();
+
+	@Nullable
 	int[] readIntArray();
 
 	@Nonnull
@@ -149,6 +152,9 @@ public interface LPDataInput {
 	<T> Set<T> readSet(IReadListObject<T> handler);
 
 	@Nullable
+	<T> NonNullList<T> readNonNullList(IReadListObject<T> reader, @Nonnull T fillItem);
+
+	@Nullable
 	<T extends Enum<T>> T readEnum(Class<T> clazz);
 
 	@Nonnull
@@ -165,8 +171,6 @@ public interface LPDataInput {
 
 	@Nonnull
 	PlayerIdentifier readPlayerIdentifier();
-
-	//LPSerializable readSerializable(Class<? extends LPSerializable> serializableClass);
 
 	default void readSerializable(LPSerializable serializable) {
 		serializable.read(this);

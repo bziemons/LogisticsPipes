@@ -8,7 +8,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import logisticspipes.LPBlocks;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -48,6 +47,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 
+import logisticspipes.LPBlocks;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsBlockGenericPipe;
 import logisticspipes.textures.Textures;
@@ -68,13 +68,13 @@ public abstract class SideConfigDisplay {
 
 	private boolean draggingRotate = false;
 	private boolean draggingMove = false;
-	private float pitch = 0;
-	private float yaw = 0;
+	private float pitch;
+	private float yaw;
 	private double distance;
 	private long initTime;
 
 	private Minecraft mc = Minecraft.getMinecraft();
-	private World world = mc.player.world;
+	private World world;
 
 	private final Vector3d origin = new Vector3d();
 	private final Vector3d eye = new Vector3d();
@@ -90,8 +90,6 @@ public abstract class SideConfigDisplay {
 	private SelectedFace selection;
 
 	public boolean renderNeighbours = true;
-	private boolean inNeigButBounds = false;
-	private LogisticsBlockGenericPipe.InternalRayTraceResult cachedLPBlockTrace;
 
 	public SideConfigDisplay(CoreRoutedPipe configurables) {
 		this(Collections.singletonList(configurables.getLPPosition()));
@@ -179,7 +177,7 @@ public abstract class SideConfigDisplay {
 			}
 		}
 
-		if(draggingMove) {
+		if (draggingMove) {
 			double dx = Mouse.getEventDX();
 			double dy = -Mouse.getEventDY();
 			Vector3d orivec = camera.getWorldPoint(new Vector2d(0, 0));
@@ -203,6 +201,7 @@ public abstract class SideConfigDisplay {
 		}
 
 		if (!Mouse.getEventButtonState() && camera.isValid() && elapsed > 500) {
+			boolean inNeigButBounds = false;
 			if (Mouse.getEventButton() == 1) {
 				if (selection != null) {
 					handleSelection(selection);
@@ -223,7 +222,8 @@ public abstract class SideConfigDisplay {
 			IBlockState bs = bc.getBlockState(world);
 			Block block = bs.getBlock();
 			if (block != null) {
-				if(block instanceof LogisticsBlockGenericPipe) {
+				LogisticsBlockGenericPipe.InternalRayTraceResult cachedLPBlockTrace;
+				if (block instanceof LogisticsBlockGenericPipe) {
 					cachedLPBlockTrace = LPBlocks.pipe.doRayTrace(world, bc.getBlockPos(), start.toVec3d(), end.toVec3d());
 				} else {
 					cachedLPBlockTrace = null;
@@ -239,7 +239,7 @@ public abstract class SideConfigDisplay {
 		RayTraceResult hit = getClosestHit(start.toVec3d(), hits);
 		if (hit != null) {
 			TileEntity te = world.getTileEntity(hit.getBlockPos());
-			if(te != null) {
+			if (te != null) {
 				selection = new SelectedFace(te, hit.sideHit, hit);
 			}
 		}
@@ -380,12 +380,12 @@ public abstract class SideConfigDisplay {
 					at.x += bc.getXCoord() - origin.x;
 					at.y += bc.getYCoord() - origin.y;
 					at.z += bc.getZCoord() - origin.z;
-					if(tile.getClass() == TileEntityChest.class) {
-						TileEntityChest chest = (TileEntityChest)tile;
-						if(chest.adjacentChestXNeg != null) {
+					if (tile.getClass() == TileEntityChest.class) {
+						TileEntityChest chest = (TileEntityChest) tile;
+						if (chest.adjacentChestXNeg != null) {
 							tile = chest.adjacentChestXNeg;
 							at.x--;
-						}  else if(chest.adjacentChestZNeg != null) {
+						} else if (chest.adjacentChestZNeg != null) {
 							tile = chest.adjacentChestZNeg;
 							at.z--;
 						}
@@ -431,9 +431,10 @@ public abstract class SideConfigDisplay {
 			state = state.getBlock().getExtendedState(state, world, pos);
 			blockrendererdispatcher.getBlockModelRenderer().renderModel(blockAccess, ibakedmodel, state, pos, worldRendererIn, false);
 
-		} catch (Throwable throwable) {
+		} catch (Throwable ignored) {
 		}
 	}
+
 	private void setGlStateForPass(BlockRenderLayer layer, boolean isNeighbour) {
 		int pass = layer == BlockRenderLayer.TRANSLUCENT ? 1 : 0;
 		setGlStateForPass(pass, isNeighbour);
@@ -468,7 +469,7 @@ public abstract class SideConfigDisplay {
 	}
 
 	private boolean updateCamera(float partialTick, int vpx, int vpy, int vpw, int vph) {
-		if(vpw <= 0 || vph <= 0) {
+		if (vpw <= 0 || vph <= 0) {
 			return false;
 		}
 		camera.setViewport(vpx, vpy, vpw, vph);
@@ -558,6 +559,7 @@ public abstract class SideConfigDisplay {
 	}
 */
 	private static class RenderUtil {
+
 		public static final Vector3d UP_V = new Vector3d(0, 1, 0);
 		public static final Vector3d ZERO_V = new Vector3d(0, 0, 0);
 		private static final FloatBuffer MATRIX_BUFFER = GLAllocation.createDirectFloatBuffer(16);
@@ -593,8 +595,6 @@ public abstract class SideConfigDisplay {
 			if (vertices == null || vertices.isEmpty()) {
 				return;
 			}
-
-			List<Vertex> newV = vertices;
 
 			Tessellator tessellator = Tessellator.getInstance();
 			BufferBuilder tes = tessellator.getBuffer();

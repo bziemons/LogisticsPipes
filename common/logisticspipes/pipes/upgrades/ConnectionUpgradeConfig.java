@@ -1,8 +1,10 @@
 package logisticspipes.pipes.upgrades;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -11,13 +13,17 @@ import net.minecraft.util.EnumFacing;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.abstractguis.UpgradeCoordinatesGuiProvider;
 import logisticspipes.network.guis.upgrade.DisconnectionUpgradeConfigGuiProvider;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 
 public class ConnectionUpgradeConfig implements IConfigPipeUpgrade {
+
+	public static String getName() {
+		return "disconnection";
+	}
 
 	@AllArgsConstructor
 	public enum Sides {
@@ -27,11 +33,14 @@ public class ConnectionUpgradeConfig implements IConfigPipeUpgrade {
 		SOUTH(EnumFacing.SOUTH, "LPDIS-SOUTH"),
 		EAST(EnumFacing.EAST, "LPDIS-EAST"),
 		WEST(EnumFacing.WEST, "LPDIS-WEST");
-		@Getter private EnumFacing dir;
-		@Getter private String lpName;
+		@Getter
+		private EnumFacing dir;
+		@Getter
+		private String lpName;
+
 		public static String getNameForDirection(EnumFacing fd) {
 			Optional<Sides> opt = Arrays.stream(values()).filter(side -> side.getDir() == fd).findFirst();
-			if(opt.isPresent()) {
+			if (opt.isPresent()) {
 				return opt.get().getLpName();
 			}
 			return "LPDIS-UNKNWON";
@@ -68,11 +77,13 @@ public class ConnectionUpgradeConfig implements IConfigPipeUpgrade {
 		return NewGuiHandler.getGui(DisconnectionUpgradeConfigGuiProvider.class);
 	}
 
-	public Stream<EnumFacing> getSides(ItemStack stack) {
-		if(!stack.hasTagCompound()) {
+	@Nonnull
+	public Stream<EnumFacing> getSides(@Nonnull ItemStack stack) {
+		if (stack.isEmpty()) return Stream.empty();
+		if (!stack.hasTagCompound()) {
 			stack.setTagCompound(new NBTTagCompound());
 		}
-		NBTTagCompound nbt = stack.getTagCompound();
-		return Arrays.stream(Sides.values()).filter(side -> nbt.getBoolean(side.getLpName())).map(Sides::getDir);
+		final NBTTagCompound tag = Objects.requireNonNull(stack.getTagCompound());
+		return Arrays.stream(Sides.values()).filter(side -> tag.getBoolean(side.getLpName())).map(Sides::getDir);
 	}
 }

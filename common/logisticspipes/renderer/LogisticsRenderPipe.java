@@ -36,7 +36,6 @@ import logisticspipes.renderer.newpipe.LogisticsNewPipeItemBoxRenderer;
 import logisticspipes.renderer.newpipe.LogisticsNewRenderPipe;
 import logisticspipes.transport.LPTravelingItem;
 import logisticspipes.transport.PipeFluidTransportLogistics;
-import logisticspipes.utils.debug.PerformanceMeter;
 import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.item.ItemStackRenderer;
 import logisticspipes.utils.tuples.Pair;
@@ -54,7 +53,6 @@ public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTile
 	public static ClientConfiguration config = LogisticsPipes.getClientPlayerConfig();
 	private static ItemStackRenderer itemRenderer = new ItemStackRenderer(0, 0, 0, false, false);
 	private ModelSign modelSign;
-	private final PerformanceMeter renderItemStackOnSignPerfMeter = new PerformanceMeter(60, false);
 
 	public LogisticsRenderPipe() {
 		super();
@@ -178,8 +176,8 @@ public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTile
 			double itemPitch = lPipe.getItemRenderPitch(fPos, item);
 			double itemYawForPitch = lPipe.getItemRenderYaw(fPos, item);
 
-			ItemStack itemstack = item.getItemIdentifierStack().makeNormalStack();
-			doRenderItem(itemstack, pipe.container.getWorld(), lX + pos.getXCoord(), lY + pos.getYCoord(), lZ + pos.getZCoord(), light, 0.75F, boxScale, itemYaw, itemPitch, itemYawForPitch, partialTickTime);
+			ItemStack stack = item.getItemIdentifierStack().makeNormalStack();
+			doRenderItem(stack, pipe.container.getWorld(), lX + pos.getXCoord(), lY + pos.getYCoord(), lZ + pos.getZCoord(), light, 0.75F, boxScale, itemYaw, itemPitch, itemYawForPitch, partialTickTime);
 			count++;
 		}
 
@@ -193,8 +191,8 @@ public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTile
 			if (item == null || item.getValue1() == null) {
 				continue;
 			}
-			ItemStack itemstack = item.getValue1().makeNormalStack();
-			doRenderItem(itemstack, pipe.container.getWorld(), x + pos.getXCoord(), y + pos.getYCoord(), z + pos.getZCoord(), light, 0.25F, 0, 0, 0, 0, partialTickTime);
+			ItemStack stack = item.getValue1().makeNormalStack();
+			doRenderItem(stack, pipe.container.getWorld(), x + pos.getXCoord(), y + pos.getYCoord(), z + pos.getZCoord(), light, 0.25F, 0, 0, 0, 0, partialTickTime);
 			count++;
 			if (count >= 27) {
 				break;
@@ -332,13 +330,6 @@ public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTile
 	}
 
 	public void renderItemStackOnSign(@Nonnull ItemStack itemstack) {
-		long start = System.nanoTime();
-		this.renderItemStackOnSignInner(itemstack);
-		long end = System.nanoTime();
-		renderItemStackOnSignPerfMeter.newPerfValue(end - start);
-	}
-
-	private void renderItemStackOnSignInner(@Nonnull ItemStack itemstack) {
 		if (itemstack.isEmpty()) {
 			return; // Only happens on false configuration
 		}

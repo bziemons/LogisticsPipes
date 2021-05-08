@@ -1,11 +1,15 @@
 package logisticspipes.pipes.upgrades;
 
-import logisticspipes.modules.ModuleAdvancedExtractor;
-import logisticspipes.modules.ModuleExtractor;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
+import network.rs485.logisticspipes.module.AsyncAdvancedExtractor;
+import network.rs485.logisticspipes.module.AsyncExtractorModule;
 
 public class ActionSpeedUpgrade implements IPipeUpgrade {
+
+	public static String getName() {
+		return "action_speed";
+	}
 
 	@Override
 	public boolean needsUpdate() {
@@ -19,7 +23,7 @@ public class ActionSpeedUpgrade implements IPipeUpgrade {
 
 	@Override
 	public boolean isAllowedForModule(LogisticsModule module) {
-		return module instanceof ModuleExtractor || module instanceof ModuleAdvancedExtractor;
+		return module instanceof AsyncExtractorModule || module instanceof AsyncAdvancedExtractor;
 	}
 
 	@Override

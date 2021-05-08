@@ -2,19 +2,19 @@ package logisticspipes.interfaces.routing;
 
 import java.util.Collection;
 
-import logisticspipes.logisticspipes.IRoutedItem;
-
 import net.minecraft.tileentity.TileEntity;
+
+import logisticspipes.logisticspipes.IRoutedItem;
 
 public interface ISpecialTileConnection {
 
-	public boolean init();
+	boolean init();
 
-	public boolean isType(TileEntity tile);
+	boolean isType(TileEntity tile);
 
-	public Collection<TileEntity> getConnections(TileEntity tile);
+	Collection<TileEntity> getConnections(TileEntity tile);
 
-	public boolean needsInformationTransition();
+	boolean needsInformationTransition();
 
-	public void transmit(TileEntity tile, IRoutedItem arrivingItem);
+	void transmit(TileEntity tile, IRoutedItem arrivingItem);
 }

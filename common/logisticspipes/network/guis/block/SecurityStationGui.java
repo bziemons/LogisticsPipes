@@ -1,15 +1,14 @@
 package logisticspipes.network.guis.block;
 
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
+
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.gui.GuiSecurityStation;
 import logisticspipes.network.abstractguis.CoordinatesGuiProvider;
 import logisticspipes.network.abstractguis.GuiProvider;
-import logisticspipes.utils.gui.DummyContainer;
-
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-
 import logisticspipes.utils.StaticResolve;
+import logisticspipes.utils.gui.DummyContainer;
 
 @StaticResolve
 public class SecurityStationGui extends CoordinatesGuiProvider {
@@ -20,21 +19,14 @@ public class SecurityStationGui extends CoordinatesGuiProvider {
 
 	@Override
 	public Object getClientGui(EntityPlayer player) {
-		LogisticsSecurityTileEntity tile = this.getTile(player.getEntityWorld(), LogisticsSecurityTileEntity.class);
-		if (tile == null) {
-			return null;
-		}
-		return new GuiSecurityStation(tile, player);
+		return new GuiSecurityStation(getTileAs(player.world, LogisticsSecurityTileEntity.class), player);
 	}
 
 	@Override
 	public DummyContainer getContainer(EntityPlayer player) {
-		LogisticsSecurityTileEntity tile = this.getTile(player.getEntityWorld(), LogisticsSecurityTileEntity.class);
-		if (tile == null) {
-			return null;
-		}
-		DummyContainer dummy = new DummyContainer(player, null, tile);
-		dummy.addRestrictedSlot(0, tile.inv, 50, 50, (Item) null);
+		LogisticsSecurityTileEntity securityStation = getTileAs(player.world, LogisticsSecurityTileEntity.class);
+		DummyContainer dummy = new DummyContainer(player, null, securityStation);
+		dummy.addRestrictedSlot(0, securityStation.inv, 50, 50, (Item) null);
 		dummy.addNormalSlotsForPlayerInventory(10, 210);
 		return dummy;
 	}

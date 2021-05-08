@@ -1,5 +1,13 @@
 package logisticspipes.pipes;
 
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
+
+import net.minecraftforge.fluids.FluidTank;
+
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.ITankUtil;
 import logisticspipes.interfaces.routing.IFluidSink;
@@ -12,18 +20,7 @@ import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.FluidIdentifierStack;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifierInventory;
-import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Triplet;
-
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-
-import net.minecraft.util.EnumFacing;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class PipeFluidBasic extends FluidRoutedPipe implements IFluidSink {
 
@@ -62,7 +59,7 @@ public class PipeFluidBasic extends FluidRoutedPipe implements IFluidSink {
 			return 0;
 		}
 		int onTheWay = this.countOnRoute(ident);
-		int freeSpace = -onTheWay;
+		long freeSpace = -onTheWay;
 		for (Triplet<ITankUtil, TileEntity, EnumFacing> pair : getAdjacentTanksAdvanced(true)) {
 			FluidTank tank = ((PipeFluidTransportLogistics) transport).sideTanks[pair.getValue3().ordinal()];
 			freeSpace += pair.getValue1().getFreeSpaceInsideTank(ident);
@@ -71,7 +68,7 @@ public class PipeFluidBasic extends FluidRoutedPipe implements IFluidSink {
 				return stack.getAmount();
 			}
 		}
-		return freeSpace;
+		return freeSpace > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) freeSpace;
 	}
 
 	@Override

@@ -1,6 +1,5 @@
 /**
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -13,6 +12,17 @@ import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.ChatAllowedCharacters;
+
+import org.lwjgl.input.Keyboard;
 
 import logisticspipes.config.Configs;
 import logisticspipes.gui.popup.GuiRequestPopup;
@@ -28,19 +38,12 @@ import logisticspipes.utils.gui.GuiCheckBox;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.IItemSearch;
 import logisticspipes.utils.gui.ISubGuiControler;
+import logisticspipes.utils.gui.InputBar;
 import logisticspipes.utils.gui.ItemDisplay;
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
-import logisticspipes.utils.gui.InputBar;
 import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
-
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.player.EntityPlayer;
-
-import org.lwjgl.input.Keyboard;
 
 public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItemSearch, ISpecialItemRenderer {
 
@@ -75,12 +78,13 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 	public abstract void refreshItems();
 
 	public void handlePacket(Collection<ItemIdentifierStack> allItems) {
-		itemDisplay.setItemList(allItems);
+		itemDisplay.setItemList(allItems.stream().filter(Objects::nonNull).collect(Collectors.toList()));
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void initGui() {
+		Keyboard.enableRepeatEvents(true);
+
 		super.initGui();
 
 		buttonList.clear();
@@ -98,14 +102,20 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 		buttonList.add(new SmallGuiButton(20, xCenter - 13, bottom - 41, 26, 10, "Sort")); // Sort
 
 		if (search == null) {
-			search = new InputBar(fontRenderer, this, guiLeft + 30, bottom - 78, right - guiLeft - 58, 15);
+			search = new InputBar(fontRenderer, this, guiLeft + 10, bottom - 78, xSize - 20, 15);
 		}
-		search.reposition(guiLeft + 30, bottom - 78, right - guiLeft - 58, 15);
+		search.reposition(guiLeft + 10, bottom - 78, xSize - 20, 15);
 
 		if (itemDisplay == null) {
 			itemDisplay = new ItemDisplay(this, fontRenderer, this, this, guiLeft + 10, guiTop + 18, xSize - 20, ySize - 100, xCenter, bottom - 24, 49, new int[] { 1, 10, 64, 64 }, true);
 		}
 		itemDisplay.reposition(guiLeft + 10, guiTop + 18, xSize - 20, ySize - 100, xCenter, bottom - 24);
+	}
+
+	@Override
+	public void closeGui() throws IOException {
+		super.closeGui();
+		Keyboard.enableRepeatEvents(false);
 	}
 
 	@Override
@@ -128,7 +138,7 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 
 		itemDisplay.renderAmount(getStackAmount());
 		//SearchInput
-		search.renderSearchBar();
+		search.drawTextBox();
 
 		itemDisplay.renderSortMode(xCenter, bottom - 52);
 		itemDisplay.renderItemArea(zLevel);
@@ -142,13 +152,12 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 		GuiGraphics.displayItemToolTip(itemDisplay.getToolTip(), this, zLevel, guiLeft, guiTop);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public boolean itemSearched(ItemIdentifier item) {
 		if (search.isEmpty()) {
 			return true;
 		}
-		if (isSearched(item.getFriendlyName().toLowerCase(Locale.US), search.getContent().toLowerCase(Locale.US))) {
+		if (isSearched(item.getFriendlyName().toLowerCase(Locale.US), search.getText().toLowerCase(Locale.US))) {
 			return true;
 		}
 		//if(isSearched(String.valueOf(Item.getIdFromItem(item.item)), search.getContent())) return true;
@@ -157,7 +166,7 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 		for (Entry<Enchantment, Integer> e : enchantIdLvlMap.entrySet()) {
 			String enchantname = e.getKey().getName();
 			if (enchantname != null) {
-				if (isSearched(enchantname.toLowerCase(Locale.US), search.getContent().toLowerCase(Locale.US))) {
+				if (isSearched(enchantname.toLowerCase(Locale.US), search.getText().toLowerCase(Locale.US))) {
 					return true;
 				}
 			}
@@ -170,6 +179,7 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 		for (String s : search.split(" ")) {
 			if (!value.contains(s)) {
 				flag = false;
+				break;
 			}
 		}
 		return flag;
@@ -209,7 +219,8 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 	@Override
 	protected void actionPerformed(GuiButton guibutton) throws IOException {
 		if (guibutton.id == 0 && itemDisplay.getSelectedItem() != null) {
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(RequestSubmitPacket.class).setDimension(dimension).setStack(itemDisplay.getSelectedItem().getItem().makeStack(itemDisplay.getRequestCount())).setPosX(xCoord).setPosY(yCoord).setPosZ(zCoord));
+			final ItemIdentifierStack stack = itemDisplay.getSelectedItem().getItem().makeStack(itemDisplay.getRequestCount());
+			MainProxy.sendPacketToServer(PacketHandler.getPacket(RequestSubmitPacket.class).setStack(stack).setPosX(xCoord).setPosY(yCoord).setPosZ(zCoord).setDimension(dimension));
 			refreshItems();
 		} else if (guibutton.id == 1) {
 			itemDisplay.nextPage();
@@ -234,7 +245,8 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 			Configs.DISPLAY_POPUP = button.change();
 			Configs.savePopupState();
 		} else if (guibutton.id == 13 && itemDisplay.getSelectedItem() != null) {
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(RequestComponentPacket.class).setDimension(dimension).setStack(itemDisplay.getSelectedItem().getItem().makeStack(itemDisplay.getRequestCount())).setPosX(xCoord).setPosY(yCoord).setPosZ(zCoord));
+			final ItemIdentifierStack stack = itemDisplay.getSelectedItem().getItem().makeStack(itemDisplay.getRequestCount());
+			MainProxy.sendPacketToServer(PacketHandler.getPacket(RequestComponentPacket.class).setStack(stack).setPosX(xCoord).setPosY(yCoord).setPosZ(zCoord).setDimension(dimension));
 		} else if (guibutton.id == 20) {
 			itemDisplay.cycle();
 		}
@@ -248,6 +260,16 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 
 	@Override
 	protected void keyTyped(char c, int i) throws IOException {
+		if (search.isFocused()) {
+			if (!search.isEmpty() && search.handleKey(c, i))
+				return;
+		} else if (GuiScreen.isAltKeyDown() && ChatAllowedCharacters.isAllowedCharacter(c)) {
+			itemDisplay.setFocused(false);
+			search.setFocused(true);
+			search.setText("");
+			search.handleKey(c, i);
+			return;
+		}
 		if (!itemDisplay.keyTyped(c, i)) {
 			// Track everything except Escape when in search bar
 			if (i == 1 || !search.handleKey(c, i)) {

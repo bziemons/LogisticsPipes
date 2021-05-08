@@ -7,9 +7,9 @@ import network.rs485.logisticspipes.util.LPDataOutput;
 
 public class FluidResource implements IResource {
 
+	private final Object[] ccTypeHolder = new Object[1];
 	private final FluidIdentifier liquid;
 	private int amount;
-	private Object ccObject;
 
 	public FluidResource(FluidIdentifier liquid, int amount) {
 		this.liquid = liquid;
@@ -17,7 +17,7 @@ public class FluidResource implements IResource {
 	}
 
 	public FluidResource(LPDataInput input) {
-		liquid = FluidIdentifier.get(input.readItemIdentifier());
+		liquid = FluidIdentifier.get(Objects.requireNonNull(input.readItemIdentifier()));
 		amount = input.readInt();
 	}
 

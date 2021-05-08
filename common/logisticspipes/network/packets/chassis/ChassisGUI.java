@@ -5,15 +5,15 @@ import net.minecraft.entity.player.EntityPlayer;
 import lombok.Getter;
 import lombok.Setter;
 
-import logisticspipes.modules.abstractmodules.LogisticsGuiModule;
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
-import logisticspipes.pipes.PipeLogisticsChassi;
+import logisticspipes.pipes.PipeLogisticsChassis;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
+import logisticspipes.utils.StaticResolve;
+import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class ChassisGUI extends CoordinatesPacket {
@@ -40,19 +40,13 @@ public class ChassisGUI extends CoordinatesPacket {
 
 	@Override
 	public void processPacket(EntityPlayer player) {
-		final LogisticsTileGenericPipe pipe = getPipe(player.world);
-		if (pipe == null || !(pipe.pipe instanceof PipeLogisticsChassi)) {
-			return;
+		final LogisticsTileGenericPipe pipe = getPipe(player.world, LTGPCompletionCheck.PIPE);
+		if (pipe.pipe instanceof PipeLogisticsChassis) {
+			LogisticsModule subModule = ((PipeLogisticsChassis) pipe.pipe).getSubModule(getButtonID());
+			if (subModule instanceof Gui) {
+				Gui.getPipeGuiProvider((Gui) subModule).setPosX(getPosX()).setPosY(getPosY()).setPosZ(getPosZ()).open(player);
+			}
 		}
-
-		final PipeLogisticsChassi chassisPipe = (PipeLogisticsChassi) pipe.pipe;
-
-		if (!(chassisPipe.getLogisticsModule().getSubModule(getButtonID()) instanceof LogisticsGuiModule)) {
-			return;
-		}
-
-		((LogisticsGuiModule) chassisPipe.getLogisticsModule().getSubModule(getButtonID())).getPipeGuiProviderForModule().setPosX(getPosX()).setPosY(getPosY())
-				.setPosZ(getPosZ()).open(player);
 	}
 
 	@Override

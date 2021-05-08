@@ -1,6 +1,13 @@
 package logisticspipes.gui.orderer;
 
 import java.io.IOException;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+
+import org.lwjgl.opengl.GL11;
 
 import logisticspipes.gui.popup.GuiDiskPopup;
 import logisticspipes.interfaces.IDiskProvider;
@@ -14,12 +21,6 @@ import logisticspipes.utils.gui.ItemDisplay;
 import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.item.ItemIdentifier;
 
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-
-import org.lwjgl.opengl.GL11;
-
 public class NormalMk2GuiOrderer extends NormalGuiOrderer implements IDiskProvider {
 
 	public PipeItemsRequestLogisticsMk2 pipe;
@@ -31,7 +32,6 @@ public class NormalMk2GuiOrderer extends NormalGuiOrderer implements IDiskProvid
 		MainProxy.sendPacketToServer(PacketHandler.getPacket(DiskRequestConectPacket.class).setPosX(pipe.getX()).setPosY(pipe.getY()).setPosZ(pipe.getZ()));
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void initGui() {
 		super.initGui();
@@ -74,6 +74,7 @@ public class NormalMk2GuiOrderer extends NormalGuiOrderer implements IDiskProvid
 	}
 
 	@Override
+	@Nonnull
 	public ItemStack getDisk() {
 		return pipe.getDisk();
 	}

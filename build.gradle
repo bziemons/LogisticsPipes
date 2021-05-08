@@ -3,74 +3,224 @@ buildscript {
         mavenCentral()
         jcenter()
         maven {
-            name = "forge"
-            url = "http://files.minecraftforge.net/maven"
-        }
-        maven {
-            name = "sonatype"
-            url = "https://oss.sonatype.org/content/repositories/snapshots/"
+            url = "https://maven.removeco.de/"
         }
     }
     dependencies {
-        classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'de.undercouch:gradle-download-task:3.4.3'
+        classpath group: 'network.rs485', name: 'ForgeGradle', version: forgegradle_version
+        classpath group: 'gradle.plugin.com.matthewprenger', name: 'CurseGradle', version: cursegradle_version
+        classpath group: 'org.jetbrains.kotlin', name: 'kotlin-gradle-plugin', version: kotlin_version
+        classpath group: 'org.jetbrains.kotlin', name: 'kotlin-serialization', version: kotlin_version
+        classpath group: 'com.github.jengelman.gradle.plugins', name: 'shadow', version: shadow_version
     }
 }
 
-plugins {
-    id "com.matthewprenger.cursegradle" version "1.3.0"
-}
-
+apply plugin: 'maven'
+apply plugin: 'java'
 apply plugin: 'kotlin'
-apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'kotlinx-serialization'
+apply plugin: 'eclipse'
 apply plugin: 'signing'
-apply plugin: 'de.undercouch.download'
-//apply plugin: 'curseforge'
+apply plugin: 'com.matthewprenger.cursegradle'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'net.minecraftforge.gradle'
+
+archivesBaseName = "logisticspipes"
+group = "network.rs485"
+version = "0.10.3"
+ext.vendor = "unknown"
+ext.target = "Forge $forge_version"
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
-version = "0.10.2"
-group= "network.rs485.logisticspipes" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "logisticspipes"
-
-def buildby = 'local'
-
 def ENV = System.getenv()
+
 if (ENV.BUILD_NUMBER) {
-    version += "." + ENV.BUILD_NUMBER
-    buildby = 'RS485-Jenkins'
+    version = "$version.${ENV.BUILD_NUMBER}"
+} else if (ENV.VERSION) {
+    version = "$version.${ENV.VERSION}"
 } else {
-    version += ".99999"
+    version = "$version-SNAPSHOT"
 }
 
-minecraft {
-    version = "1.12.2-14.23.5.2768"
-    runDir = "run/assets"
-    replace '%VERSION%', project.version
-    replace '%MCVERSION%', project.minecraft.version
-    replace '%DEBUG%', "false"
-    replaceIn "LPConstants.java"
-    mappings = "snapshot_20171120"
+if (ENV.JENKINS_URL) {
+    ext.vendor = ENV.JENKINS_URL
+} else if (ENV.JITPACK) {
+    ext.vendor = "JitPack.io"
+    group = ENV.GROUP
 }
 
-jar {
-    manifest {
-        attributes('FMLCorePlugin': 'logisticspipes.asm.LogisticsPipesCoreLoader',
-                   'FMLCorePluginContainsFMLMod': 'true',
-                   'Implementation-Vendor': 'RS485',
-                   'Implementation-Title': 'LogisticsPipes',
-                   'Implementation-Version': version,
-                   'Built-By': buildby )
+ext.sharedManifest = manifest {
+    attributes(
+            'FMLCorePlugin': 'logisticspipes.asm.LogisticsPipesCoreLoader',
+            'FMLCorePluginContainsFMLMod': 'true',
+            'FMLAT': 'lp_at.cfg',
+            'Specification-Title': 'LogisticsPipes',
+            'Specification-Vendor': 'RS485',
+            'Specification-Version': '1',
+            'Implementation-Vendor': "$vendor",
+            'Implementation-Title': "${project.name}",
+            'Implementation-Version': "$version",
+            'Implementation-Target': "$target",
+            'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"))
+}
+
+sourceSets {
+    api {
+        java {
+            srcDirs = ['src/api/java']
+        }
+    }
+    dummy {
+        java {
+            srcDirs = ['dummy/src/main/java']
+        }
+    }
+    main {
+        compileClasspath += dummy.output
+        compileClasspath += api.output
+        runtimeClasspath += api.output
+
+        java {
+            srcDirs += 'common'
+        }
+        resources {
+            srcDirs += 'resources'
+        }
+    }
+    test {
+        compileClasspath += dummy.output
+        compileClasspath += api.output
+        runtimeClasspath += api.output
     }
 }
 
-// configure  the source folders
-sourceSets {
-    main.java.srcDirs += 'common'
-    main.resources.srcDirs += 'resources'
-    api.java.srcDirs += 'dummy'
+configurations {
+    testCompileOnly.extendsFrom compileOnly
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        languageVersion = "1.4"
+        jvmTarget = JavaVersion.VERSION_1_8
+        freeCompilerArgs += "-Xjvm-default=enable"
+    }
+}
+
+minecraft {
+    mappings channel: 'snapshot', version: "$mappings_version"
+    accessTransformer = file("$rootDir/resources/META-INF/lp_at.cfg")
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            // load LP core mod from classpath
+            property 'fml.coreMods.load', 'logisticspipes.asm.LogisticsPipesCoreLoader'
+
+            mods {
+                logisticspipes {
+                    sources = [sourceSets.api, sourceSets.main]
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run-server')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            // load LP core mod from classpath
+            property 'fml.coreMods.load', 'logisticspipes.asm.LogisticsPipesCoreLoader'
+
+            mods {
+                logisticspipes {
+                    sources = [sourceSets.api, sourceSets.main]
+                }
+            }
+        }
+
+        serverTest {
+            environment 'target', 'server'
+            // mimic the runServer task
+            environment 'mainClass', 'net.minecraft.launchwrapper.Launch'
+            environment 'MCP_TO_SRG', "$buildDir/createSrgToMcp/output.srg"
+            main 'net.minecraftforge.legacydev.MainServer'
+            args '--tweakClass', 'net.minecraftforge.fml.common.launcher.FMLServerTweaker'
+            arg 'nogui' // without GUI
+            jvmArg '-ea'
+            workingDirectory project.file('run-server-test')
+
+            // load LP core mod from classpath
+            property 'fml.coreMods.load', 'logisticspipes.asm.LogisticsPipesCoreLoader'
+
+            // put LP in test mode
+            property 'logisticspipes.test', 'true'
+
+            mods {
+                logisticspipes {
+                    sources = [sourceSets.api, sourceSets.main, sourceSets.test]
+                }
+            }
+        }
+    }
+}
+
+jar {
+    from sourceSets.api.output
+    finalizedBy 'reobfJar'
+
+    manifest = project.manifest {
+        from sharedManifest
+    }
+}
+
+shadowJar {
+    from sourceSets.api.output
+    finalizedBy 'reobfJar'
+
+    archiveClassifier.set('')
+
+    dependencies {
+        include(dependency(group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: kotlin_version))
+        include(dependency(group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8', version: kotlin_version))
+        include(dependency(group: 'org.jetbrains', name: 'annotations', version: kannotations_version))
+        include(dependency(group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: kcoroutines_version))
+        include(dependency(group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-jdk8', version: kcoroutines_version))
+        include(dependency(group: 'org.jetbrains.kotlinx', name: 'kotlinx-serialization-json-jvm', version: '1.0.0'))
+        include(dependency(group: 'org.jetbrains.kotlinx', name: 'kotlinx-serialization-core-jvm', version: '1.0.0'))
+        include(dependency(group: 'com.charleskorn.kaml', name: 'kaml', version: kaml_version))
+        include(dependency(group: 'org.snakeyaml', name: 'snakeyaml-engine', version: '2.1'))
+    }
+
+    relocate 'kotlin', 'logisticspipes.kotlin'
+    relocate 'kotlinx', 'logisticspipes.kotlinx'
+    relocate 'org.intellij', 'logisticspipes.intellij'
+    relocate 'org.jetbrains', 'logisticspipes.jetbrains'
+
+    exclude 'META-INF/versions/9/*'
+    exclude 'DebugProbesKt.bin'
+
+    manifest {
+        inheritFrom sharedManifest
+    }
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.api.allSource
+    from sourceSets.main.allSource
+    archiveClassifier.set('sources')
 }
 
 test {
@@ -82,14 +232,13 @@ test {
 processResources {
     // this will ensure that this task is redone when the versions change.
     inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
 
     // replace stuff in mcmod.info, nothing else
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
 
         // replace version and mcversion
-        expand 'version':project.version, 'mcversion':project.minecraft.version
+        expand 'version': project.version
     }
 
     // copy everything else, thats not the mcmod.info
@@ -99,67 +248,79 @@ processResources {
 }
 
 repositories {
+    mavenCentral()
+    jcenter()
     maven {
-        name = "RS485 Cache"
-        url = "https://rs485.network/maven-cache/"
+        name = 'JitPack.io'
+        url = 'https://jitpack.io'
     }
     maven {
-        name = 'CB Repo'
-        url = "http://chickenbones.net/maven/"
+        url = "https://maven.removeco.de/"
     }
-    maven {
-        name = "JEI Maven."
-        url = "http://dvs1.progwml6.com/files/maven"
-    }
-    maven {
-        url "http://maven.shadowfacts.net/"
-    }
-    maven {
-        url = "https://cc.crzd.me/maven/"
-    }
-    maven {
-        url = "http://maven.cil.li/"
-    }
-    maven {
-        name = "buildcraft"
-        url = "https://mod-buildcraft.com/maven/"
-    }
-    maven { // JEI Bees & Thaumcraft
-        name = "CurseForge"
-        url = "https://minecraft.curseforge.com/api/maven/"
-    }
-    maven {
-        name = "buildcraft"
-        url = "https://mod-buildcraft.com/maven"
-    }
-    maven {
-		url "http://maven.amadornes.com/"
-	}
-	maven {
-		name = "CoFH Maven"
-		url = "http://maven.covers1624.net"
-	}
 }
 
 dependencies {
-    deobfCompile "com.mod-buildcraft:buildcraft:7.99.19"
-    compileOnly 'org.projectlombok:lombok:1.16.8'
-    compile group: "net.shadowfacts", name: "Forgelin", version: "1.8.2"
-    implementation 'com.google.code.findbugs:jsr305:3.0.2'
-    implementation 'com.google.code.gson:gson:2.8.0' // update this, when Forge is updated
-    compile 'codechicken:NotEnoughItems:1.12.2-2.4.2.240:deobf'
-    compile 'codechicken:CodeChickenLib:1.12.2-3.1.7.340:deobf'
-    compile 'codechicken:EnderStorage:1.12.2-2.4.2.126:deobf'
-    compile 'net.industrial-craft:industrialcraft-2:2.8.97-ex112:api'
-    compile "li.cil.oc:OpenComputers:MC1.12.2-1.7.2.+:api"
-    compile "appeng:appliedenergistics2:rv6-stable-6:api"
-    compileOnly "dan200.computercraft:ComputerCraft:1.80pr1-build5"
-	compileOnly "cofh:CoFHCore:1.12.2-4.5.2.+:universal"
-    compileOnly "cofh:ThermalDynamics:1.12.2-2.5.1.+:universal"
-    deobfCompile "thaumcraft:Thaumcraft:1.12.2:6.1.BETA26"
-    runtimeOnly "baubles:Baubles:1.12:1.5.2"
-	deobfCompile "MCMultiPart2:MCMultiPart:2.5.3"
-    testImplementation "org.junit.jupiter:junit-jupiter:5.4.2"
+    minecraft group: 'net.minecraftforge', name: 'forge', version: forge_version
+    apiImplementation group: 'net.minecraftforge', name: 'forge', version: forge_version
+    dummyImplementation group: 'net.minecraftforge', name: 'forge', version: forge_version
+
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.12'
+    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.12'
+
+    implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: kotlin_version
+    implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8', version: kotlin_version
+    implementation group: 'org.jetbrains', name: "annotations", version: kannotations_version
+    implementation group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: kcoroutines_version
+    implementation group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-jdk8', version: kcoroutines_version
+    implementation group: 'org.jetbrains.kotlinx', name: 'kotlinx-serialization-json', version: kserialization_version
+    implementation group: 'com.charleskorn.kaml', name: 'kaml', version: kaml_version
+    implementation group: 'com.github.RS485', name: 'CodeChickenLib', version: '5901b4c6f4af70e6ef2dbe194bf7e0e097bb375c', classifier: 'deobf'
+
+    compileOnly group: 'mcjty.theoneprobe', name: 'TheOneProbe-1.12', version: '1.12-1.4.28-17', classifier: 'api'
+    compileOnly group: 'mezz.jei', name: 'jei_1.12.2', version: '4.15.0.293'
+    compileOnly group: 'MCMultiPart2', name: 'MCMultiPart', version: '2.5.3', classifier: 'deobf'
+    compileOnly group: 'com.mod-buildcraft', name: 'buildcraft-all', version: '7.99.24.6', transitive: false
+    compileOnly group: 'net.industrial-craft', name: 'industrialcraft-2', version: '2.8.170-ex112', classifier: 'api'
+    compileOnly group: 'codechicken', name: 'NotEnoughItems', version: '1.12.2-2.4.3.245', classifier: 'deobf', transitive: false
+    compileOnly group: 'codechicken', name: 'EnderStorage', version: '1.12.2-2.4.6.137', classifier: 'deobf', transitive: false
+    compileOnly group: 'li.cil.oc', name: 'OpenComputers', version: 'MC1.12.2-1.7.5.205', classifier: 'api'
+    compileOnly files('lib/appliedenergistics2-rv6-stable-7-api.jar')
+    compileOnly group: 'cofh', name: 'CoFHCore', version: '1.12.2-4.6.3.27', classifier: 'deobf', transitive: false
+    compileOnly group: 'cofh', name: 'RedstoneFlux', version: '1.12-2.1.0.7', classifier: 'deobf', transitive: false
+    compileOnly group: 'cofh', name: 'CoFHWorld', version: '1.12.2-1.2.0.5', classifier: 'deobf', transitive: false
+    compileOnly group: 'cofh', name: 'ThermalDynamics', version: '1.12.2-2.5.5.21', classifier: 'deobf', transitive: false
+    compileOnly group: 'cofh', name: 'ThermalFoundation', version: '1.12.2-2.6.3.27', classifier: 'deobf', transitive: false
+    compileOnly group: 'cofh', name: 'ThermalExpansion', version: '1.12.2-5.5.4.43', classifier: 'deobf', transitive: false
+    compileOnly group: 'org.squiddev', name: 'cc-tweaked-1.12.2', version: '1.89.2', transitive: false
+    compileOnly group: 'com.jaquadro.minecraft.storagedrawers', name: 'StorageDrawers', version: '1.12.2-5.4.2', transitive: false
+
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.4.2'
+}
+
+
+import net.minecraftforge.gradle.userdev.MinecraftUserRepo
+
+import java.nio.file.Files
+
+final nonMinecraftConfigurations = configurations.findAll { conf -> conf != configurations.minecraft }
+if (!nonMinecraftConfigurations.empty) {
+    final fgextension = project.getExtensions().findByName("minecraft")
+    final mcrepo = new MinecraftUserRepo(project, 'net.minecraftforge', 'forge', "$forge_version", fgextension.getAccessTransformers(), fgextension.getMappings())
+    nonMinecraftConfigurations.each {
+        it.resolutionStrategy.dependencySubstitution {
+            substitute module('net.minecraftforge:forge') with module(mcrepo.getDependencyString())
+        }
+    }
+}
+
+clean {
+    // this folder is created by dependency resolution and will be created before 'clean' runs,
+    // resulting in missing minecraft sources etc. Set here: https://fckaf.de/voZ
+    setDelete(project.fileTree("$buildDir") {
+        exclude 'fg_cache'
+    })
 }
 
 tasks.withType(Test) {
@@ -169,23 +330,20 @@ tasks.withType(Test) {
     }
 }
 
-task deobfJar(type: Jar, dependsOn: 'jar') {
+task deobfJar(type: Jar) {
     from sourceSets.main.output
-    classifier = 'deobf'
-    manifest {
-        attributes(
-            'FMLCorePlugin': 'logisticspipes.asm.LogisticsPipesCoreLoader',
-            'FMLCorePluginContainsFMLMod': 'true',
-            'Implementation-Vendor': 'RS485',
-            'Implementation-Title': 'LogisticsPipes',
-            'Implementation-Version': version,
-            'Built-By': buildby)
+    from sourceSets.api.output
+    archiveClassifier.set('deobf')
+
+    manifest = project.manifest {
+        from sharedManifest
     }
 }
 
-task copyLPDummy(type: Copy) {
-    from 'LogisticsPipes_dummy.jar'
-    into 'run/assets/mods'
+task apiJar(type: Jar, dependsOn: apiClasses) {
+    from sourceSets.api.output
+    from sourceSets.api.allSource
+    archiveClassifier.set('api')
 }
 
 curseforge {
@@ -193,22 +351,22 @@ curseforge {
     project {
         id = "232838"
         changelog = project.hasProperty('changelog') ? project.findProperty('changelog') : ''
-        releaseType = 'beta'
+        releaseType = 'alpha'
         relations {
             requiredDependency 'codechicken-lib-1-8'
-            requiredDependency 'shadowfacts-forgelin'
         }
 
-        mainArtifact(jar) {
-            displayName = 'Logistics Pipes ' + project.version
+        mainArtifact(shadowJar) {
+            displayName = "Logistics Pipes $project.version"
         }
     }
 }
 
 artifacts {
+    archives apiJar
+    archives shadowJar
     archives deobfJar
     archives sourceJar
-    archives jar
 }
 
 task enableSigningTasks {
@@ -221,7 +379,8 @@ task enableSigningTasks {
 
 signing {
     useGpgCmd()
-    sign jar
+    sign apiJar
+    sign shadowJar
     sign deobfJar
     sign sourceJar
 }
@@ -238,46 +397,146 @@ tasks.withType(Sign) {
     ext.useJarsigner = (name != "signSourceJar") // dont sign source jar, it doesn't have classes
 }
 
-gradle.taskGraph.whenReady { taskGraph ->
-    taskGraph.allTasks.each {
-        if (it instanceof Sign && it.useJarsigner) {
-            def inputFiles = it.getInputFiles()
-            it.doFirst {
-                // see https://ant.apache.org/manual/Tasks/signjar.html for arguments
-                // ForgeGradle also uses ant.signjar: https://fckaf.de/DCw
-                inputFiles.each { file ->
-                    ant.signjar(
-                            jar: file,
-                            alias: "1",
-                            storetype: findProperty("LogisticsPipes.storetype"),
-                            keystore: findProperty("LogisticsPipes.keystore"),
-                            storepass: findProperty("LogisticsPipes.storepass"),
-                            verbose: "true",
-                            preservelastmodified: "true"
-                    )
+gradle.taskGraph.whenReady { TaskExecutionGraph taskGraph ->
+    taskGraph.allTasks.each { Task task ->
+        if (task instanceof Sign && task.useJarsigner) {
+            task.doFirst {
+                inputs.each { TaskInputs taskInputs ->
+                    taskInputs.files.each { File file ->
+                        // see https://ant.apache.org/manual/Tasks/signjar.html for arguments
+                        // ForgeGradle also uses ant.signjar: https://fckaf.de/DCw
+                        ant.signjar(
+                                jar: file,
+                                alias: "1",
+                                storetype: findProperty("LogisticsPipes.storetype"),
+                                keystore: findProperty("LogisticsPipes.keystore"),
+                                storepass: findProperty("LogisticsPipes.storepass"),
+                                verbose: "true",
+                                preservelastmodified: "true"
+                        )
+                    }
+                }
+            }
+        } else if (task.name.startsWith('prepareRunServerTest')) {
+            task.doFirst {
+                final def serverTestHome = projectDir.toPath().resolve('run-server-test')
+                if (findProperty("acceptMinecraftServerEula") == 'true') {
+                    def eulaFile = serverTestHome.resolve('eula.txt')
+                    Files.deleteIfExists(eulaFile)
+                    eulaFile.write('eula=true')
+                }
+
+                final serverProperties = serverTestHome.resolve('server.properties')
+                def properties = new Properties()
+                try {
+                    serverProperties.withReader {reader ->
+                        properties.load(reader)
+                    }
+                } catch (IOException e) {
+                    println "Error reading $serverProperties"
+                    e.printStackTrace()
+                }
+                properties.setProperty('spawn-monsters', 'false')
+                properties.setProperty('spawn-npcs', 'false')
+                properties.setProperty('spawn-animals', 'false')
+                properties.setProperty('generate-structures', 'false')
+                properties.setProperty('online-mode', 'false')
+                properties.setProperty('gamemode', '1')
+                properties.setProperty('level-type', 'FLAT')
+                properties.setProperty('generator-settings', 'minecraft:bedrock,3*minecraft:stone,52*minecraft:sandstone;minecraft:desert;')
+                properties.setProperty('motd', 'Logistics Pipes Test Server')
+                //properties.setProperty('max-tick-time', '0') // for debugging the server
+                try {
+                    serverProperties.withWriter {writer ->
+                        properties.store(writer, null)
+                    }
+                } catch (IOException e) {
+                    println "Error reading $serverProperties"
+                    e.printStackTrace()
                 }
             }
         }
     }
 }
 
-task downloadLanguage(type: Download) {
-    onlyIfModified true
-    quiet true
-    src "https://github.com/RS485/LogisticsPipes-Language/archive/master.zip"
-    dest new File(temporaryDir, "language.zip")
-}
+class DownloadTask extends DefaultTask {
+    String url
 
-task extractLanguage(dependsOn: downloadLanguage, type: Copy) {
-    from(zipTree(downloadLanguage.dest)) {
-        include "**/**.lang"
-        includeEmptyDirs = false
+    @OutputFile
+    final RegularFileProperty outputFile = project.objects.fileProperty()
+
+    @TaskAction
+    void download() {
+        ant.get(src: url, dest: outputFile.get().asFile)
     }
-    into temporaryDir
 }
 
-task language(dependsOn: extractLanguage, type: Copy) {
+task downloadLanguage(type: DownloadTask) {
+    url = "https://github.com/RS485/LogisticsPipes-Language/archive/master.zip"
+    outputFile.set(layout.buildDirectory.file("language.zip"))
+}
+
+task languageMain(dependsOn: downloadLanguage, type: Copy) {
+    from zipTree(downloadLanguage.outputFile)
+    into "${sourceSets.main.getOutput().resourcesDir}/assets/logisticspipes/lang/"
+    include "*/*.lang"
+
+    includeEmptyDirs false
+    eachFile { FileCopyDetails fcd ->
+        fcd.relativePath = new RelativePath(!fcd.isDirectory(), fcd.relativePath.segments.drop(1))
+    }
+}
+
+task languageBook(dependsOn: downloadLanguage, type: Copy) {
+    from zipTree(downloadLanguage.outputFile)
+    into "${sourceSets.main.getOutput().resourcesDir}/assets/logisticspipes/book/"
+    include "*/book/"
+
+    includeEmptyDirs false
+    eachFile { FileCopyDetails fcd ->
+        fcd.relativePath = new RelativePath(!fcd.isDirectory(), fcd.relativePath.segments.drop(2))
+    }
+}
+
+task language(dependsOn: [languageMain, languageBook], type: Copy) {
     processResources.dependsOn language
-    from new File(extractLanguage.destinationDir, "LogisticsPipes-Language-master")
-    into new File(buildDir, "resources/main/assets/logisticspipes/lang/")
+}
+
+install.repositories.mavenInstaller.pom.whenConfigured { pom ->
+    pom.dependencies.clear()
+}
+
+tasks.named('wrapper') {
+    gradleVersion = '5.3.1'
+    distributionType = Wrapper.DistributionType.ALL
+}
+
+tasks.withType(AbstractArchiveTask) {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+task integrationTests(dependsOn: ['prepareRunServerTest'], type: Exec) {
+    workingDir projectDir
+
+    commandLine "$projectDir/gradlew"
+    args 'runServerTest'
+    ignoreExitValue = true
+
+    standardOutput = new ByteArrayOutputStream()
+    errorOutput = new ByteArrayOutputStream()
+
+    doLast {
+        final output = standardOutput.toString()
+        final start = output.indexOf('[STARTING LOGISTICSPIPES TESTS]')
+        if (start == -1) throw new GradleException("Cannot find LP test start:\n${output}")
+        def testOutput = output.substring(start)
+        if (testOutput.contains('[FAILED]')) {
+            throw new GradleException("Error in LP Tests:\n${testOutput}")
+        } else {
+            testOutput.eachLine {
+                if (it.contains('[PASSED]')) println(it)
+            }
+        }
+    }
 }

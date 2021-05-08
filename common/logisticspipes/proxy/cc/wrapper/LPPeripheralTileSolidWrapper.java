@@ -1,7 +1,6 @@
 package logisticspipes.proxy.cc.wrapper;
 
-import logisticspipes.blocks.LogisticsSolidTileEntity;
-import logisticspipes.proxy.computers.wrapper.CCObjectWrapper;
+import javax.annotation.Nonnull;
 
 import net.minecraft.util.EnumFacing;
 
@@ -9,20 +8,21 @@ import dan200.computercraft.api.lua.ILuaContext;
 import dan200.computercraft.api.peripheral.IComputerAccess;
 import dan200.computercraft.api.peripheral.IPeripheral;
 
+import logisticspipes.blocks.LogisticsSolidTileEntity;
+import logisticspipes.proxy.computers.wrapper.CCObjectWrapper;
+
 public class LPPeripheralTileSolidWrapper implements IPeripheral {
 
-	private final EnumFacing dir;
 	private CCCommandWrapper wrapped;
 	private LogisticsSolidTileEntity tile;
 
 	public LPPeripheralTileSolidWrapper(LogisticsSolidTileEntity tile, EnumFacing dir) {
 		this.tile = tile;
 		wrapped = (CCCommandWrapper) CCObjectWrapper.checkForAnnotations(tile, CCCommandWrapper.WRAPPER);
-		this.dir = dir;
 	}
 
 	@Override
-	public Object[] callMethod(IComputerAccess computer, ILuaContext context, int method, Object[] arguments) {
+	public Object[] callMethod(@Nonnull IComputerAccess computer, @Nonnull ILuaContext context, int method, @Nonnull Object[] arguments) {
 		wrapped.isDirectCall = true;
 		Object[] result = wrapped.callMethod(context, method, arguments);
 		wrapped.isDirectCall = false;
@@ -30,10 +30,10 @@ public class LPPeripheralTileSolidWrapper implements IPeripheral {
 	}
 
 	@Override
-	public void attach(IComputerAccess computer) {}
+	public void attach(@Nonnull IComputerAccess computer) {}
 
 	@Override
-	public void detach(IComputerAccess computer) {}
+	public void detach(@Nonnull IComputerAccess computer) {}
 
 	@Override
 	public boolean equals(IPeripheral other) {
@@ -43,11 +43,13 @@ public class LPPeripheralTileSolidWrapper implements IPeripheral {
 		return false;
 	}
 
+	@Nonnull
 	@Override
 	public String getType() {
 		return wrapped.getType();
 	}
 
+	@Nonnull
 	@Override
 	public String[] getMethodNames() {
 		return wrapped.getMethodNames();

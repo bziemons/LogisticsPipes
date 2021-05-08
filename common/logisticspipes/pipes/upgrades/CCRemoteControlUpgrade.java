@@ -1,9 +1,13 @@
 package logisticspipes.pipes.upgrades;
 
-import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 
 public class CCRemoteControlUpgrade implements IPipeUpgrade {
+
+	public static String getName() {
+		return "cc_remote_control";
+	}
 
 	@Override
 	public boolean needsUpdate() {

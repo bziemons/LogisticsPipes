@@ -1,6 +1,5 @@
 /**
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -22,9 +21,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.text.TextComponentString;
 
 import logisticspipes.LogisticsPipes;
-import logisticspipes.api.IRequestAPI;
 import logisticspipes.logisticspipes.IRoutedItem;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
@@ -41,8 +39,11 @@ import logisticspipes.utils.tuples.Pair;
 import network.rs485.logisticspipes.logistic.IDestination;
 import network.rs485.logisticspipes.logistic.Interests;
 
+
 @CCType(name = "LogisticsPipes:Request")
 public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IRequestAPI {
+
+	private final LinkedList<Map<ItemIdentifier, Integer>> _history = new LinkedList<>();
 
 	public PipeItemsRequestLogistics(Item item) {
 		super(item);
@@ -244,4 +245,5 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 		}
 		return 0;
 	}
+
 }

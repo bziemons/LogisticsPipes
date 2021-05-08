@@ -13,8 +13,8 @@ import net.minecraft.util.EnumFacing;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import logisticspipes.modules.LogisticsModule.ModulePositionType;
 import logisticspipes.modules.ModuleCrafter;
-import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.packets.cpipe.CPipeSatelliteImportBack;
@@ -47,7 +47,12 @@ public class CraftingPipeSign implements IPipeSign {
 	@Override
 	public ModernPacket getPacket() {
 		PipeItemsCraftingLogistics cpipe = (PipeItemsCraftingLogistics) pipe;
-		return PacketHandler.getPacket(CPipeSatelliteImportBack.class).setInventory(cpipe.getDummyInventory()).setType(ModulePositionType.IN_PIPE).setPosX(cpipe.getX()).setPosY(cpipe.getY()).setPosZ(cpipe.getZ());
+		return PacketHandler.getPacket(CPipeSatelliteImportBack.class)
+				.setInventory(cpipe.getDummyInventory())
+				.setType(ModulePositionType.IN_PIPE)
+				.setPosX(cpipe.getX())
+				.setPosY(cpipe.getY())
+				.setPosZ(cpipe.getZ());
 	}
 
 	@Override
@@ -87,14 +92,15 @@ public class CraftingPipeSign implements IPipeSign {
 				} catch (Exception e) {
 					try {
 						name = item.getUnlocalizedName();
-					} catch (Exception e1) {}
+					} catch (Exception ignored) {}
 				}
 
-				var17.drawString("ID: " + String.valueOf(Item.getIdFromItem(item)), -var17.getStringWidth("ID: " + String.valueOf(Item.getIdFromItem(item))) / 2, 0 * 10 - 4 * 5, 0);
+				var17.drawString(String.format("ID: %d", Item.getIdFromItem(item)), -var17.getStringWidth(String.format("ID: %d", Item.getIdFromItem(item))) / 2, 0 * 10 - 4 * 5, 0);
 				ModuleCrafter logisticsMod = cpipe.getLogisticsModule();
-				if (logisticsMod.satelliteId != 0) {
+				/*if (logisticsMod.satelliteId != 0) {
 					var17.drawString("Sat ID: " + String.valueOf(logisticsMod.satelliteId), -var17.getStringWidth("Sat ID: " + String.valueOf(logisticsMod.satelliteId)) / 2, 1 * 10 - 4 * 5, 0);
 				}
+				*/
 			} else {
 				GlStateManager.rotate(-180.0F, 1.0F, 0.0F, 0.0F);
 				GlStateManager.translate(0.5F, +0.08F, 0.0F);

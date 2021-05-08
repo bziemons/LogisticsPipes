@@ -1,32 +1,13 @@
 package logisticspipes.blocks;
 
-import logisticspipes.LPBlocks;
-import logisticspipes.LPConstants;
-import logisticspipes.asm.ModDependentField;
-import logisticspipes.asm.ModDependentInterface;
-import logisticspipes.asm.ModDependentMethod;
-import logisticspipes.interfaces.IRotationProvider;
-import logisticspipes.network.PacketHandler;
-import logisticspipes.network.packets.block.RequestRotationPacket;
-import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
-import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.proxy.computers.interfaces.CCCommand;
-import logisticspipes.proxy.computers.interfaces.CCType;
-import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
-import logisticspipes.proxy.computers.wrapper.CCObjectWrapper;
-import logisticspipes.proxy.opencomputers.IOCTile;
-import logisticspipes.proxy.opencomputers.asm.BaseWrapperClass;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.util.ITickable;
-import net.minecraft.util.math.BlockPos;
-import network.rs485.logisticspipes.world.DoubleCoordinates;
-import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
+import javax.annotation.Nonnull;
 
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ITickable;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 import net.minecraftforge.fml.relauncher.Side;
@@ -40,12 +21,32 @@ import li.cil.oc.api.network.Message;
 import li.cil.oc.api.network.Node;
 import li.cil.oc.api.network.SidedEnvironment;
 
-@ModDependentInterface(modId = {LPConstants.openComputersModID, LPConstants.openComputersModID, LPConstants.openComputersModID }, interfacePath = { "li.cil.oc.api.network.ManagedPeripheral", "li.cil.oc.api.network.Environment", "li.cil.oc.api.network.SidedEnvironment" })
+import logisticspipes.LPBlocks;
+import logisticspipes.LPConstants;
+import logisticspipes.asm.ModDependentField;
+import logisticspipes.asm.ModDependentInterface;
+import logisticspipes.asm.ModDependentMethod;
+import logisticspipes.interfaces.IRotationProvider;
+import logisticspipes.network.PacketHandler;
+import logisticspipes.network.packets.block.RequestRotationPacket;
+import logisticspipes.proxy.MainProxy;
+import logisticspipes.proxy.SimpleServiceLocator;
+import logisticspipes.proxy.computers.interfaces.CCCommand;
+import logisticspipes.proxy.computers.interfaces.CCType;
+import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
+import logisticspipes.proxy.computers.wrapper.CCObjectWrapper;
+import logisticspipes.proxy.opencomputers.IOCTile;
+import logisticspipes.proxy.opencomputers.asm.BaseWrapperClass;
+import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.world.DoubleCoordinates;
+import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
+
+@ModDependentInterface(modId = { LPConstants.openComputersModID, LPConstants.openComputersModID, LPConstants.openComputersModID }, interfacePath = { "li.cil.oc.api.network.ManagedPeripheral", "li.cil.oc.api.network.Environment", "li.cil.oc.api.network.SidedEnvironment" })
 @CCType(name = "LogisticsSolidBlock")
 public class LogisticsSolidTileEntity extends TileEntity implements ITickable, ILPCCTypeHolder, IRotationProvider, ManagedPeripheral, Environment, SidedEnvironment, IOCTile {
 
+	private final Object[] ccTypeHolder = new Object[1];
 	private boolean addedToNetwork = false;
-	private Object ccType = null;
 	private boolean init = false;
 	public int rotation = 0;
 
@@ -65,6 +66,7 @@ public class LogisticsSolidTileEntity extends TileEntity implements ITickable, I
 		SimpleServiceLocator.openComputersProxy.handleReadFromNBT(this, nbt);
 	}
 
+	@Nonnull
 	@Override
 	public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
 		nbt = super.writeToNBT(nbt);
@@ -109,7 +111,7 @@ public class LogisticsSolidTileEntity extends TileEntity implements ITickable, I
 	}
 
 	@Override
-	public boolean shouldRefresh(World world, BlockPos pos, IBlockState oldState, IBlockState newSate) {
+	public boolean shouldRefresh(World world, BlockPos pos, IBlockState oldState, @Nonnull IBlockState newSate) {
 		// backwards compat; TODO remove in 1.13
 		if (oldState.getBlock() == LPBlocks.dummy && newSate.getBlock() instanceof LogisticsSolidBlock) return false;
 
@@ -122,7 +124,8 @@ public class LogisticsSolidTileEntity extends TileEntity implements ITickable, I
 		SimpleServiceLocator.openComputersProxy.handleInvalidate(this);
 	}
 
-	public void onBlockBreak() {}
+	public void onBlockBreak() {
+	}
 
 	@Override
 	@CCCommand(description = "Returns the LP rotation value for this block")
@@ -139,7 +142,8 @@ public class LogisticsSolidTileEntity extends TileEntity implements ITickable, I
 		this.rotation = rotation;
 	}
 
-	public void notifyOfBlockChange() {}
+	public void notifyOfBlockChange() {
+	}
 
 	@Override
 	@ModDependentMethod(modId = LPConstants.openComputersModID)
@@ -149,19 +153,22 @@ public class LogisticsSolidTileEntity extends TileEntity implements ITickable, I
 
 	@Override
 	@ModDependentMethod(modId = LPConstants.openComputersModID)
-	public void onConnect(Node node1) {}
+	public void onConnect(Node node1) {
+	}
 
 	@Override
 	@ModDependentMethod(modId = LPConstants.openComputersModID)
-	public void onDisconnect(Node node1) {}
+	public void onDisconnect(Node node1) {
+	}
 
 	@Override
 	@ModDependentMethod(modId = LPConstants.openComputersModID)
-	public void onMessage(Message message) {}
+	public void onMessage(Message message) {
+	}
 
 	@Override
 	@ModDependentMethod(modId = LPConstants.openComputersModID)
-	public Object[] invoke(String s, Context context, Arguments arguments) throws Exception {
+	public Object[] invoke(String s, Context context, Arguments arguments) {
 		BaseWrapperClass object = (BaseWrapperClass) CCObjectWrapper.getWrappedObject(this, BaseWrapperClass.WRAPPER);
 		object.isDirectCall = true;
 		return CCObjectWrapper.createArray(object);
@@ -175,15 +182,21 @@ public class LogisticsSolidTileEntity extends TileEntity implements ITickable, I
 
 	@Override
 	@ModDependentMethod(modId = LPConstants.openComputersModID)
-	public boolean canConnect(EnumFacing dir) {
-		TileEntity tileEntity = new WorldCoordinatesWrapper(this).getAdjacentFromDirection(dir).tileEntity;
-		return !(tileEntity instanceof LogisticsTileGenericPipe) && !(tileEntity instanceof LogisticsSolidTileEntity);
+	public Node sidedNode(EnumFacing side) {
+		final NeighborTileEntity<TileEntity> neighbor = new WorldCoordinatesWrapper(this).getNeighbor(side);
+		if (neighbor == null || neighbor.isLogisticsPipe() || neighbor.getTileEntity() instanceof LogisticsSolidTileEntity) {
+			return null;
+		} else {
+			return node();
+		}
 	}
 
 	@Override
+	@SideOnly(Side.CLIENT)
 	@ModDependentMethod(modId = LPConstants.openComputersModID)
-	public Node sidedNode(EnumFacing dir) {
-		return canConnect(dir) ? node() : null;
+	public boolean canConnect(EnumFacing side) {
+		final NeighborTileEntity<TileEntity> neighbor = new WorldCoordinatesWrapper(this).getNeighbor(side);
+		return neighbor != null && !neighbor.isLogisticsPipe() && !(neighbor.getTileEntity() instanceof LogisticsSolidTileEntity);
 	}
 
 	@Override
@@ -195,17 +208,13 @@ public class LogisticsSolidTileEntity extends TileEntity implements ITickable, I
 		return new DoubleCoordinates(this);
 	}
 
-	@Override
-	public void setCCType(Object type) {
-		ccType = type;
-	}
-
-	@Override
-	public Object getCCType() {
-		return ccType;
-	}
-
 	public World getWorldForHUD() {
 		return getWorld();
 	}
+
+	@Override
+	public Object[] getTypeHolder() {
+		return ccTypeHolder;
+	}
+
 }

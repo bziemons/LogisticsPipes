@@ -1,23 +1,23 @@
 package logisticspipes.commands;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
-
-import logisticspipes.LPConstants;
-import logisticspipes.commands.abstracts.ICommandHandler;
-import logisticspipes.commands.exception.CommandNotFoundException;
-import logisticspipes.commands.exception.LPCommandException;
-import logisticspipes.commands.exception.PermissionDeniedException;
-import logisticspipes.proxy.MainProxy;
+import javax.annotation.Nonnull;
 
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.command.WrongUsageException;
-
 import net.minecraft.server.MinecraftServer;
+
 import net.minecraftforge.fml.common.FMLCommonHandler;
+
+import logisticspipes.LogisticsPipes;
+import logisticspipes.commands.abstracts.ICommandHandler;
+import logisticspipes.commands.exception.CommandNotFoundException;
+import logisticspipes.commands.exception.LPCommandException;
+import logisticspipes.commands.exception.PermissionDeniedException;
+import logisticspipes.proxy.MainProxy;
 
 public class LogisticsPipesCommand extends CommandBase {
 
@@ -27,29 +27,32 @@ public class LogisticsPipesCommand extends CommandBase {
 		mainCommand = new MainCommandHandler();
 	}
 
+	@Nonnull
 	@Override
 	public String getName() {
 		return "logisticspipes";
 	}
 
+	@Nonnull
 	@Override
-	public String getUsage(ICommandSender var1) {
+	public String getUsage(@Nonnull ICommandSender var1) {
 		return "/" + getName() + " help";
 	}
-/*
+
+	/*
+		@Override
+		public List<String> getCommandAliases() {
+			return Arrays.asList(new String[] { "lp", "logipipes" });
+		}
+	*/
 	@Override
-	public List<String> getCommandAliases() {
-		return Arrays.asList(new String[] { "lp", "logipipes" });
-	}
-*/
-	@Override
-	public void execute(MinecraftServer server, ICommandSender sender, String[] arguments) throws CommandException {
+	public void execute(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, String[] arguments) throws CommandException {
 		if (arguments.length <= 0) {
 			throw new WrongUsageException("Type '/logisticspipes help' for help.");
 		}
 		try {
 			boolean managed = false;
-			if (LPConstants.DEBUG) {
+			if (LogisticsPipes.isDEBUG()) {
 				//Check for unlisted Debug commands
 			}
 			if (!managed) {

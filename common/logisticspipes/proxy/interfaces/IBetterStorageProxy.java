@@ -1,12 +1,12 @@
 package logisticspipes.proxy.interfaces;
 
-import logisticspipes.proxy.bs.ICrateStorageProxy;
-
 import net.minecraft.tileentity.TileEntity;
+
+import logisticspipes.proxy.bs.ICrateStorageProxy;
 
 public interface IBetterStorageProxy {
 
-	public boolean isBetterStorageCrate(TileEntity tile);
+	boolean isBetterStorageCrate(TileEntity tile);
 
-	public ICrateStorageProxy getCrateStorageProxy(TileEntity tile);
+	ICrateStorageProxy getCrateStorageProxy(TileEntity tile);
 }

@@ -1,9 +1,13 @@
 package logisticspipes.pipes.upgrades;
 
-import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 
 public class LogicControllerUpgrade implements IPipeUpgrade {
+
+	public static String getName() {
+		return "logic_controller";
+	}
 
 	@Override
 	public boolean needsUpdate() {

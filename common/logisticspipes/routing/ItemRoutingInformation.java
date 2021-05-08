@@ -42,7 +42,7 @@ public class ItemRoutingInformation {
 		that.jamlist = new ArrayList<>(jamlist);
 		that.tracker = tracker;
 		that.targetInfo = targetInfo;
-		that.item = getItem().clone();
+		that.item = new ItemIdentifierStack(getItem());
 		return that;
 	}
 
@@ -123,7 +123,7 @@ public class ItemRoutingInformation {
 	}
 
 	public static ItemRoutingInformation restoreFromNBT(NBTTagCompound nbtTagCompound) {
-		if(nbtTagCompound.hasKey("StoreUUID")) {
+		if (nbtTagCompound.hasKey("StoreUUID")) {
 			UUID uuid = UUID.fromString(nbtTagCompound.getString("StoreUUID"));
 			if (storeMap.containsKey(uuid)) {
 				ItemRoutingInformation result = storeMap.get(uuid);

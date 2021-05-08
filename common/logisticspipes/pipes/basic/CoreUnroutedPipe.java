@@ -1,31 +1,8 @@
 package logisticspipes.pipes.basic;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import logisticspipes.LPBlocks;
-import logisticspipes.renderer.newpipe.IHighlightPlacementRenderer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.GameType;
-import network.rs485.logisticspipes.world.CoordinateUtils;
-import network.rs485.logisticspipes.world.DoubleCoordinates;
-
-import logisticspipes.api.ILPPipe;
-import logisticspipes.config.Configs;
-import logisticspipes.interfaces.IClientState;
-import logisticspipes.interfaces.IPipeUpgradeManager;
-import logisticspipes.pipes.basic.debug.DebugLogController;
-import logisticspipes.pipes.basic.debug.StatusEntry;
-import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
-import logisticspipes.renderer.IIconProvider;
-import logisticspipes.renderer.newpipe.ISpecialPipeRenderer;
-import logisticspipes.routing.pathfinder.IPipeInformationProvider;
-import logisticspipes.textures.Textures;
-import logisticspipes.transport.LPTravelingItem;
-import logisticspipes.transport.PipeTransportLogistics;
-import logisticspipes.utils.item.ItemIdentifier;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -34,25 +11,43 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
-
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.NonNullList;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import logisticspipes.api.ILPPipe;
+import logisticspipes.config.Configs;
+import logisticspipes.interfaces.IClientState;
+import logisticspipes.interfaces.IPipeUpgradeManager;
+import logisticspipes.pipes.basic.debug.DebugLogController;
+import logisticspipes.pipes.basic.debug.StatusEntry;
+import logisticspipes.proxy.SimpleServiceLocator;
+import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
+import logisticspipes.renderer.IIconProvider;
+import logisticspipes.renderer.newpipe.IHighlightPlacementRenderer;
+import logisticspipes.renderer.newpipe.ISpecialPipeRenderer;
+import logisticspipes.routing.pathfinder.IPipeInformationProvider;
+import logisticspipes.textures.Textures;
+import logisticspipes.transport.LPTravelingItem;
+import logisticspipes.transport.PipeTransportLogistics;
+import logisticspipes.utils.item.ItemIdentifier;
+import network.rs485.logisticspipes.world.CoordinateUtils;
+import network.rs485.logisticspipes.world.DoubleCoordinates;
+
 public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTypeHolder {
 
-	private Object ccType;
-
+	private final Object[] ccTypeHolder = new Object[1];
+	@Nullable
 	public LogisticsTileGenericPipe container;
 	public final PipeTransportLogistics transport;
 	public final Item item;
 	public DebugLogController debug = new DebugLogController(this);
 
 	private boolean initialized = false;
-
-	private boolean oldRendererState;
 
 	public CoreUnroutedPipe(PipeTransportLogistics transport, Item item) {
 		this.transport = transport;
@@ -114,9 +109,8 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 	 * Should return the index in the array returned by GetTextureIcons() for a
 	 * specified direction
 	 *
-	 * @param direction
-	 *            - The direction for which the indexed should be rendered.
-	 *            Unknown for pipe center
+	 * @param direction - The direction for which the indexed should be rendered.
+	 *                  Unknown for pipe center
 	 * @return An index valid in the array returned by getTextureIcons()
 	 */
 	public abstract int getIconIndex(EnumFacing direction);
@@ -142,67 +136,16 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 		initialized = true;
 	}
 
-	protected void notifyBlockOfNeighborChange(EnumFacing side) {
-		container.getWorld().notifyNeighborsOfStateChange(CoordinateUtils.add(new DoubleCoordinates(container.getPos()), side).getBlockPos(), LPBlocks.pipe, true);
-	}
+	public void onBlockRemoval() {}
 
-	public void updateNeighbors(boolean needSelf) {
-		if (needSelf) {
-			container.getWorld().notifyNeighborsOfStateChange(container.getPos(), LPBlocks.pipe, true);
-		}
-		for (EnumFacing side : EnumFacing.VALUES) {
-			notifyBlockOfNeighborChange(side);
-		}
-	}
-
-	public void dropItem(ItemStack stack) {
-		MainProxy.dropItems(container.getWorld(), stack, getX(), getY(), getZ());
-	}
-
-	public void onBlockRemoval() {
-		if (getWorld().getWorldInfo().getGameType() != GameType.CREATIVE) {
-			computeItemDrop().forEach(this::dropItem);
-		}
-	}
-
-	public ArrayList<ItemStack> computeItemDrop() {
-		ArrayList<ItemStack> result = new ArrayList<>();
-		return result;
-	}
-
+	@Nullable
 	public LogisticsTileGenericPipe getContainer() {
 		return container;
 	}
 
-	public List<ItemStack> dropContents() {
+	public NonNullList<ItemStack> dropContents() {
 		return transport.dropContents();
 	}
-
-	/**
-	 * If this pipe is open on one side, return it.
-	 * /
-	public EnumFacing getOpenOrientation() {
-		int connectionsNum = 0;
-
-		EnumFacing targetOrientation = null;
-
-		for (EnumFacing o : EnumFacing.VALUES) {
-			if (container.isPipeConnectedCached(o)) {
-
-				connectionsNum++;
-
-				if (connectionsNum == 1) {
-					targetOrientation = o;
-				}
-			}
-		}
-
-		if (connectionsNum > 1 || connectionsNum == 0) {
-			return null;
-		}
-
-		return targetOrientation.getOpposite();
-	} */
 
 	/**
 	 * Called when TileGenericPipe.invalidate() is called
@@ -220,6 +163,7 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 	public void onChunkUnload() {}
 
 	public World getWorld() {
+		if (container == null) return null;
 		return container.getWorld();
 	}
 
@@ -247,6 +191,7 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 		return getPos().getZ();
 	}
 
+	@Nonnull
 	public final BlockPos getPos() {
 		return container.getPos();
 	}
@@ -274,16 +219,6 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 		return false;
 	}
 
-	@Override
-	public void setCCType(Object type) {
-		ccType = type;
-	}
-
-	@Override
-	public Object getCCType() {
-		return ccType;
-	}
-
 	public abstract int getTextureIndex();
 
 	public void triggerDebug() {
@@ -300,7 +235,11 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 
 	@Override
 	public String toString() {
-		return super.toString() + " (" + getX() + ", " + getY() + ", " + getZ() + ")";
+		if (container == null) {
+			return getClass().getName() + "(NO CONTAINER)";
+		} else {
+			return String.format("%s(%s)", getClass().getName(), container.getPos());
+		}
 	}
 
 	public DoubleCoordinates getLPPosition() {
@@ -472,4 +411,17 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 	public boolean isMultipartAllowedInPipe() {
 		return true;
 	}
+
+	@Override
+	public Object[] getTypeHolder() {
+		return ccTypeHolder;
+	}
+
+	protected void updateAdjacentCache() {}
+
+	/**
+	 * Triggers connection checks for routing.
+	 */
+	protected void triggerConnectionCheck() {}
+
 }

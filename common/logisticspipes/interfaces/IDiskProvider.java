@@ -1,18 +1,21 @@
 package logisticspipes.interfaces;
 
-import logisticspipes.utils.gui.ItemDisplay;
+import javax.annotation.Nonnull;
 
 import net.minecraft.item.ItemStack;
 
+import logisticspipes.utils.gui.ItemDisplay;
+
 public interface IDiskProvider {
 
-	public ItemStack getDisk();
+	@Nonnull
+	ItemStack getDisk();
 
-	public int getX();
+	int getX();
 
-	public int getY();
+	int getY();
 
-	public int getZ();
+	int getZ();
 
-	public ItemDisplay getItemDisplay();
+	ItemDisplay getItemDisplay();
 }

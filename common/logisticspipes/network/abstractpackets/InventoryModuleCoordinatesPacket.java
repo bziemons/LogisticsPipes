@@ -5,9 +5,7 @@ import java.util.Set;
 
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
-
-import lombok.Getter;
-import lombok.Setter;
+import net.minecraft.util.NonNullList;
 
 import logisticspipes.utils.item.ItemIdentifierStack;
 import network.rs485.logisticspipes.util.LPDataInput;
@@ -18,18 +16,12 @@ public abstract class InventoryModuleCoordinatesPacket extends ModuleCoordinates
 	private static final byte STACK_MARKER = 0;
 	private static final byte IDENT_MARKER = 1;
 
-	@Setter
 	private IInventory inventory;
 
-	@Getter
-	@Setter
-	private List<ItemStack> stackList;
+	private NonNullList<ItemStack> stackList;
 
-	@Getter
-	@Setter
 	private List<ItemIdentifierStack> identList;
 
-	@Setter
 	private Set<ItemIdentifierStack> identSet;
 
 	public InventoryModuleCoordinatesPacket(int id) {
@@ -66,11 +58,39 @@ public abstract class InventoryModuleCoordinatesPacket extends ModuleCoordinates
 
 		byte marker = input.readByte();
 		if (marker == STACK_MARKER) {
-			stackList = input.readLinkedList(LPDataInput::readItemStack);
+			stackList = input.readNonNullList(LPDataInput::readItemStack, ItemStack.EMPTY);
 		} else if (marker == IDENT_MARKER) {
 			identList = input.readLinkedList(LPDataInput::readItemIdentifierStack);
 		} else {
 			throw new UnsupportedOperationException("Unknown marker: " + marker);
 		}
+	}
+
+	public NonNullList<ItemStack> getStackList() {
+		return this.stackList;
+	}
+
+	public InventoryModuleCoordinatesPacket setStackList(NonNullList<ItemStack> stackList) {
+		this.stackList = stackList;
+		return this;
+	}
+
+	public List<ItemIdentifierStack> getIdentList() {
+		return this.identList;
+	}
+
+	public InventoryModuleCoordinatesPacket setIdentList(List<ItemIdentifierStack> identList) {
+		this.identList = identList;
+		return this;
+	}
+
+	public InventoryModuleCoordinatesPacket setInventory(IInventory inventory) {
+		this.inventory = inventory;
+		return this;
+	}
+
+	public InventoryModuleCoordinatesPacket setIdentSet(Set<ItemIdentifierStack> identSet) {
+		this.identSet = identSet;
+		return this;
 	}
 }

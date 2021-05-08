@@ -1,12 +1,13 @@
 package logisticspipes.modules;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
@@ -21,8 +22,6 @@ import logisticspipes.interfaces.IClientInformationProvider;
 import logisticspipes.interfaces.IHUDModuleHandler;
 import logisticspipes.interfaces.IHUDModuleRenderer;
 import logisticspipes.interfaces.IModuleWatchReciver;
-import logisticspipes.modules.abstractmodules.LogisticsGuiModule;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider;
@@ -32,43 +31,52 @@ import logisticspipes.network.guis.module.inpipe.OreDictItemSinkModuleSlot;
 import logisticspipes.network.packets.hud.HUDStartModuleWatchingPacket;
 import logisticspipes.network.packets.hud.HUDStopModuleWatchingPacket;
 import logisticspipes.network.packets.module.OreDictItemSinkList;
-import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
+import logisticspipes.pipes.PipeLogisticsChassis.ChassiTargetInformation;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.module.Gui;
+import network.rs485.logisticspipes.property.Property;
+import network.rs485.logisticspipes.property.StringListProperty;
 
-public class ModuleOreDictItemSink extends LogisticsGuiModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver {
+public class ModuleOreDictItemSink extends LogisticsModule
+		implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, Gui {
 
-	public final List<String> oreList = new LinkedList<>();
+	public final StringListProperty oreList = new StringListProperty("");
+
 	//map of Item:<set of damagevalues>, empty set if wildcard damage
 	private Map<Item, Set<Integer>> oreItemIdMap;
 
-	private IHUDModuleRenderer HUD = new HUDOreDictItemSink(this);
+	private final IHUDModuleRenderer HUD = new HUDOreDictItemSink(this);
 	private List<ItemIdentifierStack> oreHudList;
 
 	private final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
 
 	private SinkReply _sinkReply;
 
+	public static String getName() {
+		return "item_sink_oredict";
+	}
+
+	@Nonnull
 	@Override
-	public void registerPosition(ModulePositionType slot, int positionInt) {
+	public String getLPName() {
+		return getName();
+	}
+
+	@Nonnull
+	@Override
+	public List<Property<?>> getProperties() {
+		return Collections.singletonList(oreList);
+	}
+
+	@Override
+	public void registerPosition(@Nonnull ModulePositionType slot, int positionInt) {
 		super.registerPosition(slot, positionInt);
 		_sinkReply = new SinkReply(FixedPriority.OreDictItemSink, 0, 5, 0, new ChassiTargetInformation(getPositionInt()));
-	}
-
-	@Override
-	protected ModuleCoordinatesGuiProvider getPipeGuiProvider() {
-		NBTTagCompound nbt = new NBTTagCompound();
-		writeToNBT(nbt);
-		return NewGuiHandler.getGui(OreDictItemSinkModuleSlot.class).setNbt(nbt);
-	}
-
-	@Override
-	protected ModuleInHandGuiProvider getInHandGuiProvider() {
-		return NewGuiHandler.getGui(OreDictItemSinkModuleInHand.class);
 	}
 
 	public List<ItemIdentifierStack> getHudItemList() {
@@ -76,11 +84,6 @@ public class ModuleOreDictItemSink extends LogisticsGuiModule implements IClient
 			buildOreItemIdMap();
 		}
 		return oreHudList;
-	}
-
-	@Override
-	public LogisticsModule getSubModule(int slot) {
-		return null;
 	}
 
 	private void buildOreItemIdMap() {
@@ -119,31 +122,24 @@ public class ModuleOreDictItemSink extends LogisticsGuiModule implements IClient
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		oreList.clear();
-		int limit = nbttagcompound.getInteger("listSize");
-		for (int i = 0; i < limit; i++) {
-			String oreName = nbttagcompound.getString("Ore" + i);
-			if (!oreName.equals("")) {
-				oreList.add(nbttagcompound.getString("Ore" + i));
+	public void readFromNBT(@Nonnull NBTTagCompound tag) {
+		super.readFromNBT(tag);
+		// deprecated, TODO: remove after 1.12
+		for (int i = 0; i < oreList.size(); i++) {
+			final String key = "Ore" + i;
+			if (tag.hasKey(key)) {
+				final String val = tag.getString(key);
+				if (!val.isEmpty()) oreList.set(i, val);
 			}
 		}
 		oreItemIdMap = null;
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		nbttagcompound.setInteger("listSize", oreList.size());
-		for (int i = 0; i < oreList.size(); i++) {
-			nbttagcompound.setString("Ore" + i, oreList.get(i));
-		}
-	}
-
-	@Override
 	public void tick() {}
 
 	@Override
-	public List<String> getClientInformation() {
+	public @Nonnull List<String> getClientInformation() {
 		List<String> list = new ArrayList<>();
 		list.add("Ores: ");
 		list.addAll(oreList);
@@ -174,7 +170,7 @@ public class ModuleOreDictItemSink extends LogisticsGuiModule implements IClient
 	}
 
 	public void OreListChanged() {
-		if (MainProxy.isServer(_world.getWorld())) {
+		if (MainProxy.isServer(getWorld())) {
 			NBTTagCompound nbt = new NBTTagCompound();
 			writeToNBT(nbt);
 			MainProxy.sendToPlayerList(PacketHandler.getPacket(OreDictItemSinkList.class).setTag(nbt).setModulePos(this), localModeWatchers);
@@ -193,6 +189,20 @@ public class ModuleOreDictItemSink extends LogisticsGuiModule implements IClient
 	@Override
 	public boolean recievePassive() {
 		return true;
+	}
+
+	@Nonnull
+	@Override
+	public ModuleCoordinatesGuiProvider getPipeGuiProvider() {
+		NBTTagCompound nbt = new NBTTagCompound();
+		writeToNBT(nbt);
+		return NewGuiHandler.getGui(OreDictItemSinkModuleSlot.class).setNbt(nbt);
+	}
+
+	@Nonnull
+	@Override
+	public ModuleInHandGuiProvider getInHandGuiProvider() {
+		return NewGuiHandler.getGui(OreDictItemSinkModuleInHand.class);
 	}
 
 }

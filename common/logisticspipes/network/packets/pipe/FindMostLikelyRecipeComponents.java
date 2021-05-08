@@ -22,13 +22,11 @@ import logisticspipes.pipes.PipeItemsCraftingLogistics;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
+import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.item.ItemIdentifier;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 import network.rs485.logisticspipes.world.CoordinateUtils;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class FindMostLikelyRecipeComponents extends CoordinatesPacket {
@@ -43,7 +41,7 @@ public class FindMostLikelyRecipeComponents extends CoordinatesPacket {
 
 	@Override
 	public void processPacket(EntityPlayer player) {
-		TileEntity tile = this.getTile(player.getEntityWorld(), TileEntity.class);
+		TileEntity tile = this.getTileAs(player.getEntityWorld(), TileEntity.class);
 		CoreRoutedPipe pipe = null;
 		if (tile instanceof LogisticsCraftingTableTileEntity) {
 			for (EnumFacing dir : EnumFacing.VALUES) {

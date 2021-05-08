@@ -6,7 +6,6 @@ import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.network.abstractpackets.Integer2ModuleCoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.proxy.MainProxy;
-
 import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
@@ -27,8 +26,9 @@ public class FluidCraftingAmount extends Integer2ModuleCoordinatesPacket {
 		if (module == null) {
 			return;
 		}
+		// integer2 is the slot and integer is the amount
 		if (MainProxy.isClient(player.world)) {
-			module.defineFluidAmount(getInteger(), getInteger2());
+			module.liquidAmounts.set(getInteger2(), getInteger());
 		} else {
 			module.changeFluidAmount(getInteger(), getInteger2(), player);
 		}

@@ -1,6 +1,5 @@
-/**
+/*
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -8,51 +7,71 @@
 
 package logisticspipes.pipes;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+
+import lombok.Getter;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.gui.hud.HUDSatellite;
 import logisticspipes.interfaces.IChestContentReceiver;
 import logisticspipes.interfaces.IHeadUpDisplayRenderer;
 import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
-import logisticspipes.interfaces.IInventoryUtil;
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleSatellite;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.network.PacketHandler;
+import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.packets.hud.ChestContent;
 import logisticspipes.network.packets.hud.HUDStartWatchingPacket;
 import logisticspipes.network.packets.hud.HUDStopWatchingPacket;
-import logisticspipes.network.packets.satpipe.SatPipeNext;
-import logisticspipes.network.packets.satpipe.SatPipePrev;
-import logisticspipes.network.packets.satpipe.SatPipeSetID;
+import logisticspipes.network.packets.satpipe.SyncSatelliteNamePacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.SatellitePipe;
+import network.rs485.logisticspipes.connection.LPNeighborTileEntityKt;
 
-public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IHeadUpDisplayRendererProvider, IChestContentReceiver {
+public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IHeadUpDisplayRendererProvider, IChestContentReceiver, SatellitePipe {
+
+	public static final Set<PipeItemsSatelliteLogistics> AllSatellites = Collections.newSetFromMap(new WeakHashMap<>());
+
+	// called only on server shutdown
+	public static void cleanup() {
+		PipeItemsSatelliteLogistics.AllSatellites.clear();
+	}
 
 	public final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
-	public final LinkedList<ItemIdentifierStack> itemList = new LinkedList<>();
-	public final LinkedList<ItemIdentifierStack> oldList = new LinkedList<>();
+	private final LinkedList<ItemIdentifierStack> itemList = new LinkedList<>();
 	private final HUDSatellite HUD = new HUDSatellite(this);
+	protected final LinkedList<ItemIdentifierStack> _lostItems = new LinkedList<>();
+	private final ModuleSatellite moduleSatellite;
+
+	@Getter
+	private String satellitePipeName = "";
 
 	public PipeItemsSatelliteLogistics(Item item) {
 		super(item);
 		throttleTime = 40;
+		moduleSatellite = new ModuleSatellite();
+		moduleSatellite.registerHandler(this, this);
+		moduleSatellite.registerPosition(LogisticsModule.ModulePositionType.IN_PIPE, 0);
 	}
 
 	@Override
@@ -70,7 +89,7 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IHead
 
 	@Override
 	public LogisticsModule getLogisticsModule() {
-		return new ModuleSatellite(this);
+		return moduleSatellite;
 	}
 
 	@Override
@@ -99,21 +118,16 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IHead
 	}
 
 	private void updateInv(boolean force) {
+		ArrayList<ItemIdentifierStack> oldList = new ArrayList<>(itemList);
 		itemList.clear();
-		for (EnumFacing ori : EnumFacing.VALUES) {
-			if(!this.container.isPipeConnectedCached(ori)) continue;
-			IInventoryUtil inv = this.getPointedInventory();
-			if (inv != null) {
-				for (int i = 0; i < inv.getSizeInventory(); i++) {
-					if (inv.getStackInSlot(i) != null) {
-						addToList(ItemIdentifierStack.getFromStack(inv.getStackInSlot(i)));
-					}
-				}
-			}
-		}
-		if (!itemList.equals(oldList) || force) {
-			oldList.clear();
-			oldList.addAll(itemList);
+		itemList.addAll(
+				getAvailableAdjacent().inventories().stream()
+						.map(LPNeighborTileEntityKt::getInventoryUtil)
+						.filter(Objects::nonNull)
+						.flatMap(invUtil -> invUtil.getItemsAndCount().entrySet().stream().map(itemIdentifierAndCount -> new ItemIdentifierStack(itemIdentifierAndCount.getKey(), itemIdentifierAndCount.getValue())))
+						.collect(Collectors.toList())
+		);
+		if (!oldList.equals(itemList) || force) {
 			MainProxy.sendToPlayerList(PacketHandler.getPacket(ChestContent.class).setIdentList(itemList).setPosX(getX()).setPosY(getY()).setPosZ(getZ()), localModeWatchers);
 		}
 	}
@@ -122,7 +136,7 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IHead
 	public void playerStartWatching(EntityPlayer player, int mode) {
 		if (mode == 1) {
 			localModeWatchers.add(player);
-			final ModernPacket packet = PacketHandler.getPacket(SatPipeSetID.class).setSatID(satelliteId).setPosX(getX()).setPosY(getY()).setPosZ(getZ());
+			final ModernPacket packet = PacketHandler.getPacket(SyncSatelliteNamePacket.class).setString(satellitePipeName).setPosX(getX()).setPosY(getY()).setPosZ(getZ());
 			MainProxy.sendPacketToPlayer(packet, player);
 			updateInv(true);
 		} else {
@@ -147,92 +161,39 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IHead
 		return HUD;
 	}
 
-	public static Set<PipeItemsSatelliteLogistics> AllSatellites = Collections.newSetFromMap(new WeakHashMap<>());;
-
-	// called only on server shutdown
-	public static void cleanup() {
-		PipeItemsSatelliteLogistics.AllSatellites.clear();
-	}
-
-	protected final LinkedList<ItemIdentifierStack> _lostItems = new LinkedList<>();
-
-	public int satelliteId;
-
 	@Override
 	public void readFromNBT(NBTTagCompound nbttagcompound) {
 		super.readFromNBT(nbttagcompound);
-		satelliteId = nbttagcompound.getInteger("satelliteid");
-		ensureAllSatelliteStatus();
+		if (nbttagcompound.hasKey("satelliteid")) {
+			int satelliteId = nbttagcompound.getInteger("satelliteid");
+			satellitePipeName = Integer.toString(satelliteId);
+		} else {
+			satellitePipeName = nbttagcompound.getString("satellitePipeName");
+		}
+		if (MainProxy.isServer(getWorld())) {
+			ensureAllSatelliteStatus();
+		}
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		nbttagcompound.setInteger("satelliteid", satelliteId);
+		nbttagcompound.setString("satellitePipeName", satellitePipeName);
 		super.writeToNBT(nbttagcompound);
 	}
 
-	protected int findId(int increment) {
-		if (MainProxy.isClient(getWorld())) {
-			return satelliteId;
-		}
-		int potentialId = satelliteId;
-		boolean conflict = true;
-		while (conflict) {
-			potentialId += increment;
-			if (potentialId < 0) {
-				return 0;
-			}
-			conflict = false;
-			for (final PipeItemsSatelliteLogistics sat : PipeItemsSatelliteLogistics.AllSatellites) {
-				if (sat.satelliteId == potentialId) {
-					conflict = true;
-					break;
-				}
-			}
-		}
-		return potentialId;
-	}
-
-	protected void ensureAllSatelliteStatus() {
-		if (MainProxy.isClient()) {
-			return;
-		}
-		if (satelliteId == 0 && PipeItemsSatelliteLogistics.AllSatellites.contains(this)) {
+	public void ensureAllSatelliteStatus() {
+		if (satellitePipeName.isEmpty()) {
 			PipeItemsSatelliteLogistics.AllSatellites.remove(this);
 		}
-		if (satelliteId != 0 && !PipeItemsSatelliteLogistics.AllSatellites.contains(this)) {
+		if (!satellitePipeName.isEmpty()) {
 			PipeItemsSatelliteLogistics.AllSatellites.add(this);
 		}
 	}
 
-	public void setNextId(EntityPlayer player) {
-		satelliteId = findId(1);
-		ensureAllSatelliteStatus();
-		if (MainProxy.isClient(player.world)) {
-			final ModernPacket packet = PacketHandler.getPacket(SatPipeNext.class).setPosX(getX()).setPosY(getY()).setPosZ(getZ());
-			MainProxy.sendPacketToServer(packet);
-		} else {
-			final ModernPacket packet = PacketHandler.getPacket(SatPipeSetID.class).setSatID(satelliteId).setPosX(getX()).setPosY(getY()).setPosZ(getZ());
-			MainProxy.sendPacketToPlayer(packet, player);
-		}
-		updateWatchers();
-	}
-
-	public void setPrevId(EntityPlayer player) {
-		satelliteId = findId(-1);
-		ensureAllSatelliteStatus();
-		if (MainProxy.isClient(player.world)) {
-			final ModernPacket packet = PacketHandler.getPacket(SatPipePrev.class).setPosX(getX()).setPosY(getY()).setPosZ(getZ());
-			MainProxy.sendPacketToServer(packet);
-		} else {
-			final ModernPacket packet = PacketHandler.getPacket(SatPipeSetID.class).setSatID(satelliteId).setPosX(getX()).setPosY(getY()).setPosZ(getZ());
-			MainProxy.sendPacketToPlayer(packet, player);
-		}
-		updateWatchers();
-	}
-
-	private void updateWatchers() {
-		MainProxy.sendToPlayerList(PacketHandler.getPacket(SatPipeSetID.class).setSatID(satelliteId).setPosX(getX()).setPosY(getY()).setPosZ(getZ()), ((PipeItemsSatelliteLogistics) container.pipe).localModeWatchers);
+	public void updateWatchers() {
+		CoordinatesPacket packet = PacketHandler.getPacket(SyncSatelliteNamePacket.class).setString(satellitePipeName).setTilePos(this.getContainer());
+		MainProxy.sendToPlayerList(packet, localModeWatchers);
+		MainProxy.sendPacketToAllWatchingChunk(this.getContainer(), packet);
 	}
 
 	@Override
@@ -240,15 +201,13 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IHead
 		if (MainProxy.isClient(getWorld())) {
 			return;
 		}
-		if (PipeItemsSatelliteLogistics.AllSatellites.contains(this)) {
-			PipeItemsSatelliteLogistics.AllSatellites.remove(this);
-		}
+		PipeItemsSatelliteLogistics.AllSatellites.remove(this);
 	}
 
 	@Override
 	public void onWrenchClicked(EntityPlayer entityplayer) {
 		// Send the satellite id when opening gui
-		final ModernPacket packet = PacketHandler.getPacket(SatPipeSetID.class).setSatID(satelliteId).setPosX(getX()).setPosY(getY()).setPosZ(getZ());
+		final ModernPacket packet = PacketHandler.getPacket(SyncSatelliteNamePacket.class).setString(satellitePipeName).setPosX(getX()).setPosY(getY()).setPosZ(getZ());
 		MainProxy.sendPacketToPlayer(packet, entityplayer);
 		entityplayer.openGui(LogisticsPipes.instance, GuiIDs.GUI_SatellitePipe_ID, getWorld(), getX(), getY(), getZ());
 	}
@@ -259,8 +218,14 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IHead
 		// TODO PROVIDE REFACTOR
 	}
 
-	public void setSatelliteId(int integer) {
-		satelliteId = integer;
+	@Override
+	public void setSatellitePipeName(@Nonnull String satellitePipeName) {
+		this.satellitePipeName = satellitePipeName;
 	}
 
+	@Nonnull
+	@Override
+	public List<ItemIdentifierStack> getItemList() {
+		return itemList;
+	}
 }

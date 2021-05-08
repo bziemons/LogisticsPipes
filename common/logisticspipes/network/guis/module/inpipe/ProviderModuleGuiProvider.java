@@ -9,11 +9,11 @@ import lombok.Setter;
 import logisticspipes.modules.ModuleProvider;
 import logisticspipes.network.abstractguis.GuiProvider;
 import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider;
+import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.gui.DummyContainer;
+import network.rs485.logisticspipes.inventory.ProviderMode;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class ProviderModuleGuiProvider extends ModuleCoordinatesGuiProvider {
@@ -44,10 +44,10 @@ public class ProviderModuleGuiProvider extends ModuleCoordinatesGuiProvider {
 		if (module == null) {
 			return null;
 		}
-		module.setFilterExcluded(exclude);
-		module.setExtractionMode(extractorMode);
+		module.isExclusionFilter.setValue(exclude);
+		module.providerMode.setValue(ProviderMode.modeFromIntSafe(extractorMode));
 		module.setSneakyDirection(sneakyOrientation);
-		module.setIsActive(isActive);
+		module.isActive.setValue(isActive);
 		return new logisticspipes.gui.modules.GuiProvider(player.inventory, module);
 	}
 

@@ -1,77 +1,52 @@
 package logisticspipes.modules;
 
-import net.minecraft.inventory.IInventory;
-import net.minecraft.nbt.NBTTagCompound;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import javax.annotation.Nonnull;
 
-import logisticspipes.interfaces.IInventoryUtil;
+import net.minecraft.item.ItemStack;
+
+import org.jetbrains.annotations.NotNull;
+
 import logisticspipes.interfaces.IPipeServiceProvider;
-import logisticspipes.interfaces.IWorldProvider;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.pipes.basic.CoreRoutedPipe;
-import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
 import logisticspipes.utils.item.ItemIdentifier;
-import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
+import network.rs485.logisticspipes.connection.LPNeighborTileEntityKt;
+import network.rs485.logisticspipes.property.Property;
 
-//IHUDModuleHandler,
 public class ModuleSatellite extends LogisticsModule {
 
-	private final CoreRoutedPipe pipe;
+	private final SinkReply _sinkReply = new SinkReply(FixedPriority.ItemSink, 0, true, false, 1, 0, null);
 
-	public ModuleSatellite(CoreRoutedPipe pipeItemsSatelliteLogistics) {
-		pipe = pipeItemsSatelliteLogistics;
+	@Nonnull
+	@Override
+	public String getLPName() {
+		throw new RuntimeException("Cannot get LP name for " + this);
 	}
 
+	@NotNull
 	@Override
-	public void registerHandler(IWorldProvider world, IPipeServiceProvider service) {}
-
-	@Override
-	public final int getX() {
-		return pipe.getX();
-	}
-
-	@Override
-	public final int getY() {
-		return pipe.getY();
-	}
-
-	@Override
-	public final int getZ() {
-		return pipe.getZ();
+	public List<Property<?>> getProperties() {
+		return Collections.emptyList();
 	}
 
 	private SinkReply _sinkReply = new SinkReply(FixedPriority.ItemSink, 0, 1, 0, null);
 
-	private int spaceFor(ItemIdentifier item, boolean includeInTransit) {
-		WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(pipe.container);
-
-		//@formatter:off
-		int count = worldCoordinates.getConnectedAdjacentTileEntities(ConnectionPipeType.ITEM)
-				.filter(adjacent -> adjacent.tileEntity instanceof IInventory)
-		//@formatter:on
-				.map(adjacent -> {
-					IInventoryUtil util = SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(adjacent);
-					return util.roomForItem(item, 9999);
-				}).reduce(Integer::sum).orElse(0);
-
+	private int spaceFor(@Nonnull ItemStack stack, ItemIdentifier item, boolean includeInTransit) {
+		final IPipeServiceProvider service = Objects.requireNonNull(_service);
+		int count = service.getAvailableAdjacent().inventories().stream()
+				.map(neighbor -> LPNeighborTileEntityKt.sneakyInsertion(neighbor).from(getUpgradeManager()))
+				.map(LPNeighborTileEntityKt::getInventoryUtil)
+				.filter(Objects::nonNull)
+				.map(util -> util.roomForItem(stack))
+				.reduce(Integer::sum).orElse(0);
 		if (includeInTransit) {
-			count -= pipe.countOnRoute(item);
+			count -= service.countOnRoute(item);
 		}
 		return count;
 	}
-
-	@Override
-	public LogisticsModule getSubModule(int slot) {
-		return null;
-	}
-
-	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {}
-
-	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {}
 
 	@Override
 	public void tick() {}

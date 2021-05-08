@@ -13,10 +13,9 @@ import logisticspipes.modules.ModuleActiveSupplier.PatternMode;
 import logisticspipes.modules.ModuleActiveSupplier.SupplyMode;
 import logisticspipes.network.abstractpackets.IntegerModuleCoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
+import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class SupplierPipeMode extends IntegerModuleCoordinatesPacket {
@@ -41,9 +40,9 @@ public class SupplierPipeMode extends IntegerModuleCoordinatesPacket {
 			return;
 		}
 		if (hasPatternUpgrade) {
-			module.setPatternMode(PatternMode.values()[getInteger()]);
+			module.patternMode.setValue(PatternMode.values()[getInteger()]);
 		} else {
-			module.setSupplyMode(SupplyMode.values()[getInteger()]);
+			module.requestMode.setValue(SupplyMode.values()[getInteger()]);
 		}
 		if (FMLClientHandler.instance().getClient().currentScreen instanceof GuiSupplierPipe) {
 			((GuiSupplierPipe) FMLClientHandler.instance().getClient().currentScreen).refreshMode();

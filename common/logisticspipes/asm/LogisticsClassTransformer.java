@@ -1,11 +1,20 @@
 package logisticspipes.asm;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 
 import net.minecraft.launchwrapper.IClassTransformer;
 import net.minecraft.launchwrapper.Launch;
@@ -14,6 +23,8 @@ import net.minecraft.launchwrapper.LaunchClassLoader;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.ModContainer;
+import net.minecraftforge.fml.common.asm.transformers.AccessTransformer;
+import net.minecraftforge.fml.common.asm.transformers.ModAccessTransformer;
 import net.minecraftforge.fml.common.versioning.ArtifactVersion;
 import net.minecraftforge.fml.common.versioning.DefaultArtifactVersion;
 import net.minecraftforge.fml.common.versioning.VersionParser;
@@ -31,7 +42,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import logisticspipes.LPConstants;
+import logisticspipes.LogisticsPipes;
 import logisticspipes.asm.mcmp.ClassBlockMultipartContainerHandler;
 import logisticspipes.asm.td.ClassRenderDuctItemsHandler;
 import logisticspipes.asm.td.ClassTravelingItemHandler;
@@ -65,6 +76,9 @@ public class LogisticsClassTransformer implements IClassTransformer {
 
 	@Override
 	public byte[] transform(String name, String transformedName, byte[] bytes) {
+		// if dev environment and transform on first class is launched, boot the AT remapper
+		if (LogisticsPipesCoreLoader.isDevelopmentEnvironment() && name.equals("net.minecraftforge.fml.common.Loader")) bootATRemapper();
+
 		Thread thread = Thread.currentThread();
 		if (thread.getName().equals("Minecraft main thread") || thread.getName().equals("main") || thread.getName().equals("Server thread")) { //Only clear when called from the main thread to avoid ConcurrentModificationException on start
 			clearNegativeInterfaceCache();
@@ -72,7 +86,7 @@ public class LogisticsClassTransformer implements IClassTransformer {
 		if (bytes == null) {
 			return null;
 		}
-		if (transformedName.startsWith("logisticspipes.") || transformedName.startsWith("net.minecraft") || LPConstants.DEBUG) {
+		if (transformedName.startsWith("logisticspipes.") || transformedName.startsWith("net.minecraft")) {
 			return ParamProfiler.handleClass(applyLPTransforms(transformedName, bytes));
 		}
 		byte[] tmp = bytes.clone();
@@ -87,6 +101,73 @@ public class LogisticsClassTransformer implements IClassTransformer {
 			bytes = writer.toByteArray();
 		}
 		return ParamProfiler.handleClass(bytes);
+	}
+
+	private void bootATRemapper() {
+		System.err.println("Fetching ModAccessTransformers");
+		final List<IClassTransformer> modATs = Launch.classLoader.getTransformers().stream().filter(transformer -> transformer instanceof ModAccessTransformer).collect(Collectors.toList());
+		System.err.println("Found " + modATs);
+		if (modATs.size() == 0) return;
+
+		System.err.println("Inserting missing ATs from classpath");
+		try {
+			readClasspathATs(modATs);
+		} catch (IllegalStateException e) {
+			System.err.println("Could not inject classpath FMLATs");
+			e.printStackTrace();
+		}
+
+		System.err.println("Booting Logistics Pipes ModAccessTransformerRemapper");
+		final ModAccessTransformerRemapper remapper;
+		try {
+			remapper = new ModAccessTransformerRemapper();
+		} catch (IllegalStateException e) {
+			System.err.println("Could not initialize ModAccessTransformerRemapper:");
+			e.printStackTrace();
+			return;
+		}
+
+		modATs.forEach(remapper::apply);
+	}
+
+	private void readClasspathATs(List<IClassTransformer> modATs) {
+		final Method readMapFile;
+		try {
+			readMapFile = AccessTransformer.class.getDeclaredMethod("readMapFile", String.class);
+		} catch (NoSuchMethodException e) {
+			throw new IllegalStateException("Could not find method readMapFile on AccessTransformer class", e);
+		}
+		final boolean wasAccessible = readMapFile.isAccessible();
+		if (!wasAccessible) readMapFile.setAccessible(true);
+		try {
+			readClasspathATsInner(path -> {
+				final IClassTransformer classTransformer = modATs.get(0);
+				try {
+					readMapFile.invoke(classTransformer, path);
+				} catch (IllegalAccessException | InvocationTargetException e) {
+					throw new IllegalStateException("Could not access readMapFile method of " + classTransformer);
+				}
+			});
+		} catch (IOException e) {
+			throw new IllegalArgumentException("IO Error when fetching FMLATs", e);
+		} finally {
+			if (!wasAccessible) readMapFile.setAccessible(false);
+		}
+	}
+
+	private void readClasspathATsInner(Consumer<String> readMapFile) throws IOException {
+		final Enumeration<URL> manifestEntries = Launch.classLoader.findResources("META-INF/MANIFEST.MF");
+		while (manifestEntries.hasMoreElements()) {
+			final String accessTransformer;
+			try (InputStream manifestInputStream = manifestEntries.nextElement().openStream()) {
+				final Manifest manifest = new Manifest(manifestInputStream);
+				accessTransformer = manifest.getMainAttributes().getValue(ModAccessTransformer.FMLAT);
+			}
+			final Enumeration<URL> atEntries = Launch.classLoader.findResources("META-INF/" + accessTransformer);
+			while (atEntries.hasMoreElements()) {
+				readMapFile.accept(atEntries.nextElement().toString());
+			}
+		}
 	}
 
 	private byte[] applyLPTransforms(String name, byte[] bytes) {
@@ -123,7 +204,7 @@ public class LogisticsClassTransformer implements IClassTransformer {
 			}
 			return handleLPTransformation(bytes);
 		} catch (Exception e) {
-			if (LPConstants.DEBUG) { //For better Debugging
+			if (LogisticsPipes.isDEBUG()) { //For better Debugging
 				e.printStackTrace();
 				return bytes;
 			}
@@ -159,7 +240,7 @@ public class LogisticsClassTransformer implements IClassTransformer {
 				}
 			}
 		} catch (Exception e) {
-			if (LPConstants.DEBUG) { //For better Debugging
+			if (LogisticsPipes.isDEBUG()) { //For better Debugging
 				e.printStackTrace();
 			}
 		}
@@ -411,7 +492,7 @@ public class LogisticsClassTransformer implements IClassTransformer {
 		node.interfaces.add("logisticspipes/asm/te/ILPTEInformation");
 		node.visitField(Opcodes.ACC_PRIVATE, "informationObjectLogisticsPipes", "Llogisticspipes/asm/te/LPTileEntityObject;", null, null);
 		for (MethodNode m : node.methods) {
-			if (m.name.equals("validate") || m.name.equals("func_145829_t") || (m.name.equals("t") && m.desc.equals("()V"))) {
+			if (m.name.equals("validate") || m.name.equals("func_145829_t") || (m.name.equals("A") && m.desc.equals("()V"))) {
 				MethodNode mv = new MethodNode(Opcodes.ASM4, m.access, m.name, m.desc, m.signature, m.exceptions.toArray(new String[0])) {
 
 					@Override
@@ -426,7 +507,7 @@ public class LogisticsClassTransformer implements IClassTransformer {
 				m.accept(mv);
 				node.methods.set(node.methods.indexOf(m), mv);
 			}
-			if (m.name.equals("invalidate") || m.name.equals("func_145843_s") || (m.name.equals("s") && m.desc.equals("()V"))) {
+			if (m.name.equals("invalidate") || m.name.equals("func_145843_s") || (m.name.equals("z") && m.desc.equals("()V"))) {
 				MethodNode mv = new MethodNode(Opcodes.ASM4, m.access, m.name, m.desc, m.signature, m.exceptions.toArray(new String[0])) {
 
 					@Override

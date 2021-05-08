@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Krapht, 2011
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
@@ -20,8 +20,8 @@ import logisticspipes.gui.hud.HUDCrafting;
 import logisticspipes.interfaces.IChangeListener;
 import logisticspipes.interfaces.IHeadUpDisplayRenderer;
 import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
+import logisticspipes.modules.LogisticsModule.ModulePositionType;
 import logisticspipes.modules.ModuleCrafter;
-import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.hud.HUDStartWatchingPacket;
 import logisticspipes.network.packets.hud.HUDStopWatchingPacket;
@@ -52,16 +52,10 @@ public class PipeItemsCraftingLogistics extends CoreRoutedPipe implements IHeadU
 
 	public PipeItemsCraftingLogistics(Item item) {
 		super(item);
-		// module still relies on this for some code
-		craftingModule = new ModuleCrafter(this);
+		craftingModule = new ModuleCrafter();
+		craftingModule.registerHandler(this, this);
 		craftingModule.registerPosition(ModulePositionType.IN_PIPE, 0);
 		throttleTime = 40;
-	}
-
-	@Override
-	public void onNeighborBlockChange() {
-		craftingModule.clearCache();
-		super.onNeighborBlockChange();
 	}
 
 	@Override
@@ -131,37 +125,21 @@ public class PipeItemsCraftingLogistics extends CoreRoutedPipe implements IHeadU
 
 	@Override
 	public int getPriority() {
-		return craftingModule.getPriority();
+		return craftingModule.priority.getValue();
 	}
 
 	@Override
 	public void readFromNBT(NBTTagCompound nbttagcompound) {
 		super.readFromNBT(nbttagcompound);
-		craftingModule.readFromNBT(nbttagcompound);
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound nbttagcompound) {
 		super.writeToNBT(nbttagcompound);
-		craftingModule.writeToNBT(nbttagcompound);
-	}
-
-	@Override
-	public void throttledUpdateEntity() {
-		super.throttledUpdateEntity();
-		craftingModule.tick();
 	}
 
 	public IInventory getDummyInventory() {
-		return craftingModule.getDummyInventory();
-	}
-
-	public IInventory getFluidInventory() {
-		return craftingModule.getFluidInventory();
-	}
-
-	public IInventory getCleanupInventory() {
-		return craftingModule.getCleanupInventory();
+		return craftingModule.dummyInventory;
 	}
 
 	public boolean hasCraftingSign() {
@@ -177,4 +155,5 @@ public class PipeItemsCraftingLogistics extends CoreRoutedPipe implements IHeadU
 		// TODO PROVIDE REFACTOR
 		return new ArrayList<>(0);
 	}
+
 }

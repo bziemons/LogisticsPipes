@@ -6,22 +6,24 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.nbt.NBTTagCompound;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.google.common.collect.ImmutableList;
+import org.jetbrains.annotations.NotNull;
 
 import logisticspipes.interfaces.IClientInformationProvider;
 import logisticspipes.interfaces.IHUDModuleHandler;
 import logisticspipes.interfaces.IHUDModuleRenderer;
 import logisticspipes.interfaces.IModuleInventoryReceive;
 import logisticspipes.interfaces.IModuleWatchReciver;
-import logisticspipes.modules.abstractmodules.LogisticsGuiModule;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.interfaces.IPipeServiceProvider;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider;
@@ -32,8 +34,6 @@ import logisticspipes.network.packets.hud.HUDStartModuleWatchingPacket;
 import logisticspipes.network.packets.hud.HUDStopModuleWatchingPacket;
 import logisticspipes.network.packets.module.ModuleInventory;
 import logisticspipes.pipefxhandlers.Particles;
-import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
-import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.pipes.basic.debug.StatusEntry;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.ISimpleInventoryEventHandler;
@@ -41,25 +41,70 @@ import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 import logisticspipes.utils.item.ItemIdentifierStack;
+import logisticspipes.utils.tuples.Pair;
 import network.rs485.logisticspipes.logistic.Interests;
+import network.rs485.logisticspipes.module.Gui;
+import network.rs485.logisticspipes.property.BooleanProperty;
+import network.rs485.logisticspipes.property.EnumProperty;
+import network.rs485.logisticspipes.property.IntListProperty;
+import network.rs485.logisticspipes.property.InventoryProperty;
+import network.rs485.logisticspipes.property.Property;
 
-public class ModuleActiveSupplier extends LogisticsGuiModule implements IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, IModuleInventoryReceive, ISimpleInventoryEventHandler {
+public class ModuleActiveSupplier extends LogisticsModule
+		implements IClientInformationProvider, IHUDModuleHandler,
+		IModuleWatchReciver, IModuleInventoryReceive, ISimpleInventoryEventHandler, Gui {
+
+	public static final int SUPPLIER_SLOTS = 9;
 
 	private final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
+	private final HashMap<ItemIdentifier, Integer> _requestedItems = new HashMap<>();
+
+	// properties for the pattern upgrade
+	public final IntListProperty slotAssignmentPattern = new IntListProperty("slotpattern");
+	public final EnumProperty<PatternMode> patternMode =
+			new EnumProperty<>(PatternMode.Bulk50, "patternmode", PatternMode.values());
+
+	// properties for the regular configuration
+	public final InventoryProperty inventory =
+			new InventoryProperty(new ItemIdentifierInventory(SUPPLIER_SLOTS, "", 127), "");
+	public final EnumProperty<SupplyMode> requestMode =
+			new EnumProperty<>(SupplyMode.Bulk50, "requestmode", SupplyMode.values());
+	public final BooleanProperty isLimited = new BooleanProperty(true, "limited");
+
+	private final List<Property<?>> properties = ImmutableList.<Property<?>>builder()
+			.add(slotAssignmentPattern)
+			.add(patternMode)
+			.add(inventory)
+			.add(requestMode)
+			.add(isLimited)
+			.build();
 
 	private boolean _lastRequestFailed = false;
 
 	public ModuleActiveSupplier() {
-		dummyInventory.addListener(this);
+		inventory.addListener(this);
+		slotAssignmentPattern.ensureSize(SUPPLIER_SLOTS);
+	}
+
+	public static String getName() {
+		return "active_supplier";
+	}
+
+	@Nonnull
+	@Override
+	public String getLPName() {
+		return getName();
+	}
+
+	@NotNull
+	@Override
+	public List<Property<?>> getProperties() {
+		return properties;
 	}
 
 	@Override
-	public LogisticsModule getSubModule(int slot) {
-		return null;
-	}
-
-	@Override
-	public List<String> getClientInformation() {
+	public @Nonnull
+	List<String> getClientInformation() {
 		List<String> list = new ArrayList<>();
 		list.add("Supplied: ");
 		list.add("<inventory>");
@@ -80,7 +125,10 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IClientI
 	@Override
 	public void startWatching(EntityPlayer player) {
 		localModeWatchers.add(player);
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(dummyInventory)).setModulePos(this), player);
+		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(ModuleInventory.class)
+						.setIdentList(ItemIdentifierStack.getListFromInventory(inventory))
+						.setModulePos(this),
+				player);
 	}
 
 	@Override
@@ -95,20 +143,18 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IClientI
 	}
 
 	@Override
-	public void handleInvContent(Collection<ItemIdentifierStack> list) {
-		dummyInventory.handleItemIdentifierList(list);
+	public void handleInvContent(@Nonnull Collection<ItemIdentifierStack> list) {
+		inventory.handleItemIdentifierList(list);
 	}
 
 	@Override
 	public void InventoryChanged(IInventory inventory) {
-		if (MainProxy.isServer(_world.getWorld())) {
-			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleInventory.class).setIdentList(ItemIdentifierStack.getListFromInventory(dummyInventory)).setModulePos(this), localModeWatchers);
+		if (MainProxy.isServer(getWorld())) {
+			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleInventory.class)
+							.setIdentList(ItemIdentifierStack.getListFromInventory(inventory))
+							.setModulePos(this),
+					localModeWatchers);
 		}
-	}
-
-	@Override
-	public boolean recievePassive() {
-		return true;
 	}
 
 	@Override
@@ -121,91 +167,41 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IClientI
 		_lastRequestFailed = value;
 	}
 
-	private ItemIdentifierInventory dummyInventory = new ItemIdentifierInventory(9, "", 127);
-
-	private final HashMap<ItemIdentifier, Integer> _requestedItems = new HashMap<>();
-
-	public enum SupplyMode {
-		Partial,
-		Full,
-		Bulk50,
-		Bulk100,
-		Infinite
-	}
-
-	public enum PatternMode {
-		Partial,
-		Full,
-		Bulk50,
-		Bulk100;
-	}
-
-	private SupplyMode _requestMode = SupplyMode.Bulk50;
-	private PatternMode _patternMode = PatternMode.Bulk50;
-	@Getter
-	@Setter
-	private boolean isLimited = true;
-
-	public int[] slotArray = new int[9];
-
-	/*** GUI ***/
-	public ItemIdentifierInventory getDummyInventory() {
-		return dummyInventory;
-	}
-
 	@Override
 	public void tick() {
-		if (!_service.isNthTick(100)) {
+		final IPipeServiceProvider service = Objects.requireNonNull(_service);
+		if (!service.isNthTick(100)) {
 			return;
 		}
 
-		_requestedItems.values().stream().filter(amount -> amount > 0).forEach(amount -> _service.spawnParticle(Particles.VioletParticle, 2));
+		_requestedItems.values().stream().filter(amount -> amount > 0)
+				.forEach(amount -> service.spawnParticle(Particles.VioletParticle, 2));
 
 		// TODO PROVIDE REFACTOR: request available items
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		dummyInventory.readFromNBT(nbttagcompound, "");
-		if (nbttagcompound.hasKey("requestmode")) {
-			_requestMode = SupplyMode.values()[nbttagcompound.getShort("requestmode")];
-		}
-		if (nbttagcompound.hasKey("patternmode")) {
-			_patternMode = PatternMode.values()[nbttagcompound.getShort("patternmode")];
-		}
-		if (nbttagcompound.hasKey("limited")) {
-			setLimited(nbttagcompound.getBoolean("limited"));
-		}
-		if (nbttagcompound.hasKey("requestpartials")) {
-			boolean oldPartials = nbttagcompound.getBoolean("requestpartials");
-			if (oldPartials) {
-				_requestMode = SupplyMode.Partial;
-			} else {
-				_requestMode = SupplyMode.Full;
-			}
-		}
-		for (int i = 0; i < 9; i++) {
-			slotArray[i] = nbttagcompound.getInteger("slotArray_" + i);
-		}
-	}
-
-	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		dummyInventory.writeToNBT(nbttagcompound, "");
-		nbttagcompound.setShort("requestmode", (short) _requestMode.ordinal());
-		nbttagcompound.setShort("patternmode", (short) _patternMode.ordinal());
-		nbttagcompound.setBoolean("limited", isLimited());
-		for (int i = 0; i < 9; i++) {
-			nbttagcompound.setInteger("slotArray_" + i, slotArray[i]);
+	public void readFromNBT(@Nonnull NBTTagCompound tag) {
+		super.readFromNBT(tag);
+		// deprecated, TODO: remove after 1.12
+		final List<Pair<Integer, String>> slotArrayList = IntStream.range(0, SUPPLIER_SLOTS)
+				.mapToObj((idx) -> new Pair<>(idx, "slotArray_" + idx))
+				.filter((it) -> tag.hasKey(it.getValue2()))
+				.collect(Collectors.toList());
+		if (!slotArrayList.isEmpty()) {
+			final int[] slotArray = new int[SUPPLIER_SLOTS];
+			slotArrayList.forEach((pair) -> slotArray[pair.getValue1()] = tag.getInteger(pair.getValue2()));
+			slotAssignmentPattern.replaceContent(slotArray);
 		}
 	}
 
 	private void decreaseRequested(ItemIdentifierStack item) {
+		final IPipeServiceProvider service = Objects.requireNonNull(_service);
 		int remaining = item.getStackSize();
 		//see if we can get an exact match
 		Integer count = _requestedItems.get(item.getItem());
 		if (count != null) {
-			_service.getDebug().log("Supplier: Exact match. Still missing: " + Math.max(0, count - remaining));
+			service.getDebug().log("Supplier: Exact match. Still missing: " + Math.max(0, count - remaining));
 			if (count - remaining > 0) {
 				_requestedItems.put(item.getItem(), count - remaining);
 			} else {
@@ -222,7 +218,8 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IClientI
 			Entry<ItemIdentifier, Integer> e = it.next();
 			if (e.getKey().equalsWithoutNBT(item.getItem())) {
 				int expected = e.getValue();
-				_service.getDebug().log("Supplier: Fuzzy match with" + e + ". Still missing: " + Math.max(0, expected - remaining));
+				service.getDebug().log("Supplier: Fuzzy match with" + e + ". Still missing: " + Math
+						.max(0, expected - remaining));
 				if (expected - remaining > 0) {
 					e.setValue(expected - remaining);
 				} else {
@@ -235,7 +232,7 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IClientI
 			}
 		}
 		//we have no idea what this is, log it.
-		_service.getDebug().log("Supplier: supplier got unexpected item " + item.toString());
+		service.getDebug().log("Supplier: supplier got unexpected item " + item);
 	}
 
 	public SupplyMode getSupplyMode() {
@@ -283,20 +280,32 @@ public class ModuleActiveSupplier extends LogisticsGuiModule implements IClientI
 		status.add(entry);
 	}
 
+	@Nonnull
 	@Override
-	protected ModuleCoordinatesGuiProvider getPipeGuiProvider() {
-		return NewGuiHandler.getGui(ActiveSupplierSlot.class).setPatternUpgarde(hasPatternUpgrade()).setSlotArray(slotArray).setMode((_service.getUpgradeManager(slot, positionInt).hasPatternUpgrade() ? getPatternMode() : getSupplyMode()).ordinal()).setLimit(isLimited);
+	public ModuleCoordinatesGuiProvider getPipeGuiProvider() {
+		final boolean hasPatternUpgrade = hasPatternUpgrade();
+		return NewGuiHandler.getGui(ActiveSupplierSlot.class)
+				.setPatternUpgarde(hasPatternUpgrade)
+				.setSlotArray(slotAssignmentPattern.stream().mapToInt(Integer::intValue).toArray())
+				.setMode((hasPatternUpgrade ? patternMode.getValue() : requestMode.getValue()).ordinal())
+				.setLimit(isLimited.getValue());
 	}
 
+	@Nonnull
 	@Override
-	protected ModuleInHandGuiProvider getInHandGuiProvider() {
+	public ModuleInHandGuiProvider getInHandGuiProvider() {
 		return NewGuiHandler.getGui(ActiveSupplierInHand.class);
 	}
 
 	public boolean hasPatternUpgrade() {
-		if (_service != null && _service.getUpgradeManager(slot, positionInt) != null) {
-			return _service.getUpgradeManager(slot, positionInt).hasPatternUpgrade();
-		}
-		return false;
+		return getUpgradeManager().hasPatternUpgrade();
+	}
+
+	public enum SupplyMode {
+		Partial,
+		Full,
+		Bulk50,
+		Bulk100,
+		Infinite
 	}
 }

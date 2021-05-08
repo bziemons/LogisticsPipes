@@ -22,8 +22,9 @@ import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.item.ItemIdentifierInventory;
 
-public class PipeFluidSupplierMk2 extends FluidRoutedPipe {
+public class PipeFluidSupplierMk2 extends FluidRoutedPipe implements IRequestFluid, IRequireReliableFluidTransport {
 
+	private boolean _lastRequestFailed = false;
 	public enum MinMode {
 		NONE(0),
 		ONEBUCKET(1000),
@@ -81,7 +82,7 @@ public class PipeFluidSupplierMk2 extends FluidRoutedPipe {
 			return;
 		}
 		super.throttledUpdateEntity();
-		if (dummyInventory.getStackInSlot(0) == null) {
+		if (dummyInventory.getIDStackInSlot(0) == null) {
 			return;
 		}
 

@@ -1,10 +1,9 @@
 package logisticspipes.modules;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
@@ -15,8 +14,7 @@ import logisticspipes.interfaces.IHUDModuleHandler;
 import logisticspipes.interfaces.IHUDModuleRenderer;
 import logisticspipes.interfaces.IModuleWatchReciver;
 import logisticspipes.interfaces.IStringBasedModule;
-import logisticspipes.modules.abstractmodules.LogisticsGuiModule;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.interfaces.IWorldProvider;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider;
@@ -26,67 +24,59 @@ import logisticspipes.network.guis.module.inpipe.StringBasedItemSinkModuleGuiSlo
 import logisticspipes.network.packets.hud.HUDStartModuleWatchingPacket;
 import logisticspipes.network.packets.hud.HUDStopModuleWatchingPacket;
 import logisticspipes.network.packets.module.ModuleBasedItemSinkList;
-import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
+import logisticspipes.pipes.PipeLogisticsChassis.ChassiTargetInformation;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
 import logisticspipes.utils.item.ItemIdentifier;
+import network.rs485.logisticspipes.module.Gui;
+import network.rs485.logisticspipes.property.Property;
+import network.rs485.logisticspipes.property.StringListProperty;
 
-public class ModuleModBasedItemSink extends LogisticsGuiModule implements IStringBasedModule, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver {
+public class ModuleModBasedItemSink extends LogisticsModule
+		implements IStringBasedModule, IClientInformationProvider, IHUDModuleHandler, IModuleWatchReciver, Gui {
 
-	public final List<String> modList = new LinkedList<>();
-	private final Set<String> modIdSet = new HashSet<>();
+	public final StringListProperty modList = new StringListProperty("");
 
-	private IHUDModuleRenderer HUD = new HUDStringBasedItemSink(this);
+	private final IHUDModuleRenderer HUD = new HUDStringBasedItemSink(this);
 
 	private final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
 
 	private SinkReply _sinkReply;
 
+	public static String getName() {
+		return "item_sink_mod";
+	}
+
+	@Nonnull
 	@Override
-	public void registerPosition(ModulePositionType slot, int positionInt) {
+	public String getLPName() {
+		return getName();
+	}
+
+	@Nonnull
+	@Override
+	public List<Property<?>> getProperties() {
+		return Collections.singletonList(modList);
+	}
+
+	@Override
+	public void registerPosition(@Nonnull ModulePositionType slot, int positionInt) {
 		super.registerPosition(slot, positionInt);
 		_sinkReply = new SinkReply(FixedPriority.ModBasedItemSink, 0, 5, 0, new ChassiTargetInformation(getPositionInt()));
 	}
 
 	@Override
-	protected ModuleCoordinatesGuiProvider getPipeGuiProvider() {
-		NBTTagCompound nbt = new NBTTagCompound();
-		writeToNBT(nbt);
-		return NewGuiHandler.getGui(StringBasedItemSinkModuleGuiSlot.class).setNbt(nbt);
-	}
-
-	@Override
-	protected ModuleInHandGuiProvider getInHandGuiProvider() {
-		return NewGuiHandler.getGui(StringBasedItemSinkModuleGuiInHand.class);
-	}
-
-	@Override
-	public LogisticsModule getSubModule(int slot) {
-		return null;
-	}
-
-	private void buildModIdSet() {
-		modIdSet.clear();
-		modIdSet.addAll(modList);
-	}
-
-	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		modList.clear();
-		int limit = nbttagcompound.getInteger("listSize");
-		for (int i = 0; i < limit; i++) {
-			modList.add(nbttagcompound.getString("Mod" + i));
-		}
-		buildModIdSet();
-	}
-
-	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		nbttagcompound.setInteger("listSize", modList.size());
+	public void readFromNBT(@Nonnull NBTTagCompound tag) {
+		super.readFromNBT(tag);
+		// deprecated, TODO: remove after 1.12
 		for (int i = 0; i < modList.size(); i++) {
-			nbttagcompound.setString("Mod" + i, modList.get(i));
+			final String key = "Mod" + i;
+			if (tag.hasKey(key)) {
+				final String val = tag.getString(key);
+				if (!val.isEmpty()) modList.set(i, val);
+			}
 		}
 	}
 
@@ -94,7 +84,8 @@ public class ModuleModBasedItemSink extends LogisticsGuiModule implements IStrin
 	public void tick() {}
 
 	@Override
-	public List<String> getClientInformation() {
+	public @Nonnull
+	List<String> getClientInformation() {
 		List<String> list = new ArrayList<>();
 		list.add("Mods: ");
 		list.addAll(modList);
@@ -116,7 +107,8 @@ public class ModuleModBasedItemSink extends LogisticsGuiModule implements IStrin
 		localModeWatchers.add(player);
 		NBTTagCompound nbt = new NBTTagCompound();
 		writeToNBT(nbt);
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this), player);
+		MainProxy.sendPacketToPlayer(
+				PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this), player);
 	}
 
 	@Override
@@ -126,14 +118,19 @@ public class ModuleModBasedItemSink extends LogisticsGuiModule implements IStrin
 
 	@Override
 	public void listChanged() {
-		if (MainProxy.isServer(_world.getWorld())) {
+		final IWorldProvider worldProvider = _world;
+		if (worldProvider == null) return;
+		if (MainProxy.isServer(worldProvider.getWorld())) {
 			NBTTagCompound nbt = new NBTTagCompound();
 			writeToNBT(nbt);
-			MainProxy.sendToPlayerList(PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this), localModeWatchers);
+			MainProxy.sendToPlayerList(
+					PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this),
+					localModeWatchers);
 		} else {
 			NBTTagCompound nbt = new NBTTagCompound();
 			writeToNBT(nbt);
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this));
+			MainProxy.sendPacketToServer(
+					PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this));
 		}
 	}
 
@@ -148,7 +145,7 @@ public class ModuleModBasedItemSink extends LogisticsGuiModule implements IStrin
 	}
 
 	@Override
-	public List<String> getStringList() {
+	public StringListProperty stringListProperty() {
 		return modList;
 	}
 
@@ -156,4 +153,19 @@ public class ModuleModBasedItemSink extends LogisticsGuiModule implements IStrin
 	public String getStringForItem(ItemIdentifier ident) {
 		return ident.getModName();
 	}
+
+	@Nonnull
+	@Override
+	public ModuleCoordinatesGuiProvider getPipeGuiProvider() {
+		NBTTagCompound nbt = new NBTTagCompound();
+		writeToNBT(nbt);
+		return NewGuiHandler.getGui(StringBasedItemSinkModuleGuiSlot.class).setNbt(nbt);
+	}
+
+	@Nonnull
+	@Override
+	public ModuleInHandGuiProvider getInHandGuiProvider() {
+		return NewGuiHandler.getGui(StringBasedItemSinkModuleGuiInHand.class);
+	}
+
 }

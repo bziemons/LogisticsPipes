@@ -1,6 +1,7 @@
 package logisticspipes.network.abstractpackets;
 
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -31,6 +32,31 @@ public abstract class CoordinatesPacket extends ModernPacket {
 
 	public CoordinatesPacket(int id) {
 		super(id);
+	}
+
+	@Nonnull
+	@SuppressWarnings("unchecked")
+	public static <T> T getTileAs(Object whosAsking, World world, BlockPos blockPos, Class<T> clazz) {
+		final TileEntity tile = getWorldTile(whosAsking, world, blockPos);
+		if (tile != null) {
+			if (clazz.isAssignableFrom(tile.getClass())) {
+				return (T) tile;
+			}
+			throw new TargetNotFoundException("Couldn't find " + clazz.getName() + ", found " + tile.getClass() + " at: " + blockPos, whosAsking);
+		} else {
+			throw new TargetNotFoundException("Couldn't find " + clazz.getName() + " at: " + blockPos, whosAsking);
+		}
+	}
+
+	private static TileEntity getWorldTile(Object whosAsking, World world, BlockPos blockPos) {
+		if (world == null) {
+			throw new TargetNotFoundException("World was null", whosAsking);
+		}
+		if (world.isAirBlock(blockPos)) {
+			throw new TargetNotFoundException("Only found air at: " + blockPos, whosAsking);
+		}
+
+		return world.getTileEntity(blockPos);
 	}
 
 	@Override
@@ -79,65 +105,27 @@ public abstract class CoordinatesPacket extends ModernPacket {
 		return this;
 	}
 
-
-	public TileEntity getTile(World world, Function<TileEntity, Boolean> validateResult) {
-		TileEntity tile = getTile(world, TileEntity.class);
+	public TileEntity getTileAs(World world, Function<TileEntity, Boolean> validateResult) {
+		TileEntity tile = getTileAs(world, TileEntity.class);
 		if (!validateResult.apply(tile)) {
-			targetNotFound("TileEntity condition not met");
-			return null;
+			throw new TargetNotFoundException("TileEntity condition not met", this);
 		}
 		return tile;
 	}
 
-	@SuppressWarnings("unchecked")
 	/**
 	 * Retrieves tileEntity at packet coordinates if any.
-	 *
-	 * @param world
-	 * @param clazz
-	 * @return TileEntity
 	 */
-	public <T> T getTile(World world, Class<T> clazz) {
-		if (world == null) {
-			targetNotFound("World was null");
-			return null;
-		}
-		if (world.isAirBlock(new BlockPos(getPosX(), getPosY(), getPosZ()))) {
-			targetNotFound("Couldn't find " + clazz.getName() + " at: " + new BlockPos(getPosX(), getPosY(), getPosZ()));
-			return null;
-		}
-
-		final TileEntity tile = world.getTileEntity(new BlockPos(getPosX(), getPosY(), getPosZ()));
-		if (tile != null) {
-			if (!(clazz.isAssignableFrom(tile.getClass()))) {
-				targetNotFound("Couldn't find " + clazz.getName() + ", found " + tile.getClass() + " at: " + new BlockPos(getPosX(), getPosY(), getPosZ()));
-				return null;
-			}
-		} else {
-			targetNotFound("Couldn't find " + clazz.getName() + " at: " + new BlockPos(getPosX(), getPosY(), getPosZ()));
-		}
-		return (T) tile;
+	public <T> T getTileAs(World world, Class<T> clazz) {
+		return getTileAs(this, world, new BlockPos(getPosX(), getPosY(), getPosZ()), clazz);
 	}
 
-	@SuppressWarnings("unchecked")
 	/**
 	 * Retrieves tileEntity or CoreUnroutedPipe at packet coordinates if any.
-	 *
-	 * @param world
-	 * @param clazz
-	 * @return TileEntity
 	 */
+	@SuppressWarnings("unchecked")
 	public <T> T getTileOrPipe(World world, Class<T> clazz) {
-		if (world == null) {
-			targetNotFound("World was null");
-			return null;
-		}
-		if (world.isAirBlock(new BlockPos(getPosX(), getPosY(), getPosZ()))) {
-			targetNotFound("Couldn't find " + clazz.getName() + " at: " + new BlockPos(getPosX(), getPosY(), getPosZ()));
-			return null;
-		}
-
-		final TileEntity tile = world.getTileEntity(new BlockPos(getPosX(), getPosY(), getPosZ()));
+		final TileEntity tile = getWorldTile(this, world, new BlockPos(getPosX(), getPosY(), getPosZ()));
 		if (tile != null) {
 			if (clazz.isAssignableFrom(tile.getClass())) {
 				return (T) tile;
@@ -146,45 +134,36 @@ public abstract class CoordinatesPacket extends ModernPacket {
 				if (((LogisticsTileGenericPipe) tile).pipe != null && clazz.isAssignableFrom(((LogisticsTileGenericPipe) tile).pipe.getClass())) {
 					return (T) ((LogisticsTileGenericPipe) tile).pipe;
 				}
-				targetNotFound("Couldn't find " + clazz.getName() + ", found pipe with " + tile.getClass() + " at: " + new BlockPos(getPosX(), getPosY(), getPosZ()));
-				return null;
+				throw new TargetNotFoundException("Couldn't find " + clazz.getName() + ", found pipe with " + tile.getClass() + " at: " + new BlockPos(getPosX(), getPosY(), getPosZ()), this);
 			}
 		} else {
-			targetNotFound("Couldn't find " + clazz.getName() + " at: " + new BlockPos(getPosX(), getPosY(), getPosZ()));
-			return null;
+			throw new TargetNotFoundException("Couldn't find " + clazz.getName() + " at: " + new BlockPos(getPosX(), getPosY(), getPosZ()), this);
 		}
-		targetNotFound("Couldn't find " + clazz.getName() + ", found " + tile.getClass() + " at: " + new BlockPos(getPosX(), getPosY(), getPosZ()));
-		return null;
+		throw new TargetNotFoundException("Couldn't find " + clazz.getName() + ", found " + tile.getClass() + " at: " + new BlockPos(getPosX(), getPosY(), getPosZ()), this);
 	}
 
 	/**
 	 * Retrieves pipe at packet coordinates if any.
-	 *
-	 * @param world
-	 * @return
 	 */
 	@Deprecated
 	public LogisticsTileGenericPipe getPipe(World world) {
 		return getPipe(world, LTGPCompletionCheck.NONE);
 	}
 
+	@Nonnull
 	public LogisticsTileGenericPipe getPipe(World world, LTGPCompletionCheck check) {
-		LogisticsTileGenericPipe pipe = getTile(world, LogisticsTileGenericPipe.class);
+		LogisticsTileGenericPipe pipe = getTileAs(world, LogisticsTileGenericPipe.class);
 		if (check == LTGPCompletionCheck.PIPE || check == LTGPCompletionCheck.TRANSPORT) {
 			if (pipe.pipe == null) {
-				targetNotFound("The found pipe didn't have a loaded pipe field");
+				throw new TargetNotFoundException("The found pipe didn't have a loaded pipe field", this);
 			}
 		}
 		if (check == LTGPCompletionCheck.TRANSPORT) {
 			if (pipe.pipe.transport == null) {
-				targetNotFound("The found pipe didn't have a loaded transport field");
+				throw new TargetNotFoundException("The found pipe didn't have a loaded transport field", this);
 			}
 		}
 		return pipe;
-	}
-
-	protected void targetNotFound(String message) {
-		throw new TargetNotFoundException(message, this);
 	}
 
 	public enum LTGPCompletionCheck {

@@ -1,14 +1,6 @@
 package logisticspipes.renderer;
 
 import java.lang.reflect.Field;
-import java.util.List;
-
-import logisticspipes.LPConstants;
-import logisticspipes.modules.abstractmodules.LogisticsModule.ModulePositionType;
-import logisticspipes.network.PacketHandler;
-import logisticspipes.network.packets.pipe.SlotFinderNumberPacket;
-import logisticspipes.proxy.MainProxy;
-import logisticspipes.utils.gui.SimpleGraphics;
 
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.inventory.Slot;
@@ -19,6 +11,13 @@ import lombok.Getter;
 import lombok.Setter;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
+
+import logisticspipes.LogisticsPipes;
+import logisticspipes.modules.LogisticsModule.ModulePositionType;
+import logisticspipes.network.PacketHandler;
+import logisticspipes.network.packets.pipe.SlotFinderNumberPacket;
+import logisticspipes.proxy.MainProxy;
+import logisticspipes.utils.gui.SimpleGraphics;
 
 public class LogisticsGuiOverrenderer {
 
@@ -59,7 +58,7 @@ public class LogisticsGuiOverrenderer {
 			fX.setAccessible(true);
 			fY.setAccessible(true);
 		} catch (Exception e) {
-			if (LPConstants.DEBUG) {
+			if (LogisticsPipes.isDEBUG()) {
 				e.printStackTrace();
 			}
 		}
@@ -89,7 +88,7 @@ public class LogisticsGuiOverrenderer {
 				fY.set(null, 0);
 				hasBeenSaved = true;
 			} catch (Exception e) {
-				if (LPConstants.DEBUG) {
+				if (LogisticsPipes.isDEBUG()) {
 					e.printStackTrace();
 				}
 			}
@@ -101,7 +100,6 @@ public class LogisticsGuiOverrenderer {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	public void renderOverGui() {
 		if (hasBeenSaved) {
 			hasBeenSaved = false;
@@ -110,18 +108,18 @@ public class LogisticsGuiOverrenderer {
 				fX.set(null, oldX);
 				fY.set(null, oldY);
 			} catch (Exception e) {
-				if (LPConstants.DEBUG) {
+				if (LogisticsPipes.isDEBUG()) {
 					e.printStackTrace();
 				}
 			}
 		}
 		if (isOverlaySlotActive) {
 			GuiContainer gui = (GuiContainer) FMLClientHandler.instance().getClient().currentScreen;
-			int guiTop = gui.guiTop;
-			int guiLeft = gui.guiLeft;
+			int guiTop = gui.getGuiTop();
+			int guiLeft = gui.getGuiLeft();
 			int x = oldX * gui.width / FMLClientHandler.instance().getClient().displayWidth;
 			int y = gui.height - oldY * gui.height / FMLClientHandler.instance().getClient().displayHeight - 1;
-			for (Slot slot : (List<Slot>) gui.inventorySlots.inventorySlots) {
+			for (Slot slot : gui.inventorySlots.inventorySlots) {
 				if (isMouseOverSlot(gui, slot, x, y)) {
 					GL11.glDisable(GL11.GL_LIGHTING);
 					GL11.glDisable(GL11.GL_DEPTH_TEST);
@@ -145,15 +143,15 @@ public class LogisticsGuiOverrenderer {
 		}
 	}
 
-	private boolean isMouseOverSlot(GuiContainer gui, Slot par1Slot, int par2, int par3) {
-		return isPointInRegion(gui, par1Slot.xPos, par1Slot.yPos, 16, 16, par2, par3);
+	private boolean isMouseOverSlot(GuiContainer gui, Slot slot, int mouseX, int mouseY) {
+		return isPointInRegion(gui, slot.xPos, slot.yPos, 16, 16, mouseX, mouseY);
 	}
 
-	private boolean isPointInRegion(GuiContainer gui, int par1, int par2, int par3, int par4, int par5, int par6) {
-		int k1 = gui.guiLeft;
-		int l1 = gui.guiTop;
-		par5 -= k1;
-		par6 -= l1;
-		return par5 >= par1 - 1 && par5 < par1 + par3 + 1 && par6 >= par2 - 1 && par6 < par2 + par4 + 1;
+	private boolean isPointInRegion(GuiContainer gui, int x, int y, int width, int height, int pointX, int pointY) {
+		int x0 = gui.getGuiLeft();
+		int y0 = gui.getGuiTop();
+		pointX -= x0;
+		pointY -= y0;
+		return pointX >= x - 1 && pointX < x + width + 1 && pointY >= y - 1 && pointY < y + height + 1;
 	}
 }

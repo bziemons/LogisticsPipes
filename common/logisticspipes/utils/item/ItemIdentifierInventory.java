@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Krapht, 2011
  * <p>
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
@@ -8,21 +8,20 @@
 
 package logisticspipes.utils.item;
 
-import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -32,22 +31,24 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 
-import logisticspipes.LPConstants;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.routing.ISaveState;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
 import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.ISimpleInventoryEventHandler;
 import logisticspipes.utils.tuples.Pair;
+import network.rs485.logisticspipes.inventory.IItemIdentifierInventory;
+import network.rs485.logisticspipes.inventory.SlotAccess;
 import network.rs485.logisticspipes.util.items.ItemStackLoader;
 
-public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTypeHolder, Iterable<Pair<ItemIdentifierStack, Integer>> {
+public class ItemIdentifierInventory
+		implements ISaveState, Iterable<Pair<ItemIdentifierStack, Integer>>, IItemIdentifierInventory {
 
-	private Object ccType;
-	private ItemIdentifierStack[] _contents;
+	private final Object[] ccTypeHolder = new Object[1];
+	private final ItemIdentifierStack[] _contents;
 	private final String _name;
 	private final int _stackLimit;
+	@Nonnull
 	private final HashMap<ItemIdentifier, Integer> _contentsMap;
 	private final HashSet<ItemIdentifier> _contentsUndamagedSet;
 	private final HashSet<ItemIdentifier> _contentsNoNBTSet;
@@ -55,6 +56,31 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 	private final boolean isLiquidInventory;
 
 	private final LinkedList<ISimpleInventoryEventHandler> _listener = new LinkedList<>();
+
+	public final SlotAccess slotAccess = new SlotAccess() {
+
+		@Override
+		public void mergeSlots(int intoSlot, int fromSlot) {
+			if (_contents[intoSlot] == null) {
+				_contents[intoSlot] = _contents[fromSlot];
+			} else {
+				_contents[intoSlot].setStackSize(_contents[intoSlot].getStackSize() + _contents[fromSlot].getStackSize());
+			}
+			_contents[fromSlot] = null;
+			updateContents();
+		}
+
+		@Override
+		public boolean canMerge(int intoSlot, int fromSlot) {
+			return _contents[intoSlot].getItem().equals(_contents[fromSlot].getItem());
+		}
+
+		@Override
+		public boolean isSlotEmpty(int idx) {
+			return _contents[idx] == null;
+		}
+
+	};
 
 	public ItemIdentifierInventory(int size, String name, int stackLimit, boolean liquidInv) {
 		_contents = new ItemIdentifierStack[size];
@@ -71,6 +97,35 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 		this(size, name, stackLimit, false);
 	}
 
+	public ItemIdentifierInventory(@Nonnull ItemIdentifierInventory copy) {
+		_contents = Arrays.copyOf(copy._contents, copy._contents.length);
+		for (int i = 0; i < _contents.length; i++) {
+			if (copy._contents[i] != null) _contents[i] = new ItemIdentifierStack(copy._contents[i]);
+		}
+		_name = copy._name;
+		_stackLimit = copy._stackLimit;
+		_contentsMap = new HashMap<>(copy._contentsMap);
+		_contentsUndamagedSet = new HashSet<>(copy._contentsUndamagedSet);
+		_contentsNoNBTSet = new HashSet<>(copy._contentsNoNBTSet);
+		_contentsUndamagedNoNBTSet = new HashSet<>(copy._contentsUndamagedNoNBTSet);
+		isLiquidInventory = copy.isLiquidInventory;
+	}
+
+	public static void dropItems(World world, @Nonnull ItemStack stack, BlockPos pos) {
+		dropItems(world, stack, pos.getX(), pos.getY(), pos.getZ());
+	}
+
+	public static void dropItems(World world, @Nonnull ItemStack stack, int i, int j, int k) {
+		if (stack.isEmpty()) return;
+		float f1 = 0.7F;
+		double d = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
+		double d1 = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
+		double d2 = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
+		EntityItem entityitem = new EntityItem(world, i + d, j + d1, k + d2, stack);
+		entityitem.setPickupDelay(10);
+		world.spawnEntity(entityitem);
+	}
+
 	@Override
 	public int getSizeInventory() {
 		return _contents.length;
@@ -79,7 +134,6 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 	@Override
 	@Deprecated
 	@Nonnull
-	//NOTE: this is a clone, changing the return of this function does not altet the inventory
 	public ItemStack getStackInSlot(int i) {
 		if (_contents[i] == null) {
 			return ItemStack.EMPTY;
@@ -87,6 +141,7 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 		return _contents[i].makeNormalStack();
 	}
 
+	@Override
 	public ItemIdentifierStack getIDStackInSlot(int i) {
 		return _contents[i];
 	}
@@ -97,33 +152,13 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 		if (_contents[slot] == null) {
 			return ItemStack.EMPTY;
 		}
+		ItemStack ret = _contents[slot].makeNormalStack();
 		if (_contents[slot].getStackSize() > count) {
-			ItemStack ret = _contents[slot].makeNormalStack();
 			ret.setCount(count);
 			_contents[slot].setStackSize(_contents[slot].getStackSize() - count);
-			updateContents();
-			return ret;
+		} else {
+			_contents[slot] = null;
 		}
-		ItemStack ret = _contents[slot].makeNormalStack();
-		_contents[slot] = null;
-		updateContents();
-		return ret;
-	}
-
-	// here so the returned stack can be stuck in another inventory without re-converting it/
-	public ItemIdentifierStack decrIDStackSize(int slot, int count) {
-		if (_contents[slot] == null) return null;
-
-		if (_contents[slot].getStackSize() > count) {
-			ItemIdentifierStack ret = _contents[slot].clone();
-			ret.setStackSize(count);
-			_contents[slot].setStackSize(_contents[slot].getStackSize() - count);
-			updateContents();
-			return ret;
-		}
-
-		ItemIdentifierStack ret = _contents[slot];
-		_contents[slot] = null;
 		updateContents();
 		return ret;
 	}
@@ -133,9 +168,10 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 		if (itemstack.isEmpty()) {
 			_contents[i] = null;
 		} else {
-			if (!isValidStack(itemstack)) {
-				if (LPConstants.DEBUG) {
-					new UnsupportedOperationException("Not valid for this Inventory: (" + itemstack + ")").printStackTrace();
+			if (isInvalidStack(itemstack)) {
+				if (LogisticsPipes.isDEBUG()) {
+					new UnsupportedOperationException("Not valid for this Inventory: (" + itemstack + ")")
+							.printStackTrace();
 				}
 				return;
 			}
@@ -144,13 +180,15 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 		updateContents();
 	}
 
+	@Override
 	public void setInventorySlotContents(int i, ItemIdentifierStack itemstack) {
 		if (itemstack == null) {
 			_contents[i] = null;
 		} else {
 			if (!isValidStack(itemstack)) {
-				if (LPConstants.DEBUG) {
-					new UnsupportedOperationException("Not valid for this Inventory: (" + itemstack + ")").printStackTrace();
+				if (LogisticsPipes.isDEBUG()) {
+					new UnsupportedOperationException("Not valid for this Inventory: (" + itemstack + ")")
+							.printStackTrace();
 				}
 				return;
 			}
@@ -184,7 +222,7 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 	public void closeInventory(@Nonnull EntityPlayer player) {}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
+	public void readFromNBT(@Nonnull NBTTagCompound nbttagcompound) {
 		readFromNBT(nbttagcompound, "");
 	}
 
@@ -201,14 +239,15 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 					_contents[index] = itemstack;
 				}
 			} else {
-				LogisticsPipes.log.fatal("SimpleInventory: java.lang.ArrayIndexOutOfBoundsException: " + index + " of " + _contents.length);
+				LogisticsPipes.log.fatal("SimpleInventory: java.lang.ArrayIndexOutOfBoundsException: " + index + " of "
+						+ _contents.length);
 			}
 		}
 		updateContents();
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
+	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
 		writeToNBT(nbttagcompound, "");
 	}
 
@@ -242,37 +281,23 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 		}
 	}
 
-	public static void dropItems(World world, ItemStack stack, BlockPos pos) {
-		dropItems(world, stack, pos.getX(), pos.getY(), pos.getZ());
-	}
-
-	public static void dropItems(World world, ItemStack stack, int i, int j, int k) {
-		if (stack.getCount() <= 0) {
-			return;
-		}
-		float f1 = 0.7F;
-		double d = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
-		double d1 = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
-		double d2 = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
-		EntityItem entityitem = new EntityItem(world, i + d, j + d1, k + d2, stack);
-		entityitem.setPickupDelay(10);
-		world.spawnEntity(entityitem);
-	}
-
-	public void addListener(ISimpleInventoryEventHandler listener) {
+	@Override
+	public void addListener(@Nonnull ISimpleInventoryEventHandler listener) {
 		if (!_listener.contains(listener)) {
 			_listener.add(listener);
 		}
 	}
 
-	public void removeListener(ISimpleInventoryEventHandler listener) {
+	@Override
+	public void removeListener(@Nonnull ISimpleInventoryEventHandler listener) {
 		_listener.remove(listener);
 	}
 
+	@Nonnull
 	@Override
 	public ItemStack removeStackFromSlot(int i) {
 		if (_contents[i] == null) {
-			return null;
+			return ItemStack.EMPTY;
 		}
 
 		ItemStack stackToTake = _contents[i].makeNormalStack();
@@ -281,6 +306,7 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 		return stackToTake;
 	}
 
+	@Override
 	public void handleItemIdentifierList(Collection<ItemIdentifierStack> _allItems) {
 		int i = 0;
 		for (ItemIdentifierStack stack : _allItems) {
@@ -293,9 +319,9 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 		markDirty();
 	}
 
-	private int tryAddToSlot(int i, ItemStack stack, int realstacklimit) {
-		if (!isValidStack(stack)) {
-			if (LPConstants.DEBUG) {
+	private int tryAddToSlot(int i, @Nonnull ItemStack stack, int realstacklimit) {
+		if (isInvalidStack(stack)) {
+			if (LogisticsPipes.isDEBUG()) {
 				new UnsupportedOperationException("Not valid for this Inventory: (" + stack + ")").printStackTrace();
 			}
 			return 0;
@@ -326,11 +352,11 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 		}
 	}
 
-	public int addCompressed(ItemStack stack, boolean ignoreMaxStackSize) {
-		if (stack == null) return 0;
+	public int addCompressed(@Nonnull ItemStack stack, boolean ignoreMaxStackSize) {
+		if (stack.isEmpty()) return 0;
 
-		if (!isValidStack(stack)) {
-			if (LPConstants.DEBUG) {
+		if (isInvalidStack(stack)) {
+			if (LogisticsPipes.isDEBUG()) {
 				new UnsupportedOperationException("Not valid for this Inventory: (" + stack + ")").printStackTrace();
 			}
 			return stack.getCount();
@@ -341,7 +367,7 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 		ItemIdentifier stackIdent = ItemIdentifier.get(stack);
 		int stacklimit = _stackLimit;
 
-		if (!ignoreMaxStackSize && stackIdent != null) {
+		if (!ignoreMaxStackSize) {
 			stacklimit = Math.min(stacklimit, stackIdent.getMaxStackSize());
 		}
 
@@ -375,37 +401,48 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 			if (_content == null) continue;
 
 			ItemIdentifier itemId = _content.getItem();
-			_contentsMap.merge(itemId, _content.getStackSize(), (a, b) -> a + b);
-			_contentsUndamagedSet.add(itemId.getUndamaged()); // add is cheaper than check then add; it just returns false if it is already there
-			_contentsNoNBTSet.add(itemId.getIgnoringNBT()); // add is cheaper than check then add; it just returns false if it is already there
-			_contentsUndamagedNoNBTSet.add(itemId.getIgnoringNBT().getUndamaged()); // add is cheaper than check then add; it just returns false if it is already there
+			_contentsMap.merge(itemId, _content.getStackSize(), Integer::sum);
+			_contentsUndamagedSet.add(itemId
+					.getUndamaged()); // add is cheaper than check then add; it just returns false if it is already there
+			_contentsNoNBTSet.add(itemId
+					.getIgnoringNBT()); // add is cheaper than check then add; it just returns false if it is already there
+			_contentsUndamagedNoNBTSet.add(itemId.getIgnoringNBT()
+					.getUndamaged()); // add is cheaper than check then add; it just returns false if it is already there
 		}
 	}
 
-	public int itemCount(final ItemIdentifier item) {
+	@Override
+	public int itemCount(@Nonnull final ItemIdentifier item) {
 		return _contentsMap.getOrDefault(item, 0);
 	}
 
+	@Override
+	@Nonnull
 	public Map<ItemIdentifier, Integer> getItemsAndCount() {
 		return _contentsMap;
 	}
 
+	@Override
 	public boolean containsItem(final ItemIdentifier item) {
 		return _contentsMap.containsKey(item);
 	}
 
-	public boolean containsUndamagedItem(final ItemIdentifier item) {
+	@Override
+	public boolean containsUndamagedItem(@Nonnull final ItemIdentifier item) {
 		return _contentsUndamagedSet.contains(item);
 	}
 
-	public boolean containsExcludeNBTItem(final ItemIdentifier item) {
+	@Override
+	public boolean containsExcludeNBTItem(@Nonnull final ItemIdentifier item) {
 		return _contentsNoNBTSet.contains(item);
 	}
 
-	public boolean containsUndamagedExcludeNBTItem(final ItemIdentifier item) {
+	@Override
+	public boolean containsUndamagedExcludeNBTItem(@Nonnull final ItemIdentifier item) {
 		return _contentsUndamagedNoNBTSet.contains(item);
 	}
 
+	@Override
 	public boolean isEmpty() {
 		return _contentsMap.isEmpty();
 	}
@@ -431,47 +468,13 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 	@Override
 	public void clear() {}
 
+	@Override
 	public void clearInventorySlotContents(int i) {
 		_contents[i] = null;
 		updateContents();
 	}
 
-	public void compactFirst(int size) {
-		// Compact
-		for (int i = 0; i < size; i++) {
-			final ItemIdentifierStack stackInSlot = getIDStackInSlot(i);
-			if (stackInSlot == null) {
-				continue;
-			}
-			final ItemIdentifier itemInSlot = stackInSlot.getItem();
-			for (int j = i + 1; j < size; j++) {
-				final ItemIdentifierStack stackInOtherSlot = getIDStackInSlot(j);
-				if (stackInOtherSlot == null) {
-					continue;
-				}
-				if (itemInSlot.equals(stackInOtherSlot.getItem())) {
-					stackInSlot.setStackSize(stackInSlot.getStackSize() + stackInOtherSlot.getStackSize());
-					clearInventorySlotContents(j);
-				}
-			}
-			setInventorySlotContents(i, stackInSlot);
-		}
-
-		for (int i = 0; i < size; i++) {
-			if (!getStackInSlot(i).isEmpty()) {
-				continue;
-			}
-			for (int j = i + 1; j < size; j++) {
-				if (getStackInSlot(j).isEmpty()) {
-					continue;
-				}
-				setInventorySlotContents(i, getStackInSlot(j));
-				clearInventorySlotContents(j);
-				break;
-			}
-		}
-	}
-
+	@Override
 	public void recheckStackLimit() {
 		for (ItemIdentifierStack _content : _contents) {
 			if (_content != null) {
@@ -480,11 +483,11 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 		}
 	}
 
-	private boolean isValidStack(@Nonnull ItemStack stack) {
-		if (isLiquidInventory) {
-			return FluidIdentifier.get(stack) != null;
+	private boolean isInvalidStack(@Nonnull ItemStack stack) {
+		if (isLiquidInventory && !stack.isEmpty()) {
+			return FluidIdentifier.get(stack) == null;
 		}
-		return true;
+		return false;
 	}
 
 	private boolean isValidStack(ItemIdentifierStack stack) {
@@ -493,16 +496,6 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 			return FluidIdentifier.get(stack.getItem()) != null;
 		}
 		return true;
-	}
-
-	@Override
-	public void setCCType(Object type) {
-		ccType = type;
-	}
-
-	@Override
-	public Object getCCType() {
-		return ccType;
 	}
 
 	@Override
@@ -552,7 +545,34 @@ public class ItemIdentifierInventory implements IInventory, ISaveState, ILPCCTyp
 
 	public NonNullList<ItemStack> toNonNullList() {
 		NonNullList<ItemStack> list = NonNullList.create();
-		list.addAll(0, StreamSupport.stream(this.spliterator(), false).filter(Objects::nonNull).map(it -> it.getValue1().makeNormalStack()).collect(Collectors.toSet()));
+		list.addAll(0, Arrays.stream(_contents)
+				.filter(Objects::nonNull)
+				.map(ItemIdentifierStack::makeNormalStack)
+				.collect(Collectors.toList()));
 		return list;
 	}
+
+	@Override
+	public @Nonnull
+	List<String> getClientInformation() {
+		return Arrays.stream(_contents).filter(Objects::nonNull).map(String::valueOf).collect(Collectors.toList());
+	}
+
+	@Override
+	public Object[] getTypeHolder() {
+		return ccTypeHolder;
+	}
+
+	@Nonnull
+	@Override
+	public Iterable<Pair<ItemIdentifierStack, Integer>> contents() {
+		return this;
+	}
+
+	@Nonnull
+	@Override
+	public SlotAccess getSlotAccess() {
+		return slotAccess;
+	}
+
 }

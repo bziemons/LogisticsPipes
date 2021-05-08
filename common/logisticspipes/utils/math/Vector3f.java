@@ -19,9 +19,9 @@ public class Vector3f {
 
 	public static Vector3f getFromAngles(double Yaw, double Pitch) {
 		Vector3f vector = new Vector3f();
-		vector.x = (float)(Math.cos(Yaw) * Math.cos(Pitch));
-		vector.y = (float)Math.sin(Pitch);
-		vector.z = (float)(Math.sin(Yaw) * Math.cos(Pitch));
+		vector.x = (float) (Math.cos(Yaw) * Math.cos(Pitch));
+		vector.y = (float) Math.sin(Pitch);
+		vector.z = (float) (Math.sin(Yaw) * Math.cos(Pitch));
 		return vector;
 	}
 
@@ -97,7 +97,7 @@ public class Vector3f {
 
 	@Override
 	public String toString() {
-		return new StringBuilder().append("[").append(x).append(",").append(y).append(",").append(z).append("]").append("(").append(abs()).append(")").toString();
+		return String.format("[%s,%s,%s](%s)", x, y, z, abs());
 	}
 
 	@Override

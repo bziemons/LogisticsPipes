@@ -23,11 +23,11 @@ package network.rs485.logisticspipes.proxy.mcmp;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -77,10 +77,10 @@ public class MCMPProxy implements IMCMPProxy {
 	public MCMPProxy() {
 		MCMPHooks.mcmpGetTEHook = (world, pos) -> {
 			TileEntity tile = world.getTileEntity(pos);
-			if(tile instanceof LogisticsTileGenericPipe) {
+			if (tile instanceof LogisticsTileGenericPipe) {
 				LogisticsTileGenericPipe lpTile = (LogisticsTileGenericPipe) tile;
 				TileEntity nTile = lpTile.imcmpltgpCompanion.getMCMPTileEntity();
-				if(nTile != null) {
+				if (nTile != null) {
 					return nTile;
 				}
 			}
@@ -101,11 +101,9 @@ public class MCMPProxy implements IMCMPProxy {
 
 	@Override
 	@SideOnly(Side.CLIENT)
-	public List<BakedQuad> addQuads(List<BakedQuad> list, IBlockState state, EnumFacing side, long rand) {
-		if(modelMultipartContainer == null) modelMultipartContainer = new ModelMultipartContainer();
-		List<BakedQuad> newQuads = modelMultipartContainer.getQuads(state, side, rand);
-		if(newQuads.isEmpty()) return list;
-		return Stream.concat(list.stream(), modelMultipartContainer.getQuads(state, side, rand).stream()).collect(Collectors.toList());
+	public void addQuads(@Nonnull List<BakedQuad> list, IBlockState state, EnumFacing side, long rand) {
+		if (modelMultipartContainer == null) modelMultipartContainer = new ModelMultipartContainer();
+		list.addAll(modelMultipartContainer.getQuads(state, side, rand));
 	}
 
 	@Override
@@ -115,13 +113,13 @@ public class MCMPProxy implements IMCMPProxy {
 
 	@Override
 	public boolean checkIntersectionWith(LogisticsTileGenericPipe logisticsTileGenericPipe, AxisAlignedBB aabb) {
-		return ((TileMultipartContainer)logisticsTileGenericPipe.imcmpltgpCompanion.getMCMPTileEntity()).getParts().values().stream().filter(i -> !(i.getPart() instanceof LPPipeMultipart)).anyMatch(i -> MultipartOcclusionHelper
+		return ((TileMultipartContainer) logisticsTileGenericPipe.imcmpltgpCompanion.getMCMPTileEntity()).getParts().values().stream().filter(i -> !(i.getPart() instanceof LPPipeMultipart)).anyMatch(i -> MultipartOcclusionHelper
 				.testBoxIntersection(i.getPart().getOcclusionBoxes(i), Collections.singletonList(aabb)));
 	}
 
 	@Override
 	public boolean hasParts(LogisticsTileGenericPipe pipeTile) {
-		return ((TileMultipartContainer)pipeTile.imcmpltgpCompanion.getMCMPTileEntity()).getParts().values().stream().anyMatch(i -> !(i.getPart() instanceof LPPipeMultipart));
+		return ((TileMultipartContainer) pipeTile.imcmpltgpCompanion.getMCMPTileEntity()).getParts().values().stream().anyMatch(i -> !(i.getPart() instanceof LPPipeMultipart));
 	}
 
 	@Override
@@ -130,7 +128,9 @@ public class MCMPProxy implements IMCMPProxy {
 			float alpha) {
 		TileEntitySpecialRenderer<TileEntity> renderer = TileEntityRendererDispatcher.instance
 				.getRenderer(TileMultipartContainer.class);
-		renderer.render(tileentity.imcmpltgpCompanion.getMCMPTileEntity(), x, y, z, partialTicks, destroyStage, alpha);
+		if (destroyStage < 0 || (tileentity.imcmpltgpCompanion.getMCMPTileEntity() != null && Minecraft.getMinecraft().objectMouseOver != null)) {
+			renderer.render(tileentity.imcmpltgpCompanion.getMCMPTileEntity(), x, y, z, partialTicks, destroyStage, alpha);
+		}
 	}
 
 	@SubscribeEvent
@@ -161,7 +161,7 @@ public class MCMPProxy implements IMCMPProxy {
 			}
 
 			int slotID = hit.subHit;
-			if(slotID < 0) {
+			if (slotID < 0) {
 				return;
 			}
 			PartInfo info = tile.get().getParts().get(MCMultiPart.slotRegistry.getValue(slotID));
@@ -200,7 +200,7 @@ public class MCMPProxy implements IMCMPProxy {
 	@SubscribeEvent
 	public void onNeighborNotify(BlockEvent.NeighborNotifyEvent event) {
 		TileEntity tile = event.getWorld().getTileEntity(event.getPos());
-		if(tile instanceof LogisticsTileGenericPipe) {
+		if (tile instanceof LogisticsTileGenericPipe) {
 			((LogisticsTileGenericPipe) tile).scheduleNeighborChange();
 		}
 	}

@@ -1,40 +1,30 @@
 package logisticspipes.items;
 
-import java.util.List;
+import javax.annotation.Nonnull;
 
-import javax.annotation.Nullable;
+import net.minecraft.item.ItemStack;
 
 import logisticspipes.interfaces.IItemAdvancedExistance;
-import logisticspipes.utils.string.StringUtils;
-
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
-
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class LogisticsBrokenItem extends LogisticsItem implements IItemAdvancedExistance {
 
 	private static final String PREFIX = "tooltip.brokenItem.";
 
 	@Override
-	public boolean canExistInNormalInventory(ItemStack stack) {
+	public boolean canExistInNormalInventory(@Nonnull ItemStack stack) {
 		return false;
 	}
 
 	@Override
-	public boolean canExistInWorld(ItemStack stack) {
+	public boolean canExistInWorld(@Nonnull ItemStack stack) {
 		return false;
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	@Override
-	@SideOnly(Side.CLIENT)
-	public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
-		tooltip.add(" - " + StringUtils.translate(LogisticsBrokenItem.PREFIX + "1"));
-		tooltip.add(" - " + StringUtils.translate(LogisticsBrokenItem.PREFIX + "2"));
-		tooltip.add("    " + StringUtils.translate(LogisticsBrokenItem.PREFIX + "3"));
-	}
+//	@Override
+//	@SideOnly(Side.CLIENT)
+//	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
+//		tooltip.add(" - " + TextUtil.translate(LogisticsBrokenItem.PREFIX + "1"));
+//		tooltip.add(" - " + TextUtil.translate(LogisticsBrokenItem.PREFIX + "2"));
+//		tooltip.add("    " + TextUtil.translate(LogisticsBrokenItem.PREFIX + "3"));
+//	}
 }

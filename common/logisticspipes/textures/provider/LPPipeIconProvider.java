@@ -2,16 +2,13 @@ package logisticspipes.textures.provider;
 
 import java.util.ArrayList;
 
-import logisticspipes.renderer.IIconProvider;
-
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureMap;
 
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-import lombok.Getter;
+import logisticspipes.renderer.IIconProvider;
 
 public class LPPipeIconProvider implements IIconProvider {
 
@@ -19,7 +16,7 @@ public class LPPipeIconProvider implements IIconProvider {
 	private ArrayList<TextureAtlasSprite> icons;
 
 	public LPPipeIconProvider() {
-		if(FMLCommonHandler.instance().getSide() == Side.CLIENT) {
+		if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
 			icons = new ArrayList<>();
 		}
 	}

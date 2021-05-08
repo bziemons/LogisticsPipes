@@ -41,6 +41,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
@@ -54,19 +55,20 @@ import java.util.UUID;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
 
 import io.netty.buffer.ByteBuf;
 import static io.netty.buffer.Unpooled.buffer;
 import static io.netty.buffer.Unpooled.wrappedBuffer;
 
+import logisticspipes.LogisticsPipes;
 import logisticspipes.network.IReadListObject;
 import logisticspipes.network.IWriteListObject;
 import logisticspipes.routing.channels.ChannelInformation;
@@ -76,7 +78,7 @@ import logisticspipes.utils.item.ItemIdentifierStack;
 
 public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 
-	private static final Charset UTF_8 = Charset.forName("utf-8");
+	private static final Charset UTF_8 = StandardCharsets.UTF_8;
 	private static final HashMap<Long, LPDataIOWrapper> BUFFER_WRAPPER_MAP = new HashMap<>();
 	ByteBuf localBuffer;
 	private int reference;
@@ -129,6 +131,8 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 	}
 
 	public static void provideData(ByteBuf dataBuffer, LPDataInputConsumer dataInputConsumer) {
+		// ignore empty data
+		if (dataBuffer.readableBytes() == 0) return;
 		LPDataIOWrapper lpData = getInstance(dataBuffer);
 
 		dataInputConsumer.accept(lpData);
@@ -137,6 +141,8 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 	}
 
 	public static void writeData(ByteBuf dataBuffer, LPDataOutputConsumer dataOutputConsumer) {
+		// ignore unwritable data
+		if (dataBuffer.writableBytes() == 0) return;
 		LPDataIOWrapper lpData = getInstance(dataBuffer);
 
 		dataOutputConsumer.accept(lpData);
@@ -265,8 +271,8 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 	}
 
 	@Override
-	public void writeBitSet(BitSet bits) {
-		writeByteArray(bits.toByteArray());
+	public void writeBitSet(@Nonnull BitSet bits) {
+		writeLongArray(bits.toLongArray());
 	}
 
 	@Override
@@ -303,6 +309,18 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 	}
 
 	@Override
+	public void writeUTFArray(@Nullable String[] arr) {
+		if (arr == null) {
+			writeInt(-1);
+		} else {
+			writeInt(arr.length);
+			for (String s : arr) {
+				writeUTF(s);
+			}
+		}
+	}
+
+	@Override
 	public void writeIntArray(@Nullable int[] arr) {
 		if (arr == null) {
 			writeInt(-1);
@@ -315,8 +333,8 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 	}
 
 	@Override
-	public void writeItemStack(ItemStack itemstack) {
-		if (itemstack == ItemStack.EMPTY) {
+	public void writeItemStack(@Nonnull ItemStack itemstack) {
+		if (itemstack.isEmpty()) {
 			writeInt(0);
 		} else {
 			writeInt(Item.getIdFromItem(itemstack.getItem()));
@@ -498,11 +516,11 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 	@Nonnull
 	@Override
 	public BitSet readBitSet() {
-		byte[] arr = readByteArray();
-		if (arr == null) {
+		final long[] words = readLongArray();
+		if (words == null) {
 			return new BitSet();
 		} else {
-			return BitSet.valueOf(arr);
+			return BitSet.valueOf(words);
 		}
 	}
 
@@ -541,6 +559,19 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 
 		final boolean[] arr = new boolean[bitCount];
 		IntStream.range(0, bitCount).forEach(i -> arr[i] = bits.get(i));
+		return arr;
+	}
+
+	@Nullable
+	@Override
+	public String[] readUTFArray() {
+		final int length = localBuffer.readInt();
+		if (length == -1) {
+			return null;
+		}
+
+		final String[] arr = new String[length];
+		IntStream.range(0, length).forEach(i -> arr[i] = readUTF());
 		return arr;
 	}
 
@@ -587,6 +618,10 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 		}
 
 		ItemIdentifier item = readItemIdentifier();
+		if (item == null) {
+			LogisticsPipes.log.error("Read null ItemIdentifier in readItemIdentifierStack");
+			return null;
+		}
 		return new ItemIdentifierStack(item, stacksize);
 	}
 
@@ -653,6 +688,22 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 
 	@Nullable
 	@Override
+	public <T> NonNullList<T> readNonNullList(IReadListObject<T> reader, @Nonnull T fillItem) {
+		int size = readInt();
+		if (size == -1) {
+			return null;
+		}
+
+		NonNullList<T> list = NonNullList.withSize(size, fillItem);
+		for (int i = 0; i < size; i++) {
+			T obj = reader.readObject(this);
+			if (obj != null) list.set(i, obj);
+		}
+		return list;
+	}
+
+	@Nullable
+	@Override
 	public <T extends Enum<T>> T readEnum(Class<T> clazz) {
 		return clazz.getEnumConstants()[localBuffer.readInt()];
 	}
@@ -701,4 +752,5 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 	public PlayerIdentifier readPlayerIdentifier() {
 		return PlayerIdentifier.get(this.readUTF(), this.readUUID());
 	}
+
 }

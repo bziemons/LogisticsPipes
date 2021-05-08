@@ -1,5 +1,7 @@
 package logisticspipes.network.packets.block;
 
+import javax.annotation.Nonnull;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -10,10 +12,9 @@ import lombok.Setter;
 import logisticspipes.blocks.LogisticsProgramCompilerTileEntity;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
+import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class CompilerStatusPacket extends CoordinatesPacket {
@@ -36,15 +37,17 @@ public class CompilerStatusPacket extends CoordinatesPacket {
 
 	@Getter
 	@Setter
+	@Nonnull
 	private ItemStack disk;
 
 	@Getter
 	@Setter
+	@Nonnull
 	private ItemStack programmer;
 
 	@Override
 	public void processPacket(EntityPlayer player) {
-		LogisticsProgramCompilerTileEntity tile = this.getTile(player.world, LogisticsProgramCompilerTileEntity.class);
+		LogisticsProgramCompilerTileEntity tile = this.getTileAs(player.world, LogisticsProgramCompilerTileEntity.class);
 		tile.setStateOnClient(this);
 	}
 

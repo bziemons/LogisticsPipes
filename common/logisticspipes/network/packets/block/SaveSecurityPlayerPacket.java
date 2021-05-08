@@ -1,11 +1,10 @@
 package logisticspipes.network.packets.block;
 
+import net.minecraft.entity.player.EntityPlayer;
+
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.abstractpackets.NBTCoordinatesPacket;
-
-import net.minecraft.entity.player.EntityPlayer;
-
 import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
@@ -22,7 +21,7 @@ public class SaveSecurityPlayerPacket extends NBTCoordinatesPacket {
 
 	@Override
 	public void processPacket(EntityPlayer player) {
-		LogisticsSecurityTileEntity tile = this.getTile(player.world, LogisticsSecurityTileEntity.class);
+		LogisticsSecurityTileEntity tile = this.getTileAs(player.world, LogisticsSecurityTileEntity.class);
 		if (tile != null) {
 			tile.saveNewSecuritySettings(getTag());
 		}

@@ -19,12 +19,12 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-import logisticspipes.LogisticsPipes;
 import logisticspipes.commands.commands.debug.DebugGuiController;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.pathfinder.changedetection.LPWorldAccess;
 import logisticspipes.utils.FluidIdentifier;
+import network.rs485.grow.ServerTickDispatcher;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 public class LPTickHandler {
@@ -33,20 +33,24 @@ public class LPTickHandler {
 
 	@SubscribeEvent
 	public void clientTick(ClientTickEvent event) {
-		FluidIdentifier.initFromForge(true);
-		SimpleServiceLocator.clientBufferHandler.clientTick(event);
-		MainProxy.proxy.tickClient();
-		DebugGuiController.instance().execClient();
+		if (event.phase == Phase.END) {
+			FluidIdentifier.initFromForge(true);
+			SimpleServiceLocator.clientBufferHandler.clientTick();
+			MainProxy.proxy.tickClient();
+			DebugGuiController.instance().execClient();
+		}
 	}
 
 	@SubscribeEvent
 	public void serverTick(ServerTickEvent event) {
-		HudUpdateTick.tick();
-		SimpleServiceLocator.serverBufferHandler.serverTick(event);
-		MainProxy.proxy.tickServer();
-		LPTickHandler.adjChecksDone = 0;
-		DebugGuiController.instance().execServer();
-		LogisticsPipes.getGlobalTickExecutor().tick();
+		if (event.phase == Phase.END) {
+			HudUpdateTick.tick();
+			SimpleServiceLocator.serverBufferHandler.serverTick();
+			MainProxy.proxy.tickServer();
+			LPTickHandler.adjChecksDone = 0;
+			DebugGuiController.instance().execServer();
+			ServerTickDispatcher.INSTANCE.tick();
+		}
 	}
 
 	private static Map<World, LPWorldInfo> worldInfo = new MapMaker().weakKeys().makeMap();

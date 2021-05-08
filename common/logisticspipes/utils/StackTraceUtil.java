@@ -1,18 +1,18 @@
 package logisticspipes.utils;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.function.Supplier;
 
-import logisticspipes.LPConstants;
+import logisticspipes.LogisticsPipes;
 import logisticspipes.utils.tuples.Pair;
-
-import scala.actors.threadpool.Arrays;
 
 public class StackTraceUtil {
 
-	private static Map<Thread, LinkedList<Pair<StackTraceElement, String>>> informationMap = new HashMap<>();
+	private static final Map<Thread, LinkedList<Pair<StackTraceElement, String>>> informationMap = new HashMap<>();
 
 	public static abstract class Info {
 
@@ -26,30 +26,25 @@ public class StackTraceUtil {
 	}
 
 	private static LinkedList<Pair<StackTraceElement, String>> getList() {
-		LinkedList<Pair<StackTraceElement, String>> list = StackTraceUtil.informationMap.get(Thread.currentThread());
-		if (list == null) {
-			list = new LinkedList<>();
-			StackTraceUtil.informationMap.put(Thread.currentThread(), list);
-		}
-		return list;
+		return StackTraceUtil.informationMap.computeIfAbsent(Thread.currentThread(), k -> new LinkedList<>());
 	}
 
-	public static Info addTraceInformation(final String information, Info... infos) {
-		if (!LPConstants.DEBUG) {
+	public static Info addTraceInformation(final Supplier<String> informationSupplier, Info... infos) {
+		if (!LogisticsPipes.isDEBUG()) {
 			return new DummyInfo();
 		}
 		StackTraceElement[] trace = Thread.currentThread().getStackTrace();
 		final StackTraceElement calledFrom = trace[2];
-		return StackTraceUtil.addTraceInformationFor(calledFrom, information, infos);
+		return StackTraceUtil.addTraceInformationFor(calledFrom, informationSupplier.get(), infos);
 	}
 
-	public static Info addSuperTraceInformation(final String information, Info... infos) {
-		if (!LPConstants.DEBUG) {
+	public static Info addSuperTraceInformation(final Supplier<String> informationSupplier, Info... infos) {
+		if (!LogisticsPipes.isDEBUG()) {
 			return new DummyInfo();
 		}
 		StackTraceElement[] trace = Thread.currentThread().getStackTrace();
 		final StackTraceElement calledFrom = trace[3];
-		return StackTraceUtil.addTraceInformationFor(calledFrom, information, infos);
+		return StackTraceUtil.addTraceInformationFor(calledFrom, informationSupplier.get(), infos);
 	}
 
 	private static Info addTraceInformationFor(final StackTraceElement calledFrom, final String information, final Info... infos) {
@@ -87,8 +82,7 @@ public class StackTraceUtil {
 			synchronized (StackTraceUtil.informationMap) {
 				// Print our stack trace
 				@SuppressWarnings("unchecked")
-				LinkedList<StackTraceElement> traceList = new LinkedList<>(Arrays
-						.asList(Thread.currentThread().getStackTrace()));
+				LinkedList<StackTraceElement> traceList = new LinkedList<>(Arrays.asList(Thread.currentThread().getStackTrace()));
 				traceList.removeFirst();
 				traceList.removeFirst();
 				LinkedList<Pair<StackTraceElement, String>> paired = new LinkedList<>();

@@ -1,38 +1,41 @@
 package logisticspipes.utils;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import javax.annotation.Nonnull;
+
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidUtil;
+import net.minecraftforge.fluids.IFluidTank;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.capability.IFluidTankProperties;
+
+import lombok.AllArgsConstructor;
 
 import logisticspipes.asm.addinfo.IAddInfo;
 import logisticspipes.asm.addinfo.IAddInfoProvider;
-import logisticspipes.interfaces.ITankUtil;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
 
-import lombok.AllArgsConstructor;
-
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-
-import net.minecraft.util.EnumFacing;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTankInfo;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.IFluidTank;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import net.minecraftforge.fluids.capability.IFluidTankProperties;
-
 public class FluidIdentifier implements Comparable<FluidIdentifier>, ILPCCTypeHolder {
 
+	private final Object[] ccTypeHolder = new Object[1];
 	private final static ReadWriteLock dblock = new ReentrantReadWriteLock();
 	private final static Lock rlock = FluidIdentifier.dblock.readLock();
 	private final static Lock wlock = FluidIdentifier.dblock.writeLock();
@@ -63,11 +66,13 @@ public class FluidIdentifier implements Comparable<FluidIdentifier>, ILPCCTypeHo
 
 	@AllArgsConstructor
 	private static class FluidStackAddInfo implements IAddInfo {
+
 		private final FluidIdentifier fluid;
 	}
 
 	@AllArgsConstructor
 	private static class FluidAddInfo implements IAddInfo {
+
 		private final FluidIdentifier fluid;
 	}
 
@@ -81,22 +86,22 @@ public class FluidIdentifier implements Comparable<FluidIdentifier>, ILPCCTypeHo
 	public static FluidIdentifier get(Fluid fluid, NBTTagCompound tag, FluidIdentifier proposal) {
 		String fluidID = fluid.getName();
 		if (tag == null) {
-			if(proposal != null) {
-				if(proposal.fluidID == fluidID && proposal.tag == null) {
+			if (proposal != null) {
+				if (proposal.fluidID.equals(fluidID) && proposal.tag == null) {
 					return proposal;
 				}
 			}
 			proposal = null;
 			IAddInfoProvider prov = null;
-			if(fluid instanceof IAddInfoProvider) {
+			if (fluid instanceof IAddInfoProvider) {
 				prov = (IAddInfoProvider) fluid;
 				FluidAddInfo info = prov.getLogisticsPipesAddInfo(FluidAddInfo.class);
-				if(info != null) {
+				if (info != null) {
 					proposal = info.fluid;
 				}
 			}
 			FluidIdentifier ident = getFluidIdentifierWithoutTag(fluid, fluidID, proposal);
-			if(proposal != ident && prov != null) {
+			if (proposal != ident && prov != null) {
 				prov.setLogisticsPipesAddInfo(new FluidAddInfo(ident));
 			}
 			return ident;
@@ -128,7 +133,7 @@ public class FluidIdentifier implements Comparable<FluidIdentifier>, ILPCCTypeHo
 			}
 			HashMap<FinalNBTTagCompound, FluidIdentifier> fluidNBTList = FluidIdentifier._fluidIdentifierTagCache
 					.computeIfAbsent(fluidID, k -> new HashMap<>(16, 0.5f));
-			FinalNBTTagCompound finaltag = new FinalNBTTagCompound((NBTTagCompound) tag.copy());
+			FinalNBTTagCompound finaltag = new FinalNBTTagCompound(tag);
 			int id = FluidIdentifier.getUnusedId();
 			FluidIdentifier unknownFluid = new FluidIdentifier(fluidID, FluidRegistry.getFluidName(fluid), finaltag, id);
 			fluidNBTList.put(finaltag, unknownFluid);
@@ -139,8 +144,8 @@ public class FluidIdentifier implements Comparable<FluidIdentifier>, ILPCCTypeHo
 	}
 
 	private static FluidIdentifier getFluidIdentifierWithoutTag(Fluid fluid, String fluidID, FluidIdentifier proposal) {
-		if(proposal != null) {
-			if(proposal.fluidID == fluidID && proposal.tag == null) {
+		if (proposal != null) {
+			if (proposal.fluidID.equals(fluidID) && proposal.tag == null) {
 				return proposal;
 			}
 		}
@@ -170,20 +175,20 @@ public class FluidIdentifier implements Comparable<FluidIdentifier>, ILPCCTypeHo
 	}
 
 	public static FluidIdentifier get(FluidStack stack) {
-		if(stack == null) {
+		if (stack == null) {
 			return null;
 		}
 		FluidIdentifier proposal = null;
 		IAddInfoProvider prov = null;
-		if(stack instanceof IAddInfoProvider) {
+		if (stack instanceof IAddInfoProvider) {
 			prov = (IAddInfoProvider) stack;
 			FluidStackAddInfo info = prov.getLogisticsPipesAddInfo(FluidStackAddInfo.class);
-			if(info != null) {
+			if (info != null) {
 				proposal = info.fluid;
 			}
 		}
 		FluidIdentifier ident = FluidIdentifier.get(stack.getFluid(), stack.tag, proposal);
-		if(proposal != ident && stack.tag == null && prov != null) {
+		if (proposal != ident && stack.tag == null && prov != null) {
 			prov.setLogisticsPipesAddInfo(new FluidStackAddInfo(ident));
 		}
 		return ident;
@@ -193,22 +198,22 @@ public class FluidIdentifier implements Comparable<FluidIdentifier>, ILPCCTypeHo
 		return FluidIdentifier.get(stack.makeStack(1));
 	}
 
-	public static FluidIdentifier get(ItemStack stack) {
+	public static FluidIdentifier get(@Nonnull ItemStack stack) {
 		return FluidIdentifier.get(ItemIdentifierStack.getFromStack(stack));
 	}
 
 	public static FluidIdentifier get(ItemIdentifierStack stack) {
 		FluidStack f = null;
 		FluidIdentifierStack fstack = SimpleServiceLocator.logisticsFluidManager.getFluidFromContainer(stack);
-		if(fstack != null) {
+		if (fstack != null) {
 			f = fstack.makeFluidStack();
 		}
-		if(f == null) {
+		if (f == null) {
 			ItemStack itemStack = stack.unsafeMakeNormalStack();
-			if(itemStack.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null)) {
+			if (itemStack.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null)) {
 				IFluidHandlerItem capability = itemStack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null);
-				if(capability != null) {
-					f = Arrays.stream(capability.getTankProperties()).map(IFluidTankProperties::getContents).findFirst().orElse(null);
+				if (capability != null) {
+					f = Arrays.stream(capability.getTankProperties()).map(IFluidTankProperties::getContents).filter(Objects::nonNull).findFirst().orElse(null);
 				}
 			}
 		}
@@ -257,7 +262,7 @@ public class FluidIdentifier implements Comparable<FluidIdentifier>, ILPCCTypeHo
 
 	public int getFreeSpaceInsideTank(IFluidTank tank) {
 		FluidStack liquid = tank.getFluid();
-		if (liquid == null || liquid.getFluid() != null) {
+		if (liquid == null || liquid.getFluid() == null) {
 			return tank.getCapacity();
 		}
 		if (FluidIdentifier.get(liquid).equals(this)) {
@@ -352,15 +357,9 @@ public class FluidIdentifier implements Comparable<FluidIdentifier>, ILPCCTypeHo
 		return SimpleServiceLocator.logisticsFluidManager.getFluidContainer(this.makeFluidIdentifierStack(1)).getItem();
 	}
 
-	private Object ccObject;
-
 	@Override
-	public void setCCType(Object type) {
-		ccObject = type;
+	public Object[] getTypeHolder() {
+		return ccTypeHolder;
 	}
 
-	@Override
-	public Object getCCType() {
-		return ccObject;
-	}
 }

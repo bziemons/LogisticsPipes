@@ -1,10 +1,15 @@
 package logisticspipes.recipes;
 
-import logisticspipes.LPItems;
-import net.minecraft.item.ItemStack;
-
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nonnull;
+
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.Ingredient;
+import net.minecraft.nbt.NBTTagCompound;
+
+import logisticspipes.LPItems;
+import logisticspipes.items.ItemLogisticsProgrammer;
 
 public abstract class CraftingPartRecipes implements IRecipeProvider {
 
@@ -22,7 +27,6 @@ public abstract class CraftingPartRecipes implements IRecipeProvider {
 				SimpleServiceLocator.ccProxy.addCraftingRecipes(parts);
 				SimpleServiceLocator.buildCraftProxy.addCraftingRecipes(parts);
 
-				SolderingStationRecipes.loadRecipe(parts);
 				RecipeManager.loadRecipes();
 			}
 			*/
@@ -40,11 +44,18 @@ public abstract class CraftingPartRecipes implements IRecipeProvider {
 
 	@Override
 	public final void loadRecipes() {
-		loadPlainRecipes();
 		getCraftingPartList().forEach(this::loadRecipes);
+	}
+
+	@Nonnull
+	protected Ingredient programmerIngredient(String recipeTarget) {
+		ItemStack programmerStack = new ItemStack(LPItems.logisticsProgrammer);
+		final NBTTagCompound tag = new NBTTagCompound();
+		tag.setString(ItemLogisticsProgrammer.RECIPE_TARGET, recipeTarget);
+		programmerStack.setTagCompound(tag);
+		return NBTIngredient.fromStacks(programmerStack);
 	}
 
 	protected abstract void loadRecipes(CraftingParts parts);
 
-	protected abstract void loadPlainRecipes();
 }

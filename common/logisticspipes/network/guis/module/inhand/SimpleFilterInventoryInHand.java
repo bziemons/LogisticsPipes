@@ -1,16 +1,17 @@
 package logisticspipes.network.guis.module.inhand;
 
-import logisticspipes.gui.modules.GuiSimpleFilter;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.modules.abstractmodules.LogisticsSimpleFilterModule;
-import logisticspipes.network.abstractguis.GuiProvider;
-import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
-import logisticspipes.utils.gui.DummyContainer;
-import logisticspipes.utils.gui.DummyModuleContainer;
-
 import net.minecraft.entity.player.EntityPlayer;
 
+import logisticspipes.gui.modules.GuiSimpleFilter;
+import logisticspipes.items.ItemModule;
+import logisticspipes.modules.LogisticsModule;
+import logisticspipes.network.abstractguis.GuiProvider;
+import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
 import logisticspipes.utils.StaticResolve;
+import logisticspipes.utils.gui.DummyContainer;
+import logisticspipes.utils.gui.DummyModuleContainer;
+import network.rs485.logisticspipes.module.Gui;
+import network.rs485.logisticspipes.module.SimpleFilter;
 
 @StaticResolve
 public class SimpleFilterInventoryInHand extends ModuleInHandGuiProvider {
@@ -21,20 +22,20 @@ public class SimpleFilterInventoryInHand extends ModuleInHandGuiProvider {
 
 	@Override
 	public Object getClientGui(EntityPlayer player) {
-		LogisticsModule module = getLogisticsModule(player);
-		if (!(module instanceof LogisticsSimpleFilterModule)) {
+		LogisticsModule module = ItemModule.getLogisticsModule(player, getInvSlot());
+		if (!(module instanceof Gui && module instanceof SimpleFilter)) {
 			return null;
 		}
-		return new GuiSimpleFilter(player.inventory, (LogisticsSimpleFilterModule) module);
+		return new GuiSimpleFilter(player.inventory, module);
 	}
 
 	@Override
 	public DummyContainer getContainer(EntityPlayer player) {
 		DummyModuleContainer dummy = new DummyModuleContainer(player, getInvSlot());
-		if (!(dummy.getModule() instanceof LogisticsSimpleFilterModule)) {
+		if (!(dummy.getModule() instanceof SimpleFilter)) {
 			return null;
 		}
-		dummy.setInventory(((LogisticsSimpleFilterModule) dummy.getModule()).getFilterInventory());
+		dummy.setInventory(((SimpleFilter) dummy.getModule()).getFilterInventory());
 		dummy.addNormalSlotsForPlayerInventory(8, 60);
 
 		//Pipe slots

@@ -6,10 +6,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.UUID;
+import javax.annotation.Nonnull;
 
-import logisticspipes.LPConstants;
+import net.minecraft.crash.CrashReportCategory;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagInt;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.text.TextComponentTranslation;
+
 import logisticspipes.LPItems;
+import logisticspipes.LogisticsPipes;
 import logisticspipes.api.IRoutedPowerProvider;
 import logisticspipes.interfaces.IGuiOpenControler;
 import logisticspipes.interfaces.IGuiTileEntity;
@@ -28,21 +41,8 @@ import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.security.SecuritySettings;
-import logisticspipes.utils.OrientationsUtil;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifierInventory;
-
-import net.minecraft.crash.CrashReportCategory;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagInt;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.text.TextComponentTranslation;
-
-import net.minecraft.util.EnumFacing;
 
 public class LogisticsSecurityTileEntity extends LogisticsSolidTileEntity implements IGuiOpenControler, ISecurityProvider, IGuiTileEntity {
 
@@ -56,6 +56,7 @@ public class LogisticsSecurityTileEntity extends LogisticsSolidTileEntity implem
 
 	public static PlayerCollectionList byPassed = new PlayerCollectionList();
 	public static final SecuritySettings allowAll = new SecuritySettings("");
+
 	static {
 		LogisticsSecurityTileEntity.allowAll.openGui = true;
 		LogisticsSecurityTileEntity.allowAll.openRequest = true;
@@ -205,14 +206,14 @@ public class LogisticsSecurityTileEntity extends LogisticsSolidTileEntity implem
 				if (inv.getIDStackInSlot(0) == null) {
 					ItemStack stack = new ItemStack(LPItems.itemCard, 1, LogisticsItemCard.SEC_CARD);
 					stack.setTagCompound(new NBTTagCompound());
-					stack.getTagCompound().setString("UUID", getSecId().toString());
+					Objects.requireNonNull(stack.getTagCompound()).setString("UUID", getSecId().toString());
 					inv.setInventorySlotContents(0, stack);
 				} else {
 					ItemStack slot = inv.getStackInSlot(0);
 					if (slot.getCount() < 64) {
 						slot.grow(1);
 						slot.setTagCompound(new NBTTagCompound());
-						slot.getTagCompound().setString("UUID", getSecId().toString());
+						Objects.requireNonNull(slot.getTagCompound()).setString("UUID", getSecId().toString());
 						inv.setInventorySlotContents(0, slot);
 					}
 				}
@@ -224,15 +225,16 @@ public class LogisticsSecurityTileEntity extends LogisticsSolidTileEntity implem
 				}
 				ItemStack stack = new ItemStack(LPItems.itemCard, 64, LogisticsItemCard.SEC_CARD);
 				stack.setTagCompound(new NBTTagCompound());
-				stack.getTagCompound().setString("UUID", getSecId().toString());
+				Objects.requireNonNull(stack.getTagCompound()).setString("UUID", getSecId().toString());
 				inv.setInventorySlotContents(0, stack);
 				break;
 		}
 	}
 
-	public void handleOpenSecurityPlayer(EntityPlayer player, String string) {
+	public void handleOpenSecurityPlayer(EntityPlayer player, @Nonnull String string) {
 		SecuritySettings setting = settingsList.get(string);
-		if (setting == null && string != null && !string.isEmpty()) {
+		if (setting == null) {
+			if (string.isEmpty()) return;
 			setting = new SecuritySettings(string);
 			settingsList.put(string, setting);
 		}
@@ -325,7 +327,7 @@ public class LogisticsSecurityTileEntity extends LogisticsSolidTileEntity implem
 
 	private boolean useEnergy(int amount) {
 		for (int i = 0; i < 4; i++) {
-			TileEntity tile = OrientationsUtil.getTileNextToThis(this, EnumFacing.VALUES[i + 2]);
+			TileEntity tile = getWorld().getTileEntity(getPos().offset(EnumFacing.VALUES[i + 2]));
 			if (tile instanceof IRoutedPowerProvider) {
 				if (((IRoutedPowerProvider) tile).useEnergy(amount)) {
 					return true;
@@ -345,7 +347,7 @@ public class LogisticsSecurityTileEntity extends LogisticsSolidTileEntity implem
 	@Override
 	public void addInfoToCrashReport(CrashReportCategory par1CrashReportCategory) {
 		super.addInfoToCrashReport(par1CrashReportCategory);
-		par1CrashReportCategory.addCrashSection("LP-Version", LPConstants.VERSION);
+		par1CrashReportCategory.addCrashSection("LP-Version", LogisticsPipes.getVersionString());
 	}
 
 	@Override

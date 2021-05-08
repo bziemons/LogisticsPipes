@@ -6,8 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import network.rs485.logisticspipes.world.CoordinateUtils;
-import network.rs485.logisticspipes.world.DoubleCoordinates;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
 
 import logisticspipes.interfaces.routing.ISpecialTileConnection;
 import logisticspipes.logisticspipes.IRoutedItem;
@@ -15,10 +15,9 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
-
-import net.minecraft.tileentity.TileEntity;
-
-import net.minecraft.util.EnumFacing;
+import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.world.CoordinateUtils;
+import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 public class EnderIOTransceiverConnection implements ISpecialTileConnection {
 
@@ -93,7 +92,9 @@ public class EnderIOTransceiverConnection implements ISpecialTileConnection {
 		}
 		TileEntity pipe = list.iterator().next();
 		if (pipe instanceof LogisticsTileGenericPipe) {
-			((CoreRoutedPipe) ((LogisticsTileGenericPipe) pipe).pipe).queueUnroutedItemInformation(data.getItemIdentifierStack().clone(), data.getInfo());
+			final CoreRoutedPipe pipeTile = (CoreRoutedPipe) ((LogisticsTileGenericPipe) pipe).pipe;
+			final ItemIdentifierStack copiedStack = new ItemIdentifierStack(data.getItemIdentifierStack());
+			pipeTile.queueUnroutedItemInformation(copiedStack, data.getInfo());
 		} else {
 			new RuntimeException("Only LP pipes can be next to transceiver to queue item information").printStackTrace();
 		}

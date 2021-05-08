@@ -15,16 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import logisticspipes.LPConstants;
-import logisticspipes.LogisticsPipes;
-import logisticspipes.asm.IgnoreDisabledProxy;
-import logisticspipes.proxy.DontLoadProxy;
-import logisticspipes.proxy.VersionNotSupportedException;
-import logisticspipes.proxy.interfaces.ICraftingRecipeProvider;
-import logisticspipes.proxy.interfaces.IGenericProgressProvider;
-import logisticspipes.proxy.interfaces.ILPPipeConfigToolWrapper;
-import logisticspipes.utils.ModStatusHelper;
-
 import net.minecraft.launchwrapper.Launch;
 import net.minecraft.launchwrapper.LogWrapper;
 
@@ -37,6 +27,15 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import logisticspipes.LogisticsPipes;
+import logisticspipes.asm.IgnoreDisabledProxy;
+import logisticspipes.proxy.DontLoadProxy;
+import logisticspipes.proxy.VersionNotSupportedException;
+import logisticspipes.proxy.interfaces.ICraftingRecipeProvider;
+import logisticspipes.proxy.interfaces.IGenericProgressProvider;
+import logisticspipes.proxy.interfaces.ILPPipeConfigToolWrapper;
+import logisticspipes.utils.ModStatusHelper;
+
 public class LogisticsWrapperHandler {
 
 	private static final boolean DUMP = false;
@@ -47,7 +46,6 @@ public class LogisticsWrapperHandler {
 	private static Method m_defineClass = null;
 
 	private LogisticsWrapperHandler() {}
-
 
 	public static ILPPipeConfigToolWrapper getWrappedPipeConfigToolWrapper(String clazz, String name, Class<? extends ILPPipeConfigToolWrapper> providerClass) {
 		ILPPipeConfigToolWrapper wrapper = null;
@@ -72,18 +70,17 @@ public class LogisticsWrapperHandler {
 			LogisticsPipes.log.info("Loaded " + name + " PipeConfigToolWrapper");
 		} else {
 			if (e != null) {
-				((AbstractWrapper) instance).setState(WrapperState.Exception);
-				((AbstractWrapper) instance).setReason(e);
+				instance.setState(WrapperState.Exception);
+				instance.setReason(e);
 				LogisticsPipes.log.info("Couldn't load " + name + " PipeConfigToolWrapper");
 			} else {
 				LogisticsPipes.log.info("Didn't load " + name + " PipeConfigToolWrapper");
-				((AbstractWrapper) instance).setState(WrapperState.ModMissing);
+				instance.setState(WrapperState.ModMissing);
 			}
 		}
 		LogisticsWrapperHandler.wrapperController.add(instance);
 		return instance;
 	}
-
 
 	public static IGenericProgressProvider getWrappedProgressProvider(String modId, String name, Class<? extends IGenericProgressProvider> providerClass) {
 		IGenericProgressProvider provider = null;
@@ -107,12 +104,12 @@ public class LogisticsWrapperHandler {
 			LogisticsPipes.log.info("Loaded " + modId + ", " + name + " ProgressProvider");
 		} else {
 			if (e != null) {
-				((AbstractWrapper) instance).setState(WrapperState.Exception);
-				((AbstractWrapper) instance).setReason(e);
+				instance.setState(WrapperState.Exception);
+				instance.setReason(e);
 				LogisticsPipes.log.info("Couldn't load " + modId + ", " + name + " ProgressProvider");
 			} else {
 				LogisticsPipes.log.info("Didn't load " + modId + ", " + name + " ProgressProvider");
-				((AbstractWrapper) instance).setState(WrapperState.ModMissing);
+				instance.setState(WrapperState.ModMissing);
 			}
 		}
 		instance.setModId(modId);
@@ -142,12 +139,12 @@ public class LogisticsWrapperHandler {
 			LogisticsPipes.log.info("Loaded " + name + " RecipeProvider");
 		} else {
 			if (e != null) {
-				((AbstractWrapper) instance).setState(WrapperState.Exception);
-				((AbstractWrapper) instance).setReason(e);
+				instance.setState(WrapperState.Exception);
+				instance.setReason(e);
 				LogisticsPipes.log.info("Couldn't load " + name + " RecipeProvider");
 			} else {
 				LogisticsPipes.log.info("Didn't load " + name + " RecipeProvider");
-				((AbstractWrapper) instance).setState(WrapperState.ModMissing);
+				instance.setState(WrapperState.ModMissing);
 			}
 		}
 		instance.setModId(modId);
@@ -156,7 +153,7 @@ public class LogisticsWrapperHandler {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> T getWrappedProxy(String modId, Class<T> interfaze, Class<? extends T> proxyClazz, T dummyProxy, Class<?>... wrapperInterfaces) throws NoSuchFieldException, SecurityException, ClassNotFoundException, IllegalArgumentException, IllegalAccessException, InstantiationException,
+	public static <T> T getWrappedProxy(String modId, Class<T> interfaze, Class<? extends T> proxyClazz, T dummyProxy, Class<?>... wrapperInterfaces) throws SecurityException, IllegalArgumentException, IllegalAccessException, InstantiationException,
 			InvocationTargetException, NoSuchMethodException {
 		String proxyName = interfaze.getSimpleName().substring(1);
 		if (!proxyName.endsWith("Proxy")) {
@@ -170,7 +167,7 @@ public class LogisticsWrapperHandler {
 			modId = modId.substring(1);
 		}
 		List<Class<?>> wrapperInterfacesList = Arrays.asList(wrapperInterfaces);
-		Class<?> clazz = null;
+		Class<?> clazz;
 		synchronized (lookupMap) {
 			clazz = LogisticsWrapperHandler.lookupMap.get(className);
 			if (clazz == null) {
@@ -235,7 +232,7 @@ public class LogisticsWrapperHandler {
 
 				byte[] bytes = cw.toByteArray();
 
-				if (LPConstants.DEBUG) {
+				if (LogisticsPipes.isDEBUG()) {
 					if (LogisticsWrapperHandler.DUMP) {
 						LogisticsWrapperHandler.saveGeneratedClass(bytes, lookfor, "LP_WRAPPER_CLASSES");
 					}
@@ -245,22 +242,22 @@ public class LogisticsWrapperHandler {
 
 				try {
 					clazz = LogisticsWrapperHandler.loadClass(bytes, lookfor);
-				} catch(LinkageError e) {
+				} catch (LinkageError e) {
 					try {
-						if(e.getMessage().contains("attempted") && e.getMessage().contains("duplicate class definition")) {
+						if (e.getMessage().contains("attempted") && e.getMessage().contains("duplicate class definition")) {
 							Class<?> prev = Class.forName(className);
 							System.err.println(e.getMessage());
-							System.err.println("Already loaded: " + String.valueOf(prev));
+							System.err.printf("Already loaded: %s%n", prev);
 							String resourcePath = className.replace('.', '/').concat(".class");
 							URL classResource = Launch.classLoader.findResource(resourcePath);
-							if(classResource != null) {
-								String path = classResource.getPath().toString();
+							if (classResource != null) {
+								String path = classResource.getPath();
 								System.err.println("Class source: " + path);
 							} else {
 								System.err.println("Class source: Null");
 							}
 						}
-					} catch(Exception e2) {
+					} catch (Exception e2) {
 						e2.printStackTrace();
 					}
 					throw e;
@@ -308,14 +305,14 @@ public class LogisticsWrapperHandler {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> T getWrappedSubProxy(AbstractWrapper wrapper, Class<T> interfaze, T proxy, T dummyProxy) throws NoSuchFieldException, SecurityException, ClassNotFoundException, IllegalArgumentException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
+	public static <T> T getWrappedSubProxy(AbstractWrapper wrapper, Class<T> interfaze, T proxy, T dummyProxy) throws SecurityException, IllegalArgumentException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
 		if (proxy == null) {
 			return null;
 		}
 		String proxyName = interfaze.getSimpleName().substring(1);
 		String className = "logisticspipes/asm/wrapper/generated/" + proxyName + "ProxyWrapper";
 
-		Class<?> clazz = null;
+		Class<?> clazz;
 		synchronized (lookupMap) {
 			clazz = LogisticsWrapperHandler.lookupMap.get(className);
 			if (clazz == null) {
@@ -380,7 +377,7 @@ public class LogisticsWrapperHandler {
 
 				byte[] bytes = cw.toByteArray();
 
-				if (LPConstants.DEBUG) {
+				if (LogisticsPipes.isDEBUG()) {
 					if (LogisticsWrapperHandler.DUMP) {
 						LogisticsWrapperHandler.saveGeneratedClass(bytes, lookfor, "LP_WRAPPER_CLASSES");
 					}
@@ -390,22 +387,22 @@ public class LogisticsWrapperHandler {
 
 				try {
 					clazz = LogisticsWrapperHandler.loadClass(bytes, lookfor);
-				} catch(LinkageError e) {
+				} catch (LinkageError e) {
 					try {
-						if(e.getMessage().contains("attempted") && e.getMessage().contains("duplicate class definition")) {
+						if (e.getMessage().contains("attempted") && e.getMessage().contains("duplicate class definition")) {
 							Class<?> prev = Class.forName(className);
 							System.err.println(e.getMessage());
-							System.err.println("Already loaded: " + String.valueOf(prev));
+							System.err.printf("Already loaded: %s%n", prev);
 							String resourcePath = className.replace('.', '/').concat(".class");
 							URL classResource = Launch.classLoader.findResource(resourcePath);
-							if(classResource != null) {
-								String path = classResource.getPath().toString();
+							if (classResource != null) {
+								String path = classResource.getPath();
 								System.err.println("Class source: " + path);
 							} else {
 								System.err.println("Class source: Null");
 							}
 						}
-					} catch(Exception e2) {
+					} catch (Exception e2) {
 						e2.printStackTrace();
 					}
 					throw e;
@@ -473,7 +470,7 @@ public class LogisticsWrapperHandler {
 		desc.append(")");
 		String resultClassL = null;
 		String resultClass = null;
-		int returnType = 0;
+		int returnType;
 		if (retclazz == null || retclazz == void.class) {
 			desc.append("V");
 			returnType = Opcodes.RETURN;

@@ -1,7 +1,5 @@
 package logisticspipes.gui.popup;
 
-import java.io.IOException;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 
@@ -56,8 +54,8 @@ public class ActionChoisePopup extends SubGuiScreen {
 	}
 
 	@Override
-	protected void actionPerformed(GuiButton button) throws IOException {
-		switch(button.id) {
+	protected void actionPerformed(GuiButton button) {
+		switch (button.id) {
 			case 0:
 				leftAction.run();
 				exitGui();

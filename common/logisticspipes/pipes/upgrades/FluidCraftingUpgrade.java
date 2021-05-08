@@ -1,11 +1,15 @@
 package logisticspipes.pipes.upgrades;
 
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleCrafter;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.pipes.PipeItemsCraftingLogistics;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 
 public class FluidCraftingUpgrade implements IPipeUpgrade {
+
+	public static String getName() {
+		return "fluid_crafting";
+	}
 
 	@Override
 	public boolean needsUpdate() {

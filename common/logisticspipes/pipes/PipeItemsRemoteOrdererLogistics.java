@@ -8,7 +8,7 @@ import net.minecraft.util.text.TextComponentTranslation;
 
 import logisticspipes.LPItems;
 import logisticspipes.items.RemoteOrderer;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.security.SecuritySettings;
@@ -28,7 +28,7 @@ public class PipeItemsRemoteOrdererLogistics extends CoreRoutedPipe {
 
 	@Override
 	public boolean handleClick(EntityPlayer entityplayer, SecuritySettings settings) {
-		if (entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() == LPItems.remoteOrderer) {
+		if (!entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).isEmpty() && entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() == LPItems.remoteOrderer) {
 			if (MainProxy.isServer(getWorld())) {
 				if (settings == null || settings.openRequest) {
 					ItemStack orderer = entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);

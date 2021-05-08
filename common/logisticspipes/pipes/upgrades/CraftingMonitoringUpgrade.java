@@ -1,10 +1,14 @@
 package logisticspipes.pipes.upgrades;
 
-import logisticspipes.modules.abstractmodules.LogisticsModule;
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.PipeBlockRequestTable;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 
 public class CraftingMonitoringUpgrade implements IPipeUpgrade {
+
+	public static String getName() {
+		return "crafting_monitoring";
+	}
 
 	@Override
 	public boolean needsUpdate() {

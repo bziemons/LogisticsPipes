@@ -44,12 +44,10 @@ public class LogisticsFluidManager implements ILogisticsFluidManager {
 
 			int amount = ((IFluidSink) pipe).sinkAmount(stack);
 			if (amount > 0) {
-				Pair<Integer, Integer> result = new Pair<>(candidateRouter.destination.getSimpleID(), amount);
-				return result;
+				return new Pair<>(candidateRouter.destination.getSimpleID(), amount);
 			}
 		}
-		Pair<Integer, Integer> result = new Pair<>(0, 0);
-		return result;
+		return new Pair<>(0, 0);
 	}
 
 	@Override
@@ -68,5 +66,40 @@ public class LogisticsFluidManager implements ILogisticsFluidManager {
 			return FluidIdentifierStack.getFromStack(FluidStack.loadFluidStackFromNBT(stack.getItem().tag));
 		}
 		return null;
+	}
+
+	@Override
+	public TreeSet<FluidIdentifierStack> getAvailableFluid(List<ExitRoute> validDestinations) {
+		Map<FluidIdentifier, Integer> allAvailableItems = new HashMap<>();
+		for (ExitRoute r : validDestinations) {
+			if (r == null) {
+				continue;
+			}
+			if (!r.containsFlag(PipeRoutingConnectionType.canRequestFrom)) {
+				continue;
+			}
+			if (!(r.destination.getPipe() instanceof IProvideFluids)) {
+				continue;
+			}
+
+			IProvideFluids provider = (IProvideFluids) r.destination.getPipe();
+			Map<FluidIdentifier, Integer> allItems = provider.getAvailableFluids();
+
+			for (Entry<FluidIdentifier, Integer> liquid : allItems.entrySet()) {
+				Integer amount = allAvailableItems.get(liquid.getKey());
+				if (amount == null) {
+					allAvailableItems.put(liquid.getKey(), liquid.getValue());
+				} else {
+					long addition = ((long) amount) + liquid.getValue();
+					if (addition > Integer.MAX_VALUE) {
+						addition = Integer.MAX_VALUE;
+					}
+					allAvailableItems.put(liquid.getKey(), (int) addition);
+				}
+			}
+		}
+		return allAvailableItems.entrySet().stream()
+				.map(item -> new FluidIdentifierStack(item.getKey(), item.getValue()))
+				.collect(Collectors.toCollection(TreeSet::new));
 	}
 }

@@ -1,12 +1,11 @@
 package logisticspipes.network.packets.pipe;
 
+import net.minecraft.entity.player.EntityPlayer;
+
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
-
-import net.minecraft.entity.player.EntityPlayer;
-
 import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
@@ -22,7 +21,7 @@ public class RequestSignPacket extends CoordinatesPacket {
 		if (pipe == null) {
 			return;
 		}
-		((CoreRoutedPipe) pipe.pipe).sendSignData(player);
+		((CoreRoutedPipe) pipe.pipe).sendSignData(player, false);
 	}
 
 	@Override

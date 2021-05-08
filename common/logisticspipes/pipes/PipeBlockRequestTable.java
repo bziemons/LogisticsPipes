@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -17,6 +18,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.NonNullList;
 import net.minecraft.util.text.TextComponentTranslation;
 
 import net.minecraftforge.event.world.WorldEvent;
@@ -162,7 +164,7 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	@Override
 	public void openGui(EntityPlayer entityplayer) {
 		boolean flag = true;
-		if (diskInv.getStackInSlot(0) == null) {
+		if (!diskInv.getStackInSlot(0).isEmpty()) {
 			if (!entityplayer.getHeldItemMainhand().isEmpty() && entityplayer.getHeldItemMainhand().getItem().equals(LPItems.disk)) {
 				diskInv.setInventorySlotContents(0, entityplayer.getHeldItemMainhand());
 				entityplayer.inventory.setInventorySlotContents(entityplayer.inventory.currentItem, ItemStack.EMPTY);
@@ -231,9 +233,9 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	public void onAllowedRemoval() {
 		// TODO PROVIDE REFACTOR: cancel all orders
 		if (MainProxy.isServer(getWorld())) {
-			inv.dropContents(getWorld(), getX(), getY(), getZ());
-			toSortInv.dropContents(getWorld(), getX(), getY(), getZ());
-			diskInv.dropContents(getWorld(), getX(), getY(), getZ());
+			inv.dropContents(getWorld(), getPos());
+			toSortInv.dropContents(getWorld(), getPos());
+			diskInv.dropContents(getWorld(), getPos());
 		}
 	}
 
@@ -341,6 +343,7 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 		cacheRecipe();
 	}
 
+	@Nonnull
 	public ItemStack getOutput(boolean oreDict) {
 		if (cache == null) {
 			cacheRecipe();
@@ -421,7 +424,7 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 		SlotCrafting craftingSlot = new SlotCrafting(fake, crafter, resultInv, 0, 0, 0) {
 
 			@Override
-			protected void onCrafting(ItemStack stack) {
+			protected void onCrafting(@Nonnull ItemStack stack) {
 				IInventory tmp = this.inventory;
 				vanillaResult.setRecipeUsed(cache);
 				this.inventory = vanillaResult;
@@ -453,6 +456,7 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 		return result;
 	}
 
+	@Nonnull
 	public ItemStack getResultForClick() {
 		if (MainProxy.isServer(getWorld())) {
 			ItemStack result = getOutput(true);
@@ -478,9 +482,10 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 		}
 	}
 
-	public void handleNEIRecipePacket(ItemStack[] content) {
-		for (int i = 0; i < 9; i++) {
-			matrix.setInventorySlotContents(i, content[i]);
+	public void handleNEIRecipePacket(NonNullList<ItemStack> content) {
+		if (matrix.getSizeInventory() != content.size()) throw new IllegalStateException("Different sizes of matrix and inventory from packet");
+		for (int i = 0; i < content.size(); i++) {
+			matrix.setInventorySlotContents(i, content.get(i));
 		}
 		cacheRecipe();
 	}
@@ -508,10 +513,11 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	}
 
 	@Override
-	public boolean sharesInterestWith(CoreRoutedPipe other) {
+	public boolean isOnSameContainer(CoreRoutedPipe other) {
 		return false;
 	}
 
+	@Nonnull
 	@Override
 	public void guiOpenedByPlayer(EntityPlayer player) {
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OrderWatchRemovePacket.class).setInteger(-1).setTilePos(container), player);
@@ -551,6 +557,7 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 		}
 	}
 
+	@Nonnull
 	public ItemStack getDisk() {
 		return diskInv.getStackInSlot(0);
 	}

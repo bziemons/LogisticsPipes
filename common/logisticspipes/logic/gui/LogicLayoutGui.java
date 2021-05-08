@@ -66,7 +66,6 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 
 	private static final ResourceLocation achievementTextures = new ResourceLocation("textures/gui/achievement/achievement_background.png");
 
-	private final LogicController controller;
 	private final ItemRenderer renderitem = new ItemRenderer(mc);
 
 	private int isMouseButtonDown;
@@ -80,7 +79,6 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 
 	public LogicLayoutGui(LogicController controller, EntityPlayer player) {
 		super(256, 202 + 90, 0, 0);
-		this.controller = controller;
 		guiMapY = -200;
 		Mouse.getDWheel(); // Reset DWheel on GUI open
 		DummyContainer dummy = new DummyContainer(player.inventory, null);
@@ -89,7 +87,6 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public void initGui() {
 		super.initGui();
 		/*
@@ -154,8 +151,8 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 
 	private void drawMap(int par1, int par2) {
 		tooltip = null;
-		int mapX = (int)Math.floor(guiMapX);
-		int mapY = (int)Math.floor(guiMapY - zoom.moveY);
+		int mapX = (int) Math.floor(guiMapX);
+		int mapY = (int) Math.floor(guiMapY - zoom.moveY);
 		int leftSide = ((width - xSize) / 2);
 		int topSide = ((height - ySize) / 2);
 
@@ -171,8 +168,6 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 		ySize *= 1 / zoom.zoom;
 		leftSide *= 1 / zoom.zoom;
 		topSide *= 1 / zoom.zoom;
-		par1 *= 1 / zoom.zoom;
-		par2 *= 1 / zoom.zoom;
 
 		int innerLeftSide = leftSide + 16;
 		int innerTopSide = topSide + 17;
@@ -280,8 +275,8 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 					List<String> tooltipList = new ArrayList<>();
 					tooltipList.add(ChatColor.BLUE + "Request Type: " + ChatColor.YELLOW + order.getType().name());
 					tooltipList.add(ChatColor.BLUE + "Send to Router ID: " + ChatColor.YELLOW + order.getRouterId());
-					tooltip = new Object[]{(int) (par1 * zoom.zoom - 10), (int) (par2 * zoom.zoom), order
-							.getAsDisplayItem().makeNormalStack(), true, tooltipList};
+					tooltip = new Object[] { (int) (par1 * zoom.zoom - 10), (int) (par2 * zoom.zoom), order
+							.getAsDisplayItem().makeNormalStack(), true, tooltipList };
 				}
 			}
 			startLeft += 30;

@@ -7,10 +7,10 @@ import net.minecraft.util.EnumFacing;
 
 import lombok.Getter;
 
-import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.items.ItemUpgrade;
-import logisticspipes.pipes.PipeLogisticsChassi;
+import logisticspipes.pipes.PipeLogisticsChassis;
+import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.ISimpleInventoryEventHandler;
 import logisticspipes.utils.item.SimpleStackInventory;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
@@ -19,9 +19,9 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 
 	private final UpgradeManager parent;
 	@Getter
-	private SimpleStackInventory inv = new SimpleStackInventory(2, "UpgradeInventory", 16);
-	private IPipeUpgrade[] upgrades = new IPipeUpgrade[2];
-	private PipeLogisticsChassi pipe;
+	private final SimpleStackInventory inv = new SimpleStackInventory(2, "UpgradeInventory", 16);
+	private final IPipeUpgrade[] upgrades = new IPipeUpgrade[2];
+	private final PipeLogisticsChassis pipe;
 
 	private EnumFacing sneakyOrientation = null;
 	private boolean isAdvancedCrafter = false;
@@ -36,7 +36,7 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 
 	private boolean[] guiUpgrades = new boolean[2];
 
-	public ModuleUpgradeManager(PipeLogisticsChassi pipe, UpgradeManager parent) {
+	public ModuleUpgradeManager(PipeLogisticsChassis pipe, UpgradeManager parent) {
 		this.pipe = pipe;
 		this.parent = parent;
 		inv.addListener(this);
@@ -108,10 +108,12 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 		boolean needUpdate = false;
 		for (int i = 0; i < inv.getSizeInventory(); i++) {
 			ItemStack item = inv.getStackInSlot(i);
-			if (item != null) {
+			if (item.isEmpty()) {
+				if (upgrades[i] != null) {
+					needUpdate |= removeUpgrade(i, upgrades);
+				}
+			} else {
 				needUpdate |= updateModule(i, upgrades, inv);
-			} else if (item == null && upgrades[i] != null) {
-				needUpdate |= removeUpgrade(i, upgrades);
 			}
 		}
 		//update sneaky direction, speed upgrade count and disconnection
@@ -123,6 +125,8 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 		hasPatternUpgrade = false;
 		craftingCleanup = 0;
 		actionSpeedUpgrade = 0;
+		itemExtractionUpgrade = 0;
+		itemStackExtractionUpgrade = 0;
 		guiUpgrades = new boolean[2];
 		for (int i = 0; i < upgrades.length; i++) {
 			IPipeUpgrade upgrade = upgrades[i];
@@ -148,7 +152,7 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 			} else if (upgrade instanceof ItemStackExtractionUpgrade) {
 				itemStackExtractionUpgrade += inv.getStackInSlot(i).getCount();
 			}
-			if(upgrade instanceof IConfigPipeUpgrade) {
+			if (upgrade instanceof IConfigPipeUpgrade) {
 				guiUpgrades[i] = true;
 			}
 		}
@@ -157,10 +161,12 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 		itemExtractionUpgrade = Math.min(itemExtractionUpgrade, ItemUpgrade.MAX_ITEM_EXTRACTION);
 		itemStackExtractionUpgrade = Math.min(itemStackExtractionUpgrade, ItemUpgrade.MAX_ITEM_STACK_EXTRACTION);
 		if (needUpdate) {
-			pipe.connectionUpdate();
-			if (pipe.container != null) {
-				pipe.container.sendUpdateToClient();
-			}
+			MainProxy.runOnServer(null, () -> () -> {
+				pipe.connectionUpdate();
+				if (pipe.container != null) {
+					pipe.container.sendUpdateToClient();
+				}
+			});
 		}
 	}
 
@@ -176,10 +182,10 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 
 	private boolean updateModule(int slot, IPipeUpgrade[] upgrades, IInventory inv) {
 		ItemStack stackInSlot = inv.getStackInSlot(slot);
-		if(stackInSlot.getItem() instanceof ItemUpgrade) {
-			upgrades[slot] = ((ItemUpgrade) stackInSlot.getItem()).getUpgradeForItem(stackInSlot, upgrades[slot]);
-		} else {
+		if (stackInSlot.isEmpty() || !(stackInSlot.getItem() instanceof ItemUpgrade)) {
 			upgrades[slot] = null;
+		} else {
+			upgrades[slot] = ((ItemUpgrade) stackInSlot.getItem()).getUpgradeForItem(stackInSlot, upgrades[slot]);
 		}
 		if (upgrades[slot] == null) {
 			inv.setInventorySlotContents(slot, ItemStack.EMPTY);
@@ -215,6 +221,6 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 	}
 
 	public void dropUpgrades() {
-		inv.dropContents(pipe.getWorld(), pipe.getX(), pipe.getY(), pipe.getZ());
+		inv.dropContents(pipe.getWorld(), pipe.getPos());
 	}
 }

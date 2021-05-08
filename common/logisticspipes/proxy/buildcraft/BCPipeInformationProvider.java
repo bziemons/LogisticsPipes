@@ -1,6 +1,7 @@
 package logisticspipes.proxy.buildcraft;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import net.minecraft.item.ItemStack;
@@ -26,6 +27,7 @@ import logisticspipes.transport.LPTravelingItem;
 import logisticspipes.transport.LPTravelingItem.LPTravelingItemServer;
 import logisticspipes.utils.ReflectionHelper;
 import logisticspipes.utils.item.ItemIdentifier;
+import network.rs485.logisticspipes.connection.ConnectionType;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 public class BCPipeInformationProvider implements IPipeInformationProvider {
@@ -37,17 +39,17 @@ public class BCPipeInformationProvider implements IPipeInformationProvider {
 	}
 
 	@Override
-	public boolean isCorrect(ConnectionPipeType type) {
+	public boolean isCorrect(ConnectionType type) {
 		if (pipe == null || pipe.getPipe() == null || !SimpleServiceLocator.buildCraftProxy.isActive()) {
 			return false;
 		}
 
 		boolean precheck = false;
-		if (type == ConnectionPipeType.UNDEFINED) {
+		if (type == ConnectionType.UNDEFINED) {
 			precheck = pipe.getPipe().getDefinition().flowType == PipeApi.flowItems || pipe.getPipe().getDefinition().flowType == PipeApi.flowFluids;
-		} else if (type == ConnectionPipeType.ITEM) {
+		} else if (type == ConnectionType.ITEM) {
 			precheck = pipe.getPipe().getDefinition().flowType == PipeApi.flowItems;
-		} else if (type == ConnectionPipeType.FLUID) {
+		} else if (type == ConnectionType.FLUID) {
 			precheck = pipe.getPipe().getDefinition().flowType == PipeApi.flowFluids;
 		}
 		return precheck;
@@ -125,9 +127,9 @@ public class BCPipeInformationProvider implements IPipeInformationProvider {
 	}
 
 	@Override
-	public boolean isOutputOpen(EnumFacing direction) {
+	public boolean isOutputClosed(EnumFacing direction) {
 		EnumFacing point = ReflectionHelper.invokePrivateMethod(PipeBehaviourDirectional.class, pipe.getPipe().getBehaviour(), "getCurrentDir", "getCurrentDir", new Class[0], new Object[0]);
-		return point == direction;
+		return point != direction;
 	}
 
 	@Override
@@ -201,7 +203,8 @@ public class BCPipeInformationProvider implements IPipeInformationProvider {
 			if (!transportStack.hasTagCompound()) {
 				transportStack.setTagCompound(new NBTTagCompound());
 			}
-			transportStack.getTagCompound().setTag("logisticspipes:routingdata_buildcraft", routingData);
+			final NBTTagCompound tag = Objects.requireNonNull(transportStack.getTagCompound());
+			tag.setTag("logisticspipes:routingdata_buildcraft", routingData);
 
 			IFlowItems itemPipe = (IFlowItems) pipe.getPipe().getFlow();
 			itemPipe.insertItemsForce(transportStack, item.output.getOpposite(), null, item.getSpeed());

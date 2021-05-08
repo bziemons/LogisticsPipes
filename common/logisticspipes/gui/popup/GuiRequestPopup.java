@@ -4,19 +4,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import logisticspipes.request.resources.IResource;
-import logisticspipes.utils.gui.GuiGraphics;
-import logisticspipes.utils.gui.SubGuiScreen;
-import logisticspipes.utils.item.ItemIdentifierStack;
-import logisticspipes.utils.string.StringUtils;
-
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.text.TextComponentString;
 
 import static network.rs485.logisticspipes.resource.ResourceUtil.ColorCode.NONE;
 
+import logisticspipes.request.resources.IResource;
+import logisticspipes.utils.gui.GuiGraphics;
+import logisticspipes.utils.gui.SubGuiScreen;
+import logisticspipes.utils.item.ItemIdentifierStack;
 import network.rs485.logisticspipes.resource.ResourceUtil;
+import network.rs485.logisticspipes.util.TextUtil;
 
 public class GuiRequestPopup extends SubGuiScreen {
 
@@ -48,7 +47,6 @@ public class GuiRequestPopup extends SubGuiScreen {
 		this.player = player;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void initGui() {
 		super.initGui();
@@ -75,7 +73,7 @@ public class GuiRequestPopup extends SubGuiScreen {
 			if (text[i] == null) {
 				continue;
 			}
-			String msg = StringUtils.getCuttedString(text[i], mWidth - 10, fontRenderer);
+			String msg = TextUtil.getTrimmedString(text[i], mWidth - 10, fontRenderer, "...");
 			int stringWidth = mc.fontRenderer.getStringWidth(msg);
 			mc.fontRenderer.drawString(msg, xCenter - (stringWidth / 2), guiTop + 10 + (i * 10), 0x404040);
 		}
@@ -91,7 +89,7 @@ public class GuiRequestPopup extends SubGuiScreen {
 				for (String msg : text) {
 					player.sendMessage(new TextComponentString(msg));
 				}
-				((GuiButton) buttonList.get(1)).enabled = false;
+				buttonList.get(1).enabled = false;
 				break;
 		}
 	}

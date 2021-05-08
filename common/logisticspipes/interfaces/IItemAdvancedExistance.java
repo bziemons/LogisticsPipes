@@ -1,10 +1,12 @@
 package logisticspipes.interfaces;
 
+import javax.annotation.Nonnull;
+
 import net.minecraft.item.ItemStack;
 
 public interface IItemAdvancedExistance {
 
-	public boolean canExistInNormalInventory(ItemStack stack);
+	boolean canExistInNormalInventory(@Nonnull ItemStack stack);
 
-	public boolean canExistInWorld(ItemStack stack);
+	boolean canExistInWorld(@Nonnull ItemStack stack);
 }

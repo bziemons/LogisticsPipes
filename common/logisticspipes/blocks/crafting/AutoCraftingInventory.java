@@ -1,11 +1,13 @@
 package logisticspipes.blocks.crafting;
 
-import logisticspipes.utils.PlayerIdentifier;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryCrafting;
+
+import logisticspipes.utils.PlayerIdentifier;
 
 public class AutoCraftingInventory extends InventoryCrafting {
 
@@ -15,7 +17,7 @@ public class AutoCraftingInventory extends InventoryCrafting {
 		super(new Container() {
 
 			@Override
-			public boolean canInteractWith(EntityPlayer entityplayer) {
+			public boolean canInteractWith(@Nonnull EntityPlayer entityplayer) {
 				return false;
 			}
 

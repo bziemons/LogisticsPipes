@@ -1,6 +1,5 @@
-/**
+/*
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -20,7 +19,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import net.minecraft.inventory.IInventory;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
@@ -43,10 +41,8 @@ import logisticspipes.routing.LaserData;
 import logisticspipes.routing.PipeRoutingConnectionType;
 import logisticspipes.routing.pathfinder.IRouteProvider.RouteInfo;
 import logisticspipes.utils.OneList;
-import logisticspipes.utils.OrientationsUtil;
 import logisticspipes.utils.tuples.Pair;
 import logisticspipes.utils.tuples.Quartet;
-import logisticspipes.utils.tuples.Triplet;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
@@ -59,7 +55,7 @@ public class PathFinder {
 	 * Recurse through all exists of a pipe to find instances of
 	 * PipeItemsRouting. maxVisited and maxLength are safeguards for recursion
 	 * runaways.
-	 * 
+	 *
 	 * @param startPipe
 	 *            - The TileEntity to start the search from
 	 * @param maxVisited
@@ -68,9 +64,7 @@ public class PathFinder {
 	 * @param maxLength
 	 *            - The maximum recurse depth, i.e. the maximum length pipe that
 	 *            is supported
-	 * @return
 	 */
-
 	public static HashMap<CoreRoutedPipe, ExitRoute> paintAndgetConnectedRoutingPipes(TileEntity startPipe, EnumFacing startOrientation, int maxVisited, int maxLength, IPaintPath pathPainter, EnumSet<PipeRoutingConnectionType> connectionType) {
 		IPipeInformationProvider startProvider = SimpleServiceLocator.pipeInformationManager.getInformationProviderFor(startPipe);
 		if (startProvider == null) {
@@ -218,8 +212,8 @@ public class PathFinder {
 			if (tile == null) {
 				continue;
 			}
-			if (OrientationsUtil.isSide(direction)) {
-				if (root && tile instanceof ILogisticsPowerProvider) {
+			if (root && (direction.getAxis() == EnumFacing.Axis.X || direction.getAxis() == EnumFacing.Axis.Z)) {
+				if (tile instanceof ILogisticsPowerProvider) {
 					if (powerNodes == null) {
 						powerNodes = new ArrayList<>();
 					}
@@ -229,8 +223,7 @@ public class PathFinder {
 					} else {
 						powerNodes.add(new Pair<>((ILogisticsPowerProvider) tile, Collections.unmodifiableList(new ArrayList<>(0))));
 					}
-				}
-				if (root && tile instanceof ISubSystemPowerProvider) {
+				} else if (tile instanceof ISubSystemPowerProvider) {
 					if (subPowerProvider == null) {
 						subPowerProvider = new ArrayList<>();
 					}
@@ -269,7 +262,7 @@ public class PathFinder {
 				if (SimpleServiceLocator.connectionManager.hasChannelConnection(startPipe.getRoutingPipe().getRouter())) {
 					List<CoreRoutedPipe> connectedPipes = SimpleServiceLocator.connectionManager.getConnectedPipes(startPipe.getRoutingPipe().getRouter());
 					connections.addAll(connectedPipes.stream().map(pipe -> new Quartet<>((TileEntity) pipe.container, direction, ((IChannelRoutingConnection) startPipe.getRoutingPipe()).getConnectionResistance(), true)).collect(Collectors.toList()));
-					if(!connectedPipes.isEmpty()) {
+					if (!connectedPipes.isEmpty()) {
 						continue;
 					}
 				}
@@ -285,7 +278,7 @@ public class PathFinder {
 
 				listTileEntity(tile);
 
-				if(currentPipe.isMultiBlock()) {
+				if (currentPipe.isMultiBlock()) {
 					currentPipe.getPartsOfPipe().forEach(this::listTileEntity);
 				}
 
@@ -309,13 +302,13 @@ public class PathFinder {
 					nextConnectionFlags.remove(PipeRoutingConnectionType.canRequestFrom);
 				}
 				if (startPipe.isOnewayPipe()) {
-					if (!startPipe.isOutputOpen(direction)) {
+					if (startPipe.isOutputClosed(direction)) {
 						nextConnectionFlags.remove(PipeRoutingConnectionType.canRouteTo);
 					}
 				}
 				if (currentPipe.isOnewayPipe()) {
 					nextConnectionFlags.remove(PipeRoutingConnectionType.canPowerSubSystemFrom);
-					if (!currentPipe.isOutputOpen(direction.getOpposite())) {
+					if (currentPipe.isOutputClosed(direction.getOpposite())) {
 						nextConnectionFlags.remove(PipeRoutingConnectionType.canRequestFrom);
 						nextConnectionFlags.remove(PipeRoutingConnectionType.canPowerFrom);
 					}
@@ -333,7 +326,7 @@ public class PathFinder {
 						result = new HashMap<>();
 						DoubleCoordinates pos = new DoubleCoordinates(currentPipe);
 						for (RouteInfo info : list) {
-							if(info.getPipe() == startPipe) continue;
+							if (info.getPipe() == startPipe) continue;
 							if (setVisited.contains(new DoubleCoordinates(info.getPipe()))) {
 								//Don't go where we have been before
 								continue;

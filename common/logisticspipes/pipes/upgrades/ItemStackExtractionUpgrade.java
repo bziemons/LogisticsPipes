@@ -1,14 +1,19 @@
 package logisticspipes.pipes.upgrades;
 
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleCrafter;
-import logisticspipes.modules.ModuleExtractor;
 import logisticspipes.modules.ModuleProvider;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
 import logisticspipes.pipes.PipeItemsCraftingLogistics;
 import logisticspipes.pipes.PipeItemsProviderLogistics;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
+import network.rs485.logisticspipes.module.AsyncAdvancedExtractor;
+import network.rs485.logisticspipes.module.AsyncExtractorModule;
 
 public class ItemStackExtractionUpgrade implements IPipeUpgrade {
+
+	public static String getName() {
+		return "item_stack_extraction";
+	}
 
 	@Override
 	public boolean needsUpdate() {
@@ -22,7 +27,8 @@ public class ItemStackExtractionUpgrade implements IPipeUpgrade {
 
 	@Override
 	public boolean isAllowedForModule(LogisticsModule module) {
-		return module instanceof ModuleCrafter || module instanceof ModuleProvider;
+		return module instanceof ModuleCrafter || module instanceof ModuleProvider
+				|| module instanceof AsyncExtractorModule || module instanceof AsyncAdvancedExtractor;
 	}
 
 	@Override
@@ -32,6 +38,6 @@ public class ItemStackExtractionUpgrade implements IPipeUpgrade {
 
 	@Override
 	public String[] getAllowedModules() {
-		return new String[] { "crafting", "provider" };
+		return new String[] { "crafting", "provider", "extractor", "aextractor" };
 	}
 }

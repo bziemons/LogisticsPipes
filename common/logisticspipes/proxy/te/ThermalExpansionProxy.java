@@ -1,13 +1,10 @@
 package logisticspipes.proxy.te;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 
 import cofh.api.item.IToolHammer;
@@ -55,12 +52,12 @@ public class ThermalExpansionProxy implements IThermalExpansionProxy {
 	}
 
 	@Override
-	public boolean canHammer(ItemStack stack, EntityPlayer entityplayer, BlockPos pos) {
-		return isToolHammer(stack.getItem()) && ((IToolHammer)stack.getItem()).isUsable(stack, entityplayer, pos);
+	public boolean canHammer(@Nonnull ItemStack stack, EntityPlayer entityplayer, BlockPos pos) {
+		return isToolHammer(stack.getItem()) && ((IToolHammer) stack.getItem()).isUsable(stack, entityplayer, pos);
 	}
 
 	@Override
-	public void toolUsed(ItemStack stack, EntityPlayer entityplayer, BlockPos pos) {
-		if(isToolHammer(stack.getItem())) ((IToolHammer)stack.getItem()).toolUsed(stack, entityplayer, pos);
+	public void toolUsed(@Nonnull ItemStack stack, EntityPlayer entityplayer, BlockPos pos) {
+		if (isToolHammer(stack.getItem())) ((IToolHammer) stack.getItem()).toolUsed(stack, entityplayer, pos);
 	}
 }

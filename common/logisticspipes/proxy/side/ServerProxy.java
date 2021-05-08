@@ -3,22 +3,6 @@ package logisticspipes.proxy.side;
 import java.io.File;
 import java.util.List;
 
-import logisticspipes.LogisticsPipes;
-import logisticspipes.interfaces.ILogisticsItem;
-import logisticspipes.items.ItemLogisticsPipe;
-import logisticspipes.items.LogisticsSolidBlockItem;
-import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.network.PacketHandler;
-import logisticspipes.network.packets.UpdateName;
-import logisticspipes.pipes.basic.CoreUnroutedPipe;
-import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
-import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.proxy.interfaces.IProxy;
-import logisticspipes.utils.item.ItemIdentifier;
-
-import net.minecraft.client.multiplayer.WorldClient;
-import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.Item;
@@ -29,12 +13,22 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
 
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.config.Configuration;
-
 import net.minecraftforge.fml.server.FMLServerHandler;
+
+import logisticspipes.LogisticsPipes;
+import logisticspipes.items.ItemLogisticsPipe;
+import logisticspipes.modules.LogisticsModule;
+import logisticspipes.network.PacketHandler;
+import logisticspipes.network.packets.UpdateName;
+import logisticspipes.pipes.basic.CoreUnroutedPipe;
+import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
+import logisticspipes.proxy.MainProxy;
+import logisticspipes.proxy.SimpleServiceLocator;
+import logisticspipes.proxy.interfaces.IProxy;
+import logisticspipes.utils.item.ItemIdentifier;
 
 public class ServerProxy implements IProxy {
 
@@ -93,14 +87,14 @@ public class ServerProxy implements IProxy {
 
 	@Override
 	public String getName(ItemIdentifier item) {
-		String category = "";
+		String category;
 		if (item.isDamageable()) {
-			category = "itemNames." + Integer.toString(Item.getIdFromItem(item.item));
+			category = String.format("itemNames.%d", Item.getIdFromItem(item.item));
 		} else {
 			if (item.itemDamage == 0) {
-				category = "itemNames." + Integer.toString(Item.getIdFromItem(item.item));
+				category = String.format("itemNames.%d", Item.getIdFromItem(item.item));
 			} else {
-				category = "itemNames." + Integer.toString(Item.getIdFromItem(item.item)) + "." + Integer.toString(item.itemDamage);
+				category = String.format("itemNames.%d.%d", Item.getIdFromItem(item.item), item.itemDamage);
 			}
 		}
 		String name = getNameForCategory(category, item);
@@ -108,7 +102,7 @@ public class ServerProxy implements IProxy {
 			if (item.itemDamage == 0) {
 				return item.getFriendlyName();
 			} else {
-				category = "itemNames." + Integer.toString(Item.getIdFromItem(item.item));
+				category = String.format("itemNames.%d", Item.getIdFromItem(item.item));
 				name = getNameForCategory(category, item);
 				if (name.equals("LP|UNDEFINED")) {
 					return item.getFriendlyName();
@@ -120,14 +114,14 @@ public class ServerProxy implements IProxy {
 
 	@Override
 	public void updateNames(ItemIdentifier item, String name) {
-		String category = "";
+		String category;
 		if (item.isDamageable()) {
-			category = "itemNames." + Integer.toString(Item.getIdFromItem(item.item));
+			category = String.format("itemNames.%d", Item.getIdFromItem(item.item));
 		} else {
 			if (item.itemDamage == 0) {
-				category = "itemNames." + Integer.toString(Item.getIdFromItem(item.item));
+				category = String.format("itemNames.%d", Item.getIdFromItem(item.item));
 			} else {
-				category = "itemNames." + Integer.toString(Item.getIdFromItem(item.item)) + "." + Integer.toString(item.itemDamage);
+				category = String.format("itemNames.%d.%d", Item.getIdFromItem(item.item), item.itemDamage);
 			}
 		}
 		setNameForCategory(category, item, name);
@@ -173,9 +167,10 @@ public class ServerProxy implements IProxy {
 	}
 
 	// BuildCraft method
+
 	/**
 	 * Retrieves pipe at specified coordinates if any.
-	 * 
+	 *
 	 * @param world
 	 * @param x
 	 * @param y
@@ -212,7 +207,7 @@ public class ServerProxy implements IProxy {
 		if (server != null && server.getPlayerList() != null) {
 			List<EntityPlayerMP> list = server.getPlayerList().getPlayers();
 			if (list != null && !list.isEmpty()) {
-				list.forEach(obj -> ((EntityPlayerMP) obj).sendMessage(new TextComponentString("[LP] Server: " + message)));
+				list.forEach(obj -> obj.sendMessage(new TextComponentString("[LP] Server: " + message)));
 			}
 		}
 	}

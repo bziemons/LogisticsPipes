@@ -1,6 +1,5 @@
-/**
+/*
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -8,20 +7,27 @@
 
 package logisticspipes.utils.gui;
 
-import javax.annotation.Nonnull;
+import java.awt.Rectangle;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.inventory.ClickType;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
@@ -36,18 +42,23 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.LPConstants;
+import logisticspipes.LogisticsPipes;
 import logisticspipes.asm.ModDependentInterface;
 import logisticspipes.asm.ModDependentMethod;
+import logisticspipes.interfaces.IChainAddList;
 import logisticspipes.interfaces.IFuzzySlot;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.gui.DummyContainerSlotClick;
 import logisticspipes.network.packets.gui.FuzzySlotSettingsPacket;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.request.resources.DictResource;
+import logisticspipes.utils.ChainAddArrayList;
 import logisticspipes.utils.Color;
 import logisticspipes.utils.gui.extention.GuiExtentionController;
 import logisticspipes.utils.gui.extention.GuiExtentionController.GuiSide;
-import logisticspipes.utils.string.StringUtils;
+import network.rs485.logisticspipes.property.IBitSet;
+import network.rs485.logisticspipes.util.FuzzyFlag;
+import network.rs485.logisticspipes.util.FuzzyUtil;
+import network.rs485.logisticspipes.util.TextUtil;
 
 @ModDependentInterface(modId = { LPConstants.neiModID }, interfacePath = { "codechicken.nei.api.INEIGuiHandler" })
 public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISubGuiControler, INEIGuiHandler, IGuiAccess {
@@ -170,7 +181,7 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 				fX.set(null, 0);
 				fY.set(null, 0);
 			} catch (Exception e) {
-				if (LPConstants.DEBUG) {
+				if (LogisticsPipes.isDEBUG()) {
 					e.printStackTrace();
 				}
 			}
@@ -185,7 +196,7 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 				fX.set(null, x);
 				fY.set(null, y);
 			} catch (Exception e) {
-				if (LPConstants.DEBUG) {
+				if (LogisticsPipes.isDEBUG()) {
 					e.printStackTrace();
 				}
 			}
@@ -220,7 +231,7 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 			RenderHelper.enableStandardItemLighting();
 		}
 		Runnable run = renderAtTheEnd.poll();
-		while(run != null) {
+		while (run != null) {
 			run.run();
 			run = renderAtTheEnd.poll();
 		}
@@ -239,7 +250,7 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 	@Override
 	protected void drawSlot(Slot slot) {
 		if (extentionControllerLeft.renderSlot(slot) && extentionControllerRight.renderSlot(slot)) {
-			if(subGui == null) {
+			if (subGui == null) {
 				onRenderSlot(slot);
 			}
 			super.drawSlot(slot);
@@ -247,33 +258,38 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 	}
 
 	private void onRenderSlot(Slot slot) {
-		if(slot instanceof IFuzzySlot) {
-			final DictResource resource = ((IFuzzySlot) slot).getFuzzyFlags();
+		if (slot instanceof IFuzzySlot) {
+			final IBitSet set = ((IFuzzySlot) slot).getFuzzyFlags();
 			int x1 = slot.xPos;
 			int y1 = slot.yPos;
 			GL11.glDisable(GL11.GL_LIGHTING);
-			if (resource.use_od) {
+			final boolean useOreDict = FuzzyUtil.INSTANCE.get(set, FuzzyFlag.USE_ORE_DICT);
+			if (useOreDict) {
 				Gui.drawRect(x1 + 8, y1 - 1, x1 + 17, y1, 0xFFFF4040);
 				Gui.drawRect(x1 + 16, y1, x1 + 17, y1 + 8, 0xFFFF4040);
 			}
-			if (resource.ignore_dmg) {
+			final boolean ignoreDamage = FuzzyUtil.INSTANCE.get(set, FuzzyFlag.IGNORE_DAMAGE);
+			if (ignoreDamage) {
 				Gui.drawRect(x1 - 1, y1 - 1, x1 + 8, y1, 0xFF40FF40);
 				Gui.drawRect(x1 - 1, y1, x1, y1 + 8, 0xFF40FF40);
 			}
-			if (resource.ignore_nbt) {
+			final boolean ignoreNBT = FuzzyUtil.INSTANCE.get(set, FuzzyFlag.IGNORE_NBT);
+			if (ignoreNBT) {
 				Gui.drawRect(x1 - 1, y1 + 16, x1 + 8, y1 + 17, 0xFF4040FF);
 				Gui.drawRect(x1 - 1, y1 + 8, x1, y1 + 17, 0xFF4040FF);
 			}
-			if (resource.use_category) {
+			final boolean useOreCategory = FuzzyUtil.INSTANCE.get(set, FuzzyFlag.USE_ORE_CATEGORY);
+			if (useOreCategory) {
 				Gui.drawRect(x1 + 8, y1 + 16, x1 + 17, y1 + 17, 0xFF7F7F40);
 				Gui.drawRect(x1 + 16, y1 + 8, x1 + 17, y1 + 17, 0xFF7F7F40);
 			}
+			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 			GL11.glEnable(GL11.GL_LIGHTING);
 			final boolean mouseOver = this.isMouseOverSlot(slot, currentDrawScreenMouseX, currentDrawScreenMouseY);
-			if(mouseOver) {
-				if(fuzzySlot == slot) {
+			if (mouseOver) {
+				if (fuzzySlot == slot) {
 					fuzzySlotGuiHoverTime++;
-					if(fuzzySlotGuiHoverTime >= 10) {
+					if (fuzzySlotGuiHoverTime >= 10) {
 						fuzzySlotActiveGui = true;
 					}
 				} else {
@@ -282,27 +298,30 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 					fuzzySlotActiveGui = false;
 				}
 			}
-			if(fuzzySlotActiveGui && fuzzySlot == slot) {
-				if(!mouseOver) {
+			if (fuzzySlotActiveGui && fuzzySlot == slot) {
+				if (!mouseOver) {
 					//Check within FuzzyGui
-					if(!isPointInRegion(slot.xPos, slot.yPos + 16, 60, 52, currentDrawScreenMouseX, currentDrawScreenMouseY)) {
+					if (!isPointInRegion(slot.xPos, slot.yPos + 16, 60, 52, currentDrawScreenMouseX, currentDrawScreenMouseY)) {
 						fuzzySlotActiveGui = false;
 						fuzzySlot = null;
 					}
 				}
-				//int posX = -60;
-				//int posY = 0;
 				final int posX = slot.xPos + guiLeft;
 				final int posY = slot.yPos + 17 + guiTop;
 				renderAtTheEnd.add(() -> {
 					GL11.glDisable(GL11.GL_DEPTH_TEST);
 					GL11.glDisable(GL11.GL_LIGHTING);
-					GuiGraphics.drawGuiBackGround(mc, posX, posY, posX + 60, posY + 52, zLevel, true, true, true, true, true);
+					GuiGraphics.drawGuiBackGround(mc, posX, posY, posX + 61, posY + 47, zLevel, true, true, true, true, true);
+					GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 					final String PREFIX = "gui.crafting.";
-					mc.fontRenderer.drawString(StringUtils.translate(PREFIX + "OreDict"), posX + 4, posY + 4, (!resource.use_od ? 0x404040 : 0xFF4040));
-					mc.fontRenderer.drawString(StringUtils.translate(PREFIX + "IgnDamage"), posX + 4, posY + 14, (!resource.ignore_dmg ? 0x404040 : 0x40FF40));
-					mc.fontRenderer.drawString(StringUtils.translate(PREFIX + "IgnNBT"), posX + 4, posY + 26, (!resource.ignore_nbt ? 0x404040 : 0x4040FF));
-					mc.fontRenderer.drawString(StringUtils.translate(PREFIX + "OrePrefix"), posX + 4, posY + 38, (!resource.use_category ? 0x404040 : 0x7F7F40));
+					mc.fontRenderer.drawString(TextUtil.translate(PREFIX + "OreDict"), posX + 5, posY + 5,
+							(useOreDict ? 0xFF4040 : 0x404040));
+					mc.fontRenderer.drawString(TextUtil.translate(PREFIX + "IgnDamage"), posX + 5, posY + 15,
+							(ignoreDamage ? 0x40FF40 : 0x404040));
+					mc.fontRenderer.drawString(TextUtil.translate(PREFIX + "IgnNBT"), posX + 5, posY + 25,
+							(ignoreNBT ? 0x4040FF : 0x404040));
+					mc.fontRenderer.drawString(TextUtil.translate(PREFIX + "OrePrefix"), posX + 5, posY + 35,
+							(useOreCategory ? 0x7F7F40 : 0x404040));
 					GL11.glEnable(GL11.GL_LIGHTING);
 					GL11.glEnable(GL11.GL_DEPTH_TEST);
 				});
@@ -327,9 +346,8 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 		return isPointInRegion(fuzzySlot.getX(), fuzzySlot.getY() + 16, 60, 52, x, y);
 	}
 
-	@SuppressWarnings("unchecked")
 	protected void checkButtons() {
-		for (GuiButton button : (List<GuiButton>) buttonList) {
+		for (GuiButton button : buttonList) {
 			if (extentionControllerLeft.renderButtonControlled(button)) {
 				button.visible = extentionControllerLeft.renderButton(button);
 			}
@@ -339,8 +357,8 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	public GuiButton addButton(GuiButton button) {
+	@Nonnull
+	public <T extends GuiButton> T addButton(@Nonnull T button) {
 		buttonList.add(button);
 		return button;
 	}
@@ -356,6 +374,22 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 
 	public void handleMouseInputSub() throws IOException {
 		super.handleMouseInput();
+		int x = Mouse.getEventX() * this.width / this.mc.displayWidth;
+		int y = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
+		int dWheel = Mouse.getEventDWheel();
+		if (dWheel != 0 && !mouseHandled) {
+			Optional<DummySlot> slotOpt = this.inventorySlots.inventorySlots.stream().filter(it -> it instanceof DummySlot).map(it -> (DummySlot) it).filter(it -> isMouseOverSlot(it, x, y)).findFirst();
+			if (slotOpt.isPresent()) {
+				DummySlot slot = slotOpt.get();
+				slot.setRedirectCall(true);
+				if (slot.getSlotStackLimit() > 0 && slot.getHasStack()) {
+					int buttonActionID = dWheel > 0 ? 1000 : 1001;
+					this.mc.playerController.windowClick(this.inventorySlots.windowId, slot.slotNumber, buttonActionID, ClickType.SWAP, this.mc.player);
+				}
+				slot.setRedirectCall(false);
+				mouseHandled = true;
+			}
+		}
 	}
 
 	@Override
@@ -365,6 +399,8 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 		} else {
 			super.handleKeyboardInput();
 		}
+		for (EventListener el : onGuiEvents)
+			keyHandled |= el.onKeyboardInput();
 	}
 
 	public void addRenderSlot(IRenderSlot slot) {
@@ -414,27 +450,33 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 			final int posX = fuzzySlot.getX() + guiLeft;
 			final int posY = fuzzySlot.getY() + 17 + guiTop;
 			int sel = -1;
-			if (par1 >= posX + 4 && par1 <= posX + 60 - 4) {
-				if (par2 >= posY + 4 && par2 <= posY + 52 - 4) {
-					sel = (par2 - posY - 4) / 11;
+			if (par1 >= posX + 5 && par1 <= posX + 56) {
+				if (par2 >= posY + 5 && par2 <= posY + 45) {
+					sel = (par2 - posY - 4) / 10;
 				}
 			}
-			DictResource resource = fuzzySlot.getFuzzyFlags();
-			BitSet set = resource.getBitSet();
-			if (sel == 0) {
-				resource.use_od = !resource.use_od;
+			IBitSet set = fuzzySlot.getFuzzyFlags();
+			FuzzyFlag flag = null;
+			switch (sel) {
+				case 0:
+					flag = FuzzyFlag.USE_ORE_DICT;
+					break;
+				case 1:
+					flag = FuzzyFlag.IGNORE_DAMAGE;
+					break;
+				case 2:
+					flag = FuzzyFlag.IGNORE_NBT;
+					break;
+				case 3:
+					flag = FuzzyFlag.USE_ORE_CATEGORY;
+					break;
 			}
-			if (sel == 1) {
-				resource.ignore_dmg = !resource.ignore_dmg;
-			}
-			if (sel == 2) {
-				resource.ignore_nbt = !resource.ignore_nbt;
-			}
-			if (sel == 3) {
-				resource.use_category = !resource.use_category;
-			}
-			MainProxy.sendPacketToServer(PacketHandler.getPacket(FuzzySlotSettingsPacket.class).setSlotNumber(fuzzySlot.getSlotId()).setFlags(resource.getBitSet()));
-			resource.loadFromBitSet(set); // Reset to wait for server
+			if (flag == null) return;
+			set.flip(flag.getBit());
+			MainProxy.sendPacketToServer(
+					PacketHandler.getPacket(FuzzySlotSettingsPacket.class)
+							.setSlotNumber(fuzzySlot.getSlotId())
+							.setFlags(set.copyValue()));
 			return;
 		}
 		boolean handledButton = false;
@@ -468,8 +510,8 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 			selectedButton = null;
 		} else if (isMouseInFuzzyPanel(par1 - guiLeft, par2 - guiTop)) {
 		} else {
-				super.mouseReleased(par1, par2, par3);
-			}
+			super.mouseReleased(par1, par2, par3);
+		}
 	}
 
 	private boolean mouseCanPressButton(int par1, int par2) {
@@ -484,7 +526,7 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 
 	private boolean isOverSlot(int par1, int par2) {
 		for (int k = 0; k < inventorySlots.inventorySlots.size(); ++k) {
-			Slot slot = (Slot) inventorySlots.inventorySlots.get(k);
+			Slot slot = inventorySlots.inventorySlots.get(k);
 			if (isMouseOverSlot(slot, par1, par2)) {
 				return true;
 			}
@@ -551,7 +593,7 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 
 	@Override
 	@ModDependentMethod(modId = LPConstants.neiModID)
-	public Iterable<Integer> getItemSpawnSlots(GuiContainer gui, ItemStack stack) {
+	public Iterable<Integer> getItemSpawnSlots(GuiContainer gui, @Nonnull ItemStack stack) {
 		return null;
 	}
 
@@ -587,5 +629,85 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 			return ((LogisticsBaseGuiScreen) gui).extentionControllerRight.isOverPanel(x, y, w, h);
 		}
 		return false;
+	}
+
+	public IChainAddList<EventListener> onGuiEvents = new ChainAddArrayList<>();
+
+	public List<Rectangle> getGuiExtraAreas() {
+		return Stream.concat(extentionControllerLeft.getGuiExtraAreas().stream(), extentionControllerRight.getGuiExtraAreas().stream()).collect(Collectors.toList());
+	}
+
+	public interface EventListener {
+
+		void onUpdateScreen();
+
+		boolean onKeyboardInput();
+
+	}
+
+	public void updateScreen() {
+		for (EventListener el : onGuiEvents)
+			el.onUpdateScreen();
+	}
+
+	public void drawCenteredString(String text, int x, int y, int color) {
+		int actualX = x - mc.fontRenderer.getStringWidth(text) / 2;
+		mc.fontRenderer.drawString(text, actualX, y, color);
+	}
+
+	public static void drawHorizontalGradientRect(int left, int top, int right, int bottom, int z, int colorLeft, int colorRight){
+		float aL = (float)(colorLeft >> 24 & 255) / 255.0F;
+		float rL = (float)(colorLeft >> 16 & 255) / 255.0F;
+		float gL = (float)(colorLeft >> 8 & 255) / 255.0F;
+		float bL = (float)(colorLeft & 255) / 255.0F;
+		float aR = (float)(colorRight >> 24 & 255) / 255.0F;
+		float rR = (float)(colorRight >> 16 & 255) / 255.0F;
+		float gR = (float)(colorRight >> 8 & 255) / 255.0F;
+		float bR = (float)(colorRight & 255) / 255.0F;
+		GlStateManager.disableTexture2D();
+		GlStateManager.enableBlend();
+		GlStateManager.disableAlpha();
+		GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+		GlStateManager.shadeModel(7425);
+		Tessellator tessellator = Tessellator.getInstance();
+		BufferBuilder bufferbuilder = tessellator.getBuffer();
+		bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+		bufferbuilder.pos((double)right, (double)top, (double)z).color(rR, gR, bR, aR).endVertex();
+		bufferbuilder.pos((double)left, (double)top, (double)z).color(rL, gL, bL, aL).endVertex();
+		bufferbuilder.pos((double)left, (double)bottom, (double)z).color(rL, gL, bL, aL).endVertex();
+		bufferbuilder.pos((double)right, (double)bottom, (double)z).color(rR, gR, bR, aR).endVertex();
+		tessellator.draw();
+		GlStateManager.shadeModel(7424);
+		GlStateManager.disableBlend();
+		GlStateManager.enableAlpha();
+		GlStateManager.enableTexture2D();
+	}
+
+	public static void drawVerticalGradientRect(int left, int top, int right, int bottom, int z, int colorTop, int colorBottom){
+		float aT = (float)(colorTop >> 24 & 255) / 255.0F;
+		float rT = (float)(colorTop >> 16 & 255) / 255.0F;
+		float gT = (float)(colorTop >> 8 & 255) / 255.0F;
+		float bT = (float)(colorTop & 255) / 255.0F;
+		float aB = (float)(colorBottom >> 24 & 255) / 255.0F;
+		float rB = (float)(colorBottom >> 16 & 255) / 255.0F;
+		float gB = (float)(colorBottom >> 8 & 255) / 255.0F;
+		float bB = (float)(colorBottom & 255) / 255.0F;
+		GlStateManager.disableTexture2D();
+		GlStateManager.enableBlend();
+		GlStateManager.disableAlpha();
+		GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+		GlStateManager.shadeModel(7425);
+		Tessellator tessellator = Tessellator.getInstance();
+		BufferBuilder bufferbuilder = tessellator.getBuffer();
+		bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+		bufferbuilder.pos((double)right, (double)top, (double)z).color(rT, gT, bT, aT).endVertex();
+		bufferbuilder.pos((double)left, (double)top, (double)z).color(rT, gT, bT, aT).endVertex();
+		bufferbuilder.pos((double)left, (double)bottom, (double)z).color(rB, gB, bB, aB).endVertex();
+		bufferbuilder.pos((double)right, (double)bottom, (double)z).color(rB, gB, bB, aB).endVertex();
+		tessellator.draw();
+		GlStateManager.shadeModel(7424);
+		GlStateManager.disableBlend();
+		GlStateManager.enableAlpha();
+		GlStateManager.enableTexture2D();
 	}
 }

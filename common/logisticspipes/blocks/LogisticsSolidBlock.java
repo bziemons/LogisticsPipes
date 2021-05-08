@@ -1,16 +1,12 @@
 package logisticspipes.blocks;
 
-import logisticspipes.LogisticsPipes;
-import logisticspipes.blocks.crafting.LogisticsCraftingTableTileEntity;
-import logisticspipes.blocks.powertile.LogisticsIC2PowerProviderTileEntity;
-import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
-import logisticspipes.blocks.powertile.LogisticsRFPowerProviderTileEntity;
-import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
-import logisticspipes.interfaces.IGuiTileEntity;
-import logisticspipes.interfaces.IRotationProvider;
-import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
-import logisticspipes.proxy.MainProxy;
-import lombok.Getter;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
@@ -28,12 +24,18 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import lombok.Getter;
+
+import logisticspipes.LogisticsPipes;
+import logisticspipes.blocks.crafting.LogisticsCraftingTableTileEntity;
+import logisticspipes.blocks.powertile.LogisticsIC2PowerProviderTileEntity;
+import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
+import logisticspipes.blocks.powertile.LogisticsRFPowerProviderTileEntity;
+import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
+import logisticspipes.interfaces.IGuiTileEntity;
+import logisticspipes.interfaces.IRotationProvider;
+import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
+import logisticspipes.proxy.MainProxy;
 
 public class LogisticsSolidBlock extends Block {
 
@@ -45,7 +47,6 @@ public class LogisticsSolidBlock extends Block {
 	private final Type type;
 
 	public enum Type {
-		SOLDERING_STATION(0, LogisticsSolderingTileEntity::new, true),
 		LOGISTICS_POWER_JUNCTION(1, LogisticsPowerJunctionTileEntity::new),
 		LOGISTICS_SECURITY_STATION(2, LogisticsSecurityTileEntity::new),
 		LOGISTICS_AUTOCRAFTING_TABLE(3, LogisticsCraftingTableTileEntity::new),
@@ -130,8 +131,7 @@ public class LogisticsSolidBlock extends Block {
 	}
 
 	@Override
-	@Nonnull
-	public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
+	public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase placer, @Nonnull ItemStack stack) {
 		super.onBlockPlacedBy(world, pos, state, placer, stack);
 		TileEntity tile = world.getTileEntity(pos);
 		if (tile instanceof LogisticsCraftingTableTileEntity) {
@@ -153,7 +153,7 @@ public class LogisticsSolidBlock extends Block {
 
 	@Nullable
 	@Override
-	public TileEntity createTileEntity(World world, IBlockState state) {
+	public TileEntity createTileEntity(@Nonnull World world, @Nonnull IBlockState state) {
 		if (!type.hasTE()) return null;
 		return type.createTE();
 	}
@@ -163,13 +163,14 @@ public class LogisticsSolidBlock extends Block {
 		return type.hasTE();
 	}
 
+	@Nonnull
 	@Override
 	protected BlockStateContainer createBlockState() {
 		return new BlockStateContainer.Builder(this)
-			.add(rotationProperty)
-			.add(active)
-			.add(connectionPropertys.values().toArray(new IProperty[0]))
-			.build();
+				.add(rotationProperty)
+				.add(active)
+				.add(connectionPropertys.values().toArray(new IProperty[0]))
+				.build();
 	}
 
 	@Override
@@ -177,16 +178,17 @@ public class LogisticsSolidBlock extends Block {
 		return 0;
 	}
 
+	@Nonnull
 	@Override
-	public IBlockState getActualState(IBlockState state, IBlockAccess worldIn, BlockPos pos) {
+	public IBlockState getActualState(@Nonnull IBlockState state, IBlockAccess worldIn, BlockPos pos) {
 		state = super.getActualState(state, worldIn, pos);
 		TileEntity tile = worldIn.getTileEntity(pos);
 		if (tile instanceof LogisticsSolidTileEntity) {
 			LogisticsSolidTileEntity ste = (LogisticsSolidTileEntity) tile;
 			int rotation = ste.getRotation();
 			state = state
-				.withProperty(rotationProperty, rotation)
-				.withProperty(active, ste.isActive());
+					.withProperty(rotationProperty, Math.min(Math.max(rotation, 0), 3))
+					.withProperty(active, ste.isActive());
 		}
 
 		if (tile != null) {

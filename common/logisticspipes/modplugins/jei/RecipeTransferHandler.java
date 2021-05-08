@@ -1,14 +1,13 @@
 package logisticspipes.modplugins.jei;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.NonNullList;
@@ -32,9 +31,9 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
 
-public class RecipeTransferHandler implements IRecipeTransferHandler {
+public class RecipeTransferHandler implements IRecipeTransferHandler<DummyContainer> {
 
-	private IRecipeTransferHandlerHelper recipeTransferHandlerHelper;
+	private final IRecipeTransferHandlerHelper recipeTransferHandlerHelper;
 
 	public RecipeTransferHandler(IRecipeTransferHandlerHelper recipeTransferHandlerHelper) {
 		this.recipeTransferHandlerHelper = recipeTransferHandlerHelper;
@@ -42,82 +41,88 @@ public class RecipeTransferHandler implements IRecipeTransferHandler {
 
 	@Nonnull
 	@Override
-	public Class getContainerClass() {
+	public Class<DummyContainer> getContainerClass() {
 		return DummyContainer.class;
 	}
 
 	@Nullable
 	@Override
-	public IRecipeTransferError transferRecipe(@Nonnull Container container, @Nonnull IRecipeLayout recipeLayout, @Nonnull EntityPlayer player, boolean maxTransfer, boolean doTransfer) {
-		if(container instanceof DummyContainer) {
-			DummyContainer dContainer = (DummyContainer) container;
+	public IRecipeTransferError transferRecipe(@Nonnull DummyContainer container, @Nonnull IRecipeLayout recipeLayout, @Nonnull EntityPlayer player, boolean maxTransfer, boolean doTransfer) {
+		LogisticsBaseGuiScreen gui = container.guiHolderForJEI;
 
-			LogisticsBaseGuiScreen gui = dContainer.guiHolderForJEI;
+		if (gui instanceof GuiLogisticsCraftingTable || gui instanceof GuiRequestTable) {
 
-			if(gui instanceof GuiLogisticsCraftingTable || gui instanceof GuiRequestTable) {
+			TileEntity tile;
+			if (gui instanceof GuiLogisticsCraftingTable) {
+				tile = ((GuiLogisticsCraftingTable) gui)._crafter;
+			} else {
+				tile = ((GuiRequestTable) gui)._table.container;
+			}
 
-				TileEntity tile = null;
-				if (gui instanceof GuiLogisticsCraftingTable) {
-					tile = ((GuiLogisticsCraftingTable) gui)._crafter;
-				} else {
-					tile = ((GuiRequestTable) gui)._table.container;
-				}
+			if (tile == null) {
+				return recipeTransferHandlerHelper.createInternalError();
+			}
 
-				if(tile == null) {
-					return recipeTransferHandlerHelper.createInternalError();
-				}
+			if (!recipeLayout.getRecipeCategory().getUid().equals(VanillaRecipeCategoryUid.CRAFTING)) {
+				return recipeTransferHandlerHelper.createInternalError();
+			}
 
-				if(!recipeLayout.getRecipeCategory().getUid().equals(VanillaRecipeCategoryUid.CRAFTING)) {
-					return recipeTransferHandlerHelper.createInternalError();
-				}
+			NEISetCraftingRecipe packet = PacketHandler.getPacket(NEISetCraftingRecipe.class);
+			NonNullList<ItemStack> stackList = packet.getStackList();
+			ItemStack[][] stacks = new ItemStack[9][];
+			boolean hasCanidates = false;
 
-				ItemStack[] stack = new ItemStack[9];
-				ItemStack[][] stacks = new ItemStack[9][];
-				boolean hasCanidates = false;
-				NEISetCraftingRecipe packet = PacketHandler.getPacket(NEISetCraftingRecipe.class);
+			IGuiItemStackGroup guiItemStackGroup = recipeLayout.getItemStacks();
+			Map<Integer, ? extends IGuiIngredient<ItemStack>> guiIngredients = guiItemStackGroup.getGuiIngredients();
 
-				IGuiItemStackGroup guiItemStackGroup = recipeLayout.getItemStacks();
-				Map<Integer, ? extends IGuiIngredient<ItemStack>> guiIngredients = guiItemStackGroup.getGuiIngredients();
+			if (doTransfer) {
+				for (Map.Entry<Integer, ? extends IGuiIngredient<ItemStack>> ps : guiIngredients.entrySet()) {
+					if (!ps.getValue().isInput()) continue;
 
-				if(doTransfer) {
-					for (Map.Entry<Integer, ? extends IGuiIngredient<ItemStack>> ps : guiIngredients.entrySet()) {
-						if(!ps.getValue().isInput()) continue;
+					int slot = ps.getKey() - 1;
 
-						int slot = ps.getKey() - 1;
+					if (slot < 9) {
+						final ItemStack displayedIngredient = ps.getValue().getDisplayedIngredient();
+						stackList.set(slot, displayedIngredient == null ? ItemStack.EMPTY : displayedIngredient);
+						NonNullList<ItemStack> itemCandidateList = NonNullList.create();
 
-						if (slot < 9) {
-							stack[slot] = ps.getValue().getDisplayedIngredient();
-							List<ItemStack> list = new ArrayList<>(ps.getValue().getAllIngredients());
-							if(!list.isEmpty()) {
-								Iterator<ItemStack> iter = list.iterator();
-								while (iter.hasNext()) {
-									ItemStack wildCardCheckStack = iter.next();
-									if (wildCardCheckStack.getItemDamage() == OreDictionary.WILDCARD_VALUE) {
-										iter.remove();
+						// add all non-null non-empty ingredients to the itemCandidateList
+						ps.getValue().getAllIngredients().stream()
+								.filter(itemStack -> Objects.nonNull(itemStack) && !itemStack.isEmpty())
+								.forEach(itemCandidateList::add);
+
+						if (!itemCandidateList.isEmpty()) {
+							Iterator<ItemStack> iter = itemCandidateList.iterator();
+							while (iter.hasNext()) {
+								ItemStack wildCardCheckStack = iter.next();
+								if (wildCardCheckStack.getItemDamage() == OreDictionary.WILDCARD_VALUE) {
+									iter.remove();
+									final CreativeTabs creativeTab = wildCardCheckStack.getItem().getCreativeTab();
+									if (creativeTab != null) {
 										NonNullList<ItemStack> secondList = NonNullList.create();
-										wildCardCheckStack.getItem().getSubItems(wildCardCheckStack.getItem().getCreativeTab(), secondList);
-										list.addAll(secondList);
-										iter = list.iterator();
+										wildCardCheckStack.getItem().getSubItems(creativeTab, secondList);
+										itemCandidateList.addAll(secondList);
 									}
+									iter = itemCandidateList.iterator();
 								}
-								stacks[slot] = list.toArray(new ItemStack[0]);
-								if (stacks[slot].length > 1) {
-									hasCanidates = true;
-								} else if(stacks[slot].length == 1) {
-									stack[slot] = stacks[slot][0];
-								}
+							}
+							stacks[slot] = itemCandidateList.toArray(new ItemStack[0]);
+							if (stacks[slot].length > 1) {
+								hasCanidates = true;
+							} else if (stacks[slot].length == 1) {
+								stackList.set(slot, stacks[slot][0]);
 							}
 						}
 					}
-
-					if (hasCanidates) {
-						gui.setSubGui(new GuiRecipeImport(tile, stacks));
-					} else {
-						MainProxy.sendPacketToServer(packet.setContent(stack).setTilePos(tile));
-					}
 				}
-				return null;
+
+				if (hasCanidates) {
+					gui.setSubGui(new GuiRecipeImport(tile, stacks));
+				} else {
+					MainProxy.sendPacketToServer(packet.setTilePos(tile));
+				}
 			}
+			return null;
 		}
 		return recipeTransferHandlerHelper.createInternalError();
 	}

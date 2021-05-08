@@ -2,9 +2,10 @@ package logisticspipes.routing.pathfinder.changedetection;
 
 import java.util.ArrayList;
 
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
-import network.rs485.logisticspipes.world.CoordinateUtils;
-import network.rs485.logisticspipes.world.DoubleCoordinates;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 import logisticspipes.asm.te.ILPTEInformation;
 import logisticspipes.asm.te.ITileEntityChangeListener;
@@ -12,24 +13,17 @@ import logisticspipes.asm.te.LPTileEntityObject;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.routing.pathfinder.IPipeInformationProvider.ConnectionPipeType;
 import logisticspipes.ticks.LPTickHandler;
 import logisticspipes.ticks.LPTickHandler.LPWorldInfo;
 import logisticspipes.ticks.QueuedTasks;
-
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-
-import net.minecraft.util.EnumFacing;
+import network.rs485.logisticspipes.connection.ConnectionType;
+import network.rs485.logisticspipes.world.CoordinateUtils;
+import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 public class TEControl {
 
 	public static void validate(final TileEntity tile) {
 		final World world = tile.getWorld();
-		if (world == null) {
-			return;
-		}
 		if (!MainProxy.isServer(world)) {
 			return;
 		}
@@ -42,14 +36,14 @@ public class TEControl {
 			return;
 		}
 
-		if (SimpleServiceLocator.pipeInformationManager.isPipe(tile, false, ConnectionPipeType.UNDEFINED) || SimpleServiceLocator.specialtileconnection.isType(tile)) {
+		if (SimpleServiceLocator.pipeInformationManager.isPipe(tile, false, ConnectionType.UNDEFINED) || SimpleServiceLocator.specialtileconnection.isType(tile)) {
 			((ILPTEInformation) tile).setObject(new LPTileEntityObject());
 			((ILPTEInformation) tile).getObject().initialised = LPTickHandler.getWorldInfo(world).getWorldTick();
 			if (((ILPTEInformation) tile).getObject().initialised < 5) {
 				return;
 			}
 			QueuedTasks.queueTask(() -> {
-				if (!SimpleServiceLocator.pipeInformationManager.isPipe(tile, true, ConnectionPipeType.UNDEFINED)) {
+				if (!SimpleServiceLocator.pipeInformationManager.isPipe(tile, true, ConnectionType.UNDEFINED)) {
 					return null;
 				}
 				for (EnumFacing dir : EnumFacing.VALUES) {
@@ -78,9 +72,6 @@ public class TEControl {
 
 	public static void invalidate(final TileEntity tile) {
 		final World world = tile.getWorld();
-		if (world == null) {
-			return;
-		}
 		if (!MainProxy.isServer(world)) {
 			return;
 		}
@@ -125,7 +116,7 @@ public class TEControl {
 			return;
 		}
 		final TileEntity tile = pos.getTileEntity(world);
-		if(SimpleServiceLocator.enderIOProxy.isBundledPipe(tile)) {
+		if (SimpleServiceLocator.enderIOProxy.isBundledPipe(tile)) {
 			QueuedTasks.queueTask(() -> {
 				for (EnumFacing dir : EnumFacing.VALUES) {
 					DoubleCoordinates newPos = CoordinateUtils.sum(pos, dir);
@@ -133,8 +124,8 @@ public class TEControl {
 						continue;
 					}
 					TileEntity nextTile = newPos.getTileEntity(world);
-					if(nextTile instanceof LogisticsTileGenericPipe) {
-						((LogisticsTileGenericPipe)nextTile).scheduleNeighborChange();
+					if (nextTile instanceof LogisticsTileGenericPipe) {
+						((LogisticsTileGenericPipe) nextTile).scheduleNeighborChange();
 					}
 				}
 				return null;

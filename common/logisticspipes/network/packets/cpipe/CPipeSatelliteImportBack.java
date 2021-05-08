@@ -5,7 +5,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import logisticspipes.modules.ModuleCrafter;
 import logisticspipes.network.abstractpackets.InventoryModuleCoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
-
 import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
@@ -27,7 +26,7 @@ public class CPipeSatelliteImportBack extends InventoryModuleCoordinatesPacket {
 			return;
 		}
 		for (int i = 0; i < getStackList().size(); i++) {
-			module.setDummyInventorySlot(i, getStackList().get(i));
+			module.dummyInventory.setInventorySlotContents(i, getStackList().get(i));
 		}
 	}
 }

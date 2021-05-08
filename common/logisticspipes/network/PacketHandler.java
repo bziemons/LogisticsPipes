@@ -27,7 +27,6 @@ import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.util.AttributeKey;
 import org.apache.logging.log4j.Level;
 
-import logisticspipes.LPConstants;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.exception.DelayPacketException;
@@ -50,11 +49,10 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, ModernP
 	public static Map<Class<? extends ModernPacket>, ModernPacket> packetmap;
 	private static int packetDebugID = 1;
 
-	@SuppressWarnings("unchecked")
-	// Suppressed because this cast should never fail.
+	@SuppressWarnings("unchecked") // Suppressed because this cast should never fail.
 	public static <T extends ModernPacket> T getPacket(Class<T> clazz) {
 		T packet = (T) PacketHandler.packetmap.get(clazz).template();
-		if (LPConstants.DEBUG && MainProxy.proxy.getSide().equals("Client")) {
+		if (LogisticsPipes.isDEBUG() && MainProxy.proxy.getSide().equals("Client")) {
 			StackTraceElement[] trace = Thread.currentThread().getStackTrace();
 			synchronized (PacketHandler.debugMap) { //Unique id
 				int id = PacketHandler.packetDebugID++;
@@ -104,7 +102,7 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, ModernP
 		return PacketHandler.toFMLPacket(msg, MainProxy.networkChannelName);
 	}
 
-	private static FMLProxyPacket toFMLPacket(ModernPacket msg, String channel) throws Exception {
+	private static FMLProxyPacket toFMLPacket(ModernPacket msg, String channel) {
 		ByteBuf buffer = Unpooled.buffer();
 		fillByteBuf(msg, buffer);
 
@@ -160,13 +158,13 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, ModernP
 	public static void onPacketData(ModernPacket packet, final EntityPlayer player) {
 		try {
 			packet.processPacket(player);
-			if (LPConstants.DEBUG) {
+			if (LogisticsPipes.isDEBUG()) {
 				PacketHandler.debugMap.remove(packet.getDebugId());
 			}
 		} catch (DelayPacketException e) {
 			if (packet.retry() && MainProxy.isClient(player.getEntityWorld())) {
 				SimpleServiceLocator.clientBufferHandler.queuePacket(packet, player);
-			} else if (LPConstants.DEBUG) {
+			} else if (LogisticsPipes.isDEBUG()) {
 				LogisticsPipes.log.error(packet.getClass().getName());
 				LogisticsPipes.log.error(packet.toString());
 				e.printStackTrace();
@@ -193,7 +191,7 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, ModernP
 	}
 
 	@Override
-	protected final void decode(ChannelHandlerContext ctx, FMLProxyPacket msg, List<Object> out) throws Exception {
+	protected final void decode(ChannelHandlerContext ctx, FMLProxyPacket msg, List<Object> out) {
 		ByteBuf payload = msg.payload();
 		int packetID = payload.readShort();
 		final ModernPacket packet = PacketHandler.packetlist.get(packetID).template();
@@ -202,7 +200,11 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, ModernP
 
 		LPDataIOWrapper.provideData(payload.slice(), packet::readData);
 
-		out.add(new InboundModernPacketWrapper(packet, MainProxy.proxy.getEntityPlayerFromNetHandler(msg.handler())));
+		EntityPlayer player = MainProxy.proxy.getEntityPlayerFromNetHandler(msg.handler());
+
+		if (player != null) {
+			out.add(new InboundModernPacketWrapper(packet, player));
+		}
 	}
 
 	@Override

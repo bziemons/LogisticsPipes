@@ -1,18 +1,13 @@
 package logisticspipes.proxy;
 
-import java.io.File;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import com.google.common.collect.Maps;
-import logisticspipes.LPItems;
-import logisticspipes.entity.FakePlayerLP;
-import lombok.val;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -24,10 +19,10 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
+
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.world.WorldEvent;
-import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.FMLEmbeddedChannel;
@@ -36,10 +31,14 @@ import net.minecraftforge.fml.common.network.FMLOutboundHandler.OutboundTarget;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 
+import com.google.common.collect.Maps;
 import lombok.Getter;
 
+import logisticspipes.LPItems;
 import logisticspipes.LogisticsEventListener;
 import logisticspipes.LogisticsPipes;
+import logisticspipes.entity.FakePlayerLP;
+import logisticspipes.modules.LogisticsModule;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.PacketInboundHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
@@ -47,7 +46,6 @@ import logisticspipes.proxy.interfaces.IProxy;
 import logisticspipes.routing.debug.RoutingTableDebugUpdateThread;
 import logisticspipes.routing.pathfinder.IPipeInformationProvider;
 import logisticspipes.ticks.RoutingTableUpdateThread;
-import logisticspipes.utils.OrientationsUtil;
 import logisticspipes.utils.PlayerCollectionList;
 
 public class MainProxy {
@@ -60,8 +58,8 @@ public class MainProxy {
 	private static int globalTick;
 	public static EnumMap<Side, FMLEmbeddedChannel> channels;
 
-	private static WeakHashMap<Thread, Side> threadSideMap = new WeakHashMap<>();
-	private static Map<Integer, FakePlayerLP> fakePlayers = Maps.newHashMap();
+	private static final WeakHashMap<Thread, Side> threadSideMap = new WeakHashMap<>();
+	private static final Map<Integer, FakePlayerLP> fakePlayers = Maps.newHashMap();
 
 	public static final String networkChannelName = "LogisticsPipes";
 
@@ -89,7 +87,7 @@ public class MainProxy {
 	}
 
 	public static boolean isClient(IBlockAccess blockAccess) {
-		if(blockAccess instanceof World) {
+		if (blockAccess instanceof World) {
 			World world = (World) blockAccess;
 			try {
 				return world.isRemote;
@@ -101,17 +99,16 @@ public class MainProxy {
 		return MainProxy.isClient();
 	}
 
-	@Deprecated
 	/**
 	 * isClient is slow, find a world and check isClient(world)
-	 * @return
 	 */
+	@Deprecated
 	public static boolean isClient() {
 		return MainProxy.getEffectiveSide() == Side.CLIENT;
 	}
 
 	public static boolean isServer(IBlockAccess blockAccess) {
-		if(blockAccess instanceof World) {
+		if (blockAccess instanceof World) {
 			World world = (World) blockAccess;
 			try {
 				return !world.isRemote;
@@ -123,13 +120,23 @@ public class MainProxy {
 		return MainProxy.isServer();
 	}
 
-	@Deprecated
 	/**
 	 * isServer is slow, find a world and check isServer(world)
-	 * @return
 	 */
+	@Deprecated
 	public static boolean isServer() {
 		return MainProxy.getEffectiveSide() == Side.SERVER;
+	}
+
+	/**
+	 * Simple function to run code on the server and which can be replaced by the DistExecutor later.
+	 */
+	public static void runOnServer(@Nullable IBlockAccess world, @Nonnull Supplier<Runnable> runnableConsumer) {
+		if (isServer(world)) runnableConsumer.get().run();
+	}
+
+	public static void runOnClient(@Nullable IBlockAccess world, @Nonnull Supplier<Runnable> runnableConsumer) {
+		if (isClient(world)) runnableConsumer.get().run();
 	}
 
 	public static World getClientMainWorld() {
@@ -189,6 +196,24 @@ public class MainProxy {
 		return !players.isEmptyWithoutCheck();
 	}
 
+	public static void sendPacketToAllWatchingChunk(LogisticsModule module, ModernPacket packet) {
+		if (module.getSlot().isInWorld()) {
+			final World world = module.getWorld();
+			if (world == null) {
+				if (LogisticsPipes.isDEBUG()) {
+					throw new IllegalStateException("sendPacketToAllWatchingChunk called without a world provider on the module");
+				}
+				return;
+			}
+			final BlockPos pos = module.getBlockPos();
+			sendPacketToAllWatchingChunk(pos.getX(), pos.getZ(), world.provider.getDimension(), packet);
+		} else {
+			if (LogisticsPipes.isDEBUG()) {
+				throw new IllegalStateException("sendPacketToAllWatchingChunk for module in hand was called");
+			}
+		}
+	}
+
 	public static void sendPacketToAllWatchingChunk(TileEntity tile, ModernPacket packet) {
 		sendPacketToAllWatchingChunk(tile.getPos().getX(), tile.getPos().getZ(), tile.getWorld().provider.getDimension(), packet);
 	}
@@ -207,7 +232,6 @@ public class MainProxy {
 					MainProxy.sendPacketToPlayer(packet, player);
 				}
 			}
-			return;
 		}
 	}
 
@@ -289,22 +313,14 @@ public class MainProxy {
 		return null;
 	}
 
-	public static File getLPFolder() {
-		return new File(DimensionManager.getCurrentSaveRootDirectory(), "LogisticsPipes");
-	}
-
 	public static void addTick() {
 		MainProxy.globalTick++;
 	}
 
-	public static EntityItem dropItems(World world, ItemStack stack, int xCoord, int yCoord, int zCoord) {
+	public static EntityItem dropItems(World world, @Nonnull ItemStack stack, int xCoord, int yCoord, int zCoord) {
 		EntityItem item = new EntityItem(world, xCoord, yCoord, zCoord, stack);
 		world.spawnEntity(item);
 		return item;
-	}
-
-	public static boolean checkPipesConnections(TileEntity from, TileEntity to) {
-		return MainProxy.checkPipesConnections(from, to, OrientationsUtil.getOrientationOfTilewithTile(from, to));
 	}
 
 	public static boolean checkPipesConnections(TileEntity from, TileEntity to, EnumFacing way) {
@@ -326,19 +342,20 @@ public class MainProxy {
 			}
 		}
 		if (toInfo != null) {
-			if (!toInfo.canConnect(from, way.getOpposite(), ignoreSystemDisconnection)) {
-				return false;
-			}
+			return toInfo.canConnect(from, way.getOpposite(), ignoreSystemDisconnection);
 		}
 		return true;
 	}
 
 	public static boolean isPipeControllerEquipped(EntityPlayer entityplayer) {
-		return entityplayer != null && entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() == LPItems.pipeController;
+		return entityplayer != null &&
+				!entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).isEmpty() &&
+				entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() == LPItems.pipeController;
 	}
 
 	@SubscribeEvent
 	public static void onWorldUnload(WorldEvent.Unload event) {
 		fakePlayers.entrySet().removeIf(entry -> entry.getValue().world == event.getWorld());
 	}
+
 }

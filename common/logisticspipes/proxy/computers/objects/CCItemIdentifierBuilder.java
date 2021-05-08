@@ -13,8 +13,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 @CCType(name = "ItemIdentifierBuilder")
 public class CCItemIdentifierBuilder implements ILPCCTypeHolder {
 
-	private Object ccType;
-
+	private final Object[] ccTypeHolder = new Object[1];
 	private int itemID = 0;
 	private String itemIDName = null;
 	private int itemData = 0;
@@ -33,7 +32,7 @@ public class CCItemIdentifierBuilder implements ILPCCTypeHolder {
 
 	@CCCommand(description = "Returns the itemID (String or Int) for this ItemIdentifierBuilder")
 	public Object getItemID() {
-		if(itemIDName != null) {
+		if (itemIDName != null) {
 			return itemIDName;
 		}
 		return itemID;
@@ -51,9 +50,9 @@ public class CCItemIdentifierBuilder implements ILPCCTypeHolder {
 
 	@CCCommand(description = "Returns the ItemIdentifier for this ItemIdentifierBuilder")
 	public ItemIdentifier build() {
-		Item item = null;
-		if(itemIDName != null) {
-			item = (Item) Item.REGISTRY.getObject(new ResourceLocation(itemIDName));
+		Item item;
+		if (itemIDName != null) {
+			item = Item.REGISTRY.getObject(new ResourceLocation(itemIDName));
 		} else {
 			item = Item.getItemById(itemID);
 		}
@@ -63,9 +62,9 @@ public class CCItemIdentifierBuilder implements ILPCCTypeHolder {
 		return ItemIdentifier.get(item, itemData, null);
 	}
 
-	@CCCommand(description = "Returns a list of all ItemIdentifier with an NBT tag matching the givven Item ID and data")
+	@CCCommand(description = "Returns a list of all ItemIdentifier with an NBT tag matching the given Item ID and data")
 	public List<ItemIdentifier> matchingNBTIdentifier() {
-		Item item = Item.getItemById(itemID);
+		Item item = Item.REGISTRY.getObjectById(itemID);
 		if (item == null) {
 			throw new UnsupportedOperationException("Not a valid ItemIdentifier");
 		}
@@ -73,12 +72,8 @@ public class CCItemIdentifierBuilder implements ILPCCTypeHolder {
 	}
 
 	@Override
-	public void setCCType(Object type) {
-		ccType = type;
+	public Object[] getTypeHolder() {
+		return ccTypeHolder;
 	}
 
-	@Override
-	public Object getCCType() {
-		return ccType;
-	}
 }

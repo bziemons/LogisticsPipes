@@ -2,14 +2,13 @@ package logisticspipes.network.packets;
 
 import net.minecraft.entity.player.EntityPlayer;
 
-import logisticspipes.LPConstants;
+import logisticspipes.LogisticsPipes;
 import logisticspipes.config.Configs;
 import logisticspipes.modplugins.nei.LoadingHelper;
 import logisticspipes.network.abstractpackets.ModernPacket;
+import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class ActivateNBTDebug extends ModernPacket {
@@ -27,10 +26,10 @@ public class ActivateNBTDebug extends ModernPacket {
 			Class.forName("codechicken.nei.handler.NEIClientEventHandler");
 			Configs.TOOLTIP_INFO = true;
 			LoadingHelper.LoadNeiNBTDebugHelper();
-		} catch (ClassNotFoundException e) {
+		} catch (ClassNotFoundException ignored) {
 
 		} catch (Exception e1) {
-			if (LPConstants.DEBUG) {
+			if (LogisticsPipes.isDEBUG()) {
 				e1.printStackTrace();
 			}
 		}

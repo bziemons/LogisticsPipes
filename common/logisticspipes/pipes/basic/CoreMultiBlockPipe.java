@@ -3,25 +3,21 @@ package logisticspipes.pipes.basic;
 import java.util.ArrayList;
 import java.util.List;
 
-import logisticspipes.LogisticsPipes;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.AxisAlignedBB;
+
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+
 import logisticspipes.interfaces.ITubeOrientation;
-import logisticspipes.renderer.newpipe.IHighlightPlacementRenderer;
 import logisticspipes.renderer.newpipe.ISpecialPipeRenderer;
 import logisticspipes.transport.LPTravelingItem;
 import logisticspipes.transport.PipeMultiBlockTransportLogistics;
 import logisticspipes.utils.LPPositionSet;
-
 import logisticspipes.utils.tuples.Pair;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-import net.minecraft.tileentity.TileEntity;
-
-import net.minecraft.util.EnumFacing;
-
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import network.rs485.logisticspipes.world.DoubleCoordinates;
 import network.rs485.logisticspipes.world.DoubleCoordinatesType;
 
 public abstract class CoreMultiBlockPipe extends CoreUnroutedPipe {
@@ -53,27 +49,26 @@ public abstract class CoreMultiBlockPipe extends CoreUnroutedPipe {
 	}
 
 	public static boolean canShare(List<SubBlockTypeForShare> list, SubBlockTypeForShare toAdd) {
-		if(toAdd == SubBlockTypeForShare.NON_SHARE) return false;
-		if(toAdd == null) return false;
-		if(list.size() > 1) return false;
-		if(list.isEmpty()) return true;
+		if (toAdd == SubBlockTypeForShare.NON_SHARE) return false;
+		if (toAdd == null) return false;
+		if (list.size() > 1) return false;
+		if (list.isEmpty()) return true;
 		SubBlockTypeForShare contained = list.get(0);
-		if(contained == SubBlockTypeForShare.NON_SHARE) return false;
-		for(Pair<SubBlockTypeForShare, SubBlockTypeForShare> allowed: allowedCombinations) {
-			if(allowed.getValue1() == contained) {
-				if(allowed.getValue2() == toAdd) {
+		if (contained == SubBlockTypeForShare.NON_SHARE) return false;
+		for (Pair<SubBlockTypeForShare, SubBlockTypeForShare> allowed : allowedCombinations) {
+			if (allowed.getValue1() == contained) {
+				if (allowed.getValue2() == toAdd) {
 					return true;
 				}
 			}
-			if(allowed.getValue2() == contained) {
-				if(allowed.getValue1() == toAdd) {
+			if (allowed.getValue2() == contained) {
+				if (allowed.getValue1() == toAdd) {
 					return true;
 				}
 			}
 		}
 		return false;
 	}
-
 
 	public CoreMultiBlockPipe(PipeMultiBlockTransportLogistics transport, Item item) {
 		super(transport, item);
@@ -86,15 +81,14 @@ public abstract class CoreMultiBlockPipe extends CoreUnroutedPipe {
 
 	/**
 	 * North Orientated
-	 * 
+	 *
 	 * @return Relative Positions
 	 */
 	public abstract LPPositionSet<DoubleCoordinatesType<SubBlockTypeForShare>> getSubBlocks();
 
 	public abstract LPPositionSet<DoubleCoordinatesType<SubBlockTypeForShare>> getRotatedSubBlocks();
 
-	@SuppressWarnings("rawtypes")
-	public abstract void addCollisionBoxesToList(List arraylist, AxisAlignedBB axisalignedbb);
+	public abstract void addCollisionBoxesToList(List<AxisAlignedBB> arraylist, AxisAlignedBB axisalignedbb);
 
 	public abstract AxisAlignedBB getCompleteBox();
 
@@ -123,14 +117,15 @@ public abstract class CoreMultiBlockPipe extends CoreUnroutedPipe {
 
 	@Override
 	public boolean canPipeConnect(TileEntity tile, EnumFacing side) {
-		if(tile instanceof LogisticsTileGenericSubMultiBlock) {
+		if (tile instanceof LogisticsTileGenericSubMultiBlock) {
 			return true;
 		}
-		if(tile instanceof LogisticsTileGenericPipe) {
-			if(((LogisticsTileGenericPipe) tile).pipe.isMultiBlock()) {
+		if (tile instanceof LogisticsTileGenericPipe) {
+			if (((LogisticsTileGenericPipe) tile).pipe.isMultiBlock()) {
 				return true;
 			}
 		}
 		return super.canPipeConnect(tile, side);
 	}
+
 }

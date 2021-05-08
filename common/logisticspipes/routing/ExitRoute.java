@@ -1,6 +1,5 @@
-/**
+/*
  * Copyright (c) Krapht, 2011
- * 
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
  * License 1.0, or MMPL. Please check the contents of the license located in
  * http://www.mod-buildcraft.com/MMPL-1.0.txt
@@ -13,6 +12,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.tileentity.TileEntity;
@@ -39,7 +39,7 @@ public class ExitRoute implements Comparable<ExitRoute>, LPFinalSerializable {
 	public final double destinationDistanceToRoot;
 	public final int blockDistance;
 	public final EnumSet<PipeRoutingConnectionType> connectionDetails;
-	public final IRouter destination;
+	public final @Nonnull IRouter destination;
 	public EnumFacing exitOrientation;
 	public EnumFacing insertOrientation;
 	public double distanceToDestination;
@@ -51,7 +51,7 @@ public class ExitRoute implements Comparable<ExitRoute>, LPFinalSerializable {
 	 */
 	public ExitRouteDebug debug = new ExitRouteDebug();
 
-	public ExitRoute(IRouter source, IRouter destination, @Nullable EnumFacing exitOrientation, @Nullable EnumFacing insertOrientation, double metric,
+	public ExitRoute(@Nullable IRouter source, @Nonnull IRouter destination, @Nullable EnumFacing exitOrientation, @Nullable EnumFacing insertOrientation, double metric,
 			EnumSet<PipeRoutingConnectionType> connectionDetails, int blockDistance) {
 		this.destination = destination;
 		this.root = source;
@@ -73,11 +73,14 @@ public class ExitRoute implements Comparable<ExitRoute>, LPFinalSerializable {
 
 	@SideOnly(Side.CLIENT)
 	public ExitRoute(LPDataInput input) {
-		if (input.readBoolean()) {
-			destination = readRouter(input);
-		} else {
-			destination = null;
+		if (!input.readBoolean()) {
+			throw new RuntimeException("Cannot read an ExitRoute without destination");
 		}
+		final IRouter destinationRouter = readRouter(input);
+		if (destinationRouter == null) {
+			throw new RuntimeException("Destination of the ExitRoute could not be determined");
+		}
+		destination = destinationRouter;
 
 		if (input.readBoolean()) {
 			root = readRouter(input);
@@ -128,12 +131,8 @@ public class ExitRoute implements Comparable<ExitRoute>, LPFinalSerializable {
 
 	@Override
 	public void write(LPDataOutput output) {
-		if (destination == null) {
-			output.writeBoolean(false);
-		} else {
-			output.writeBoolean(true);
-			destination.write(output);
-		}
+		output.writeBoolean(true);
+		destination.write(output);
 
 		if (root == null) {
 			output.writeBoolean(false);
@@ -184,7 +183,9 @@ public class ExitRoute implements Comparable<ExitRoute>, LPFinalSerializable {
 
 	@Override
 	public String toString() {
-		return "{" + exitOrientation.name() + "," + insertOrientation.name() + "," + distanceToDestination + "," + destinationDistanceToRoot + ", ConnectionDetails: " + connectionDetails + ", " + filters + "}";
+		return String.format("ExitRoute(exitdir=%s, insertdir=%s, distance=%s, reverse distance=%s, conn. details=%s, "
+						+ "filters=%s)", exitOrientation, insertOrientation, distanceToDestination, destinationDistanceToRoot,
+				connectionDetails, filters);
 	}
 
 	public void removeFlags(EnumSet<PipeRoutingConnectionType> flags) {
@@ -196,7 +197,7 @@ public class ExitRoute implements Comparable<ExitRoute>, LPFinalSerializable {
 	}
 
 	public boolean hasActivePipe() {
-		return destination != null && destination.getCachedPipe() != null;
+		return destination.getCachedPipe() != null;
 	}
 
 	//copies
@@ -211,9 +212,9 @@ public class ExitRoute implements Comparable<ExitRoute>, LPFinalSerializable {
 
 	@Override
 	public int compareTo(ExitRoute o) {
-		int c = (int) Math.floor(distanceToDestination - o.distanceToDestination);
+		final int c = Double.compare(distanceToDestination, o.distanceToDestination);
 		if (c == 0) {
-			return destination.getSimpleID() - o.destination.getSimpleID();
+			return Integer.compare(destination.getSimpleID(), o.destination.getSimpleID());
 		}
 		return c;
 	}

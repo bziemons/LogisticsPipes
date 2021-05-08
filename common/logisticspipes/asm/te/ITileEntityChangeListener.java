@@ -1,14 +1,14 @@
 package logisticspipes.asm.te;
 
-import network.rs485.logisticspipes.world.DoubleCoordinates;
-
 import net.minecraft.util.EnumFacing;
+
+import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 public interface ITileEntityChangeListener {
 
-	public void pipeRemoved(DoubleCoordinates pos);
+	void pipeRemoved(DoubleCoordinates pos);
 
-	public void pipeAdded(DoubleCoordinates pos, EnumFacing side);
+	void pipeAdded(DoubleCoordinates pos, EnumFacing side);
 
-	public void pipeModified(DoubleCoordinates pos);
+	void pipeModified(DoubleCoordinates pos);
 }

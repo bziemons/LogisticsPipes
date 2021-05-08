@@ -2,14 +2,16 @@ package logisticspipes.routing.debug;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.concurrent.Callable;
+
+import net.minecraft.command.ICommandSender;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.text.TextComponentString;
 
 import logisticspipes.commands.chathelper.LPChatListener;
 import logisticspipes.interfaces.IRoutingDebugAdapter;
@@ -32,10 +34,6 @@ import logisticspipes.routing.PipeRoutingConnectionType;
 import logisticspipes.routing.ServerRouter;
 import logisticspipes.ticks.QueuedTasks;
 
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextComponentString;
-
 public class DebugController implements IRoutingDebugAdapter {
 
 	private static HashMap<ICommandSender, DebugController> instances = new HashMap<>();
@@ -54,10 +52,10 @@ public class DebugController implements IRoutingDebugAdapter {
 		return DebugController.instances.get(sender);
 	}
 
-	private static enum DebugWaitState {
+	private enum DebugWaitState {
 		LOOP,
 		CONTINUE,
-		NOWAIT;
+		NOWAIT
 	}
 
 	private Thread oldThread = null;
@@ -146,8 +144,7 @@ public class DebugController implements IRoutingDebugAdapter {
 		this.candidatesCost = candidatesCost;
 		this.closedSet = closedSet;
 		this.filterList = filterList;
-		ExitRoute[] e = candidatesCost.toArray(new ExitRoute[] {});
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDebugCanidateList.class).setMsg(e), (EntityPlayer) sender);
+		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDebugCanidateList.class).setExitRoutes(new ArrayList<>(candidatesCost)), (EntityPlayer) sender);
 		wait("Start?", true);
 	}
 
@@ -188,14 +185,11 @@ public class DebugController implements IRoutingDebugAdapter {
 			}
 		}
 
-		ExitRoute[] e = candidatesCost.toArray(new ExitRoute[] {});
+		LinkedList<ExitRoute> exitRoutes = new LinkedList<>(candidatesCost);
 		if (flag) {
-			LinkedList<ExitRoute> list = new LinkedList<>();
-			list.add(nextNode);
-			list.addAll(Arrays.asList(e));
-			e = list.toArray(new ExitRoute[] {});
+			exitRoutes.addFirst(nextNode);
 		}
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDebugCanidateList.class).setMsg(e), (EntityPlayer) sender);
+		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateDebugCanidateList.class).setExitRoutes(exitRoutes), (EntityPlayer) sender);
 		if (prevNode == null || prevNode.debug.isTraced) {
 			//Display Information On Client Side
 

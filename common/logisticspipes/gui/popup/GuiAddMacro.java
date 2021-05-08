@@ -44,7 +44,7 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 	private boolean editsearch = false;
 	private boolean editname = false;
 	private LinkedList<ItemIdentifierStack> macroItems = new LinkedList<>();
-	private String name1 = "";
+	private String name1;
 	private String name2 = "";
 	private String Search1 = "";
 	private String Search2 = "";
@@ -53,8 +53,8 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 
 	private Object[] tooltip;
 
-	private int nameWidth = 122;
-	private int searchWidth = 138;
+	private static final int NAME_WIDTH = 122;
+	private static final int SEARCH_WIDTH = 138;
 
 	public GuiAddMacro(IDiskProvider diskProvider, String macroName) {
 		super(200, 200, 0, 0);
@@ -96,7 +96,6 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void initGui() {
 		super.initGui();
@@ -170,8 +169,8 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 
 		tooltip = null;
 
-		for (ItemIdentifierStack itemStack : diskProvider.getItemDisplay()._allItems) {
-			ItemIdentifier item = itemStack.getItem();
+		for (ItemIdentifierStack itemidStack : diskProvider.getItemDisplay()._allItems) {
+			ItemIdentifier item = itemidStack.getItem();
 			if (!itemSearched(item)) {
 				continue;
 			}
@@ -183,7 +182,7 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 			if (ppi > 45 * (pageAll + 1)) {
 				continue;
 			}
-			ItemStack st = itemStack.unsafeMakeNormalStack();
+			ItemStack st = itemidStack.unsafeMakeNormalStack();
 			int x = guiLeft + 10 + panelxSize * column;
 			int y = guiTop + 18 + panelySize * row;
 
@@ -396,6 +395,7 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 		for (String s : search.split(" ")) {
 			if (!value.contains(s)) {
 				flag = false;
+				break;
 			}
 		}
 		return flag;
@@ -502,7 +502,7 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 				}
 				return;
 			} else if (Character.isLetterOrDigit(c) || c == ' ') {
-				if (mc.fontRenderer.getStringWidth(name1 + c + name2) <= nameWidth) {
+				if (mc.fontRenderer.getStringWidth(name1 + c + name2) <= NAME_WIDTH) {
 					name1 += c;
 				}
 				return;
@@ -543,7 +543,7 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 				}
 				return;
 			} else if (Character.isLetterOrDigit(c) || c == ' ') {
-				if (mc.fontRenderer.getStringWidth(Search1 + c + Search2) <= searchWidth) {
+				if (mc.fontRenderer.getStringWidth(Search1 + c + Search2) <= SEARCH_WIDTH) {
 					Search1 += c;
 				}
 				return;

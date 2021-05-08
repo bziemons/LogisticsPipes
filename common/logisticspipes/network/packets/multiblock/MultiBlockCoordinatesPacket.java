@@ -12,11 +12,10 @@ import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.CoreMultiBlockPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericSubMultiBlock;
+import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class MultiBlockCoordinatesPacket extends CoordinatesPacket {
@@ -49,7 +48,7 @@ public class MultiBlockCoordinatesPacket extends CoordinatesPacket {
 
 	@Override
 	public void processPacket(EntityPlayer player) {
-		LogisticsTileGenericSubMultiBlock block = this.getTile(player.getEntityWorld(), LogisticsTileGenericSubMultiBlock.class);
+		LogisticsTileGenericSubMultiBlock block = this.getTileAs(player.getEntityWorld(), LogisticsTileGenericSubMultiBlock.class);
 		block.setPosition(targetPos, subTypes);
 	}
 

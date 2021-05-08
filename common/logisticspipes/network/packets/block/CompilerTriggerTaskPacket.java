@@ -9,10 +9,9 @@ import lombok.Setter;
 import logisticspipes.blocks.LogisticsProgramCompilerTileEntity;
 import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
+import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class CompilerTriggerTaskPacket extends CoordinatesPacket {
@@ -31,7 +30,7 @@ public class CompilerTriggerTaskPacket extends CoordinatesPacket {
 
 	@Override
 	public void processPacket(EntityPlayer player) {
-		LogisticsProgramCompilerTileEntity tile = this.getTile(player.world, LogisticsProgramCompilerTileEntity.class);
+		LogisticsProgramCompilerTileEntity tile = this.getTileAs(player.world, LogisticsProgramCompilerTileEntity.class);
 		tile.triggerNewTask(getCategory(), getType());
 	}
 

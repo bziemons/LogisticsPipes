@@ -1,9 +1,10 @@
 package logisticspipes.interfaces;
 
-import logisticspipes.request.resources.DictResource;
+import network.rs485.logisticspipes.property.IBitSet;
 
 public interface IFuzzySlot {
-	DictResource getFuzzyFlags();
+
+	IBitSet getFuzzyFlags();
 
 	int getX();
 

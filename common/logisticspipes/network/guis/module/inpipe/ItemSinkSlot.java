@@ -11,11 +11,10 @@ import logisticspipes.gui.modules.GuiItemSink;
 import logisticspipes.modules.ModuleItemSink;
 import logisticspipes.network.abstractguis.GuiProvider;
 import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider;
+import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.gui.DummyContainer;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
 public class ItemSinkSlot extends ModuleCoordinatesGuiProvider {
@@ -72,19 +71,7 @@ public class ItemSinkSlot extends ModuleCoordinatesGuiProvider {
 
 	@Override
 	public DummyContainer getContainer(EntityPlayer player) {
-		ModuleItemSink module = this.getLogisticsModule(player.getEntityWorld(), ModuleItemSink.class);
-		if (module == null) {
-			return null;
-		}
-		DummyContainer dummy = new DummyContainer(player.inventory, module.getFilterInventory());
-		dummy.addNormalSlotsForPlayerInventory(8, 60);
-
-		//Pipe slots
-		for (int pipeSlot = 0; pipeSlot < 9; pipeSlot++) {
-			dummy.addDummySlot(pipeSlot, 8 + pipeSlot * 18, 18);
-		}
-
-		return dummy;
+		return SimpleFilterInventorySlot.getContainerFromFilterModule(this, player);
 	}
 
 	@Override

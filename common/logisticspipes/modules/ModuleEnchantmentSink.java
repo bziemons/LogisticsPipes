@@ -1,58 +1,40 @@
 package logisticspipes.modules;
 
-import net.minecraft.nbt.NBTTagCompound;
+import java.util.Collections;
+import java.util.List;
+import javax.annotation.Nonnull;
 
-import logisticspipes.modules.abstractmodules.LogisticsModule;
-import logisticspipes.pipes.PipeLogisticsChassi.ChassiTargetInformation;
+import org.jetbrains.annotations.NotNull;
+
+import logisticspipes.pipes.PipeLogisticsChassis.ChassiTargetInformation;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.SinkReply.FixedPriority;
+import network.rs485.logisticspipes.property.Property;
 
 public class ModuleEnchantmentSink extends LogisticsModule {
 
-	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {}
-
-	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {}
-
-	@Override
-	public int getX() {
-		if (slot.isInWorld()) {
-			return _service.getX();
-		} else {
-			return 0;
-		}
-	}
-
-	@Override
-	public int getY() {
-		if (slot.isInWorld()) {
-			return _service.getY();
-		} else {
-			return 0;
-		}
-	}
-
-	@Override
-	public int getZ() {
-		if (slot.isInWorld()) {
-			return _service.getZ();
-		} else {
-			return 0;
-		}
-	}
-
 	private SinkReply _sinkReply;
 
+	public static String getName() {
+		return "enchantment_sink";
+	}
+
+	@Nonnull
 	@Override
-	public void registerPosition(ModulePositionType slot, int positionInt) {
-		super.registerPosition(slot, positionInt);
-		_sinkReply = new SinkReply(FixedPriority.EnchantmentItemSink, 0, 1, 0, new ChassiTargetInformation(getPositionInt()));
+	public String getLPName() {
+		return getName();
+	}
+
+	@NotNull
+	@Override
+	public List<Property<?>> getProperties() {
+		return Collections.emptyList();
 	}
 
 	@Override
-	public LogisticsModule getSubModule(int slot) {
-		return null;
+	public void registerPosition(@Nonnull ModulePositionType slot, int positionInt) {
+		super.registerPosition(slot, positionInt);
+		_sinkReply = new SinkReply(FixedPriority.EnchantmentItemSink, 0, 1, 0, new ChassiTargetInformation(getPositionInt()));
 	}
 
 	@Override
@@ -67,4 +49,5 @@ public class ModuleEnchantmentSink extends LogisticsModule {
 	public boolean hasEffect() {
 		return true;
 	}
+
 }
