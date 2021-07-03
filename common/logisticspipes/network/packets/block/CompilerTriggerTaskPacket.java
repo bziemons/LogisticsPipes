@@ -1,13 +1,13 @@
 package logisticspipes.network.packets.block;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ResourceLocation;
 
 import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.blocks.LogisticsProgramCompilerTileEntity;
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
@@ -29,7 +29,7 @@ public class CompilerTriggerTaskPacket extends CoordinatesPacket {
 	private String type;
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsProgramCompilerTileEntity tile = this.getTileAs(player.world, LogisticsProgramCompilerTileEntity.class);
 		tile.triggerNewTask(getCategory(), getType());
 	}

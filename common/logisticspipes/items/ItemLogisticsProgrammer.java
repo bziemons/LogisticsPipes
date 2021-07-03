@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 
@@ -30,7 +30,7 @@ public class ItemLogisticsProgrammer extends LogisticsItem {
 	@Override
 	public ItemStack getContainerItem(@Nonnull ItemStack itemStack) {
 		ItemStack items = super.getContainerItem(itemStack);
-		items.setTagCompound(itemStack.getTagCompound());
+		items.setTag(itemStack.getTag());
 		return items;
 	}
 
@@ -38,20 +38,20 @@ public class ItemLogisticsProgrammer extends LogisticsItem {
 	@SideOnly(Side.CLIENT)
 	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
 		if (!stack.isEmpty()) {
-			if (stack.hasTagCompound()) {
-				NBTTagCompound nbt = stack.getTagCompound();
+			if (stack.hasTag()) {
+				CompoundNBT nbt = stack.getTag();
 				String target = nbt.getString(RECIPE_TARGET);
 				if (!target.isEmpty()) {
 					Item targetItem = REGISTRY.getObject(new ResourceLocation(target));
 					if (targetItem instanceof ItemModule) {
 						tooltip.add(TextUtil.translate("tooltip.programmerForModule"));
-						tooltip.add(TextUtil.translate(targetItem.getUnlocalizedName() + ".name"));
+						tooltip.add(TextUtil.translate(targetItem.getTranslationKey() + ".name"));
 					} else if (targetItem instanceof ItemUpgrade) {
 						tooltip.add(TextUtil.translate("tooltip.programmerForUpgrade"));
-						tooltip.add(TextUtil.translate(targetItem.getUnlocalizedName() + ".name"));
+						tooltip.add(TextUtil.translate(targetItem.getTranslationKey() + ".name"));
 					} else if (targetItem instanceof ItemLogisticsPipe) {
 						tooltip.add(TextUtil.translate("tooltip.programmerForPipe"));
-						tooltip.add(TextUtil.translate(targetItem.getUnlocalizedName() + ".name"));
+						tooltip.add(TextUtil.translate(targetItem.getTranslationKey() + ".name"));
 					} else {
 						tooltip.add(TextUtil.translate("tooltip.programmerForUnknown.1"));
 						tooltip.add(TextUtil.translate("tooltip.programmerForUnknown.2"));

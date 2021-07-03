@@ -21,8 +21,10 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.World;
+
+import net.minecraftforge.fml.common.thread.EffectiveSide;
 
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.interfaces.ISecurityStationManager;
@@ -47,7 +49,7 @@ public class RouterManager implements IChannelConnectionManager, ISecurityStatio
 	@Nullable
 	public IRouter getRouter(int id) {
 		//TODO: isClient without a world is expensive
-		if (id <= 0 || MainProxy.isClient()) {
+		if (id <= 0 || EffectiveSide.get().isClient()) {
 			return null;
 		} else {
 			return _routersServer.get(id);
@@ -76,7 +78,7 @@ public class RouterManager implements IChannelConnectionManager, ISecurityStatio
 
 	public void removeRouter(int id) {
 		//TODO: isClient without a world is expensive
-		if (!MainProxy.isClient()) {
+		if (!EffectiveSide.get().isClient()) {
 			_routersServer.set(id, null);
 		}
 	}
@@ -91,21 +93,21 @@ public class RouterManager implements IChannelConnectionManager, ISecurityStatio
 		if (MainProxy.isClient(world)) {
 			synchronized (_routersClient) {
 				for (IRouter r2 : _routersClient) {
-					if (r2.isAt(world.provider.getDimension(), xCoord, yCoord, zCoord)) {
+					if (r2.isAt(world.getDimension(), xCoord, yCoord, zCoord)) {
 						return r2;
 					}
 				}
-				r = new ClientRouter(UUid, world.provider.getDimension(), xCoord, yCoord, zCoord);
+				r = new ClientRouter(UUid, world.getDimension(), xCoord, yCoord, zCoord);
 				_routersClient.add(r);
 			}
 		} else {
 			synchronized (_routersServer) {
 				for (IRouter r2 : _routersServer) {
-					if (r2 != null && r2.isAt(world.provider.getDimension(), xCoord, yCoord, zCoord)) {
+					if (r2 != null && r2.isAt(world.getDimension(), xCoord, yCoord, zCoord)) {
 						return r2;
 					}
 				}
-				final ServerRouter serverRouter = new ServerRouter(UUid, world.provider.getDimension(), xCoord, yCoord, zCoord);
+				final ServerRouter serverRouter = new ServerRouter(UUid, world.getDimension(), xCoord, yCoord, zCoord);
 
 				int rId = serverRouter.getSimpleID();
 				if (_routersServer.size() <= rId) {
@@ -140,7 +142,7 @@ public class RouterManager implements IChannelConnectionManager, ISecurityStatio
 	}
 
 	public List<IRouter> getRouters() {
-		if (MainProxy.isClient()) {
+		if (EffectiveSide.get().isClient()) {
 			return Collections.unmodifiableList(_routersClient);
 		} else {
 			return Collections.unmodifiableList(_routersServer);
@@ -156,7 +158,7 @@ public class RouterManager implements IChannelConnectionManager, ISecurityStatio
 
 	@Override
 	public boolean addChannelConnection(UUID ident, IRouter router) {
-		if (MainProxy.isClient()) {
+		if (EffectiveSide.get().isClient()) {
 			return false;
 		}
 		int routerSimpleID = router.getSimpleID();
@@ -191,7 +193,7 @@ public class RouterManager implements IChannelConnectionManager, ISecurityStatio
 
 	@Override
 	public void removeChannelConnection(IRouter router) {
-		if (MainProxy.isClient()) {
+		if (EffectiveSide.get().isClient()) {
 			return;
 		}
 		Optional<ChannelConnection> channel = channelConnectedPipes.stream()
@@ -291,7 +293,7 @@ public class RouterManager implements IChannelConnectionManager, ISecurityStatio
 	}
 
 	@Override
-	public void sendClientAuthorizationList(EntityPlayer player) {
+	public void sendClientAuthorizationList(PlayerEntity player) {
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(SecurityStationAuthorizedList.class).setStringList(_authorized), player);
 	}
 

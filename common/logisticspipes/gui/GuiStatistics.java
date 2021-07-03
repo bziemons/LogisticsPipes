@@ -8,18 +8,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Math.pow;
 import static java.lang.Math.round;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
 
 import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
 import logisticspipes.blocks.stats.TrackingTask;
@@ -54,7 +50,7 @@ public class GuiStatistics extends LogisticsBaseGuiScreen {
 	private int prevMouseDragY;
 
 	public GuiStatistics(final LogisticsStatisticsTileEntity tile) {
-		super(180, 220, 0, 0);
+		super(inv, titleIn, 180, 220, 0, 0);
 		this.tile = tile;
 	}
 
@@ -101,7 +97,7 @@ public class GuiStatistics extends LogisticsBaseGuiScreen {
 
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int mouseX, int mouseY) {
-		GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+		GlStateManager.color4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 		drawBG();
 		getActiveTab().draw(mouseX, mouseY);
@@ -111,12 +107,12 @@ public class GuiStatistics extends LogisticsBaseGuiScreen {
 
 	private void drawBG() {
 		// background
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop + 20, right, bottom, zLevel, true);
-		GuiGraphics.drawGuiBackGround(mc, guiLeft + (25 * currentTab) + 2, guiTop - 2, guiLeft + 27 + (25 * currentTab), guiTop + 38, zLevel, true, true, true, false, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop + 20, right, bottom, blitOffset, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft + (25 * currentTab) + 2, guiTop - 2, guiLeft + 27 + (25 * currentTab), guiTop + 38, blitOffset, true, true, true, false, true);
 
 		// tab selector panes
 		for (int i = 0; i < tabs.size(); i++) {
-			GuiGraphics.drawGuiBackGround(mc, guiLeft + (25 * i) + 2, guiTop - 2, guiLeft + 27 + (25 * i), guiTop + 35, zLevel, false, true, true, false, true);
+			GuiGraphics.drawGuiBackGround(mc, guiLeft + (25 * i) + 2, guiTop - 2, guiLeft + 27 + (25 * i), guiTop + 35, blitOffset, false, true, true, false, true);
 		}
 
 		// First Tab
@@ -125,10 +121,10 @@ public class GuiStatistics extends LogisticsBaseGuiScreen {
 		// Second Tab
 		RenderHelper.enableGUIStandardItemLighting();
 		ItemStack stack = new ItemStack(Blocks.CRAFTING_TABLE, 1);
-		GlStateManager.enableDepth();
-		itemRender.renderItemAndEffectIntoGUI(stack, guiLeft + 31, guiTop + 3);
-		GlStateManager.disableDepth();
-		itemRender.zLevel = 0.0F;
+		GlStateManager.enableDepthTest();
+		itemRenderer.renderItemAndEffectIntoGUI(stack, guiLeft + 31, guiTop + 3);
+		GlStateManager.disableDepthTest();
+		itemRenderer.zLevel = 0.0F;
 	}
 
 	@Override
@@ -229,7 +225,7 @@ public class GuiStatistics extends LogisticsBaseGuiScreen {
 
 		@Override
 		public void draw(int mouseX, int mouseY) {
-			itemDisplay.renderItemArea(zLevel);
+			itemDisplay.renderItemArea(blitOffset);
 			itemDisplay.renderPageNumber(right - 40, guiTop + 28);
 			if (itemDisplay.getSelectedItem() != null) {
 				TrackingTask task = getSelectedTask();
@@ -237,16 +233,16 @@ public class GuiStatistics extends LogisticsBaseGuiScreen {
 				if (task != null) {
 					GuiGraphics.drawSlotBackground(mc, guiLeft + 10, guiTop + 99);
 					RenderHelper.enableGUIStandardItemLighting();
-					GlStateManager.enableDepth();
-					itemRender.renderItemAndEffectIntoGUI(task.item.makeNormalStack(1), guiLeft + 11, guiTop + 100);
-					GlStateManager.disableDepth();
-					itemRender.zLevel = 0.0F;
+					GlStateManager.enableDepthTest();
+					itemRenderer.renderItemAndEffectIntoGUI(task.item.makeNormalStack(1), guiLeft + 11, guiTop + 100);
+					GlStateManager.disableDepthTest();
+					itemRenderer.zLevel = 0.0F;
 					mc.fontRenderer.drawString(StringUtils.getWithMaxWidth(task.item.getFriendlyName(), 136, fontRenderer), guiLeft + 32, guiTop + 104, Color.getValue(Color.DARKER_GREY), false);
 
 					int xOrigo = xCenter - 72;
 					int yOrigo = yCenter + 90;
 					GlStateManager.pushMatrix();
-					GlStateManager.translate(xOrigo, yOrigo, 0);
+					GlStateManager.translated(xOrigo, yOrigo, 0);
 
 					drawLine(0, 0, 150, 0, Color.DARKER_GREY);
 					drawLine(0, 0, 0, -80, Color.DARKER_GREY);
@@ -304,7 +300,7 @@ public class GuiStatistics extends LogisticsBaseGuiScreen {
 						if (y > 0 && y < 80) {
 							drawLine(-4, (int) -y, 0, (int) -y, Color.DARKER_GREY);
 							GlStateManager.pushMatrix();
-							GlStateManager.rotate(90, 0, 0, 1);
+							GlStateManager.rotatef(90f, 0f, 0f, 1f);
 							String s = data[i] + "";
 							int w = mc.fontRenderer.getStringWidth(s);
 							mc.fontRenderer.drawString(s, (int) -y - w / 2f, 6, Color.DARKER_GREY.getValue(), false);
@@ -529,14 +525,14 @@ public class GuiStatistics extends LogisticsBaseGuiScreen {
 
 		@Override
 		public void draw(int mouseX, int mouseY) {
-			itemDisplay.renderItemArea(zLevel);
+			itemDisplay.renderItemArea(blitOffset);
 			itemDisplay.renderPageNumber(right - 50, guiTop + 66);
 		}
 
 		@Override
 		public void drawForegroundLayer(int mouseX, int mouseY) {
 			mc.fontRenderer.drawString(TextUtil.translate(PREFIX + "crafting"), 10, 28, Color.getValue(Color.DARKER_GREY), false);
-			GuiGraphics.displayItemToolTip(itemDisplay.getToolTip(), GuiStatistics.this, zLevel, guiLeft, guiTop);
+			GuiGraphics.displayItemToolTip(itemDisplay.getToolTip(), GuiStatistics.this, blitOffset, guiLeft, guiTop);
 		}
 
 		@Override

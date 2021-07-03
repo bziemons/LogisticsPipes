@@ -10,8 +10,8 @@ package logisticspipes.logisticspipes;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.routing.IRouter;
@@ -68,9 +68,9 @@ public interface IRoutedItem {
 
 	ItemIdentifierStack getItemIdentifierStack();
 
-	void readFromNBT(NBTTagCompound data);
+	void readFromNBT(CompoundNBT data);
 
-	void writeToNBT(NBTTagCompound tagentityitem);
+	void writeToNBT(CompoundNBT tagItemEntity);
 
 	void setDistanceTracker(IDistanceTracker tracker);
 
@@ -78,5 +78,5 @@ public interface IRoutedItem {
 
 	ItemRoutingInformation getInfo();
 
-	void split(int itemsToTake, EnumFacing orientation);
+	void split(int itemsToTake, Direction orientation);
 }

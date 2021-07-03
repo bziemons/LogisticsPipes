@@ -1,48 +1,71 @@
 package logisticspipes.asm;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-import net.minecraft.launchwrapper.Launch;
-
-import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
-
+import cpw.mods.modlauncher.Launcher;
+import cpw.mods.modlauncher.TransformingClassLoader;
 import lombok.Getter;
 
-//@IFMLLoadingPlugin.SortingIndex(1001) TODO: For next MC update. Changing this now, will change ASM check sums as well.
-public class LogisticsPipesCoreLoader implements IFMLLoadingPlugin {
+import logisticspipes.LogisticsPipes;
+
+public class LogisticsPipesCoreLoader {
 
 	@Getter
 	private static boolean coremodLoaded = false;
 	private static boolean developmentEnvironment = false;
+	private static LogisticsPipesCoreLoader instance;
+
+	private final TransformingClassLoader loader;
 
 	public LogisticsPipesCoreLoader() throws Exception {
-		Launch.classLoader.addTransformerExclusion("logisticspipes.asm.");
+		try {
+			final Field classLoaderField = Launcher.class.getDeclaredField("classLoader");
+			classLoaderField.setAccessible(true);
+			loader = (TransformingClassLoader) classLoaderField.get(Launcher.INSTANCE);
+		} catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
+			LogisticsPipes.getLOGGER().error("Cannot fetch Launcher.classLoader");
+			throw new RuntimeException(e);
+		}
 		coremodLoaded = true;
+		addTransformerExclusion("logisticspipes.asm.");
+		instance = this;
 	}
 
-	@Override
+	public static LogisticsPipesCoreLoader getInstance() {
+		return instance;
+	}
+
+	public void addTransformerExclusion(String packageName) throws NoSuchFieldException, IllegalAccessException {
+		final Field packageExceptionsField = TransformingClassLoader.class.getDeclaredField("SKIP_PACKAGE_PREFIXES");
+		packageExceptionsField.setAccessible(true);
+		//noinspection unchecked
+		final List<String> exceptions = (List<String>) packageExceptionsField.get(null);
+		final ArrayList<String> newExceptions = new ArrayList<>(exceptions);
+		newExceptions.add(packageName);
+		packageExceptionsField.set(null, newExceptions);
+	}
+
 	public String[] getASMTransformerClass() {
 		return new String[] { "logisticspipes.asm.LogisticsClassTransformer" };
 	}
 
-	@Override
 	public String getModContainerClass() {
 		return null;
 	}
 
-	@Override
 	public String getSetupClass() {
 		return null;
 	}
 
-	@Override
 	public void injectData(Map<String, Object> data) {
 		if (data.containsKey("runtimeDeobfuscationEnabled")) {
 			developmentEnvironment = !((Boolean) data.get("runtimeDeobfuscationEnabled"));
 		}
 	}
 
-	@Override
 	public String getAccessTransformerClass() {
 		return null;
 	}

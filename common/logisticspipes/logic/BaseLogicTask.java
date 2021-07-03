@@ -2,7 +2,7 @@ package logisticspipes.logic;
 
 import java.util.UUID;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 
 import lombok.Getter;
@@ -23,9 +23,9 @@ public abstract class BaseLogicTask {
 	@Getter
 	protected UUID uuid;
 
-	public BaseLogicTask(NBTTagCompound nbt) {
-		posX = nbt.getInteger("posX");
-		posY = nbt.getInteger("posY");
+	public BaseLogicTask(CompoundNBT nbt) {
+		posX = nbt.getInt("posX");
+		posY = nbt.getInt("posY");
 		name = nbt.getString("name");
 		comment = nbt.getString("comment");
 		uuid = UUID.fromString(nbt.getString("uuid"));
@@ -37,18 +37,18 @@ public abstract class BaseLogicTask {
 		uuid = UUID.randomUUID();
 	}
 
-	public final NBTTagCompound getNBTTagCompound() {
-		NBTTagCompound nbt = new NBTTagCompound();
+	public final CompoundNBT getCompoundNBT() {
+		CompoundNBT nbt = new CompoundNBT();
 		addToNBT(nbt);
 		return nbt;
 	}
 
-	protected void addToNBT(NBTTagCompound nbt) {
-		nbt.setInteger("posX", posX);
-		nbt.setInteger("posY", posY);
-		nbt.setString("name", name);
-		nbt.setString("comment", comment);
-		nbt.setString("uuid", uuid.toString());
+	protected void addToNBT(CompoundNBT nbt) {
+		nbt.putInt("posX", posX);
+		nbt.putInt("posY", posY);
+		nbt.putString("name", name);
+		nbt.putString("comment", comment);
+		nbt.putString("uuid", uuid.toString());
 	}
 
 	public abstract int getAmountOfInput();

@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.gui;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -49,7 +49,7 @@ public class OpenGUIPacket extends ModernPacket {
 
 	@Override
 	@ClientSideOnlyMethodContent
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		NewGuiHandler.openGui(this, player);
 	}
 

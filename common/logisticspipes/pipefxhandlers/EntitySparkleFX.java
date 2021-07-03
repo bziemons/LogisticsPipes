@@ -1,14 +1,16 @@
 package logisticspipes.pipefxhandlers;
 
 import java.util.Random;
+import javax.annotation.Nonnull;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.client.particle.IParticleRenderType;
 import net.minecraft.client.particle.Particle;
+import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 
@@ -32,8 +34,8 @@ public class EntitySparkleFX extends Particle {
 		particleBlue = blue;
 		particleGravity = 0.07F;
 		motionX = motionY = motionZ = 0.0D;
-		particleScale *= scalemult;
-		particleMaxAge = 3 * var12 - 1;
+		multipleParticleScaleBy(scalemult);
+		maxAge = 3 * var12 - 1;
 		multiplier = var12;
 		canCollide = false;
 	}
@@ -42,25 +44,25 @@ public class EntitySparkleFX extends Particle {
 	private static final ResourceLocation field_110737_b = new ResourceLocation("textures/particle/particles.png");
 
 	@Override
-	public void renderParticle(BufferBuilder worldRendererIn, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
+	public void renderParticle(BufferBuilder buffer, @Nonnull ActiveRenderInfo entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
 		Tessellator.getInstance().draw();
 		GL11.glPushMatrix();
 		GL11.glDepthMask(false);
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, blendmode);
-		Minecraft.getMinecraft().renderEngine.bindTexture(EntitySparkleFX.TEXTURE);
+		Minecraft.getInstance().textureManager.bindTexture(EntitySparkleFX.TEXTURE);
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.75F);
-		int var8 = particle + particleAge / multiplier;
+		float var8 = particle + partialTicks / multiplier;
 		float var9 = var8 % 8 / 8.0F;
 		float var10 = var9 + 0.124875F;
 		float var11 = var8 / 8 / 8.0F;
 		float var12 = var11 + 0.124875F;
-		float var13 = 0.1F * particleScale * ((float) (particleMaxAge - particleAge + 1) / (float) particleMaxAge);
+		float var13 = 0.1F * width * ((maxAge - partialTicks + 1) / (float) maxAge);
 		float var14 = (float) (prevPosX + (posX - prevPosX) * partialTicks - Particle.interpPosX);
 		float var15 = (float) (prevPosY + (posY - prevPosY) * partialTicks - Particle.interpPosY);
 		float var16 = (float) (prevPosZ + (posZ - prevPosZ) * partialTicks - Particle.interpPosZ);
 		float var17 = 1.0F;
-		BufferBuilder buffer = Tessellator.getInstance().getBuffer();
+		//BufferBuilder buffer = Tessellator.getInstance().getBuffer();
 		buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
 		//tesselator.setBrightness(240);
 		buffer.pos(var14 - rotationX * var13 - rotationXY * var13, var15 - rotationZ * var13, var16 - rotationYZ * var13 - rotationXZ * var13).tex(var10, var12).color(particleRed * var17, particleGreen * var17, particleBlue * var17, 1.0F).endVertex();
@@ -72,7 +74,7 @@ public class EntitySparkleFX extends Particle {
 		GL11.glDepthMask(true);
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		GL11.glPopMatrix();
-		Minecraft.getMinecraft().renderEngine.bindTexture(EntitySparkleFX.field_110737_b);
+		Minecraft.getInstance().textureManager.bindTexture(EntitySparkleFX.field_110737_b);
 		buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
 	}
 
@@ -80,21 +82,19 @@ public class EntitySparkleFX extends Particle {
 	 * Called to update the entity's position/logic.
 	 */
 	@Override
-	public void onUpdate() {
+	public void tick() {
+		// TODO: Replace with super.tick() ?
 		try {
-			EntityPlayerSP var1 = Minecraft.getMinecraft().player;
+			ClientPlayerEntity var1 = Minecraft.getInstance().player;
 
-			if (var1.getDistance(posX, posY, posZ) > 50) {
+			if (var1.getDistanceSq(posX, posY, posZ) > 2500 || age++ >= maxAge) {
 				setExpired();
+				return;
 			}
 
 			prevPosX = posX;
 			prevPosY = posY;
 			prevPosZ = posZ;
-
-			if (particleAge++ >= particleMaxAge) {
-				setExpired();
-			}
 
 			motionX -= 0.05D * particleGravity - 0.1D * particleGravity * new Random().nextDouble();
 			motionY -= 0.05D * particleGravity - 0.1D * particleGravity * new Random().nextDouble();
@@ -111,5 +111,11 @@ public class EntitySparkleFX extends Particle {
 			}
 		} catch (Exception ignored) {
 		}
+	}
+
+	@Nonnull
+	@Override
+	public IParticleRenderType getRenderType() {
+		return IParticleRenderType.CUSTOM;
 	}
 }

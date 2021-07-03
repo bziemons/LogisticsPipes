@@ -3,7 +3,7 @@ package logisticspipes.gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 
 import org.lwjgl.input.Keyboard;
@@ -26,7 +26,7 @@ public class GuiLogisticsSettings extends LogisticsBaseTabGuiScreen {
 
 	private static final String PREFIX = "gui.settings.";
 
-	public GuiLogisticsSettings(final EntityPlayer player) {
+	public GuiLogisticsSettings(final PlayerEntity player) {
 		super(180, 220);
 		DummyContainer dummy = new DummyContainer(player, null);
 		dummy.addNormalSlotsForPlayerInventory(10, 135);
@@ -72,10 +72,10 @@ public class GuiLogisticsSettings extends LogisticsBaseTabGuiScreen {
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
 			RenderHelper.enableGUIStandardItemLighting();
 			ItemStack stack = new ItemStack(LPItems.pipeBasic, 1);
-			itemRender.renderItemAndEffectIntoGUI(stack, x, y);
+			itemRenderer.renderItemAndEffectIntoGUI(stack, x, y);
 			GL11.glDisable(GL11.GL_LIGHTING);
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
-			itemRender.zLevel = 0.0F;
+			itemRenderer.zLevel = 0.0F;
 		}
 
 		@Override

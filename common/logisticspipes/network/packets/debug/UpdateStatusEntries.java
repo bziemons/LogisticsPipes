@@ -2,7 +2,7 @@ package logisticspipes.network.packets.debug;
 
 import java.util.List;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -49,7 +49,7 @@ public class UpdateStatusEntries extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogWindow.getWindow(windowID).updateStatus(status);
 	}
 

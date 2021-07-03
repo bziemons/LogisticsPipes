@@ -19,12 +19,10 @@ import java.util.WeakHashMap;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
-import com.google.common.collect.Lists;
 import lombok.Getter;
 
 import logisticspipes.LogisticsPipes;
@@ -32,7 +30,6 @@ import logisticspipes.gui.hud.HUDSatellite;
 import logisticspipes.interfaces.IChestContentReceiver;
 import logisticspipes.interfaces.IHeadUpDisplayRenderer;
 import logisticspipes.interfaces.IHeadUpDisplayRendererProvider;
-import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.interfaces.routing.IRequestItems;
 import logisticspipes.interfaces.routing.IRequireReliableTransport;
@@ -40,7 +37,7 @@ import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleSatellite;
 import logisticspipes.network.GuiIDs;
 import logisticspipes.network.PacketHandler;
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.packets.hud.ChestContent;
 import logisticspipes.network.packets.hud.HUDStartWatchingPacket;
@@ -141,7 +138,7 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IRequ
 	}
 
 	@Override
-	public void playerStartWatching(EntityPlayer player, int mode) {
+	public void playerStartWatching(PlayerEntity player, int mode) {
 		if (mode == 1) {
 			localModeWatchers.add(player);
 			final ModernPacket packet = PacketHandler.getPacket(SyncSatelliteNamePacket.class).setString(satellitePipeName).setPosX(getX()).setPosY(getY()).setPosZ(getZ());
@@ -153,7 +150,7 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IRequ
 	}
 
 	@Override
-	public void playerStopWatching(EntityPlayer player, int mode) {
+	public void playerStopWatching(PlayerEntity player, int mode) {
 		super.playerStopWatching(player, mode);
 		localModeWatchers.remove(player);
 	}
@@ -170,13 +167,13 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IRequ
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		super.readFromNBT(nbttagcompound);
-		if (nbttagcompound.hasKey("satelliteid")) {
-			int satelliteId = nbttagcompound.getInteger("satelliteid");
+	public void readFromNBT(CompoundNBT tag) {
+		super.readFromNBT(CompoundNBT);
+		if (tag.contains("satelliteid")) {
+			int satelliteId = tag.getInt("satelliteid");
 			satellitePipeName = Integer.toString(satelliteId);
 		} else {
-			satellitePipeName = nbttagcompound.getString("satellitePipeName");
+			satellitePipeName = CompoundNBT.getString("satellitePipeName");
 		}
 		if (MainProxy.isServer(getWorld())) {
 			ensureAllSatelliteStatus();
@@ -184,9 +181,9 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IRequ
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		nbttagcompound.setString("satellitePipeName", satellitePipeName);
-		super.writeToNBT(nbttagcompound);
+	public void writeToNBT(CompoundNBT tag) {
+		tag.putString("satellitePipeName", satellitePipeName);
+		super.writeToNBT(tag);
 	}
 
 	public void ensureAllSatelliteStatus() {
@@ -213,11 +210,11 @@ public class PipeItemsSatelliteLogistics extends CoreRoutedPipe implements IRequ
 	}
 
 	@Override
-	public void onWrenchClicked(EntityPlayer entityplayer) {
+	public void onWrenchClicked(PlayerEntity player) {
 		// Send the satellite id when opening gui
 		final ModernPacket packet = PacketHandler.getPacket(SyncSatelliteNamePacket.class).setString(satellitePipeName).setPosX(getX()).setPosY(getY()).setPosZ(getZ());
-		MainProxy.sendPacketToPlayer(packet, entityplayer);
-		entityplayer.openGui(LogisticsPipes.instance, GuiIDs.GUI_SatellitePipe_ID, getWorld(), getX(), getY(), getZ());
+		MainProxy.sendPacketToPlayer(packet, PlayerEntity);
+		PlayerEntity.openGui(LogisticsPipes.instance, GuiIDs.GUI_SatellitePipe_ID, getWorld(), getX(), getY(), getZ());
 	}
 
 	@Override

@@ -1,8 +1,8 @@
 package logisticspipes.commands.commands;
 
-import net.minecraft.command.ICommandSender;
+import net.minecraft.command.ICommandSource;
 import net.minecraft.item.Item;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.StringTextComponent;
 
 import logisticspipes.commands.abstracts.ICommandHandler;
 import logisticspipes.commands.exception.MissingArgumentException;
@@ -16,7 +16,7 @@ public class NameLookupCommand implements ICommandHandler {
 	}
 
 	@Override
-	public boolean isCommandUsableBy(ICommandSender sender) {
+	public boolean isCommandUsableBy(ICommandSource sender) {
 		return true;
 	}
 
@@ -26,7 +26,7 @@ public class NameLookupCommand implements ICommandHandler {
 	}
 
 	@Override
-	public void executeCommand(ICommandSender sender, String[] args) {
+	public void executeCommand(ICommandSource sender, String[] args) {
 		if (args.length < 2) {
 			throw new MissingArgumentException();
 		}
@@ -35,6 +35,6 @@ public class NameLookupCommand implements ICommandHandler {
 		int id = Integer.valueOf(idString);
 		int meta = Integer.valueOf(metaString);
 		ItemIdentifier item = ItemIdentifier.get(Item.getItemById(id), meta, null);
-		sender.sendMessage(new TextComponentString("Name: " + item.getFriendlyNameCC()));
+		sender.sendMessage(new StringTextComponent("Name: " + item.getFriendlyNameCC()));
 	}
 }

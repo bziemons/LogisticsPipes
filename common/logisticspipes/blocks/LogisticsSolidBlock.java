@@ -8,28 +8,27 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyBool;
-import net.minecraft.block.properties.PropertyInteger;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.state.BooleanProperty;
+import net.minecraft.state.IProperty;
+import net.minecraft.state.IntegerProperty;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
+import net.minecraft.util.Direction;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.BlockStateContainer;
 
 import lombok.Getter;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.blocks.crafting.LogisticsCraftingTableTileEntity;
 import logisticspipes.blocks.powertile.LogisticsIC2PowerProviderTileEntity;
-import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
 import logisticspipes.blocks.powertile.LogisticsRFPowerProviderTileEntity;
 import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
 import logisticspipes.interfaces.IGuiTileEntity;
@@ -39,9 +38,9 @@ import logisticspipes.proxy.MainProxy;
 
 public class LogisticsSolidBlock extends Block {
 
-	public static final PropertyInteger rotationProperty = PropertyInteger.create("rotation", 0, 3);
-	public static final PropertyBool active = PropertyBool.create("active");
-	public static final Map<EnumFacing, PropertyBool> connectionPropertys = Arrays.stream(EnumFacing.values()).collect(Collectors.toMap(key -> key, key -> PropertyBool.create("connection_" + key.ordinal())));
+	public static final IProperty<Integer> rotationProperty = IntegerProperty.create("rotation", 0, 3);
+	public static final IProperty<Boolean> active = BooleanProperty.create("active");
+	public static final Map<Direction, IProperty<Boolean>> connectionPropertys = Arrays.stream(Direction.values()).collect(Collectors.toMap(key -> key, key -> BooleanProperty.create("connection_" + key.ordinal())));
 
 	@Getter
 	private final Type type;
@@ -61,10 +60,6 @@ public class LogisticsSolidBlock extends Block {
 		LOGISTICS_PROGRAM_COMPILER(14, LogisticsProgramCompilerTileEntity::new),
 
 		LOGISTICS_BLOCK_FRAME(15);
-
-		// TODO backwards compat, remove with 1.13
-		@Getter
-		int meta;
 
 		@Getter
 		boolean hasActiveTexture;
@@ -103,12 +98,12 @@ public class LogisticsSolidBlock extends Block {
 		super(Material.IRON);
 		this.type = type;
 		setHardness(6.0F);
-		setCreativeTab(LogisticsPipes.CREATIVE_TAB_LP);
+		setCreativeTab(LogisticsPipes.LP_ITEM_GROUP);
 		BlockDummy.updateBlockMap.put(type.getMeta(), this);
 	}
 
 	@Override
-	public void onNeighborChange(IBlockAccess world, BlockPos pos, BlockPos neigbour) {
+	public void onNeighborChange(IWorld world, BlockPos pos, BlockPos neigbour) {
 		super.onNeighborChange(world, pos, neigbour);
 		TileEntity tile = world.getTileEntity(pos);
 		if (tile instanceof LogisticsSolidTileEntity) {
@@ -117,7 +112,7 @@ public class LogisticsSolidBlock extends Block {
 	}
 
 	@Override
-	public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+	public boolean onBlockActivated(World worldIn, BlockPos pos, BlockState state, PlayerEntity playerIn, Hand hand, Direction facing, float hitX, float hitY, float hitZ) {
 		if (!playerIn.isSneaking()) {
 			TileEntity tile = worldIn.getTileEntity(pos);
 			if (tile instanceof IGuiTileEntity) {
@@ -131,7 +126,7 @@ public class LogisticsSolidBlock extends Block {
 	}
 
 	@Override
-	public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase placer, @Nonnull ItemStack stack) {
+	public void onBlockPlacedBy(World world, BlockPos pos, BlockState state, EntityLivingBase placer, @Nonnull ItemStack stack) {
 		super.onBlockPlacedBy(world, pos, state, placer, stack);
 		TileEntity tile = world.getTileEntity(pos);
 		if (tile instanceof LogisticsCraftingTableTileEntity) {
@@ -143,7 +138,7 @@ public class LogisticsSolidBlock extends Block {
 	}
 
 	@Override
-	public void breakBlock(World worldIn, @Nonnull BlockPos pos, @Nonnull IBlockState state) {
+	public void breakBlock(World worldIn, @Nonnull BlockPos pos, @Nonnull BlockState state) {
 		TileEntity tile = worldIn.getTileEntity(pos);
 		if (tile instanceof LogisticsSolidTileEntity) {
 			((LogisticsSolidTileEntity) tile).onBlockBreak();
@@ -153,13 +148,13 @@ public class LogisticsSolidBlock extends Block {
 
 	@Nullable
 	@Override
-	public TileEntity createTileEntity(@Nonnull World world, @Nonnull IBlockState state) {
+	public TileEntity createTileEntity(@Nonnull World world, @Nonnull BlockState state) {
 		if (!type.hasTE()) return null;
 		return type.createTE();
 	}
 
 	@Override
-	public boolean hasTileEntity(IBlockState state) {
+	public boolean hasTileEntity(BlockState state) {
 		return type.hasTE();
 	}
 
@@ -174,13 +169,13 @@ public class LogisticsSolidBlock extends Block {
 	}
 
 	@Override
-	public int getMetaFromState(IBlockState state) {
+	public int getMetaFromState(BlockState state) {
 		return 0;
 	}
 
 	@Nonnull
 	@Override
-	public IBlockState getActualState(@Nonnull IBlockState state, IBlockAccess worldIn, BlockPos pos) {
+	public BlockState getActualState(@Nonnull BlockState state, IWorld worldIn, BlockPos pos) {
 		state = super.getActualState(state, worldIn, pos);
 		TileEntity tile = worldIn.getTileEntity(pos);
 		if (tile instanceof LogisticsSolidTileEntity) {
@@ -192,7 +187,7 @@ public class LogisticsSolidBlock extends Block {
 		}
 
 		if (tile != null) {
-			for (EnumFacing side : EnumFacing.VALUES) {
+			for (Direction side : Direction.values()) {
 				boolean render = true;
 				TileEntity sideTile = worldIn.getTileEntity(pos.offset(side));
 				if (sideTile instanceof LogisticsTileGenericPipe) {

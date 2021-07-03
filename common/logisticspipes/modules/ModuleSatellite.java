@@ -6,6 +6,7 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
 
 import org.jetbrains.annotations.NotNull;
 

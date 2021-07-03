@@ -51,8 +51,9 @@ import logisticspipes.routing.ServerRouter
 import logisticspipes.utils.PlayerCollectionList
 import logisticspipes.utils.SinkReply
 import logisticspipes.utils.item.ItemIdentifier
-import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.ItemStack
+import net.minecraft.nbt.CompoundNBT
 import network.rs485.logisticspipes.logistics.LogisticsManager
 import network.rs485.logisticspipes.property.Property
 import network.rs485.logisticspipes.util.equalsWithNBT
@@ -157,7 +158,7 @@ class AsyncQuicksortModule : AsyncModule<Pair<Int, ItemStack>?, QuicksortAsyncRe
             destRouterId,
             sinkReply,
             CoreRoutedPipe.ItemSendMode.Fast,
-            service.pointedOrientation)
+            service.pointedDirection)
         service.spawnParticle(Particles.OrangeParticle, 8)
     }
 
@@ -171,13 +172,13 @@ class AsyncQuicksortModule : AsyncModule<Pair<Int, ItemStack>?, QuicksortAsyncRe
 
     override fun interestedInAttachedInventory(): Boolean = false
 
-    fun addWatchingPlayer(player: EntityPlayer) {
+    fun addWatchingPlayer(player: PlayerEntity) {
         localSlotWatchers.add(player)
         MainProxy.sendPacketToPlayer(PacketHandler.getPacket(QuickSortState::class.java).setInteger(currentSlot)
             .setModulePos(this), player)
     }
 
-    fun removeWatchingPlayer(player: EntityPlayer) {
+    fun removeWatchingPlayer(player: PlayerEntity) {
         localSlotWatchers.remove(player)
     }
 

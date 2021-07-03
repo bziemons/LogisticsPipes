@@ -20,15 +20,13 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.item.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 
 import logisticspipes.LogisticsPipes;
@@ -211,35 +209,35 @@ public class ItemIdentifierInventory
 	}
 
 	@Override
-	public boolean isUsableByPlayer(@Nonnull EntityPlayer entityplayer) {
+	public boolean isUsableByPlayer(@Nonnull PlayerEntity player) {
 		return true;
 	}
 
 	@Override
-	public void openInventory(@Nonnull EntityPlayer player) {}
+	public void openInventory(@Nonnull PlayerEntity player) {}
 
 	@Override
-	public void closeInventory(@Nonnull EntityPlayer player) {}
+	public void closeInventory(@Nonnull PlayerEntity player) {}
 
 	@Override
-	public void readFromNBT(@Nonnull NBTTagCompound nbttagcompound) {
-		readFromNBT(nbttagcompound, "");
+	public void readFromNBT(@Nonnull CompoundNBT tag) {
+		readFromNBT(tag, "");
 	}
 
-	public void readFromNBT(NBTTagCompound nbttagcompound, String prefix) {
-		NBTTagList nbttaglist = nbttagcompound.getTagList(prefix + "items", nbttagcompound.getId());
+	public void readFromNBT(CompoundNBT tag, String prefix) {
+		ListNBT items = tag.getList(prefix + "items", tag.getId());
 
-		for (int j = 0; j < nbttaglist.tagCount(); ++j) {
-			NBTTagCompound nbttagcompound2 = nbttaglist.getCompoundTagAt(j);
-			int index = nbttagcompound2.getInteger("index");
+		for (int j = 0; j < items.size(); ++j) {
+			CompoundNBT item = items.getCompound(j);
+			int index = item.getInt("index");
 			if (index < _contents.length) {
-				ItemStack stack = ItemStackLoader.loadAndFixItemStackFromNBT(nbttagcompound2);
+				ItemStack stack = ItemStackLoader.loadAndFixItemStackFromNBT(item);
 				ItemIdentifierStack itemstack = ItemIdentifierStack.getFromStack(stack);
 				if (isValidStack(itemstack)) {
 					_contents[index] = itemstack;
 				}
 			} else {
-				LogisticsPipes.log.fatal("SimpleInventory: java.lang.ArrayIndexOutOfBoundsException: " + index + " of "
+				LogisticsPipes.getLOGGER().fatal("SimpleInventory: java.lang.ArrayIndexOutOfBoundsException: " + index + " of "
 						+ _contents.length);
 			}
 		}
@@ -247,22 +245,22 @@ public class ItemIdentifierInventory
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
-		writeToNBT(nbttagcompound, "");
+	public void writeToNBT(@Nonnull CompoundNBT tag) {
+		writeToNBT(tag, "");
 	}
 
-	public void writeToNBT(NBTTagCompound nbttagcompound, String prefix) {
-		NBTTagList nbttaglist = new NBTTagList();
+	public void writeToNBT(CompoundNBT tag, String prefix) {
+		ListNBT items = new ListNBT();
 		for (int j = 0; j < _contents.length; ++j) {
 			if (_contents[j] != null && _contents[j].getStackSize() > 0) {
-				NBTTagCompound nbttagcompound2 = new NBTTagCompound();
-				nbttaglist.appendTag(nbttagcompound2);
-				nbttagcompound2.setInteger("index", j);
-				_contents[j].unsafeMakeNormalStack().writeToNBT(nbttagcompound2);
+				CompoundNBT item = new CompoundNBT();
+				items.add(item);
+				item.putInt("index", j);
+				_contents[j].unsafeMakeNormalStack().write(item);
 			}
 		}
-		nbttagcompound.setTag(prefix + "items", nbttaglist);
-		nbttagcompound.setInteger(prefix + "itemsCount", _contents.length);
+		tag.put(prefix + "items", items);
+		tag.putInt(prefix + "itemsCount", _contents.length);
 	}
 
 	public void dropContents(World world, BlockPos pos) {
@@ -453,19 +451,6 @@ public class ItemIdentifierInventory
 	}
 
 	@Override
-	public int getField(int id) {
-		return 0;
-	}
-
-	@Override
-	public void setField(int id, int value) {}
-
-	@Override
-	public int getFieldCount() {
-		return 0;
-	}
-
-	@Override
 	public void clear() {}
 
 	@Override
@@ -524,23 +509,6 @@ public class ItemIdentifierInventory
 			_contents[i] = null;
 		}
 		updateContents();
-	}
-
-	@Override
-	@Nonnull
-	public String getName() {
-		return _name;
-	}
-
-	@Override
-	public boolean hasCustomName() {
-		return true;
-	}
-
-	@Override
-	@Nonnull
-	public ITextComponent getDisplayName() {
-		return new TextComponentString(getName());
 	}
 
 	public NonNullList<ItemStack> toNonNullList() {

@@ -2,11 +2,11 @@ package logisticspipes.network.packets.pipe;
 
 import java.util.List;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Setter;
 
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
@@ -38,7 +38,7 @@ public class StatUpdate extends CoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		final LogisticsTileGenericPipe pipe = this.getPipe(player.world);
 		if (pipe == null) {
 			return;

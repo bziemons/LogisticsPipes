@@ -2,7 +2,7 @@ package logisticspipes.network.packets.gui;
 
 import java.util.BitSet;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -35,7 +35,7 @@ public class FuzzySlotSettingsPacket extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		if (player.openContainer != null && player.openContainer.getSlot(slotNumber) instanceof IFuzzySlot) {
 			((IFuzzySlot) player.openContainer.getSlot(slotNumber)).getFuzzyFlags().replaceWith(flags);
 		}

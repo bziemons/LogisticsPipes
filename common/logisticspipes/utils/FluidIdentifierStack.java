@@ -1,5 +1,7 @@
 package logisticspipes.utils;
 
+import javax.annotation.Nonnull;
+
 import net.minecraftforge.fluids.FluidStack;
 
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -53,6 +55,7 @@ public class FluidIdentifierStack implements Comparable<FluidIdentifierStack> {
 		this.amount += stackSize;
 	}
 
+	@Nonnull
 	public FluidStack makeFluidStack() {
 		return _fluid.makeFluidStack(amount);
 	}

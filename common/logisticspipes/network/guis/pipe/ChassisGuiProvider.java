@@ -2,7 +2,7 @@ package logisticspipes.network.guis.pipe;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 
@@ -25,7 +25,7 @@ public class ChassisGuiProvider extends BooleanModuleCoordinatesGuiProvider {
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		LogisticsTileGenericPipe pipe = getTileAs(player.world, LogisticsTileGenericPipe.class);
 		if (!(pipe.pipe instanceof PipeLogisticsChassis)) {
 			return null;
@@ -34,7 +34,7 @@ public class ChassisGuiProvider extends BooleanModuleCoordinatesGuiProvider {
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		LogisticsTileGenericPipe pipe = getTileAs(player.world, LogisticsTileGenericPipe.class);
 		if (!(pipe.pipe instanceof PipeLogisticsChassis)) {
 			return null;

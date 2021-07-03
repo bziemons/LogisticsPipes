@@ -2,7 +2,7 @@ package logisticspipes.security;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.interfaces.routing.ISaveState;
 
@@ -21,31 +21,31 @@ public class SecuritySettings implements ISaveState {
 	}
 
 	@Override
-	public void readFromNBT(@Nonnull NBTTagCompound nbttagcompound) {
+	public void readFromNBT(@Nonnull CompoundNBT tag) {
 		String prev = name;
-		name = nbttagcompound.getString("name");
+		name = CompoundNBT.getString("name");
 		if (name.equals("")) {
 			name = prev;
 		}
-		openGui = nbttagcompound.getBoolean("openGui");
-		openRequest = nbttagcompound.getBoolean("openRequest");
-		openUpgrades = nbttagcompound.getBoolean("openUpgrades");
-		openNetworkMonitor = nbttagcompound.getBoolean("openNetworkMonitor");
-		removePipes = nbttagcompound.getBoolean("removePipes");
-		accessRoutingChannels = nbttagcompound.getBoolean("accessRoutingChannels");
+		openGui = CompoundNBT.getBoolean("openGui");
+		openRequest = CompoundNBT.getBoolean("openRequest");
+		openUpgrades = CompoundNBT.getBoolean("openUpgrades");
+		openNetworkMonitor = CompoundNBT.getBoolean("openNetworkMonitor");
+		removePipes = CompoundNBT.getBoolean("removePipes");
+		accessRoutingChannels = CompoundNBT.getBoolean("accessRoutingChannels");
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
+	public void writeToNBT(@Nonnull CompoundNBT tag) {
 		if (name == null || name.isEmpty()) {
 			return;
 		}
-		nbttagcompound.setString("name", name);
-		nbttagcompound.setBoolean("openGui", openGui);
-		nbttagcompound.setBoolean("openRequest", openRequest);
-		nbttagcompound.setBoolean("openUpgrades", openUpgrades);
-		nbttagcompound.setBoolean("openNetworkMonitor", openNetworkMonitor);
-		nbttagcompound.setBoolean("removePipes", removePipes);
-		nbttagcompound.setBoolean("accessRoutingChannels", accessRoutingChannels);
+		tag.putString("name", name);
+		tag.putBoolean("openGui", openGui);
+		tag.putBoolean("openRequest", openRequest);
+		tag.putBoolean("openUpgrades", openUpgrades);
+		tag.putBoolean("openNetworkMonitor", openNetworkMonitor);
+		tag.putBoolean("removePipes", removePipes);
+		tag.putBoolean("accessRoutingChannels", accessRoutingChannels);
 	}
 }

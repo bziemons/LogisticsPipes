@@ -1,6 +1,6 @@
 package logisticspipes.blocks.stats;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.SimpleServiceLocator;
@@ -26,7 +26,7 @@ public class TrackingTask {
 		}
 	}
 
-	public void readFromNBT(NBTTagCompound nbt) {
+	public void readFromNBT(CompoundNBT nbt) {
 		int[] amountRecorded_A = nbt.getIntArray("amountRecorded_A");
 		int[] amountRecorded_B = nbt.getIntArray("amountRecorded_B");
 		for (int i = 0; i < amountRecorded.length; i++) {
@@ -35,21 +35,21 @@ public class TrackingTask {
 			}
 			amountRecorded[i] = (((long) amountRecorded_B[i]) << 32) | amountRecorded_A[i];
 		}
-		arrayPos = nbt.getInteger("arrayPos");
+		arrayPos = nbt.getInt("arrayPos");
 		item = ItemIdentifier.get(ItemStackLoader.loadAndFixItemStackFromNBT(nbt));
 	}
 
-	public void writeToNBT(NBTTagCompound nbt) {
+	public void writeToNBT(CompoundNBT nbt) {
 		int[] amountRecorded_A = new int[amountRecorded.length];
 		int[] amountRecorded_B = new int[amountRecorded.length];
 		for (int i = 0; i < amountRecorded.length; i++) {
 			amountRecorded_A[i] = (int) amountRecorded[i];
 			amountRecorded_B[i] = (int) (amountRecorded[i] >> 32);
 		}
-		nbt.setIntArray("amountRecorded_A", amountRecorded_A);
-		nbt.setIntArray("amountRecorded_B", amountRecorded_B);
-		nbt.setInteger("arrayPos", arrayPos);
-		item.makeNormalStack(1).writeToNBT(nbt);
+		nbt.putIntArray("amountRecorded_A", amountRecorded_A);
+		nbt.putIntArray("amountRecorded_B", amountRecorded_B);
+		nbt.putInt("arrayPos", arrayPos);
+		item.makeNormalStack(1).write(nbt);
 	}
 
 	public void writeToLPData(LPDataOutput output) {

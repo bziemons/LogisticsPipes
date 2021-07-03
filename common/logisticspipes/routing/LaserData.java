@@ -4,7 +4,7 @@ import java.util.EnumSet;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
@@ -19,11 +19,11 @@ public class LaserData {
 	private int length = 1;
 
 	@Nonnull
-	private EnumFacing dir;
+	private Direction dir;
 	@Nonnull
 	private EnumSet<PipeRoutingConnectionType> connectionType;
 
-	public LaserData(int posX, int posY, int posZ, @Nonnull EnumFacing dir, @Nonnull EnumSet<PipeRoutingConnectionType> connectionType) {
+	public LaserData(int posX, int posY, int posZ, @Nonnull Direction dir, @Nonnull EnumSet<PipeRoutingConnectionType> connectionType) {
 		this.posX = posX;
 		this.posY = posY;
 		this.posZ = posZ;
@@ -88,11 +88,11 @@ public class LaserData {
 	}
 
 	@Nonnull
-	public EnumFacing getDir() {
+	public Direction getDir() {
 		return this.dir;
 	}
 
-	public LaserData setDir(EnumFacing dir) {
+	public LaserData setDir(Direction dir) {
 		this.dir = dir;
 		return this;
 	}

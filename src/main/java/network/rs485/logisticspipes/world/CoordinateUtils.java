@@ -20,27 +20,27 @@
 
 package network.rs485.logisticspipes.world;
 
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 public final class CoordinateUtils {
 
 	private CoordinateUtils() {}
 
-	public static DoubleCoordinates add(DoubleCoordinates coords, EnumFacing direction) {
+	public static DoubleCoordinates add(DoubleCoordinates coords, Direction direction) {
 		coords.setXCoord(coords.getXCoord() + direction.getDirectionVec().getX());
 		coords.setYCoord(coords.getYCoord() + direction.getDirectionVec().getY());
 		coords.setZCoord(coords.getZCoord() + direction.getDirectionVec().getZ());
 		return coords;
 	}
 
-	public static DoubleCoordinates add(DoubleCoordinates coords, EnumFacing direction, double times) {
+	public static DoubleCoordinates add(DoubleCoordinates coords, Direction direction, double times) {
 		coords.setXCoord(coords.getXCoord() + direction.getDirectionVec().getX() * times);
 		coords.setYCoord(coords.getYCoord() + direction.getDirectionVec().getY() * times);
 		coords.setZCoord(coords.getZCoord() + direction.getDirectionVec().getZ() * times);
 		return coords;
 	}
 
-	public static DoubleCoordinates sum(DoubleCoordinates coords, EnumFacing direction) {
+	public static DoubleCoordinates sum(DoubleCoordinates coords, Direction direction) {
 		DoubleCoordinates ret = new DoubleCoordinates(coords);
 		return CoordinateUtils.add(ret, direction);
 	}

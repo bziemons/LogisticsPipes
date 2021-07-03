@@ -1,6 +1,6 @@
 package logisticspipes.interfaces;
 
-import logisticspipes.routing.channels.ChannelInformation;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 
 public interface IGUIChannelInformationReceiver {
 

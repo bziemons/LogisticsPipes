@@ -1,8 +1,8 @@
 package logisticspipes.commands.commands.debug;
 
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.command.ICommandSource;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.text.StringTextComponent;
 
 import logisticspipes.commands.abstracts.ICommandHandler;
 import logisticspipes.network.PacketHandler;
@@ -17,8 +17,8 @@ public class RoutingTableCommand implements ICommandHandler {
 	}
 
 	@Override
-	public boolean isCommandUsableBy(ICommandSender sender) {
-		return sender instanceof EntityPlayer;
+	public boolean isCommandUsableBy(ICommandSource sender) {
+		return sender instanceof PlayerEntity;
 	}
 
 	@Override
@@ -27,8 +27,8 @@ public class RoutingTableCommand implements ICommandHandler {
 	}
 
 	@Override
-	public void executeCommand(ICommandSender sender, String[] args) {
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateAskForTarget.class), (EntityPlayer) sender);
-		sender.sendMessage(new TextComponentString("Asking for Target."));
+	public void executeCommand(ICommandSource sender, String[] args) {
+		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RoutingUpdateAskForTarget.class), (PlayerEntity) sender);
+		sender.sendMessage(new StringTextComponent("Asking for Target."));
 	}
 }

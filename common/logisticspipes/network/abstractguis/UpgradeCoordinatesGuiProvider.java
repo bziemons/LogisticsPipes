@@ -1,6 +1,6 @@
 package logisticspipes.network.abstractguis;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Slot;
 
 import lombok.AccessLevel;
@@ -39,7 +39,7 @@ public abstract class UpgradeCoordinatesGuiProvider extends CoordinatesPopupGuiP
 		return this;
 	}
 
-	public <T extends Slot> T getSlot(EntityPlayer player, Class<T> clazz) {
+	public <T extends Slot> T getSlot(PlayerEntity player, Class<T> clazz) {
 		if (player.openContainer instanceof DummyContainer) {
 			if (positionInt >= player.openContainer.inventorySlots.size()) {
 				throw new TargetNotFoundException("The requested Slot was out of range", this);

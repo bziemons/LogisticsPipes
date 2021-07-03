@@ -1,7 +1,7 @@
 package logisticspipes.commands.commands;
 
-import net.minecraft.command.ICommandSender;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.command.ICommandSource;
+import net.minecraft.util.text.StringTextComponent;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.commands.abstracts.ICommandHandler;
@@ -16,7 +16,7 @@ public class ChangelogCommand implements ICommandHandler {
 	}
 
 	@Override
-	public boolean isCommandUsableBy(ICommandSender sender) {
+	public boolean isCommandUsableBy(ICommandSource sender) {
 		return true;
 	}
 
@@ -26,7 +26,7 @@ public class ChangelogCommand implements ICommandHandler {
 	}
 
 	@Override
-	public void executeCommand(ICommandSender sender, String[] args) {
+	public void executeCommand(ICommandSource sender, String[] args) {
 		VersionChecker versionChecker = LogisticsPipes.versionChecker;
 		String statusMessage = versionChecker.getVersionCheckerStatus();
 
@@ -41,7 +41,7 @@ public class ChangelogCommand implements ICommandHandler {
 			}
 			display.display(sender);
 		} else {
-			sender.sendMessage(new TextComponentString(statusMessage));
+			sender.sendMessage(new StringTextComponent(statusMessage));
 		}
 	}
 }

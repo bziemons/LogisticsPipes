@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Krapht, 2011
  * <p>
  * "LogisticsPipes" is distributed under the terms of the Minecraft Mod Public
@@ -15,11 +15,11 @@ import javax.annotation.Nullable;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.text.translation.I18n;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.World;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import org.lwjgl.input.Keyboard;
 
@@ -30,12 +30,16 @@ import network.rs485.logisticspipes.util.TextUtil;
 public class LogisticsItem extends Item implements ILogisticsItem {
 
 	public LogisticsItem() {
-		setCreativeTab(LogisticsPipes.CREATIVE_TAB_LP);
+		super(new Item.Properties().group(LogisticsPipes.LP_ITEM_GROUP));
+	}
+
+	protected LogisticsItem(Item.Properties itemProperties) {
+		super(itemProperties);
 	}
 
 	@Override
 	public String getModelPath() {
-		String modelFile = getRegistryName().getResourcePath();
+		String modelFile = getRegistryName().getPath();
 		String dir = getModelSubdir();
 		if (!dir.isEmpty()) {
 			if (modelFile.startsWith(String.format("%s_", dir))) {
@@ -56,11 +60,11 @@ public class LogisticsItem extends Item implements ILogisticsItem {
 
 	@Nonnull
 	@Override
-	public String getUnlocalizedName(@Nonnull ItemStack stack) {
-		if (getHasSubtypes()) {
-			return String.format("%s.%d", super.getUnlocalizedName(stack), stack.getMetadata());
-		}
-		return super.getUnlocalizedName(stack);
+	public String getTranslationKey(@Nonnull ItemStack stack) {
+//		if (getHasSubtypes()) {
+//			return String.format("%s.%d", super.getTranslationKey(stack), stack.getMetadata());
+//		}
+		return super.getTranslationKey(stack);
 	}
 
 	/**
@@ -70,21 +74,16 @@ public class LogisticsItem extends Item implements ILogisticsItem {
 	 * shows full tooltip, without it you just get the first line.
 	 */
 	@Override
-	@SideOnly(Side.CLIENT)
-	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
+	@OnlyIn(Dist.CLIENT)
+	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, @Nonnull List<ITextComponent> tooltip, @Nonnull ITooltipFlag flagIn) {
 		super.addInformation(stack, worldIn, tooltip, flagIn);
-		if (addShiftInfo()) {
-			TextUtil.addTooltipInformation(stack, tooltip, Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT));
-		}
+//		if (addShiftInfo()) {
+//			TextUtil.addTooltipInformation(stack, tooltip, Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT));
+//		}
 	}
 
 	public boolean addShiftInfo() {
 		return true;
 	}
 
-	@Nonnull
-	@Override
-	public String getItemStackDisplayName(@Nonnull ItemStack itemstack) {
-		return I18n.translateToLocal(getUnlocalizedName(itemstack) + ".name").trim();
-	}
 }

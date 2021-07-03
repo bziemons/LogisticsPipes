@@ -3,9 +3,10 @@ package logisticspipes.utils.gui;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
+import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.ItemStack;
 
 import logisticspipes.items.ItemModule;
@@ -19,7 +20,7 @@ public class DummyModuleContainer extends DummyContainer {
 	private final LogisticsModule module;
 	private final int slot;
 
-	public DummyModuleContainer(EntityPlayer player, int slot) {
+	public DummyModuleContainer(PlayerEntity player, int slot) {
 		super(player.inventory, null);
 		this.slot = slot;
 		ItemStack moduleStack = player.inventory.mainInventory.get(slot);
@@ -48,7 +49,7 @@ public class DummyModuleContainer extends DummyContainer {
 	}
 
 	@Override
-	public void onContainerClosed(@Nonnull EntityPlayer player) {
+	public void onContainerClosed(PlayerEntity player) {
 		super.onContainerClosed(player);
 		ItemModuleInformationManager.saveInformation(player.inventory.mainInventory.get(slot), module);
 		player.inventory.markDirty();

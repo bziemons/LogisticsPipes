@@ -2,7 +2,6 @@ package logisticspipes.datafixer;
 
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ModFixs;
-import net.minecraftforge.fml.common.FMLCommonHandler;
 
 import logisticspipes.LPConstants;
 

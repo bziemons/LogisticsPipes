@@ -13,7 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.World;
 
 import logisticspipes.interfaces.IChangeListener;
@@ -178,12 +178,12 @@ public abstract class LogisticsOrderManager<T extends LogisticsOrder, I> impleme
 		return _orders.getFirst().isWatched();
 	}
 
-	public void startWatching(EntityPlayer player) {
+	public void startWatching(PlayerEntity player) {
 		watchingPlayers.add(player);
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(PipeManagerContentPacket.class).setManager(this).setLPPos(pos.getLPPosition()), player);
 	}
 
-	public void stopWatching(EntityPlayer player) {
+	public void stopWatching(PlayerEntity player) {
 		watchingPlayers.remove(player);
 	}
 

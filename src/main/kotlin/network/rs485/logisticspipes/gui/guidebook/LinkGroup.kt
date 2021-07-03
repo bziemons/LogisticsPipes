@@ -64,18 +64,19 @@ interface LinkInteractable : MouseInteractable {
 
 class LinkGroup(private val link: Link) : LinkInteractable {
     private val orderedChildren: MutableList<DrawableWord> = mutableListOf()
-    var hovered: Boolean = false
+    var isHovered: Boolean = false
         internal set
 
     fun addChild(linkWord: DrawableWord) = orderedChildren.add(linkWord)
 
-    override fun isHovering(mouseX: Int, mouseY: Int, visibleArea: Rectangle): Boolean =
+    override fun isHovering(mouseX: Double, mouseY: Double, visibleArea: Rectangle): Boolean =
         orderedChildren.any { it.isHovering(mouseX, mouseY, visibleArea) }
 
     override fun updateState(mouseX: Int, mouseY: Int, visibleArea: Rectangle) =
-        isHovering(mouseX, mouseY, visibleArea).let { hovered = it }
+        // FIXME: weird conversion to double?
+        isHovering(mouseX.toDouble(), mouseY.toDouble(), visibleArea).let { isHovered = it }
 
-    override fun mouseClicked(mouseX: Int, mouseY: Int, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) {
+    override fun mouseClicked(mouseX: Double, mouseY: Double, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) {
         when (link) {
             is PageLink -> guideActionListener.onPageLinkClick(link.page)
             is WebLink -> guideActionListener.onWebLinkClick(link.url)
@@ -85,6 +86,6 @@ class LinkGroup(private val link: Link) : LinkInteractable {
     override fun updateColor(baseColor: Int): Int = MinecraftColor.BLUE.colorCode
 
     override fun updateFormat(baseFormat: Set<TextFormat>): Set<TextFormat> =
-        (if (hovered) baseFormat::minusElement else baseFormat::plusElement).invoke(TextFormat.Underline)
+        (if (isHovered) baseFormat::minusElement else baseFormat::plusElement).invoke(TextFormat.Underline)
 
 }

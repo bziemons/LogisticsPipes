@@ -20,7 +20,7 @@ public class LogisticsBaseTabGuiScreen extends LogisticsBaseGuiScreen {
 	private final List<Slot> hiddenSlots = new ArrayList<>();
 
 	public LogisticsBaseTabGuiScreen(int xSize, int ySize) {
-		super(xSize, ySize, 0, 0);
+		super(inv, titleIn, xSize, ySize, 0, 0);
 	}
 
 	@Override
@@ -50,10 +50,10 @@ public class LogisticsBaseTabGuiScreen extends LogisticsBaseGuiScreen {
 	protected void drawGuiContainerBackgroundLayer(float f, int mouse_x, int mouse_y) {
 		GL11.glColor4d(1.0D, 1.0D, 1.0D, 1.0D);
 		for (int i = 0; i < tabList.size(); i++) {
-			GuiGraphics.drawGuiBackGround(mc, guiLeft + (25 * i) + 2, guiTop - 2, guiLeft + 27 + (25 * i), guiTop + 35, zLevel, false, true, true, false, true);
+			GuiGraphics.drawGuiBackGround(mc, guiLeft + (25 * i) + 2, guiTop - 2, guiLeft + 27 + (25 * i), guiTop + 35, blitOffset, false, true, true, false, true);
 		}
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop + 20, right, bottom, zLevel, true);
-		GuiGraphics.drawGuiBackGround(mc, guiLeft + (25 * current_Tab) + 2, guiTop - 2, guiLeft + 27 + (25 * current_Tab), guiTop + 38, zLevel, true, true, true, false, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop + 20, right, bottom, blitOffset, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft + (25 * current_Tab) + 2, guiTop - 2, guiLeft + 27 + (25 * current_Tab), guiTop + 38, blitOffset, true, true, true, false, true);
 		GuiGraphics.drawPlayerInventoryBackground(mc, guiLeft + 10, guiTop + 135);
 
 		int x = 6;

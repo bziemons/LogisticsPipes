@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.List;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 
 import org.lwjgl.input.Keyboard;
@@ -20,7 +20,7 @@ import logisticspipes.network.packets.pipe.InvSysConOpenSelectChannelPopupPacket
 import logisticspipes.network.packets.pipe.InvSysConResistance;
 import logisticspipes.pipes.PipeItemsInvSysConnector;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.routing.channels.ChannelInformation;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 import logisticspipes.utils.Color;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.GuiGraphics;
@@ -43,8 +43,8 @@ public class GuiInvSysConnector extends LogisticsBaseGuiScreen implements IGUICh
 
 	private ChannelInformation connectedChannel = null;
 
-	public GuiInvSysConnector(EntityPlayer player, PipeItemsInvSysConnector pipe) {
-		super(180, 220, 0, 0);
+	public GuiInvSysConnector(PlayerEntity player, PipeItemsInvSysConnector pipe) {
+		super(inv, titleIn, 180, 220, 0, 0);
 		DummyContainer dummy = new DummyContainer(player.inventory, null);
 
 		dummy.addNormalSlotsForPlayerInventory(10, 135);
@@ -86,7 +86,7 @@ public class GuiInvSysConnector extends LogisticsBaseGuiScreen implements IGUICh
 
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		GuiGraphics.drawPlayerInventoryBackground(mc, guiLeft + 10, guiTop + 135);
 		mc.fontRenderer.drawString(TextUtil.translate(GuiInvSysConnector.PREFIX + "InventorySystemConnector"), guiLeft + 5, guiTop + 6, 0x404040);
 		drawRect(guiLeft + 9, guiTop + 78, guiLeft + 170, guiTop + 132, Color.GREY);
@@ -125,7 +125,7 @@ public class GuiInvSysConnector extends LogisticsBaseGuiScreen implements IGUICh
 			int mouseY = height - Mouse.getY() * height / mc.displayHeight - 1;
 
 			if (x < mouseX && mouseX < x + 18 && y < mouseY && mouseY < y + 18) {
-				GuiGraphics.displayItemToolTip(new Object[] { mouseX, mouseY, st, true }, zLevel, guiLeft, guiTop, false);
+				GuiGraphics.displayItemToolTip(new Object[] { mouseX, mouseY, st, true }, blitOffset, guiLeft, guiTop, false);
 			}
 
 			column++;
@@ -174,7 +174,7 @@ public class GuiInvSysConnector extends LogisticsBaseGuiScreen implements IGUICh
 		} else if (button.id == 2) {
 			refreshPacket();
 		} else if (button.id == 3) {
-			resistanceCountBar.setInteger(resistanceCountBar.getInteger() - (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) ? 10 : 1));
+			resistanceCountBar.setInteger(resistanceCountBar.getInteger() - (InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL) ? 10 : 1));
 		} else if (button.id == 4) {
 			resistanceCountBar.setInteger(resistanceCountBar.getInteger() + 1);
 		} else if (button.id == 5) {

@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
 import logisticspipes.interfaces.ISpawnParticles.ParticleCount;
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipefxhandlers.Particles;
 import logisticspipes.pipefxhandlers.PipeFXRenderHandler;
@@ -59,7 +59,7 @@ public class ParticleFX extends CoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		if (!Minecraft.isFancyGraphicsEnabled()) {
 			return;
 		}

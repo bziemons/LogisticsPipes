@@ -2,7 +2,7 @@ package logisticspipes.asm.wrapper;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 
 import logisticspipes.api.ILPPipeConfigTool;
@@ -54,7 +54,7 @@ public class GenericLPPipeConfigToolWrapper extends AbstractWrapper implements I
 		}
 
 		@Override
-		public boolean canWrench(EntityPlayer player, @Nonnull ItemStack wrench, ILPPipeTile pipe) {
+		public boolean canWrench(PlayerEntity player, @Nonnull ItemStack wrench, ILPPipeTile pipe) {
 			if (isEnabled()) {
 				try {
 					return tool.canWrench(player, wrench, pipe);
@@ -66,7 +66,7 @@ public class GenericLPPipeConfigToolWrapper extends AbstractWrapper implements I
 		}
 
 		@Override
-		public void wrenchUsed(EntityPlayer player, @Nonnull ItemStack wrench, ILPPipeTile pipe) {
+		public void wrenchUsed(PlayerEntity player, @Nonnull ItemStack wrench, ILPPipeTile pipe) {
 			if (isEnabled()) {
 				try {
 					tool.wrenchUsed(player, wrench, pipe);

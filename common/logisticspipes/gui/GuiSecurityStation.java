@@ -6,7 +6,7 @@ import java.util.List;
 
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 
 import org.lwjgl.input.Keyboard;
@@ -56,8 +56,8 @@ public class GuiSecurityStation extends LogisticsBaseGuiScreen implements Player
 	protected final String _title = "Request items";
 	protected boolean clickWasButton = false;
 
-	public GuiSecurityStation(LogisticsSecurityTileEntity tile, EntityPlayer player) {
-		super(280, 260, 0, 0);
+	public GuiSecurityStation(LogisticsSecurityTileEntity tile, PlayerEntity player) {
+		super(inv, titleIn, 280, 260, 0, 0);
 		DummyContainer dummy = new DummyContainer(player.inventory, tile.inv);
 		dummy.addRestrictedSlot(0, tile.inv, 82, 141, (Item) null);
 		dummy.addNormalSlotsForPlayerInventory(10, 175);
@@ -80,7 +80,7 @@ public class GuiSecurityStation extends LogisticsBaseGuiScreen implements Player
 		buttonList.get(3).visible = false;
 		buttonList.add(new SmallGuiButton(4, guiLeft + 241, guiTop + 217, 30, 10, TextUtil
 				.translate(GuiSecurityStation.PREFIX + "Open")));
-		buttonList.add(new GuiCheckBox(5, guiLeft + 160, guiTop + 42, 16, 16, _tile.allowCC));
+		buttonList.add(new GuiCheckBox(guiLeft + 160, guiTop + 42, 16, 16, "allowCC", _tile.allowCC));
 		buttonList.add(new SmallGuiButton(6, guiLeft + 162, guiTop + 60, 60, 10, TextUtil.translate(GuiSecurityStation.PREFIX + "EditTable")));
 		if (!SimpleServiceLocator.ccProxy.isCC() && !LogisticsPipes.isDEBUG()) {
 			buttonList.get(5).visible = false;
@@ -88,7 +88,7 @@ public class GuiSecurityStation extends LogisticsBaseGuiScreen implements Player
 		}
 		buttonList.add(new GuiButton(7, guiLeft + 55, guiTop + 95, 70, 20, TextUtil.translate(GuiSecurityStation.PREFIX + "Authorize")));
 		buttonList.add(new GuiButton(8, guiLeft + 175, guiTop + 95, 70, 20, TextUtil.translate(GuiSecurityStation.PREFIX + "Deauthorize")));
-		buttonList.add(new GuiCheckBox(9, guiLeft + 160, guiTop + 74, 16, 16, _tile.allowAutoDestroy));
+		buttonList.add(new GuiCheckBox(guiLeft + 160, guiTop + 74, 16, 16, "allowAutoDestroy", _tile.allowAutoDestroy));
 		buttonList.add(new GuiButton(10, guiLeft + 177, guiTop + 230, 95, 20, TextUtil.translate(GuiSecurityStation.PREFIX + "ChannelManager")));
 		if (searchBar == null) {
 			searchBar = new InputBar(this.fontRenderer, this, guiLeft + 180, bottom - 120, right - 8 + addition - guiLeft - 180, 17);
@@ -139,7 +139,7 @@ public class GuiSecurityStation extends LogisticsBaseGuiScreen implements Player
 
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		GuiGraphics.drawPlayerInventoryBackground(mc, guiLeft + 10, guiTop + 175);
 		GuiGraphics.drawSlotBackground(mc, guiLeft + 81, guiTop + 140);
 		mc.fontRenderer.drawString(TextUtil.translate(GuiSecurityStation.PREFIX + "SecurityStation"), guiLeft + 105, guiTop + 10, 0x404040);

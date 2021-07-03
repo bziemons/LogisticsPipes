@@ -6,15 +6,15 @@ import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.util.ITooltipFlag;
+import net.minecraft.client.util.InputMappings;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.world.World;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-
-import org.lwjgl.input.Keyboard;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import logisticspipes.interfaces.IItemAdvancedExistance;
 import logisticspipes.proxy.SimpleServiceLocator;
@@ -30,22 +30,22 @@ public class LogisticsItemCard extends LogisticsItem implements IItemAdvancedExi
 	}
 
 	@Override
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
 		super.addInformation(stack, worldIn, tooltip, flagIn);
-		if (!stack.hasTagCompound()) {
+		if (!stack.hasTag()) {
 			tooltip.add(TextUtil.translate("tooltip.logisticsItemCard"));
 		} else {
-			final NBTTagCompound tag = Objects.requireNonNull(stack.getTagCompound());
-			if (tag.hasKey("UUID")) {
-				if (stack.getItemDamage() == LogisticsItemCard.FREQ_CARD) {
+			final CompoundNBT tag = Objects.requireNonNull(stack.getTag());
+			if (tag.contains("UUID")) {
+				if (stack.getDamage() == LogisticsItemCard.FREQ_CARD) {
 					tooltip.add("Freq. Card");
-				} else if (stack.getItemDamage() == LogisticsItemCard.SEC_CARD) {
+				} else if (stack.getDamage() == LogisticsItemCard.SEC_CARD) {
 					tooltip.add("Sec. Card");
 				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+				if (InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), 340)) {
 					tooltip.add("Id: " + tag.getString("UUID"));
-					if (stack.getItemDamage() == LogisticsItemCard.SEC_CARD) {
+					if (stack.getDamage() == LogisticsItemCard.SEC_CARD) {
 						UUID id = UUID.fromString(tag.getString("UUID"));
 						tooltip.add("Authorization: " + (SimpleServiceLocator.securityStationManager.isAuthorized(id) ? "Authorized" : "Deauthorized"));
 					}
@@ -71,6 +71,6 @@ public class LogisticsItemCard extends LogisticsItem implements IItemAdvancedExi
 
 	@Override
 	public boolean canExistInWorld(@Nonnull ItemStack stack) {
-		return stack.getItemDamage() != LogisticsItemCard.SEC_CARD;
+		return stack.getDamage() != LogisticsItemCard.SEC_CARD;
 	}
 }

@@ -1,9 +1,9 @@
 package logisticspipes.network.packets.pipe;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.text.StringTextComponent;
 
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.utils.StaticResolve;
@@ -16,14 +16,14 @@ public class PipeDebugResponse extends CoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsTileGenericPipe pipe = this.getPipe(player.getEntityWorld());
 		if (pipe != null && pipe.isInitialized()) {
 			pipe.pipe.debug.debugThisPipe = !pipe.pipe.debug.debugThisPipe;
 			if (pipe.pipe.debug.debugThisPipe) {
-				player.sendMessage(new TextComponentString("Debug enabled on Server"));
+				player.sendMessage(new StringTextComponent("Debug enabled on Server"));
 			} else {
-				player.sendMessage(new TextComponentString("Debug disabled on Server"));
+				player.sendMessage(new StringTextComponent("Debug disabled on Server"));
 			}
 		}
 	}

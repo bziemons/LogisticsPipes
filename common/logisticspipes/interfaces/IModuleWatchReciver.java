@@ -1,10 +1,10 @@
 package logisticspipes.interfaces;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 public interface IModuleWatchReciver {
 
-	void startWatching(EntityPlayer player);
+	void startWatching(PlayerEntity player);
 
-	void stopWatching(EntityPlayer player);
+	void stopWatching(PlayerEntity player);
 }

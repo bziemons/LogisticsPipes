@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.modules;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import net.minecraftforge.fml.client.FMLClientHandler;
 
@@ -34,7 +34,7 @@ public class SupplierPipeMode extends IntegerModuleCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		ModuleActiveSupplier module = this.getLogisticsModule(player, ModuleActiveSupplier.class);
 		if (module == null) {
 			return;

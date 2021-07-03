@@ -9,9 +9,9 @@ import net.minecraft.client.gui.GuiButton;
 import org.lwjgl.input.Keyboard;
 
 import logisticspipes.network.PacketHandler;
-import logisticspipes.network.packets.AddNewChannelPacket;
+import network.rs485.logisticspipes.network.packets.CAddNewChannelPacket;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.routing.channels.ChannelInformation;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 import logisticspipes.utils.gui.GuiCheckBox;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.InputBar;
@@ -42,14 +42,14 @@ public class GuiAddChannelPopup extends SubGuiScreen {
 		super.initGui();
 
 		buttonList.clear();
-		buttonList.add(new GuiCheckBox(0, guiLeft + 94, guiTop + 66, 16, 16, true));
-		buttonList.add(new GuiCheckBox(1, guiLeft + 94, guiTop + 81, 16, 16, false));
-		buttonList.add(new GuiCheckBox(2, guiLeft + 94, guiTop + 96, 16, 16, false));
+		buttonList.add(new GuiCheckBox(guiLeft + 94, guiTop + 66, 16, 16, "AccessRights.PUBLIC", true));
+		buttonList.add(new GuiCheckBox(guiLeft + 94, guiTop + 81, 16, 16, "AccessRights.SECURED", false));
+		buttonList.add(new GuiCheckBox(guiLeft + 94, guiTop + 96, 16, 16, "AccessRights.PRIVATE", false));
 
 		buttonList.add(new SmallGuiButton(4, guiLeft + 58, guiTop + 120, 50, 10, TextUtil.translate(GUI_LANG_KEY + "save")));
 
 		if (this.textInput == null) {
-			this.textInput = new InputBar(Minecraft.getMinecraft().fontRenderer, this.getBaseScreen(), guiLeft + 30, guiTop + 32, right - guiLeft - 20, 15);
+			this.textInput = new InputBar(Minecraft.getInstance().fontRenderer, this.getBaseScreen(), guiLeft + 30, guiTop + 32, right - guiLeft - 20, 15);
 		}
 		this.textInput.reposition(guiLeft + 10, guiTop + 34, right - guiLeft - 20, 15);
 
@@ -65,7 +65,7 @@ public class GuiAddChannelPopup extends SubGuiScreen {
 
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		drawTitle();
 		mc.fontRenderer.drawString(TextUtil.translate(GUI_LANG_KEY + "name"), guiLeft + 10, guiTop + 20, 0x404040);
 		mc.fontRenderer.drawString(TextUtil.translate(GUI_LANG_KEY + "access") + ":", guiLeft + 10, guiTop + 55, 0x404040);
@@ -128,7 +128,7 @@ public class GuiAddChannelPopup extends SubGuiScreen {
 				} else if (((GuiCheckBox) buttonList.get(2)).getState()) {
 					rights = ChannelInformation.AccessRights.PRIVATE;
 				}
-				MainProxy.sendPacketToServer(PacketHandler.getPacket(AddNewChannelPacket.class).setName(this.textInput.getText()).setRights(rights).setSecurityStationID(security));
+				MainProxy.sendPacketToServer(PacketHandler.getPacket(CAddNewChannelPacket.class).setName(this.textInput.getText()).setRights(rights).setSecurityStationID(security));
 				exitGui();
 				break;
 		}

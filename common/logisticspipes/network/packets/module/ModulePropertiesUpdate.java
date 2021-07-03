@@ -3,9 +3,9 @@ package logisticspipes.network.packets.module;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.ContainerPlayer;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.container.PlayerContainer;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.logisticspipes.ItemModuleInformationManager;
 import logisticspipes.modules.LogisticsModule;
@@ -13,7 +13,6 @@ import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.property.PropertyHolder;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
@@ -22,7 +21,7 @@ import network.rs485.logisticspipes.util.LPDataOutput;
 public class ModulePropertiesUpdate extends ModuleCoordinatesPacket {
 
 	@Nonnull
-	public NBTTagCompound tag = new NBTTagCompound();
+	public CompoundNBT tag = new CompoundNBT();
 
 	public ModulePropertiesUpdate(int id) {
 		super(id);
@@ -31,13 +30,13 @@ public class ModulePropertiesUpdate extends ModuleCoordinatesPacket {
 	@Override
 	public void writeData(LPDataOutput output) {
 		super.writeData(output);
-		output.writeNBTTagCompound(tag);
+		output.writeCompoundNBT(tag);
 	}
 
 	@Override
 	public void readData(LPDataInput input) {
 		super.readData(input);
-		tag = Objects.requireNonNull(input.readNBTTagCompound(), "read null NBT in ModulePropertiesUpdate");
+		tag = Objects.requireNonNull(input.readCompoundNBT(), "read null NBT in ModulePropertiesUpdate");
 	}
 
 	@Override
@@ -46,7 +45,7 @@ public class ModulePropertiesUpdate extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		final LogisticsModule module = this.getLogisticsModule(player, LogisticsModule.class);
 		if (module == null) {
 			return;
@@ -55,7 +54,7 @@ public class ModulePropertiesUpdate extends ModuleCoordinatesPacket {
 		// sync updated properties
 		module.readFromNBT(tag);
 
-		if (!getType().isInWorld() && player.openContainer instanceof ContainerPlayer) {
+		if (!getType().isInWorld() && player.openContainer instanceof PlayerContainer) {
 			// FIXME: saveInformation & markDirty on module property change? should be called only once
 			// sync slot in player inventory and mark player inventory dirty
 			ItemModuleInformationManager.saveInformation(player.inventory.mainInventory.get(getPositionInt()), module);

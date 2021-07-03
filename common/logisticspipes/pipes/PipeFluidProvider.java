@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 
 import net.minecraft.item.Item;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Direction;
 
 import net.minecraftforge.fluids.FluidStack;
 

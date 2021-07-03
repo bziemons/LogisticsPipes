@@ -3,13 +3,13 @@ package logisticspipes.gui;
 import java.io.IOException;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.LogisticsPipes;
-import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
+import logisticspipes.blocks.LogisticsPowerJunctionTileEntity;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.block.PowerJunctionCheatPacket;
 import logisticspipes.proxy.MainProxy;
@@ -23,8 +23,8 @@ public class GuiPowerJunction extends LogisticsBaseGuiScreen {
 
 	private final LogisticsPowerJunctionTileEntity junction;
 
-	public GuiPowerJunction(EntityPlayer player, LogisticsPowerJunctionTileEntity junction) {
-		super(176, 166, 0, 0);
+	public GuiPowerJunction(PlayerEntity player, LogisticsPowerJunctionTileEntity junction) {
+		super(inv, titleIn, 176, 166, 0, 0);
 		DummyContainer dummy = new DummyContainer(player, null, junction);
 		dummy.addNormalSlotsForPlayerInventory(8, 80);
 		inventorySlots = dummy;
@@ -42,7 +42,7 @@ public class GuiPowerJunction extends LogisticsBaseGuiScreen {
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-		mc.renderEngine.bindTexture(GuiPowerJunction.TEXTURE);
+		mc.textureManager.bindTexture(GuiPowerJunction.TEXTURE);
 		int j = guiLeft;
 		int k = guiTop;
 		drawTexturedModalRect(j, k, 0, 0, xSize, ySize);

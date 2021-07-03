@@ -1,6 +1,6 @@
 package logisticspipes.interfaces;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.utils.item.ItemIdentifier;
 import network.rs485.logisticspipes.property.StringListProperty;
@@ -13,5 +13,5 @@ public interface IStringBasedModule {
 
 	void listChanged();
 
-	void readFromNBT(NBTTagCompound nbt);
+	void readFromNBT(CompoundNBT nbt);
 }

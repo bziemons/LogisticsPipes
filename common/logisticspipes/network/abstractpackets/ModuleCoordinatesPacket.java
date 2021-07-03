@@ -1,7 +1,9 @@
 package logisticspipes.network.abstractpackets;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.ContainerPlayer;
+import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.world.World;
 
 import lombok.Getter;
@@ -17,6 +19,8 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.DummyModuleContainer;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket.LTGPCompletionCheck;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 
@@ -71,7 +75,7 @@ public abstract class ModuleCoordinatesPacket extends CoordinatesPacket {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T getLogisticsModule(EntityPlayer player, Class<T> clazz) {
+	public <T> T getLogisticsModule(PlayerEntity player, Class<T> clazz) {
 		LogisticsModule module;
 		if (type == ModulePositionType.IN_PIPE) {
 			moduleBased = true;
@@ -86,7 +90,7 @@ public abstract class ModuleCoordinatesPacket extends CoordinatesPacket {
 				if (player.openContainer instanceof DummyModuleContainer) {
 					DummyModuleContainer dummy = (DummyModuleContainer) player.openContainer;
 					module = dummy.getModule();
-				} else if (player.openContainer instanceof ContainerPlayer) {
+				} else if (player.openContainer instanceof PlayerContainer) {
 					module = ItemModule.getLogisticsModule(player, getPositionInt());
 					if (module == null) {
 						throw new TargetNotFoundException("Couldn't find " + clazz.getName() + ", module not found at slot " + getPositionInt(), this);
@@ -105,7 +109,7 @@ public abstract class ModuleCoordinatesPacket extends CoordinatesPacket {
 			}
 		} else {
 			moduleBased = true;
-			LogisticsTileGenericPipe pipe = this.getPipe(player.getEntityWorld(), LTGPCompletionCheck.NONE);
+			LogisticsTileGenericPipe pipe = this.getPipe(player.getEntityWorld(), CoordinatesPacket.LTGPCompletionCheck.NONE);
 			moduleBased = false;
 			if (!(pipe.pipe instanceof CoreRoutedPipe)) {
 				throw new TargetNotFoundException("Couldn't find " + clazz.getName() + ", pipe didn't exsist", this);

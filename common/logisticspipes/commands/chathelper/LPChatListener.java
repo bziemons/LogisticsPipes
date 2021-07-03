@@ -6,16 +6,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.command.ICommandSource;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.StringTextComponent;
 
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.event.ServerChatEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
+import logisticspipes.LPConstants;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.asm.ClientSideOnlyMethodContent;
 import logisticspipes.network.PacketHandler;
@@ -24,6 +26,7 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.string.ChatColor;
 import logisticspipes.utils.string.StringUtils;
 
+@Mod.EventBusSubscriber(modid = LPConstants.LP_MOD_ID)
 public class LPChatListener {
 
 	private static final Map<String, Callable<Boolean>> tasks = new HashMap<>();
@@ -33,23 +36,23 @@ public class LPChatListener {
 
 	@SubscribeEvent
 	public void serverChat(ServerChatEvent event) {
-		EntityPlayerMP player = event.getPlayer();
+		ServerPlayerEntity player = event.getPlayer();
 		if (LPChatListener.tasks.containsKey(event.getUsername())) {
 			if (event.getMessage().startsWith("/")) {
-				player.sendMessage(new TextComponentString(ChatColor.RED + "You need to answer the question, before you can use any other command"));
+				player.sendMessage(new StringTextComponent(ChatColor.RED + "You need to answer the question, before you can use any other command"));
 				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), player);
 			} else {
 				if (!event.getMessage().equalsIgnoreCase("true") && !event.getMessage().equalsIgnoreCase("false") && !event.getMessage().equalsIgnoreCase("on") && !event.getMessage().equalsIgnoreCase("off") && !event.getMessage().equalsIgnoreCase("0") && !event.getMessage().equalsIgnoreCase("1") && !event.getMessage()
 						.equalsIgnoreCase("no")
 						&& !event.getMessage().equalsIgnoreCase("yes")) {
-					player.sendMessage(new TextComponentString(ChatColor.RED + "Not a valid answer."));
-					player.sendMessage(new TextComponentString(ChatColor.AQUA + "Please enter " + ChatColor.RESET + "<" + ChatColor.GREEN + "yes" + ChatColor.RESET + "/" + ChatColor.RED + "no " + ChatColor.RESET + "| " + ChatColor.GREEN + "true" + ChatColor.RESET + "/" + ChatColor.RED + "flase "
+					player.sendMessage(new StringTextComponent(ChatColor.RED + "Not a valid answer."));
+					player.sendMessage(new StringTextComponent(ChatColor.AQUA + "Please enter " + ChatColor.RESET + "<" + ChatColor.GREEN + "yes" + ChatColor.RESET + "/" + ChatColor.RED + "no " + ChatColor.RESET + "| " + ChatColor.GREEN + "true" + ChatColor.RESET + "/" + ChatColor.RED + "flase "
 							+ ChatColor.RESET + "| " + ChatColor.GREEN + "on" + ChatColor.RESET + "/" + ChatColor.RED + "off " + ChatColor.RESET + "| " + ChatColor.GREEN + "1" + ChatColor.RESET + "/" + ChatColor.RED + "0" + ChatColor.RESET + ">"));
 					MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), player);
 				} else {
 					boolean flag = event.getMessage().equalsIgnoreCase("true") || event.getMessage().equalsIgnoreCase("on") || event.getMessage().equalsIgnoreCase("1") || event.getMessage().equalsIgnoreCase("yes");
 					if (!handleAnswer(flag, player)) {
-						player.sendMessage(new TextComponentString(ChatColor.RED + "Error: Could not handle answer."));
+						player.sendMessage(new StringTextComponent(ChatColor.RED + "Error: Could not handle answer."));
 					}
 				}
 			}
@@ -57,7 +60,7 @@ public class LPChatListener {
 		} else if (LPChatListener.morePageDisplays.containsKey(event.getUsername())) {
 			if (!LPChatListener.morePageDisplays.get(event.getUsername()).isTerminated()) {
 				if (event.getMessage().startsWith("/")) {
-					player.sendMessage(new TextComponentString(ChatColor.RED + "Exit " + ChatColor.AQUA + "PageView" + ChatColor.RED + " first!"));
+					player.sendMessage(new StringTextComponent(ChatColor.RED + "Exit " + ChatColor.AQUA + "PageView" + ChatColor.RED + " first!"));
 					MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), player);
 					event.setCanceled(true);
 				} else {
@@ -147,7 +150,7 @@ public class LPChatListener {
 		LPChatListener.morePageDisplays.remove(name);
 	}
 
-	public boolean handleAnswer(boolean flag, ICommandSender sender) {
+	public boolean handleAnswer(boolean flag, ICommandSource sender) {
 		if (!LPChatListener.tasks.containsKey(sender.getName())) {
 			return false;
 		}
@@ -164,7 +167,7 @@ public class LPChatListener {
 				return false;
 			}
 		} else {
-			sender.sendMessage(new TextComponentString(ChatColor.GREEN + "Answer handled."));
+			sender.sendMessage(new StringTextComponent(ChatColor.GREEN + "Answer handled."));
 		}
 		LPChatListener.tasks.remove(sender.getName());
 		return true;
@@ -178,7 +181,7 @@ public class LPChatListener {
 		LPChatListener.tasks.remove(name);
 	}
 
-	public static boolean addTask(Callable<Boolean> input, ICommandSender sender) {
+	public static boolean addTask(Callable<Boolean> input, ICommandSource sender) {
 		if (LPChatListener.tasks.containsKey(sender.getName())) {
 			return false;
 		} else {

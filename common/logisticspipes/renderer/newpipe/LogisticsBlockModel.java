@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 import javax.vecmath.Matrix4f;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
@@ -22,14 +22,14 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.item.Item;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 
 import net.minecraftforge.client.model.ICustomModelLoader;
 import net.minecraftforge.client.model.IModel;
 import net.minecraftforge.client.model.PerspectiveMapWrapper;
 import net.minecraftforge.common.model.IModelState;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
@@ -53,14 +53,14 @@ public class LogisticsBlockModel implements IModel {
 		@Override
 		@Nonnull
 		public IModel loadModel(@Nonnull ResourceLocation modelLocation) {
-			ResourceLocation baseTex = new ResourceLocation(modelLocation.getResourceDomain(), "solid_block/" + modelLocation.getResourcePath());
+			ResourceLocation baseTex = new ResourceLocation(modelLocation.getNamespace(), "solid_block/" + modelLocation.getPath());
 			return new LogisticsBlockModel(baseTex, Objects.requireNonNull(getType(modelLocation)));
 		}
 
 		@Nullable
 		private Type getType(ResourceLocation modelLocation) {
 			if (!(modelLocation instanceof ModelResourceLocation)) return null;
-			ResourceLocation clean = new ResourceLocation(modelLocation.getResourceDomain(), modelLocation.getResourcePath());
+			ResourceLocation clean = new ResourceLocation(modelLocation.getNamespace(), modelLocation.getPath());
 			String variant = ((ModelResourceLocation) modelLocation).getVariant();
 
 			if (variant.equals("inventory")) {
@@ -87,7 +87,7 @@ public class LogisticsBlockModel implements IModel {
 	public LogisticsBlockModel(ResourceLocation texture, Type type) {
 		this.inactive = texture;
 		if (type.isHasActiveTexture()) {
-			this.active = new ResourceLocation(texture.getResourceDomain(), texture.getResourcePath() + "_active");
+			this.active = new ResourceLocation(texture.getNamespace(), texture.getPath() + "_active");
 		} else {
 			this.active = texture;
 		}
@@ -111,7 +111,7 @@ public class LogisticsBlockModel implements IModel {
 
 			@Override
 			@Nonnull
-			public List<BakedQuad> getQuads(@Nullable IBlockState state, @Nullable EnumFacing side, long rand) {
+			public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, long rand) {
 				if (side == null) {
 					if (quads.isEmpty()) {
 						quads.addAll(LogisticsRenderPipe.secondRenderer.getQuadsFromRenderList(generateBlockRenderList(state, inactiveT, activeT), format, true));
@@ -157,7 +157,7 @@ public class LogisticsBlockModel implements IModel {
 		};
 	}
 
-	private List<RenderEntry> generateBlockRenderList(@Nullable IBlockState state, @Nonnull TextureAtlasSprite inactive, @Nonnull TextureAtlasSprite active) {
+	private List<RenderEntry> generateBlockRenderList(@Nullable BlockState state, @Nonnull TextureAtlasSprite inactive, @Nonnull TextureAtlasSprite active) {
 		List<RenderEntry> objectsToRender = new ArrayList<>();
 
 		LogisticsNewSolidBlockWorldRenderer.BlockRotation rotation = LogisticsNewSolidBlockWorldRenderer.BlockRotation.ZERO;

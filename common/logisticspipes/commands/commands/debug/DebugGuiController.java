@@ -7,13 +7,14 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.launchwrapper.Launch;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Direction;
 import net.minecraft.world.World;
 
 import lombok.AllArgsConstructor;
 
+import logisticspipes.LogisticsPipes;
+import logisticspipes.asm.LogisticsPipesCoreLoader;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.exception.DelayPacketException;
 import logisticspipes.network.packets.debuggui.DebugDataPacket;
@@ -28,9 +29,15 @@ import network.rs485.debug.api.IObjectIdentification;
 public class DebugGuiController {
 
 	static {
-		Launch.classLoader.addTransformerExclusion("com.trolltech.qt.");
-		Launch.classLoader.addTransformerExclusion("network.rs485.debuggui.");
-		Launch.classLoader.addTransformerExclusion("network.rs485.debug.");
+		if (LogisticsPipesCoreLoader.isCoremodLoaded()) {
+			try {
+				LogisticsPipesCoreLoader.getInstance().addTransformerExclusion("com.trolltech.qt.");
+				LogisticsPipesCoreLoader.getInstance().addTransformerExclusion("network.rs485.debuggui.");
+				LogisticsPipesCoreLoader.getInstance().addTransformerExclusion("network.rs485.debug.");
+			} catch (NoSuchFieldException | IllegalAccessException e) {
+				LogisticsPipes.getLOGGER().warn("Error adding debug gui transformer exclusions", e);
+			}
+		}
 	}
 
 	transient private static DebugGuiController instance;
@@ -54,13 +61,13 @@ public class DebugGuiController {
 		serverDebugger.values().forEach(IDebugGuiEntry::exec);
 	}
 
-	private final HashMap<EntityPlayer, IDebugGuiEntry> serverDebugger = new HashMap<>();
+	private final HashMap<PlayerEntity, IDebugGuiEntry> serverDebugger = new HashMap<>();
 	private final List<IDataConnection> serverList = new LinkedList<>();
 
 	private IDebugGuiEntry clientController = null;
 	private final List<Future<IDataConnection>> clientList = new LinkedList<>();
 
-	public void startWatchingOf(Object object, EntityPlayer player) {
+	public void startWatchingOf(Object object, PlayerEntity player) {
 		if (object == null) {
 			return;
 		}
@@ -101,7 +108,7 @@ public class DebugGuiController {
 		}
 	}
 
-	public void handleDataPacket(byte[] payload, int identifier, EntityPlayer player) {
+	public void handleDataPacket(byte[] payload, int identifier, PlayerEntity player) {
 		if (MainProxy.isServer(player.getEntityWorld())) {
 			synchronized (serverList) {
 				IDataConnection connection = serverList.get(identifier);
@@ -140,7 +147,7 @@ public class DebugGuiController {
 	private class DataConnectionServer implements IDataConnection {
 
 		private int identification;
-		private EntityPlayer player;
+		private PlayerEntity player;
 
 		@Override
 		public void passData(byte[] packet) {
@@ -173,7 +180,7 @@ public class DebugGuiController {
 
 		@Override
 		public boolean toStringObject(Object o) {
-			return o.getClass() == EnumFacing.class || o.getClass() == ItemIdentifier.class || o.getClass() == ItemIdentifierStack.class;
+			return o.getClass() == Direction.class || o.getClass() == ItemIdentifier.class || o.getClass() == ItemIdentifierStack.class;
 		}
 
 		@Override

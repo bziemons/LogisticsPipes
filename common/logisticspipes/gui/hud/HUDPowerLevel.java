@@ -39,7 +39,7 @@ public class HUDPowerLevel extends BasicHUDGui implements IHeadUpDisplayRenderer
 		GL11.glTranslatef(0.0F, 0.0F, -0.0005F);
 		super.renderHeadUpDisplay(distance, day, shifted, mc, config);
 		GL11.glTranslatef(0.0F, 0.0F, -0.0005F);
-		mc.renderEngine.bindTexture(HUDPowerLevel.TEXTURE);
+		mc.textureManager.bindTexture(HUDPowerLevel.TEXTURE);
 		drawTexturedModalRect(-50, -30, 9, 10, 7, 61);
 		GL11.glTranslatef(0.0F, 0.0F, -0.0005F);
 		int level = 100 - junction.getChargeState();

@@ -39,17 +39,17 @@ package network.rs485.logisticspipes.connection
 
 import logisticspipes.interfaces.ISlotUpgradeManager
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.EnumFacing
+import net.minecraft.util.Direction
 
-class LPNeighborTileEntitySneakyInsertion<T : TileEntity>(tileEntity: T, direction: EnumFacing) :
+class LPNeighborTileEntitySneakyInsertion<T : TileEntity>(tileEntity: T, direction: Direction) :
         LPNeighborTileEntity<T>(tileEntity, direction) {
-    private var sneakyDirection: EnumFacing = super.getOurDirection()
+    private var sneakyDirection: Direction = super.getOurDirection()
 
-    override fun getOurDirection(): EnumFacing {
+    override fun getOurDirection(): Direction {
         return sneakyDirection
     }
 
-    fun from(direction: EnumFacing): LPNeighborTileEntitySneakyInsertion<T> {
+    fun from(direction: Direction): LPNeighborTileEntitySneakyInsertion<T> {
         sneakyDirection = direction
         return this
     }

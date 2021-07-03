@@ -39,7 +39,7 @@ package network.rs485.logisticspipes.gui
 
 import logisticspipes.proxy.MainProxy
 import net.minecraftforge.event.entity.player.PlayerContainerEvent
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
+import net.minecraftforge.eventbus.api.SubscribeEvent
 
 object PropertyUpdaterEventListener {
     private val propertyUpdaters: ArrayList<PropertyUpdater> = ArrayList()
@@ -47,7 +47,7 @@ object PropertyUpdaterEventListener {
     @SubscribeEvent
     fun openContainer(event: PlayerContainerEvent.Open) {
         // FIXME: disabled server-side property update until there is a common Container class with getModule
-//        val player = event.entityPlayer ?: return
+//        val player = event.player ?: return
 //        MainProxy.runOnServer(player.world) {
 //            Runnable {
 //                val guiContainer = event.container
@@ -63,11 +63,11 @@ object PropertyUpdaterEventListener {
 
     @SubscribeEvent
     fun closeContainer(event: PlayerContainerEvent.Close) {
-        val player = event.entityPlayer ?: return
+        val player = event.player ?: return
         MainProxy.runOnServer(player.world) {
             Runnable {
                 propertyUpdaters.removeIf { propertyUpdater: PropertyUpdater ->
-                    propertyUpdater.removeForPlayer(event.entityPlayer)
+                    propertyUpdater.removeForPlayer(player)
                 }
             }
         }

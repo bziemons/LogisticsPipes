@@ -27,66 +27,45 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 
 import net.minecraft.block.Block;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.CraftingManager;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.item.crafting.ShapelessRecipes;
-import net.minecraft.launchwrapper.IClassTransformer;
-import net.minecraft.launchwrapper.Launch;
-import net.minecraft.launchwrapper.LaunchClassLoader;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
-import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLFingerprintViolationEvent;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.common.event.FMLInterModComms;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLServerAboutToStartEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLDedicatedServerSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLFingerprintViolationEvent;
+import net.minecraftforge.fml.event.server.FMLServerAboutToStartEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
-import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
+import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.registries.GameData;
 import net.minecraftforge.registries.IForgeRegistry;
 
+import cpw.mods.modlauncher.Launcher;
+import cpw.mods.modlauncher.TransformingClassLoader;
 import lombok.Getter;
-import lombok.SneakyThrows;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import logisticspipes.asm.LogisticsPipesClassInjector;
 import logisticspipes.asm.LogisticsPipesCoreLoader;
-import logisticspipes.asm.wrapper.LogisticsWrapperHandler;
-import logisticspipes.blocks.BlockDummy;
-import logisticspipes.blocks.LogisticsProgramCompilerTileEntity;
-import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.blocks.LogisticsSolidBlock;
-import logisticspipes.blocks.crafting.LogisticsCraftingTableTileEntity;
-import logisticspipes.blocks.powertile.LogisticsIC2PowerProviderTileEntity;
-import logisticspipes.blocks.powertile.LogisticsPowerJunctionTileEntity;
-import logisticspipes.blocks.powertile.LogisticsRFPowerProviderTileEntity;
-import logisticspipes.blocks.stats.LogisticsStatisticsTileEntity;
-import logisticspipes.commands.LogisticsPipesCommand;
 import logisticspipes.commands.chathelper.LPChatListener;
 import logisticspipes.config.Configs;
 import logisticspipes.datafixer.LPDataFixer;
@@ -109,7 +88,6 @@ import logisticspipes.items.LogisticsSolidBlockItem;
 import logisticspipes.items.RemoteOrderer;
 import logisticspipes.logistics.LogisticsFluidManager;
 import logisticspipes.logistics.LogisticsManager;
-import logisticspipes.network.GuiHandler;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.pipes.PipeBlockRequestTable;
@@ -143,8 +121,6 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
 import logisticspipes.pipes.basic.LogisticsBlockGenericPipe;
 import logisticspipes.pipes.basic.LogisticsBlockGenericSubMultiBlock;
-import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
-import logisticspipes.pipes.basic.LogisticsTileGenericSubMultiBlock;
 import logisticspipes.pipes.tubes.HSTubeCurve;
 import logisticspipes.pipes.tubes.HSTubeGain;
 import logisticspipes.pipes.tubes.HSTubeLine;
@@ -156,16 +132,12 @@ import logisticspipes.proxy.ProxyManager;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.proxy.SpecialInventoryHandlerManager;
 import logisticspipes.proxy.SpecialTankHandlerManager;
-import logisticspipes.proxy.computers.objects.LPGlobalCCAccess;
-import logisticspipes.proxy.endercore.EnderCoreProgressProvider;
-import logisticspipes.proxy.ic2.IC2ProgressProvider;
 import logisticspipes.proxy.progressprovider.MachineProgressProvider;
 import logisticspipes.proxy.recipeproviders.LogisticsCraftingTable;
 import logisticspipes.proxy.specialconnection.EnderIOTransceiverConnection;
 import logisticspipes.proxy.specialconnection.SpecialPipeConnection;
 import logisticspipes.proxy.specialconnection.SpecialTileConnection;
 import logisticspipes.proxy.specialtankhandler.SpecialTankHandler;
-import logisticspipes.proxy.te.ThermalExpansionProgressProvider;
 import logisticspipes.recipes.CraftingRecipes;
 import logisticspipes.recipes.LPChipRecipes;
 import logisticspipes.recipes.ModuleChippedCraftingRecipes;
@@ -196,7 +168,6 @@ import logisticspipes.ticks.VersionChecker;
 import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.InventoryUtilFactory;
 import logisticspipes.utils.RoutedItemHelper;
-import logisticspipes.utils.StaticResolverUtil;
 import logisticspipes.utils.TankUtilFactory;
 import logisticspipes.utils.tuples.Pair;
 import network.rs485.grow.ServerTickDispatcher;
@@ -206,19 +177,11 @@ import network.rs485.logisticspipes.config.ServerConfigurationManager;
 import network.rs485.logisticspipes.gui.LPFontRenderer;
 import network.rs485.logisticspipes.gui.PropertyUpdaterEventListener;
 import network.rs485.logisticspipes.guidebook.ItemGuideBook;
+import network.rs485.logisticspipes.network.DefaultChannel;
 
-//@formatter:off
-//CHECKSTYLE:OFF
-
-@Mod(
-		name = "Logistics Pipes",
-		modid = LPConstants.LP_MOD_ID,
-		certificateFingerprint = "e0c86912b2f7cc0cc646ad57799574aea43dbd45",
-		useMetadata = true)
+@Mod(LPConstants.LP_MOD_ID)
+@Mod.EventBusSubscriber
 public class LogisticsPipes {
-	//@formatter:on
-	//CHECKSTYLE:ON
-
 	public static final String UNKNOWN = "unknown";
 	private static boolean DEBUG = true;
 	private Consumer<FMLServerStartedEvent> minecraftTestStartMethod = null;
@@ -234,8 +197,17 @@ public class LogisticsPipes {
 	@Getter
 	private static String TARGET = UNKNOWN;
 
-	public LogisticsPipes() { //TODO: remove throws
-		final LaunchClassLoader loader = Launch.classLoader;
+	public LogisticsPipes() {
+		instance = this;
+		final TransformingClassLoader loader;
+		try {
+			final Field classLoaderField = Launcher.class.getDeclaredField("classLoader");
+			classLoaderField.setAccessible(true);
+			loader = (TransformingClassLoader) classLoaderField.get(Launcher.INSTANCE);
+		} catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
+			LOGGER.error("Cannot fetch Launcher.classLoader");
+			throw new RuntimeException(e);
+		}
 		loadManifestValues(loader);
 
 		if (!LogisticsPipesCoreLoader.isCoremodLoaded()) {
@@ -246,22 +218,25 @@ public class LogisticsPipes {
 			}
 		}
 
-		try {
-			Field fTransformers = LaunchClassLoader.class.getDeclaredField("transformers");
-			fTransformers.setAccessible(true);
-			@SuppressWarnings("unchecked")
-			List<IClassTransformer> transformers = (List<IClassTransformer>) fTransformers.get(loader);
-			IClassTransformer lpClassInjector = new LogisticsPipesClassInjector();
-			transformers.add(lpClassInjector);
-			// Avoid NPE caused by wrong ClassTransformers
-			for (int i = transformers.size() - 1; i > 0; i--) { // Move everything one up
-				transformers.set(i, transformers.get(i - 1));
-			}
-			transformers.set(0, lpClassInjector); // So that our injector can be first
-		} catch (NoSuchFieldException | SecurityException | IllegalAccessException | IllegalArgumentException e) {
-			loader.registerTransformer("logisticspipes.asm.LogisticsPipesClassInjector");
-			e.printStackTrace();
-		}
+		// FIXME: Do not rely on being the first ITransformer anymore
+//		try {
+//			final Field transformStoreField = Launcher.class.getDeclaredField("transformStore");
+//			transformStoreField.setAccessible(true);
+//			final TransformStore transformStore = (TransformStore) transformStoreField.get(Launcher.INSTANCE);
+//			final Field transformersField = TransformStore.class.getDeclaredField("transformers");
+//			transformersField.setAccessible(true);
+//			List<IClassTransformer> transformers = (List<IClassTransformer>) transformersField.get(loader);
+//			ITransformer<?> lpClassInjector = new LogisticsPipesClassInjector();
+//			transformers.add(lpClassInjector);
+//			// Avoid NPE caused by wrong ClassTransformers
+//			for (int i = transformers.size() - 1; i > 0; i--) { // Move everything one up
+//				transformers.set(i, transformers.get(i - 1));
+//			}
+//			transformers.set(0, lpClassInjector); // So that our injector can be first
+//		} catch (NoSuchFieldException | SecurityException | IllegalAccessException | IllegalArgumentException e) {
+//			loader.registerTransformer("logisticspipes.asm.LogisticsPipesClassInjector");
+//			e.printStackTrace();
+//		}
 
 		MinecraftForge.EVENT_BUS.register(this);
 	}
@@ -281,11 +256,10 @@ public class LogisticsPipes {
 				}
 			} while (resources.hasMoreElements() && !foundLp);
 		} catch (IOException e) {
-			LogisticsPipes.log.error("There was a problem loading our MANIFEST file, Logistics Pipes will not know about its origin");
+			LOGGER.error("There was a problem loading our MANIFEST file, Logistics Pipes will not know about its origin");
 		}
 	}
 
-	@Mod.Instance("logisticspipes")
 	public static LogisticsPipes instance;
 
 	private static boolean certificateError = false;
@@ -303,22 +277,24 @@ public class LogisticsPipes {
 
 	// other statics
 	public static Textures textures = new Textures();
-	public static Logger log;
+
+	private static final Logger LOGGER = LogManager.getLogger();
+	public static Logger getLOGGER() {
+		return LOGGER;
+	}
+
 	public static ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
 	public static VersionChecker versionChecker;
 
-	// initializes the creative tab
-	public static final CreativeTabs CREATIVE_TAB_LP = new CreativeTabs("Logistics_Pipes") {
+	public static final ItemGroup LP_ITEM_GROUP = new ItemGroup("Logistics_Pipes") {
 
-		@SideOnly(Side.CLIENT)
-		@Nonnull
-		public ItemStack getTabIconItem() {
+		@Override
+		public ItemStack createIcon() {
 			return new ItemStack(LPItems.pipeBasic);
 		}
 	};
 
 	private Queue<Runnable> postInitRun = new LinkedList<>();
-	private static LPGlobalCCAccess generalAccess;
 	private static ClientConfiguration playerConfig;
 	private static ServerConfigurationManager serverConfigManager;
 
@@ -341,8 +317,65 @@ public class LogisticsPipes {
 		}
 	}
 
-	@Mod.EventHandler
-	public void init(FMLInitializationEvent event) {
+	@SubscribeEvent
+	public void clientInit(FMLClientSetupEvent event) {
+		RenderTickHandler sub = new RenderTickHandler();
+		MinecraftForge.EVENT_BUS.register(sub);
+		SimpleServiceLocator.setClientPacketBufferHandlerThread(new ClientPacketBufferHandlerThread());
+		LPFontRenderer.Factory.asyncPreload();
+	}
+
+	@SubscribeEvent
+	public void serverInit(FMLDedicatedServerSetupEvent event) {
+		LogisticsPipes.textures.registerBlockIcons(null);
+	}
+
+	@SubscribeEvent
+	public void init(FMLCommonSetupEvent event) {
+
+		// preInit …
+
+		// FIXME RIP StaticResolve
+		// StaticResolverUtil.useASMDataTable(event.getAsmData());
+		DefaultChannel.INSTANCE.registerPackets();
+		PacketHandler.initialize();
+		NewGuiHandler.initialize();
+
+		LOGGER.info("====================================================");
+		LOGGER.info(" LogisticsPipes Logger initialized, enabled levels: ");
+		LOGGER.info("----------------------------------------------------");
+		LOGGER.info("    Fatal: " + LOGGER.isFatalEnabled());
+		LOGGER.info("    Error: " + LOGGER.isErrorEnabled());
+		LOGGER.info("    Warn:  " + LOGGER.isWarnEnabled());
+		LOGGER.info("    Info:  " + LOGGER.isInfoEnabled());
+		LOGGER.info("    Trace: " + LOGGER.isTraceEnabled());
+		LOGGER.info("    Debug: " + LOGGER.isDebugEnabled());
+		LOGGER.info("====================================================");
+		loadClasses();
+		ProxyManager.load();
+		Configs.load();
+		if (LogisticsPipes.certificateError) {
+			LOGGER.fatal("Certificate not correct");
+			LOGGER.fatal("This in not a LogisticsPipes version from RS485.");
+		}
+
+		if (LogisticsPipes.UNKNOWN.equals(LogisticsPipes.VERSION)) {
+			LOGGER.warn("Could not determine Logistics Pipes version, we do need that " + JarFile.MANIFEST_NAME + ", don't you know?");
+		}
+		LOGGER.info("Running " + getVersionString());
+
+		SimpleServiceLocator.setPipeInformationManager(new PipeInformationManager());
+		SimpleServiceLocator.setLogisticsFluidManager(new LogisticsFluidManager());
+
+		if (Loader.isModLoaded(LPConstants.theOneProbeModID)) {
+			FMLInterModComms.sendFunctionMessage(LPConstants.theOneProbeModID, "getTheOneProbe",
+					TheOneProbeIntegration.class.getName());
+		}
+
+		MainProxy.proxy.initModelLoader();
+
+		// init …
+
 		registerRecipes(); // TODO data fileS!!!!!
 
 		//Register Network channels
@@ -362,17 +395,10 @@ public class LogisticsPipes {
 		SimpleServiceLocator.setRoutedItemHelper(new RoutedItemHelper());
 		SimpleServiceLocator.setChannelManagerProvider(new ChannelManagerProvider());
 
-		NetworkRegistry.INSTANCE.registerGuiHandler(LogisticsPipes.instance, new GuiHandler());
+		// FIXME: GuiHandler is no more  RIP
+//		NetworkRegistry.INSTANCE.registerGuiHandler(LogisticsPipes.instance, new GuiHandler());
 		MinecraftForge.EVENT_BUS.register(new LPTickHandler());
-
-		if (event.getSide().equals(Side.CLIENT)) {
-			RenderTickHandler sub = new RenderTickHandler();
-			MinecraftForge.EVENT_BUS.register(sub);
-		}
 		MinecraftForge.EVENT_BUS.register(new QueuedTasks());
-		if (event.getSide() == Side.CLIENT) {
-			SimpleServiceLocator.setClientPacketBufferHandlerThread(new ClientPacketBufferHandlerThread());
-		}
 		SimpleServiceLocator.setServerPacketBufferHandlerThread(new ServerPacketBufferHandlerThread());
 		for (int i = 0; i < Configs.MULTI_THREAD_NUMBER; i++) {
 			new RoutingTableUpdateThread(i);
@@ -382,12 +408,6 @@ public class LogisticsPipes {
 		MinecraftForge.EVENT_BUS.register(PropertyUpdaterEventListener.INSTANCE);
 
 		LPDataFixer.INSTANCE.init();
-
-		if (event.getSide() == Side.SERVER) {
-			LogisticsPipes.textures.registerBlockIcons(null);
-		} else if (event.getSide() == Side.CLIENT) {
-			LPFontRenderer.Factory.asyncPreload();
-		}
 
 		// load all the models so they don't get loaded and crash on concurrent class loading
 		// the OBJParser is a non-sharable static thing
@@ -424,66 +444,19 @@ public class LogisticsPipes {
 
 			MinecraftForge.EVENT_BUS.register(minecraftTestInstance);
 		}
-	}
 
-	public static boolean isTesting() {
-		final String testSetting = System.getProperty("logisticspipes.test");
-		return testSetting != null && testSetting.equalsIgnoreCase("true");
-	}
+		// postInit …
 
-	@Mod.EventHandler
-	public void preInit(FMLPreInitializationEvent evt) {
-		StaticResolverUtil.useASMDataTable(evt.getAsmData());
-		PacketHandler.initialize();
-		NewGuiHandler.initialize();
-
-		LogisticsPipes.log = evt.getModLog();
-		log.info("====================================================");
-		log.info(" LogisticsPipes Logger initialized, enabled levels: ");
-		log.info("----------------------------------------------------");
-		log.info("    Fatal: " + log.isFatalEnabled());
-		log.info("    Error: " + log.isErrorEnabled());
-		log.info("    Warn:  " + log.isWarnEnabled());
-		log.info("    Info:  " + log.isInfoEnabled());
-		log.info("    Trace: " + log.isTraceEnabled());
-		log.info("    Debug: " + log.isDebugEnabled());
-		log.info("====================================================");
-		loadClasses();
-		ProxyManager.load();
-		Configs.load();
-		if (LogisticsPipes.certificateError) {
-			LogisticsPipes.log.fatal("Certificate not correct");
-			LogisticsPipes.log.fatal("This in not a LogisticsPipes version from RS485.");
-		}
-
-		if (LogisticsPipes.UNKNOWN.equals(LogisticsPipes.VERSION)) {
-			LogisticsPipes.log.warn("Could not determine Logistics Pipes version, we do need that " + JarFile.MANIFEST_NAME + ", don't you know?");
-		}
-		LogisticsPipes.log.info("Running " + getVersionString());
-
-		SimpleServiceLocator.setPipeInformationManager(new PipeInformationManager());
-		SimpleServiceLocator.setLogisticsFluidManager(new LogisticsFluidManager());
-
-		if (Loader.isModLoaded(LPConstants.theOneProbeModID)) {
-			FMLInterModComms.sendFunctionMessage(LPConstants.theOneProbeModID, "getTheOneProbe",
-					TheOneProbeIntegration.class.getName());
-		}
-
-		MainProxy.proxy.initModelLoader();
-	}
-
-	@Mod.EventHandler
-	public void postInit(FMLPostInitializationEvent event) {
 		postInitRun.forEach(Runnable::run);
 		postInitRun = null;
 
 		SpecialInventoryHandlerManager.load();
 		SpecialTankHandlerManager.load();
 
-		SimpleServiceLocator.buildCraftProxy.registerPipeInformationProvider();
-		SimpleServiceLocator.buildCraftProxy.initProxy();
-
-		SimpleServiceLocator.thermalDynamicsProxy.registerPipeInformationProvider();
+//		SimpleServiceLocator.buildCraftProxy.registerPipeInformationProvider();
+//		SimpleServiceLocator.buildCraftProxy.initProxy();
+//
+//		SimpleServiceLocator.thermalDynamicsProxy.registerPipeInformationProvider();
 
 		//SimpleServiceLocator.specialpipeconnection.registerHandler(new TeleportPipes());
 		//SimpleServiceLocator.specialtileconnection.registerHandler(new TesseractConnection());
@@ -492,29 +465,28 @@ public class LogisticsPipes {
 
 		//SimpleServiceLocator.addCraftingRecipeProvider(LogisticsWrapperHandler.getWrappedRecipeProvider("BuildCraft|Factory", "AutoWorkbench", AutoWorkbench.class));
 		//SimpleServiceLocator.addCraftingRecipeProvider(LogisticsWrapperHandler.getWrappedRecipeProvider("BuildCraft|Silicon", "AssemblyAdvancedWorkbench", AssemblyAdvancedWorkbench.class));
-		if (SimpleServiceLocator.buildCraftProxy.getAssemblyTableProviderClass() != null) {
-			SimpleServiceLocator.addCraftingRecipeProvider(LogisticsWrapperHandler.getWrappedRecipeProvider(LPConstants.bcSiliconModID, "AssemblyTable", SimpleServiceLocator.buildCraftProxy.getAssemblyTableProviderClass()));
-		}
-		SimpleServiceLocator.addCraftingRecipeProvider(new LogisticsCraftingTable());
+//		if (SimpleServiceLocator.buildCraftProxy.getAssemblyTableProviderClass() != null) {
+//			SimpleServiceLocator.addCraftingRecipeProvider(LogisticsWrapperHandler.getWrappedRecipeProvider(LPConstants.bcSiliconModID, "AssemblyTable", SimpleServiceLocator.buildCraftProxy.getAssemblyTableProviderClass()));
+//		}
+//		SimpleServiceLocator.addCraftingRecipeProvider(new LogisticsCraftingTable());
 
-		SimpleServiceLocator.machineProgressProvider.registerProgressProvider(LogisticsWrapperHandler.getWrappedProgressProvider(LPConstants.thermalExpansionModID, "Generic", ThermalExpansionProgressProvider.class));
-		SimpleServiceLocator.machineProgressProvider.registerProgressProvider(LogisticsWrapperHandler.getWrappedProgressProvider(LPConstants.ic2ModID, "Generic", IC2ProgressProvider.class));
+//		SimpleServiceLocator.machineProgressProvider.registerProgressProvider(LogisticsWrapperHandler.getWrappedProgressProvider(LPConstants.thermalExpansionModID, "Generic", ThermalExpansionProgressProvider.class));
+//		SimpleServiceLocator.machineProgressProvider.registerProgressProvider(LogisticsWrapperHandler.getWrappedProgressProvider(LPConstants.ic2ModID, "Generic", IC2ProgressProvider.class));
 		//SimpleServiceLocator.machineProgressProvider.registerProgressProvider(LogisticsWrapperHandler.getWrappedProgressProvider("EnderIO", "Generic", EnderIOProgressProvider.class));
-		SimpleServiceLocator.machineProgressProvider.registerProgressProvider(LogisticsWrapperHandler.getWrappedProgressProvider(LPConstants.enderCoreModID, "Generic", EnderCoreProgressProvider.class));
+//		SimpleServiceLocator.machineProgressProvider.registerProgressProvider(LogisticsWrapperHandler.getWrappedProgressProvider(LPConstants.enderCoreModID, "Generic", EnderCoreProgressProvider.class));
 
-		GameRegistry.registerTileEntity(LogisticsPowerJunctionTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "power_junction"));
-		GameRegistry.registerTileEntity(LogisticsRFPowerProviderTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "power_provider_rf"));
-		GameRegistry.registerTileEntity(LogisticsIC2PowerProviderTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "power_provider_ic2"));
-		GameRegistry.registerTileEntity(LogisticsSecurityTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "security_station"));
-		GameRegistry.registerTileEntity(LogisticsCraftingTableTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "logistics_crafting_table"));
-		GameRegistry.registerTileEntity(LogisticsTileGenericPipe.class, new ResourceLocation(LPConstants.LP_MOD_ID, "pipe"));
-		GameRegistry.registerTileEntity(LogisticsStatisticsTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "statistics_table"));
-		GameRegistry.registerTileEntity(LogisticsProgramCompilerTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "program_compiler"));
-		GameRegistry.registerTileEntity(LogisticsTileGenericSubMultiBlock.class, new ResourceLocation(LPConstants.LP_MOD_ID, "submultiblock"));
+		// FIXME: register tile entities
+//		GameRegistry.registerTileEntity(LogisticsPowerJunctionTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "power_junction"));
+//		GameRegistry.registerTileEntity(LogisticsRFPowerProviderTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "power_provider_rf"));
+//		GameRegistry.registerTileEntity(LogisticsIC2PowerProviderTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "power_provider_ic2"));
+//		GameRegistry.registerTileEntity(LogisticsSecurityTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "security_station"));
+//		GameRegistry.registerTileEntity(LogisticsCraftingTableTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "logistics_crafting_table"));
+//		GameRegistry.registerTileEntity(LogisticsTileGenericPipe.class, new ResourceLocation(LPConstants.LP_MOD_ID, "pipe"));
+//		GameRegistry.registerTileEntity(LogisticsStatisticsTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "statistics_table"));
+//		GameRegistry.registerTileEntity(LogisticsProgramCompilerTileEntity.class, new ResourceLocation(LPConstants.LP_MOD_ID, "program_compiler"));
+//		GameRegistry.registerTileEntity(LogisticsTileGenericSubMultiBlock.class, new ResourceLocation(LPConstants.LP_MOD_ID, "submultiblock"));
 
 		MainProxy.proxy.registerTileEntities();
-
-		SimpleServiceLocator.mcmpProxy.registerTileEntities();
 
 		//Registering special particles
 		MainProxy.proxy.registerParticles();
@@ -525,8 +497,13 @@ public class LogisticsPipes {
 		versionChecker = VersionChecker.runVersionCheck();
 	}
 
+	public static boolean isTesting() {
+		final String testSetting = System.getProperty("logisticspipes.test");
+		return testSetting != null && testSetting.equalsIgnoreCase("true");
+	}
+
+	@OnlyIn(Dist.CLIENT)
 	@SubscribeEvent
-	@SideOnly(Side.CLIENT)
 	public void textureLoad(TextureStitchEvent.Pre event) {
 		if (!event.getMap().getBasePath().equals("textures")) {
 			return;
@@ -581,14 +558,14 @@ public class LogisticsPipes {
 
 	public static <T extends Item> T setName(T item, String name, String modID) {
 		item.setRegistryName(modID, name);
-		item.setUnlocalizedName(String.format("%s.%s", modID, name));
+//		item.setUnlocalizedName(String.format("%s.%s", modID, name));
 		return item;
 	}
 
 	// TODO move somewhere
 	public static <T extends Block> T setName(T block, String name) {
 		block.setRegistryName(LPConstants.LP_MOD_ID, name);
-		block.setUnlocalizedName(String.format("%s.%s", LPConstants.LP_MOD_ID, name));
+//		block.setUnlocalizedName(String.format("%s.%s", LPConstants.LP_MOD_ID, name));
 		return block;
 	}
 
@@ -607,7 +584,7 @@ public class LogisticsPipes {
 		registry.register(setName(new LogisticsSolidBlock(LogisticsSolidBlock.Type.LOGISTICS_BC_POWERPROVIDER), "power_provider_mj"));
 		registry.register(setName(new LogisticsSolidBlock(LogisticsSolidBlock.Type.LOGISTICS_PROGRAM_COMPILER), "program_compiler"));
 
-		registry.register(setName(new BlockDummy(), "solid_block"));
+//		registry.register(setName(new BlockDummy(), "solid_block"));
 
 		registry.register(setName(new LogisticsBlockGenericPipe(), "pipe"));
 		registry.register(setName(new LogisticsBlockGenericSubMultiBlock(), "sub_multiblock"));
@@ -626,12 +603,12 @@ public class LogisticsPipes {
 		RecipeManager.recipeProvider.add(new CraftingRecipes());
 		RecipeManager.loadRecipes();
 
-		resetRecipeList.stream()
-				.map(Supplier::get)
-				.forEach(itemItemPair -> registerShapelessResetRecipe(itemItemPair.getValue1(), itemItemPair.getValue2()));
+		// FIXME
+//		resetRecipeList.stream()
+//				.map(Supplier::get)
+//				.forEach(itemItemPair -> registerShapelessResetRecipe(itemItemPair.getValue1(), itemItemPair.getValue2()));
 	}
 
-	@SneakyThrows
 	private void loadClasses() {
 		//Try to load all classes to let our checksums get generated
 		forName("net.minecraft.tileentity.TileEntity");
@@ -644,7 +621,6 @@ public class LogisticsPipes {
 		forName("crazypants.enderio.conduit.item.ItemConduit");
 		forName("crazypants.enderio.conduit.item.NetworkedInventory");
 		forName("crazypants.enderio.conduit.liquid.AbstractLiquidConduit");
-		forName("mcmultipart.block.BlockMultipartContainer");
 	}
 
 	private void forName(String string) {
@@ -653,12 +629,12 @@ public class LogisticsPipes {
 		} catch (Exception ignore) {}
 	}
 
-	@Mod.EventHandler
+	@SubscribeEvent
 	public void beforeStart(FMLServerAboutToStartEvent event) {
 		ServerTickDispatcher.INSTANCE.serverStart();
 	}
 
-	@Mod.EventHandler
+	@SubscribeEvent
 	public void cleanup(FMLServerStoppingEvent event) {
 		SimpleServiceLocator.routerManager.serverStopClean();
 		QueuedTasks.clearAllTasks();
@@ -666,24 +642,23 @@ public class LogisticsPipes {
 		PipeItemsSatelliteLogistics.cleanup();
 		PipeFluidSatellite.cleanup();
 		ServerRouter.cleanup();
-		if (event.getSide().equals(Side.CLIENT)) {
-			LogisticsHUDRenderer.instance().clear();
-		}
+		DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> LogisticsHUDRenderer.instance().clear());
 		ServerTickDispatcher.INSTANCE.cleanup();
 		LogisticsPipes.serverConfigManager = null;
 	}
 
-	@Mod.EventHandler
+	@SubscribeEvent
 	public void registerCommands(FMLServerStartingEvent event) {
-		event.registerServerCommand(new LogisticsPipesCommand());
+		// FIXME: make commands use com.mojang:brigadier
+		// event.getCommandDispatcher().register(LogisticsPipesCommand.builder());
 	}
 
-	@Mod.EventHandler
+	@SubscribeEvent
 	public void serverStarted(FMLServerStartedEvent event) {
 		if (minecraftTestStartMethod != null) minecraftTestStartMethod.accept(event);
 	}
 
-	@Mod.EventHandler
+	@SubscribeEvent
 	public void certificateWarning(FMLFingerprintViolationEvent warning) {
 		LogisticsPipes.certificateError = true;
 		if (!LogisticsPipes.isDEBUG()) {
@@ -692,13 +667,6 @@ public class LogisticsPipes {
 			System.out.println("[LogisticsPipes|Certificate] File: " + warning.getSource().getAbsolutePath());
 			System.out.println("[LogisticsPipes|Certificate] This in not a LogisticsPipes version from RS485.");
 		}
-	}
-
-	public static Object getComputerLP() {
-		if (LogisticsPipes.generalAccess == null) {
-			LogisticsPipes.generalAccess = new LPGlobalCCAccess();
-		}
-		return LogisticsPipes.generalAccess;
 	}
 
 	public void registerPipes(IForgeRegistry<Item> registry) {
@@ -757,24 +725,25 @@ public class LogisticsPipes {
 		}
 	}
 
-	protected void registerShapelessResetRecipe(Item fromItem, Item toItem) {
-		NonNullList<Ingredient> list = NonNullList.create();
-		list.add(CraftingHelper.getIngredient(new ItemStack(fromItem, 1, 0)));
-
-		ItemStack output = new ItemStack(toItem, 1, 0);
-
-		ResourceLocation baseLoc = new ResourceLocation(LPConstants.LP_MOD_ID, fromItem.getRegistryName().getResourcePath() + ".resetrecipe");
-		ResourceLocation recipeLoc = baseLoc;
-		int index = 0;
-		while (CraftingManager.REGISTRY.containsKey(recipeLoc)) {
-			index++;
-			recipeLoc = new ResourceLocation(LPConstants.LP_MOD_ID, baseLoc.getResourcePath() + "_" + index);
-		}
-
-		ShapelessRecipes recipe = new ShapelessRecipes("logisticspipes.resetrecipe.pipe", output, list);
-		recipe.setRegistryName(recipeLoc);
-		GameData.register_impl(recipe);
-	}
+	// FIXME
+//	protected void registerShapelessResetRecipe(Item fromItem, Item toItem) {
+//		NonNullList<Ingredient> list = NonNullList.create();
+//		list.add(CraftingHelper.getIngredient(new ItemStack(fromItem, 1)));
+//
+//		ItemStack output = new ItemStack(toItem, 1);
+//
+//		ResourceLocation baseLoc = new ResourceLocation(LPConstants.LP_MOD_ID, fromItem.getRegistryName().getPath() + ".resetrecipe");
+//		ResourceLocation recipeLoc = baseLoc;
+//		int index = 0;
+//		while (CraftingManager.REGISTRY.containsKey(recipeLoc)) {
+//			index++;
+//			recipeLoc = new ResourceLocation(LPConstants.LP_MOD_ID, baseLoc.getPath() + "_" + index);
+//		}
+//
+//		ShapelessRecipes recipe = new ShapelessRecipe("logisticspipes.resetrecipe.pipe", output, list);
+//		recipe.setRegistryName(recipeLoc);
+//		GameData.register_impl(recipe);
+//	}
 
 	public static ClientConfiguration getClientPlayerConfig() {
 		if (LogisticsPipes.playerConfig == null) {

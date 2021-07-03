@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import logisticspipes.interfaces.routing.ISpecialTileConnection;
 import logisticspipes.logisticspipes.IRoutedItem;
@@ -34,7 +34,7 @@ public class EnderIOTransceiverConnection implements ISpecialTileConnection {
 	@Override
 	public Collection<TileEntity> getConnections(TileEntity tile) {
 		boolean onlyOnePipe = false;
-		for (EnumFacing direction : EnumFacing.VALUES) {
+		for (Direction direction : Direction.values()) {
 			DoubleCoordinates p = CoordinateUtils.add(new DoubleCoordinates(tile), direction);
 			TileEntity candidate = p.getTileEntity(tile.getWorld());
 			if (candidate instanceof LogisticsTileGenericPipe && MainProxy.checkPipesConnections(tile, candidate, direction)) {
@@ -56,7 +56,7 @@ public class EnderIOTransceiverConnection implements ISpecialTileConnection {
 				continue;
 			}
 			LogisticsTileGenericPipe pipe = null;
-			for (EnumFacing direction : EnumFacing.VALUES) {
+			for (Direction direction : Direction.values()) {
 				DoubleCoordinates p = CoordinateUtils.add(new DoubleCoordinates(connected), direction);
 				TileEntity candidate = p.getTileEntity(tile.getWorld());
 				if (candidate instanceof LogisticsTileGenericPipe && MainProxy.checkPipesConnections(connected, candidate, direction)) {

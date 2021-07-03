@@ -1,0 +1,11 @@
+<root>
+    <item name='net.minecraftforge.common.util.LazyOptional T orElse(T)'>
+        <annotation name='javax.annotation.Nullable'/>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;!null -&gt; !null&quot;"/>
+        </annotation>
+    </item>
+    <item name='net.minecraftforge.common.util.LazyOptional T orElse(T) 0'>
+        <annotation name='javax.annotation.Nullable'/>
+    </item>
+</root>

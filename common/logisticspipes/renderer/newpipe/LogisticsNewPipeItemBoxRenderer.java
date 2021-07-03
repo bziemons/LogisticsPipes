@@ -10,8 +10,8 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import org.lwjgl.opengl.GL11;
 
@@ -29,7 +29,7 @@ public class LogisticsNewPipeItemBoxRenderer {
 	private static final ResourceLocation BLOCKS = new ResourceLocation("textures/atlas/blocks.png");
 	private static final Map<FluidIdentifier, int[]> renderLists = new HashMap<>();
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public void doRenderItem(@Nonnull ItemStack itemstack, float light, double x, double y, double z, double boxScale, double yaw, double pitch, double yawForPitch) {
 		if (LogisticsNewRenderPipe.innerTransportBox == null) return;
 		GL11.glPushMatrix();
@@ -48,7 +48,7 @@ public class LogisticsNewPipeItemBoxRenderer {
 		}
 
 		GL11.glTranslated(x, y, z);
-		Minecraft.getMinecraft().getTextureManager().bindTexture(LogisticsNewPipeItemBoxRenderer.BLOCKS);
+		Minecraft.getInstance().getTextureManager().bindTexture(LogisticsNewPipeItemBoxRenderer.BLOCKS);
 		GL11.glScaled(boxScale, boxScale, boxScale);
 		GL11.glRotated(yawForPitch, 0, 1, 0);
 		GL11.glRotated(pitch, 1, 0, 0);
@@ -115,7 +115,7 @@ public class LogisticsNewPipeItemBoxRenderer {
 		block.minZ = 0.32;
 		block.maxZ = 0.68;
 
-		CustomBlockRenderer.INSTANCE.renderBlock(block, Minecraft.getMinecraft().theWorld, 0, 0, 0, false, true);
+		CustomBlockRenderer.INSTANCE.renderBlock(block, Minecraft.getInstance().theWorld, 0, 0, 0, false, true);
 
 		GL11.glEndList();
 		return array[pos];

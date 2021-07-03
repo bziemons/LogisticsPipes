@@ -47,9 +47,9 @@ object FontParser {
 
     fun read(resourceLocation: ResourceLocation): BDF? {
         return try {
-            read(Minecraft.getMinecraft().resourceManager.getResource(resourceLocation).inputStream.bufferedReader().use { it.readLines() })
+            read(Minecraft.getInstance().resourceManager.getResource(resourceLocation).inputStream.bufferedReader().use { it.readLines() })
         } catch (e: IOException) {
-            LogisticsPipes.log.error("Font ${resourceLocation.resourcePath} not found, and will not be rendered.", e)
+            LogisticsPipes.getLOGGER().error("Font ${resourceLocation.path} not found, and will not be rendered.", e)
             null
         }
     }
@@ -136,7 +136,7 @@ object FontParser {
                     currentByte = 0
                 }
 
-                else -> if(LogisticsPipes.isDEBUG()) LogisticsPipes.log.warn("[@$state][Ln$index] Declaration start not recognized: $head")
+                else -> if(LogisticsPipes.isDEBUG()) LogisticsPipes.getLOGGER().warn("[@$state][Ln$index] Declaration start not recognized: $head")
             }
         }
 

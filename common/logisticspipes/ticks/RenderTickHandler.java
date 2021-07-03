@@ -3,27 +3,27 @@ package logisticspipes.ticks;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
 import net.minecraftforge.fml.common.gameevent.TickEvent.RenderTickEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.LPBlocks;
@@ -74,25 +74,25 @@ public class RenderTickHandler {
 	//private static final ResourceLocation TEXTURE = new ResourceLocation("logisticspipes", "textures/blocks/pipes/White.png");
 
 	@SubscribeEvent
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public void renderWorldLast(RenderWorldLastEvent worldEvent) {
 		//if (LogisticsRenderPipe.config.isUseNewRenderer()) {
 		if (displayPipeGhost()) {
-			Minecraft mc = Minecraft.getMinecraft();
-			EntityPlayer player = mc.player;
+			Minecraft mc = Minecraft.getInstance();
+			PlayerEntity player = mc.player;
 			RayTraceResult box = mc.objectMouseOver;
 			if (box != null && box.typeOfHit == RayTraceResult.Type.BLOCK) {
 				ItemStack stack = FMLClientHandler.instance().getClient().player.inventory.mainInventory.get(FMLClientHandler.instance().getClient().player.inventory.currentItem);
 				CoreUnroutedPipe pipe = ((ItemLogisticsPipe) stack.getItem()).getDummyPipe();
 
 				World world = player.getEntityWorld();
-				EnumFacing side = box.sideHit;
+				Direction side = box.sideHit;
 				BlockPos bPos = box.getBlockPos();
 
 				Block block = world.getBlockState(bPos).getBlock();
 
 				if (block == Blocks.SNOW_LAYER && block.isReplaceable(world, bPos)) {
-					side = EnumFacing.UP;
+					side = Direction.UP;
 				} else if (!block.isReplaceable(world, bPos)) {
 					bPos = bPos.offset(side);
 				}
@@ -153,15 +153,15 @@ public class RenderTickHandler {
 
 					GlStateManager.enableBlend();
 					//GL11.glDepthMask(false);
-					GlStateManager.disableTexture2D();
+					GlStateManager.disableTexture();
 					GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 
-					mc.renderEngine.bindTexture(new ResourceLocation("logisticspipes", "textures/blocks/pipes/white.png"));
+					mc.textureManager.bindTexture(new ResourceLocation("logisticspipes", "textures/blocks/pipes/white.png"));
 
 					SimpleServiceLocator.cclProxy.getRenderState().reset();
 					SimpleServiceLocator.cclProxy.getRenderState().setAlphaOverride(0xff);
 
-					GlStateManager.enableTexture2D();
+					GlStateManager.enableTexture();
 
 					SimpleServiceLocator.cclProxy.getRenderState().setAlphaOverride(0x50);
 					SimpleServiceLocator.cclProxy.getRenderState().startDrawing(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);

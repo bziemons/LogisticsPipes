@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
 
 import lombok.experimental.Accessors;
 
@@ -31,7 +31,7 @@ public class PlayerIdentifier {
 		return username;
 	}
 
-	public static PlayerIdentifier get(EntityPlayer player) {
+	public static PlayerIdentifier get(PlayerEntity player) {
 		return PlayerIdentifier.get(player.getGameProfile().getName(), player.getGameProfile().getId());
 	}
 
@@ -55,16 +55,16 @@ public class PlayerIdentifier {
 		return ident;
 	}
 
-	public void writeToNBT(NBTTagCompound nbt, String prefix) {
+	public void writeToNBT(CompoundNBT nbt, String prefix) {
 		if (id != null) {
-			nbt.setString(prefix + "_id", id.toString());
+			nbt.putString(prefix + "_id", id.toString());
 		}
-		nbt.setString(prefix + "_name", username);
+		nbt.putString(prefix + "_name", username);
 	}
 
-	public static PlayerIdentifier readFromNBT(NBTTagCompound nbt, String prefix) {
+	public static PlayerIdentifier readFromNBT(CompoundNBT nbt, String prefix) {
 		UUID id = null;
-		if (nbt.hasKey(prefix + "_id")) {
+		if (nbt.contains(prefix + "_id")) {
 			String tmp = nbt.getString(prefix + "_id");
 			try {
 				id = UUID.fromString(tmp);

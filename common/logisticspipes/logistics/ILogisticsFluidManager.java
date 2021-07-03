@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.TreeSet;
 import javax.annotation.Nullable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.IRouter;
 import logisticspipes.utils.FluidIdentifierStack;
@@ -18,7 +21,8 @@ public interface ILogisticsFluidManager {
 
 	ItemIdentifierStack getFluidContainer(FluidIdentifierStack stack);
 
-	FluidIdentifierStack getFluidFromContainer(ItemIdentifierStack stack);
+	@Nullable
+	FluidIdentifierStack getFluidFromContainer(@Nonnull ItemIdentifierStack stack);
 
 	TreeSet<FluidIdentifierStack> getAvailableFluid(List<ExitRoute> list);
 }

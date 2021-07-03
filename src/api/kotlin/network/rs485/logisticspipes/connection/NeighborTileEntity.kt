@@ -38,13 +38,10 @@
 package network.rs485.logisticspipes.connection
 
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.EnumFacing
-import net.minecraftforge.common.capabilities.Capability
+import net.minecraft.util.Direction
 
-abstract class NeighborTileEntity<T : TileEntity>(val tileEntity: T, val direction: EnumFacing) {
-    open fun getOurDirection(): EnumFacing = direction.opposite
-
-    fun hasCapability(capability: Capability<*>): Boolean = tileEntity.hasCapability(capability, getOurDirection())
+abstract class NeighborTileEntity<T : TileEntity>(val tileEntity: T, val direction: Direction) {
+    open fun getOurDirection(): Direction = direction.opposite
 
     abstract fun isLogisticsPipe(): Boolean
 

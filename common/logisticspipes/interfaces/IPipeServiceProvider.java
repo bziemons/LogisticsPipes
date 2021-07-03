@@ -3,7 +3,7 @@ package logisticspipes.interfaces;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 
 import logisticspipes.api.IRoutedPowerProvider;
@@ -40,17 +40,19 @@ public interface IPipeServiceProvider extends IRoutedPowerProvider, ISpawnPartic
 	 * Only makes sense to use this on the chassis pipe.
 	 */
 	@Nullable
-	EnumFacing getPointedOrientation();
+	Direction getPointedDirection();
 
 	/**
 	 * to interact and send items you need to know about orders, upgrades, and have the ability to send
 	 */
 	LogisticsItemOrderManager getItemOrderManager();
 
-	void queueRoutedItem(IRoutedItem routedItem, EnumFacing from);
+	void queueRoutedItem(IRoutedItem routedItem, Direction from);
 
 	@Nonnull
 	ISlotUpgradeManager getUpgradeManager(LogisticsModule.ModulePositionType slot, int positionInt);
 
 	int countOnRoute(ItemIdentifier item);
+
+	void markDirty();
 }

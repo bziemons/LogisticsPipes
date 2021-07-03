@@ -11,14 +11,14 @@ import javax.annotation.Nullable;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.registries.IForgeRegistry;
-
-import org.lwjgl.input.Keyboard;
 
 import logisticspipes.LPItems;
 import logisticspipes.LogisticsPipes;
@@ -120,7 +120,9 @@ public class ItemUpgrade extends LogisticsItem {
 	@Nonnull
 	public static Item getAndCheckUpgrade(ResourceLocation resource) {
 		Objects.requireNonNull(resource, "Resource for upgrade is null. Was the upgrade registered?");
-		return Objects.requireNonNull(Item.REGISTRY.getObject(resource), "Upgrade " + resource.toString() + " not found in Item registry");
+		final Item item = Registry.ITEM.getOrDefault(resource);
+		if (item == Items.AIR) throw new IllegalStateException("Upgrade " + resource.toString() + " not found in Item registry");
+		return item;
 	}
 
 	public static void registerUpgrade(IForgeRegistry<Item> registry, String name, Supplier<? extends IPipeUpgrade> upgradeConstructor) {
@@ -159,7 +161,7 @@ public class ItemUpgrade extends LogisticsItem {
 	public static String SHIFT_INFO_PREFIX = "item.upgrade.info.";
 
 	@Override
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
 		super.addInformation(stack, worldIn, tooltip, flagIn);
 		IPipeUpgrade upgrade = getUpgradeForItem(stack, null);
@@ -171,7 +173,7 @@ public class ItemUpgrade extends LogisticsItem {
 		if (pipe.isEmpty() && module.isEmpty()) {
 			return;
 		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
+		if (InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LSHIFT) || InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_RSHIFT)) {
 			if (!pipe.isEmpty() && !module.isEmpty()) {
 				//Can be applied to {0} pipes
 				//and {0} modules

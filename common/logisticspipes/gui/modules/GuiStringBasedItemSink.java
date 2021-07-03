@@ -111,7 +111,7 @@ public class GuiStringBasedItemSink extends ModuleBaseGui {
 
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		GuiGraphics.drawPlayerInventoryBackground(mc, guiLeft + 7, guiTop + 126);
 		GuiGraphics.drawSlotBackground(mc, guiLeft + 6, guiTop + 7);
 		SimpleGraphics.drawRectNoBlend(guiLeft + 26, guiTop + 5, guiLeft + 169, guiTop + 17, Color.DARK_GREY, 0.0);

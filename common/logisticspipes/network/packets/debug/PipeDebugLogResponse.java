@@ -1,9 +1,9 @@
 package logisticspipes.network.packets.debug;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.text.StringTextComponent;
 
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
@@ -17,11 +17,11 @@ public class PipeDebugLogResponse extends CoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsTileGenericPipe tile = this.getPipe(player.getEntityWorld());
 		if (tile != null) {
 			((CoreRoutedPipe) tile.pipe).debug.openForPlayer(player);
-			player.sendMessage(new TextComponentString("Debug log enabled."));
+			player.sendMessage(new StringTextComponent("Debug log enabled."));
 		}
 	}
 

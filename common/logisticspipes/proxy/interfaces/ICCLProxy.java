@@ -7,9 +7,9 @@ import java.util.Map;
 
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.model.IModelState;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 import logisticspipes.proxy.object3d.interfaces.I3DOperation;
 import logisticspipes.proxy.object3d.interfaces.IModel3D;
@@ -21,7 +21,7 @@ import logisticspipes.proxy.object3d.operation.LPScale;
 
 public interface ICCLProxy {
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	TextureTransformation createIconTransformer(TextureAtlasSprite registerIcon);
 
 	IRenderState getRenderState();

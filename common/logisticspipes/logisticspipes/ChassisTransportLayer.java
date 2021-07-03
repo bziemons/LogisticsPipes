@@ -1,6 +1,6 @@
 package logisticspipes.logisticspipes;
 
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import logisticspipes.modules.LogisticsModule;
 import logisticspipes.pipes.PipeLogisticsChassis;
@@ -16,11 +16,11 @@ public class ChassisTransportLayer extends TransportLayer {
 	}
 
 	@Override
-	public EnumFacing itemArrived(IRoutedItem item, EnumFacing blocked) {
+	public Direction itemArrived(IRoutedItem item, Direction blocked) {
 		if (item.getItemIdentifierStack() != null) {
 			_chassiPipe.recievedItem(item.getItemIdentifierStack().getStackSize());
 		}
-		return _chassiPipe.getPointedOrientation();
+		return _chassiPipe.getPointedDirection();
 	}
 
 	@Override
@@ -42,9 +42,9 @@ public class ChassisTransportLayer extends TransportLayer {
 		}
 
 		if (reply.maxNumberOfItems > 0 && itemidStack.getStackSize() > reply.maxNumberOfItems) {
-			EnumFacing o = _chassiPipe.getPointedOrientation();
+			Direction o = _chassiPipe.getPointedDirection();
 			if (o == null) {
-				o = EnumFacing.UP;
+				o = Direction.UP;
 			}
 
 			item.split(reply.maxNumberOfItems, o);

@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.routingdebug;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -25,7 +25,7 @@ public class RoutingUpdateCanidatePipe extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		// do not handle packet if the ExitRoute could not be read
 		if (exitRoute != null) {
 			ClientViewController.instance().handlePacket(this);
@@ -47,7 +47,7 @@ public class RoutingUpdateCanidatePipe extends ModernPacket {
 		try {
 			exitRoute = new ExitRoute(input);
 		} catch (RuntimeException e) {
-			LogisticsPipes.log.error("Could not read ExitRoute from RoutingUpdateCanidatePipe", e);
+			LogisticsPipes.getLOGGER().error("Could not read ExitRoute from RoutingUpdateCanidatePipe", e);
 		}
 	}
 

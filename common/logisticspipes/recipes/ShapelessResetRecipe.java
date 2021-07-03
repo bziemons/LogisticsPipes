@@ -30,7 +30,7 @@ public class ShapelessResetRecipe extends IForgeRegistryEntry.Impl<IRecipe> impl
 			if (stack.isEmpty()) {
 				continue;
 			}
-			if (stack.getItem() != item || stack.getItemDamage() != meta) {
+			if (stack.getItem() != item || stack.getDamage() != meta) {
 				return false;
 			}
 			nmatches++;

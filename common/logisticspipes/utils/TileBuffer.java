@@ -1,9 +1,9 @@
 package logisticspipes.utils;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -42,7 +42,7 @@ public final class TileBuffer {
 			return;
 		}
 
-		IBlockState blockState = world.getBlockState(new BlockPos(x, y, z));
+		BlockState blockState = world.getBlockState(new BlockPos(x, y, z));
 		block = blockState != null ? blockState.getBlock() : null;
 
 		if (block != null && block.hasTileEntity(world.getBlockState(new BlockPos(x, y, z)))) {
@@ -57,14 +57,14 @@ public final class TileBuffer {
 	}
 
 	public Block getBlock() {
-		if (tile != null && !tile.isInvalid()) {
+		if (tile != null && !tile.isRemoved()) {
 			return block;
 		}
 
 		if (tracker.markTimeIfDelay(world)) {
 			refresh();
 
-			if (tile != null && !tile.isInvalid()) {
+			if (tile != null && !tile.isRemoved()) {
 				return block;
 			}
 		}
@@ -73,14 +73,14 @@ public final class TileBuffer {
 	}
 
 	public TileEntity getTile() {
-		if (tile != null && !tile.isInvalid()) {
+		if (tile != null && !tile.isRemoved()) {
 			return tile;
 		}
 
 		if (tracker.markTimeIfDelay(world)) {
 			refresh();
 
-			if (tile != null && !tile.isInvalid()) {
+			if (tile != null && !tile.isRemoved()) {
 				return tile;
 			}
 		}
@@ -89,10 +89,10 @@ public final class TileBuffer {
 	}
 
 	public boolean exists() {
-		if (tile != null && !tile.isInvalid()) {
+		if (tile != null && !tile.isRemoved()) {
 			return true;
 		}
-		IBlockState blockState = world.getBlockState(new BlockPos(x, y, z));
+		BlockState blockState = world.getBlockState(new BlockPos(x, y, z));
 		return blockState != null && blockState.getBlock() != null;
 	}
 
@@ -100,7 +100,7 @@ public final class TileBuffer {
 		TileBuffer[] buffer = new TileBuffer[6];
 
 		for (int i = 0; i < 6; i++) {
-			EnumFacing d = EnumFacing.getFront(i);
+			Direction d = Direction.getFront(i);
 			buffer[i] = new TileBuffer(world, pos.getX() + d.getFrontOffsetX(), pos.getY() + d.getFrontOffsetY(), pos.getZ() + d.getFrontOffsetZ(), loadUnloaded);
 		}
 

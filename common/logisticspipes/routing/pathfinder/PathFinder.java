@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.world.World;
 
 import logisticspipes.LogisticsPipes;
@@ -65,7 +65,7 @@ public class PathFinder {
 	 *            - The maximum recurse depth, i.e. the maximum length pipe that
 	 *            is supported
 	 */
-	public static HashMap<CoreRoutedPipe, ExitRoute> paintAndgetConnectedRoutingPipes(TileEntity startPipe, EnumFacing startOrientation, int maxVisited, int maxLength, IPaintPath pathPainter, EnumSet<PipeRoutingConnectionType> connectionType) {
+	public static HashMap<CoreRoutedPipe, ExitRoute> paintAndgetConnectedRoutingPipes(TileEntity startPipe, Direction startOrientation, int maxVisited, int maxLength, IPaintPath pathPainter, EnumSet<PipeRoutingConnectionType> connectionType) {
 		IPipeInformationProvider startProvider = SimpleServiceLocator.pipeInformationManager.getInformationProviderFor(startPipe);
 		if (startProvider == null) {
 			return new HashMap<>();
@@ -92,7 +92,7 @@ public class PathFinder {
 		result = getConnectedRoutingPipes(startPipe, EnumSet.allOf(PipeRoutingConnectionType.class), null);
 	}
 
-	public PathFinder(IPipeInformationProvider startPipe, int maxVisited, int maxLength, EnumFacing side) {
+	public PathFinder(IPipeInformationProvider startPipe, int maxVisited, int maxLength, Direction side) {
 		this(maxVisited, maxLength, null);
 		result = getConnectedRoutingPipes(startPipe, EnumSet.allOf(PipeRoutingConnectionType.class), side);
 	}
@@ -120,7 +120,7 @@ public class PathFinder {
 	public Set<List<ITileEntityChangeListener>> listenedPipes = new HashSet<>();
 	public Set<LPTileEntityObject> touchedPipes = new HashSet<>();
 
-	private HashMap<CoreRoutedPipe, ExitRoute> getConnectedRoutingPipes(IPipeInformationProvider startPipe, EnumSet<PipeRoutingConnectionType> connectionFlags, EnumFacing side) {
+	private HashMap<CoreRoutedPipe, ExitRoute> getConnectedRoutingPipes(IPipeInformationProvider startPipe, EnumSet<PipeRoutingConnectionType> connectionFlags, Direction side) {
 		HashMap<CoreRoutedPipe, ExitRoute> foundPipes = new HashMap<>();
 
 		final int setVisitedSize = setVisited.size();
@@ -198,10 +198,10 @@ public class PathFinder {
 			}
 		}
 
-		ArrayDeque<Quartet<TileEntity, EnumFacing, Integer, Boolean>> connections = new ArrayDeque<>();
+		ArrayDeque<Quartet<TileEntity, Direction, Integer, Boolean>> connections = new ArrayDeque<>();
 
 		//Recurse in all directions
-		for (EnumFacing direction : EnumFacing.VALUES) {
+		for (Direction direction : Direction.values()) {
 			if (root && side != null && !direction.equals(side)) {
 				continue;
 			}
@@ -212,7 +212,7 @@ public class PathFinder {
 			if (tile == null) {
 				continue;
 			}
-			if (root && (direction.getAxis() == EnumFacing.Axis.X || direction.getAxis() == EnumFacing.Axis.Z)) {
+			if (root && (direction.getAxis() == Direction.Axis.X || direction.getAxis() == Direction.Axis.Z)) {
 				if (tile instanceof ILogisticsPowerProvider) {
 					if (powerNodes == null) {
 						powerNodes = new ArrayList<>();
@@ -239,9 +239,9 @@ public class PathFinder {
 		}
 
 		while (!connections.isEmpty()) {
-			Quartet<TileEntity, EnumFacing, Integer, Boolean> quartet = connections.pollFirst();
+			Quartet<TileEntity, Direction, Integer, Boolean> quartet = connections.pollFirst();
 			TileEntity tile = quartet.getValue1();
-			EnumFacing direction = quartet.getValue2();
+			Direction direction = quartet.getValue2();
 			int resistance = quartet.getValue3();
 			boolean isDirectConnection = quartet.getValue4();
 			EnumSet<PipeRoutingConnectionType> nextConnectionFlags = EnumSet.copyOf(connectionFlags);
@@ -258,10 +258,19 @@ public class PathFinder {
 				}
 			}
 
-			if (!SimpleServiceLocator.pipeInformationManager.isPipe(tile) && tile.hasCapability(LogisticsPipes.ITEM_HANDLER_CAPABILITY, direction.getOpposite()) && startPipe.isRoutingPipe() && startPipe.getRoutingPipe() instanceof IChannelRoutingConnection && startPipe.canConnect(tile, direction, false)) {
-				if (SimpleServiceLocator.connectionManager.hasChannelConnection(startPipe.getRoutingPipe().getRouter())) {
-					List<CoreRoutedPipe> connectedPipes = SimpleServiceLocator.connectionManager.getConnectedPipes(startPipe.getRoutingPipe().getRouter());
-					connections.addAll(connectedPipes.stream().map(pipe -> new Quartet<>((TileEntity) pipe.container, direction, ((IChannelRoutingConnection) startPipe.getRoutingPipe()).getConnectionResistance(), true)).collect(Collectors.toList()));
+			if (!SimpleServiceLocator.pipeInformationManager.isPipe(tile)
+					&& tile.getCapability(LogisticsPipes.ITEM_HANDLER_CAPABILITY, direction.getOpposite()).isPresent()
+					&& startPipe.isRoutingPipe()
+					&& startPipe.getRoutingPipe() instanceof IChannelRoutingConnection
+					&& startPipe.canConnect(tile, direction, false)) {
+				if (SimpleServiceLocator.connectionManager
+						.hasChannelConnection(startPipe.getRoutingPipe().getRouter())) {
+					List<CoreRoutedPipe> connectedPipes = SimpleServiceLocator.connectionManager
+							.getConnectedPipes(startPipe.getRoutingPipe().getRouter());
+					connections.addAll(connectedPipes.stream()
+							.map(pipe -> new Quartet<>((TileEntity) pipe.container, direction,
+									((IChannelRoutingConnection) startPipe.getRoutingPipe()).getConnectionResistance(),
+									true)).collect(Collectors.toList()));
 					if (!connectedPipes.isEmpty()) {
 						continue;
 					}
@@ -387,7 +396,7 @@ public class PathFinder {
 		}
 	}
 
-	public static int messureDistanceToNextRoutedPipe(DoubleCoordinates lpPosition, EnumFacing exitOrientation, World world) {
+	public static int messureDistanceToNextRoutedPipe(DoubleCoordinates lpPosition, Direction exitOrientation, World world) {
 		int dis = 1;
 		TileEntity tile = lpPosition.getTileEntity(world);
 		if (tile instanceof LogisticsTileGenericPipe) {

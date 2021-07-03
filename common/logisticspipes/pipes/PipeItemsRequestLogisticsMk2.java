@@ -2,13 +2,13 @@ package logisticspipes.pipes;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.entity.item.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.text.TranslationTextComponent;
 
 import logisticspipes.LPItems;
 import logisticspipes.LogisticsPipes;
@@ -29,51 +29,51 @@ public class PipeItemsRequestLogisticsMk2 extends PipeItemsRequestLogistics {
 	}
 
 	@Override
-	public boolean handleClick(EntityPlayer entityplayer, SecuritySettings settings) {
+	public boolean handleClick(PlayerEntity player, SecuritySettings settings) {
 		//allow using upgrade manager
-		if (MainProxy.isPipeControllerEquipped(entityplayer) && !(entityplayer.isSneaking())) {
+		if (MainProxy.isPipeControllerEquipped(PlayerEntity) && !(PlayerEntity.isSneaking())) {
 			return false;
 		}
 		if (MainProxy.isServer(getWorld())) {
 			if (settings == null || settings.openGui) {
-				openGui(entityplayer);
+				openGui(PlayerEntity);
 			} else {
-				entityplayer.sendMessage(new TextComponentTranslation("lp.chat.permissiondenied"));
+				PlayerEntity.sendMessage(new TranslationTextComponent("lp.chat.permissiondenied"));
 			}
 		}
 		return true;
 	}
 
 	@Override
-	public void openGui(EntityPlayer entityplayer) {
+	public void openGui(PlayerEntity player) {
 		boolean flag = true;
 		if (disk.isEmpty()) {
-			if (!entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).isEmpty() && entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem().equals(LPItems.disk)) {
-				disk = entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
-				entityplayer.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, ItemStack.EMPTY);
+			if (!PlayerEntity.getItemStackFromSlot(EquipmentSlotType.MAINHAND).isEmpty() && PlayerEntity.getItemStackFromSlot(EquipmentSlotType.MAINHAND).getItem().equals(LPItems.disk)) {
+				disk = PlayerEntity.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
+				PlayerEntity.setItemStackToSlot(EquipmentSlotType.MAINHAND, ItemStack.EMPTY);
 				flag = false;
 			}
 		}
 		if (flag) {
-			entityplayer.openGui(LogisticsPipes.instance, GuiIDs.GUI_Normal_Mk2_Orderer_ID, getWorld(), getX(), getY(), getZ());
+			PlayerEntity.openGui(LogisticsPipes.instance, GuiIDs.GUI_Normal_Mk2_Orderer_ID, getWorld(), getX(), getY(), getZ());
 		}
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		super.writeToNBT(nbttagcompound);
+	public void writeToNBT(CompoundNBT tag) {
+		super.writeToNBT(tag);
 		if (!disk.isEmpty()) {
-			NBTTagCompound itemNBT = new NBTTagCompound();
+			CompoundNBT itemNBT = new CompoundNBT();
 			disk.writeToNBT(itemNBT);
-			nbttagcompound.setTag("Disk", itemNBT);
+			tag.put("Disk", itemNBT);
 		}
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		super.readFromNBT(nbttagcompound);
-		if (nbttagcompound.hasKey("Disk")) {
-			NBTTagCompound item = nbttagcompound.getCompoundTag("Disk");
+	public void readFromNBT(CompoundNBT tag) {
+		super.readFromNBT(CompoundNBT);
+		if (tag.contains("Disk")) {
+			CompoundNBT item = CompoundNBT.getCompound("Disk");
 			disk = ItemStackLoader.loadAndFixItemStackFromNBT(item);
 		}
 	}
@@ -97,7 +97,7 @@ public class PipeItemsRequestLogisticsMk2 extends PipeItemsRequestLogistics {
 
 	public void dropDisk() {
 		if (!disk.isEmpty()) {
-			EntityItem item = new EntityItem(getWorld(), getX(), getY(), getZ(), disk);
+			ItemEntity item = new ItemEntity(getWorld(), getX(), getY(), getZ(), disk);
 			getWorld().spawnEntity(item);
 			disk = ItemStack.EMPTY;
 		}

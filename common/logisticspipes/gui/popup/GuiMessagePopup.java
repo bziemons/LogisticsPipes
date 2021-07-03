@@ -46,7 +46,7 @@ public class GuiMessagePopup extends SubGuiScreen {
 			xSize = mWidth = Math.max(Math.min(lWidth + 20, 400), 120);
 			super.initGui();
 		}
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		for (int i = 0; i < 9 && i < text.length; i++) {
 			if (text[i] == null) {
 				continue;

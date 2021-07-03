@@ -3,12 +3,12 @@ package logisticspipes.utils.gui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public abstract class IItemTextureRenderSlot implements IRenderSlot {
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public abstract TextureAtlasSprite getTextureIcon();
 
 	public abstract boolean drawSlotIcon();

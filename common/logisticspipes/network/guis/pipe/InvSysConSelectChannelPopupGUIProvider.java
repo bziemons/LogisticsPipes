@@ -1,6 +1,6 @@
 package logisticspipes.network.guis.pipe;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.gui.popup.GuiSelectChannelPopup;
 import logisticspipes.network.PacketHandler;
@@ -20,7 +20,7 @@ public class InvSysConSelectChannelPopupGUIProvider extends ChannelInformationLi
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		LogisticsTileGenericPipe bPipe = getTileAs(player.world, LogisticsTileGenericPipe.class);
 		if (!(bPipe.pipe instanceof PipeItemsInvSysConnector)) {
 			return null;

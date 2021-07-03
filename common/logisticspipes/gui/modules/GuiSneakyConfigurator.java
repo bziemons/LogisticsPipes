@@ -12,7 +12,7 @@ import java.util.Locale;
 
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.inventory.IInventory;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
@@ -57,13 +57,13 @@ public class GuiSneakyConfigurator extends ModuleBaseGui {
 	private void refreshButtons() {
 		for (Object p : buttonList) {
 			GuiButton button = (GuiButton) p;
-			button.displayString = getButtonOrientationString(button.id == 6 ? null : EnumFacing.getFront(button.id));
+			button.displayString = getButtonOrientationString(button.id == 6 ? null : Direction.getFront(button.id));
 		}
 	}
 
 	@Override
 	protected void actionPerformed(GuiButton guibutton) throws IOException {
-		directionReceiver.setSneakyDirection(guibutton.id == 6 ? null : EnumFacing.getFront(guibutton.id));
+		directionReceiver.setSneakyDirection(guibutton.id == 6 ? null : Direction.getFront(guibutton.id));
 
 		MainProxy.sendPacketToServer(PacketHandler.getPacket(SneakyModuleDirectionUpdate.class).setDirection(directionReceiver.getSneakyDirection()).setModulePos(module));
 
@@ -86,14 +86,14 @@ public class GuiSneakyConfigurator extends ModuleBaseGui {
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int x, int y) {
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-		mc.renderEngine.bindTexture(GuiSneakyConfigurator.TEXTURE);
+		mc.textureManager.bindTexture(GuiSneakyConfigurator.TEXTURE);
 		int j = guiLeft;
 		int k = guiTop;
 		//drawRect(width/2 - xSize / 2, height / 2 - ySize /2, width/2 + xSize / 2, height / 2 + ySize /2, 0xFF404040);
 		drawTexturedModalRect(j, k, 0, 0, xSize, ySize);
 	}
 
-	private String getButtonOrientationString(EnumFacing orientation) {
+	private String getButtonOrientationString(Direction orientation) {
 		String s = (orientation == null ? "DEFAULT" : orientation.name());
 		if (orientation == directionReceiver.getSneakyDirection()) {
 			return "\u00a7a>" + s + "<";

@@ -2,9 +2,9 @@ package logisticspipes.pipes;
 
 import java.util.BitSet;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.routing.IFilter;
@@ -43,33 +43,33 @@ public class PipeItemsFirewall extends CoreRoutedPipe {
 	}
 
 	@Override
-	public void onWrenchClicked(EntityPlayer entityplayer) {
-		entityplayer.openGui(LogisticsPipes.instance, GuiIDs.GUI_FIREWALL, getWorld(), getX(), getY(), getZ());
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()), entityplayer);
+	public void onWrenchClicked(PlayerEntity player) {
+		PlayerEntity.openGui(LogisticsPipes.instance, GuiIDs.GUI_FIREWALL, getWorld(), getX(), getY(), getZ());
+		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(FireWallFlag.class).setFlags(getFlags()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()), PlayerEntity);
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		super.writeToNBT(nbttagcompound);
-		inv.writeToNBT(nbttagcompound);
-		nbttagcompound.setBoolean("blockProvider", blockProvider);
-		nbttagcompound.setBoolean("blockCrafer", blockCrafer);
-		nbttagcompound.setBoolean("blockSorting", blockSorting);
-		nbttagcompound.setBoolean("blockPower", blockPower);
-		nbttagcompound.setBoolean("isBlocking", isBlocking);
+	public void writeToNBT(CompoundNBT tag) {
+		super.writeToNBT(tag);
+		inv.writeToNBT(CompoundNBT);
+		tag.putBoolean("blockProvider", blockProvider);
+		tag.putBoolean("blockCrafer", blockCrafer);
+		tag.putBoolean("blockSorting", blockSorting);
+		tag.putBoolean("blockPower", blockPower);
+		tag.putBoolean("isBlocking", isBlocking);
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		super.readFromNBT(nbttagcompound);
-		inv.readFromNBT(nbttagcompound);
-		blockProvider = nbttagcompound.getBoolean("blockProvider");
-		blockCrafer = nbttagcompound.getBoolean("blockCrafer");
-		blockSorting = nbttagcompound.getBoolean("blockSorting");
-		if (nbttagcompound.hasKey("blockPower")) {
-			blockPower = nbttagcompound.getBoolean("blockPower");
+	public void readFromNBT(CompoundNBT tag) {
+		super.readFromNBT(CompoundNBT);
+		inv.readFromNBT(CompoundNBT);
+		blockProvider = CompoundNBT.getBoolean("blockProvider");
+		blockCrafer = CompoundNBT.getBoolean("blockCrafer");
+		blockSorting = CompoundNBT.getBoolean("blockSorting");
+		if (tag.contains("blockPower")) {
+			blockPower = CompoundNBT.getBoolean("blockPower");
 		}
-		isBlocking = nbttagcompound.getBoolean("isBlocking");
+		isBlocking = CompoundNBT.getBoolean("isBlocking");
 	}
 
 	@Override

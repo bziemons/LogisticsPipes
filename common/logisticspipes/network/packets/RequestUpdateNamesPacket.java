@@ -5,14 +5,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 
 import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
@@ -34,14 +34,14 @@ public class RequestUpdateNamesPacket extends ModernPacket {
 	public void readData(LPDataInput input) {}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		Collection<Item> itemList = ForgeRegistries.ITEMS.getValuesCollection();
 		List<ItemIdentifier> identList = new LinkedList<>();
 		for (Item item : itemList) {
 			if (item != null) {
-				for (CreativeTabs tab : item.getCreativeTabs()) {
+				for (ItemGroup group : item.getCreativeTabs()) {
 					NonNullList<ItemStack> list = NonNullList.create();
-					item.getSubItems(tab, list);
+					item.getSubItems(group, list);
 					if (list.size() > 0) {
 						identList.addAll(list.stream().map(ItemIdentifier::get).collect(Collectors.toList()));
 					} else {

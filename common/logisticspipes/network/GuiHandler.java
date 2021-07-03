@@ -1,6 +1,6 @@
 package logisticspipes.network;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -46,7 +46,7 @@ import network.rs485.logisticspipes.SatellitePipe;
 public class GuiHandler implements IGuiHandler {
 
 	@Override
-	public Object getServerGuiElement(int ID, EntityPlayer player, World world, final int x, final int y, final int z) {
+	public Object getServerGuiElement(int ID, PlayerEntity player, World world, final int x, final int y, final int z) {
 
 		TileEntity tile = null;
 		if (y != -1) {
@@ -170,12 +170,12 @@ public class GuiHandler implements IGuiHandler {
 					dummy = new DummyContainer(player, ((PipeFluidBasic) pipe.pipe).getSinkInv(), new IGuiOpenControler() {
 
 						@Override
-						public void guiOpenedByPlayer(EntityPlayer player) {
+						public void guiOpenedByPlayer(PlayerEntity player) {
 							((PipeFluidBasic) fpipe.pipe).guiOpenedByPlayer(player);
 						}
 
 						@Override
-						public void guiClosedByPlayer(EntityPlayer player) {
+						public void guiClosedByPlayer(PlayerEntity player) {
 							((PipeFluidBasic) fpipe.pipe).guiClosedByPlayer(player);
 						}
 					});
@@ -190,12 +190,12 @@ public class GuiHandler implements IGuiHandler {
 					dummy = new DummyContainer(player, ((PipeFluidTerminus) pipe.pipe).getSinkInv(), new IGuiOpenControler() {
 
 						@Override
-						public void guiOpenedByPlayer(EntityPlayer player) {
+						public void guiOpenedByPlayer(PlayerEntity player) {
 							((PipeFluidTerminus) fpipe.pipe).guiOpenedByPlayer(player);
 						}
 
 						@Override
-						public void guiClosedByPlayer(EntityPlayer player) {
+						public void guiClosedByPlayer(PlayerEntity player) {
 							((PipeFluidTerminus) fpipe.pipe).guiClosedByPlayer(player);
 						}
 					});
@@ -249,7 +249,7 @@ public class GuiHandler implements IGuiHandler {
 	}
 
 	@Override
-	public Object getClientGuiElement(int ID, EntityPlayer player, final World world, int x, int y, int z) {
+	public Object getClientGuiElement(int ID, PlayerEntity player, final World world, int x, int y, int z) {
 		if (ID == -1) {
 			return getClientGuiElement(-100 * 20 + x, player, world, 0, -1, z);
 		}

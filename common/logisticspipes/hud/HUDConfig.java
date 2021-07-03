@@ -3,32 +3,32 @@ package logisticspipes.hud;
 import javax.annotation.Nonnull;
 
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.interfaces.IHUDConfig;
 
 public class HUDConfig implements IHUDConfig {
 
-	private NBTTagCompound configTag;
+	private CompoundNBT configTag;
 
 	public HUDConfig(@Nonnull ItemStack stack) {
-		this(stack.getTagCompound());
-		stack.setTagCompound(configTag);
+		this(stack.getTag());
+		stack.setTag(configTag);
 	}
 
-	public HUDConfig(NBTTagCompound tag) {
+	public HUDConfig(CompoundNBT tag) {
 		configTag = tag;
 		if (configTag == null) {
-			configTag = new NBTTagCompound();
+			configTag = new CompoundNBT();
 		}
 
 		if (configTag.hasNoTags()) {
-			configTag.setBoolean("HUDChassie", true);
-			configTag.setBoolean("HUDCrafting", true);
-			configTag.setBoolean("HUDInvSysCon", true);
-			configTag.setBoolean("HUDPowerJunction", true);
-			configTag.setBoolean("HUDProvider", true);
-			configTag.setBoolean("HUDSatellite", true);
+			configTag.putBoolean("HUDChassie", true);
+			configTag.putBoolean("HUDCrafting", true);
+			configTag.putBoolean("HUDInvSysCon", true);
+			configTag.putBoolean("HUDPowerJunction", true);
+			configTag.putBoolean("HUDProvider", true);
+			configTag.putBoolean("HUDSatellite", true);
 		}
 	}
 
@@ -64,31 +64,31 @@ public class HUDConfig implements IHUDConfig {
 
 	@Override
 	public void setChassisHUD(boolean flag) {
-		configTag.setBoolean("HUDChassie", flag);
+		configTag.putBoolean("HUDChassie", flag);
 	}
 
 	@Override
 	public void setHUDCrafting(boolean flag) {
-		configTag.setBoolean("HUDCrafting", flag);
+		configTag.putBoolean("HUDCrafting", flag);
 	}
 
 	@Override
 	public void setHUDInvSysCon(boolean flag) {
-		configTag.setBoolean("HUDInvSysCon", flag);
+		configTag.putBoolean("HUDInvSysCon", flag);
 	}
 
 	@Override
 	public void setHUDPowerJunction(boolean flag) {
-		configTag.setBoolean("HUDPowerJunction", flag);
+		configTag.putBoolean("HUDPowerJunction", flag);
 	}
 
 	@Override
 	public void setHUDProvider(boolean flag) {
-		configTag.setBoolean("HUDProvider", flag);
+		configTag.putBoolean("HUDProvider", flag);
 	}
 
 	@Override
 	public void setHUDSatellite(boolean flag) {
-		configTag.setBoolean("HUDSatellite", flag);
+		configTag.putBoolean("HUDSatellite", flag);
 	}
 }

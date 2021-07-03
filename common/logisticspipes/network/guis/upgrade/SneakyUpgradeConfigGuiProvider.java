@@ -3,7 +3,7 @@ package logisticspipes.network.guis.upgrade;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.gui.popup.SneakyConfigurationPopup;
 import logisticspipes.network.abstractguis.GuiProvider;
@@ -24,7 +24,7 @@ public class SneakyUpgradeConfigGuiProvider extends UpgradeCoordinatesGuiProvide
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		LogisticsTileGenericPipe bPipe = getTileAs(player.world, LogisticsTileGenericPipe.class);
 		if (!(bPipe.pipe instanceof CoreRoutedPipe)) {
 			return null;

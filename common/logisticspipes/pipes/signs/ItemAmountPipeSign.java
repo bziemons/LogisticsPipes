@@ -5,16 +5,17 @@ import java.util.List;
 import java.util.Map;
 
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
+import com.mojang.blaze3d.platform.GlStateManager;
 
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.PacketHandler;
@@ -23,7 +24,6 @@ import logisticspipes.network.guis.item.ItemAmountSignGui;
 import logisticspipes.network.packets.pipe.ItemAmountSignUpdatePacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.renderer.LogisticsRenderPipe;
 import logisticspipes.routing.ExitRoute;
 import logisticspipes.routing.IRouter;
@@ -40,7 +40,7 @@ public class ItemAmountPipeSign implements IPipeSign, ISimpleInventoryEventHandl
 	public ItemIdentifierInventory itemTypeInv = new ItemIdentifierInventory(1, "", 1);
 	public int amount = 100;
 	public CoreRoutedPipe pipe;
-	public EnumFacing dir;
+	public Direction dir;
 	private boolean hasUpdated = false;
 
 	public ItemAmountPipeSign() {
@@ -53,22 +53,22 @@ public class ItemAmountPipeSign implements IPipeSign, ISimpleInventoryEventHandl
 	}
 
 	@Override
-	public void addSignTo(CoreRoutedPipe pipe, EnumFacing dir, EntityPlayer player) {
+	public void addSignTo(CoreRoutedPipe pipe, Direction dir, PlayerEntity player) {
 		pipe.addPipeSign(dir, new ItemAmountPipeSign(), player);
 		openGUI(pipe, dir, player);
 	}
 
-	private void openGUI(CoreRoutedPipe pipe, EnumFacing dir, EntityPlayer player) {
+	private void openGUI(CoreRoutedPipe pipe, Direction dir, PlayerEntity player) {
 		NewGuiHandler.getGui(ItemAmountSignGui.class).setDir(dir).setTilePos(pipe.container).open(player);
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound tag) {
+	public void readFromNBT(CompoundNBT tag) {
 		itemTypeInv.readFromNBT(tag);
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound tag) {
+	public void writeToNBT(CompoundNBT tag) {
 		itemTypeInv.writeToNBT(tag);
 	}
 
@@ -114,7 +114,7 @@ public class ItemAmountPipeSign implements IPipeSign, ISimpleInventoryEventHandl
 			if (exit.connectionDetails.contains(PipeRoutingConnectionType.canRequestFrom) && exit.connectionDetails.contains(PipeRoutingConnectionType.canRouteTo)) {
 				CoreRoutedPipe cachedPipe = exit.destination.getCachedPipe();
 				if (cachedPipe != null) {
-					List<Pair<EnumFacing, IPipeSign>> pipeSigns = cachedPipe.getPipeSigns();
+					List<Pair<Direction, IPipeSign>> pipeSigns = cachedPipe.getPipeSigns();
 					pipeSigns.stream()
 							.filter(signPair -> signPair != null && signPair.getValue2() instanceof ItemAmountPipeSign)
 							.forEach(signPair -> ((ItemAmountPipeSign) signPair.getValue2()).updateStats(availableItems, set));
@@ -139,18 +139,18 @@ public class ItemAmountPipeSign implements IPipeSign, ISimpleInventoryEventHandl
 	}
 
 	@Override
-	public void activate(EntityPlayer player) {
+	public void activate(PlayerEntity player) {
 		openGUI(pipe, dir, player);
 	}
 
 	@Override
-	public void init(CoreRoutedPipe pipe, EnumFacing dir) {
+	public void init(CoreRoutedPipe pipe, Direction dir) {
 		this.pipe = pipe;
 		this.dir = dir;
 	}
 
 	@Override
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public void render(CoreRoutedPipe pipe, LogisticsRenderPipe renderer) {
 		FontRenderer var17 = renderer.getFontRenderer();
 		if (pipe != null) {
@@ -162,15 +162,15 @@ public class ItemAmountPipeSign implements IPipeSign, ISimpleInventoryEventHandl
 				Item item = itemstack.getItem();
 
 				GlStateManager.depthMask(false);
-				GlStateManager.rotate(-180.0F, 1.0F, 0.0F, 0.0F);
-				GlStateManager.translate(0.5F, +0.08F, 0.0F);
-				GlStateManager.scale(1.0F / 90.0F, 1.0F / 90.0F, 1.0F / 90.0F);
+				GlStateManager.rotatef(-180.0F, 1.0F, 0.0F, 0.0F);
+				GlStateManager.translatef(0.5F, +0.08F, 0.0F);
+				GlStateManager.scalef(1.0F / 90.0F, 1.0F / 90.0F, 1.0F / 90.0F);
 
 				try {
 					name = item.getItemStackDisplayName(itemstack);
 				} catch (Exception e) {
 					try {
-						name = item.getUnlocalizedName();
+						name = item.getTranslationKey();
 					} catch (Exception ignored) {}
 				}
 
@@ -179,9 +179,9 @@ public class ItemAmountPipeSign implements IPipeSign, ISimpleInventoryEventHandl
 				var17.drawString("Amount:", -var17.getStringWidth("Amount:") / 2, 1 * 10 - 4 * 5, 0);
 				var17.drawString(displayAmount, -var17.getStringWidth(displayAmount) / 2, 2 * 10 - 4 * 5, 0);
 			} else {
-				GlStateManager.rotate(-180.0F, 1.0F, 0.0F, 0.0F);
-				GlStateManager.translate(0.5F, +0.08F, 0.0F);
-				GlStateManager.scale(1.0F / 90.0F, 1.0F / 90.0F, 1.0F / 90.0F);
+				GlStateManager.rotatef(-180.0F, 1.0F, 0.0F, 0.0F);
+				GlStateManager.translatef(0.5F, +0.08F, 0.0F);
+				GlStateManager.scalef(1.0F / 90.0F, 1.0F / 90.0F, 1.0F / 90.0F);
 				name = "Empty";
 			}
 
@@ -190,7 +190,7 @@ public class ItemAmountPipeSign implements IPipeSign, ISimpleInventoryEventHandl
 			var17.drawString(name, -var17.getStringWidth(name) / 2 - 15, 3 * 10 - 4 * 5, 0);
 
 			GlStateManager.depthMask(true);
-			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+			GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 		}
 	}
 

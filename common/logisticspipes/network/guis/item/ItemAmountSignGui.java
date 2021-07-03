@@ -2,8 +2,8 @@ package logisticspipes.network.guis.item;
 
 import java.util.Objects;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Direction;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -24,14 +24,14 @@ public class ItemAmountSignGui extends CoordinatesGuiProvider {
 
 	@Getter
 	@Setter
-	private EnumFacing dir;
+	private Direction dir;
 
 	public ItemAmountSignGui(int id) {
 		super(id);
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		LogisticsTileGenericPipe pipe = getTileAs(player.world, LogisticsTileGenericPipe.class);
 		if (!(pipe.pipe instanceof CoreRoutedPipe)) {
 			return null;
@@ -40,7 +40,7 @@ public class ItemAmountSignGui extends CoordinatesGuiProvider {
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		LogisticsTileGenericPipe pipe = getTileAs(player.world, LogisticsTileGenericPipe.class);
 		if (!(pipe.pipe instanceof CoreRoutedPipe)) {
 			return null;

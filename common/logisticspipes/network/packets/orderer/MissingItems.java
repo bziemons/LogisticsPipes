@@ -3,8 +3,8 @@ package logisticspipes.network.packets.orderer;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.text.StringTextComponent;
 
 import net.minecraftforge.fml.client.FMLClientHandler;
 
@@ -46,7 +46,7 @@ public class MissingItems extends ModernPacket {
 
 	@Override
 	@ClientSideOnlyMethodContent
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		if (Configs.DISPLAY_POPUP && FMLClientHandler.instance().getClient().currentScreen instanceof GuiOrderer) {
 			((GuiOrderer) FMLClientHandler.instance().getClient().currentScreen)
 					.handleRequestAnswer(getItems(), isFlag(), (GuiOrderer) FMLClientHandler.instance().getClient().currentScreen, player);
@@ -55,13 +55,13 @@ public class MissingItems extends ModernPacket {
 					.handleRequestAnswer(getItems(), isFlag(), (GuiRequestTable) FMLClientHandler.instance().getClient().currentScreen, player);
 		} else if (isFlag()) {
 			for (IResource item : items) {
-				player.sendMessage(new TextComponentString(ChatColor.RED + "Missing: " + item.getDisplayText(ColorCode.MISSING)));
+				player.sendMessage(new StringTextComponent(ChatColor.RED + "Missing: " + item.getDisplayText(ColorCode.MISSING)));
 			}
 		} else {
 			for (IResource item : items) {
-				player.sendMessage(new TextComponentString(ChatColor.GREEN + "Requested: " + item.getDisplayText(ColorCode.SUCCESS)));
+				player.sendMessage(new StringTextComponent(ChatColor.GREEN + "Requested: " + item.getDisplayText(ColorCode.SUCCESS)));
 			}
-			player.sendMessage(new TextComponentString(ChatColor.GREEN + "Request successful!"));
+			player.sendMessage(new StringTextComponent(ChatColor.GREEN + "Request successful!"));
 		}
 	}
 

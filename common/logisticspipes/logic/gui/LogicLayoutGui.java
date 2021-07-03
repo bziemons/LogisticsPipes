@@ -7,7 +7,7 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.input.Mouse;
@@ -77,8 +77,8 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 
 	private Object[] tooltip = null;
 
-	public LogicLayoutGui(LogicController controller, EntityPlayer player) {
-		super(256, 202 + 90, 0, 0);
+	public LogicLayoutGui(LogicController controller, PlayerEntity player) {
+		super(inv, titleIn, 256, 202 + 90, 0, 0);
 		guiMapY = -200;
 		Mouse.getDWheel(); // Reset DWheel on GUI open
 		DummyContainer dummy = new DummyContainer(player.inventory, null);
@@ -131,7 +131,7 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 		}
 		GL11.glTranslatef(0.0F, 0.0F, 100.0F);
 		if (tooltip != null) {
-			GuiGraphics.displayItemToolTip(tooltip, zLevel, guiLeft, guiTop, true);
+			GuiGraphics.displayItemToolTip(tooltip, blitOffset, guiLeft, guiTop, true);
 		}
 	}
 
@@ -140,7 +140,7 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 		super.drawGuiContainerBackgroundLayer(f, i, j);
 		drawTransparentBack();
 		drawMap(i, j);
-		GuiGraphics.drawGuiBackGround(getMC(), guiLeft, guiTop + 180, right, bottom, zLevel, true, false, true, true, true);
+		GuiGraphics.drawGuiBackGround(getMC(), guiLeft, guiTop + 180, right, bottom, blitOffset, true, false, true, true, true);
 		GuiGraphics.drawPlayerInventoryBackground(getMC(), guiLeft + 50, guiTop + 205);
 	}
 
@@ -171,7 +171,7 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 
 		int innerLeftSide = leftSide + 16;
 		int innerTopSide = topSide + 17;
-		zLevel = 0.0F;
+		blitOffset = 0.0F;
 
 		GL11.glDepthFunc(GL11.GL_GEQUAL);
 		GL11.glPushMatrix();
@@ -189,7 +189,7 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 			for (int xVar = 0; xVar * 16 - moveBackgroundX < zoom.rightRenderBorder; xVar++) {
 				/*
 				TextureAtlasSprite icon = Blocks.STONE.getIcon(0, 0);
-				mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+				mc.getTextureManager().bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
 				drawTexturedModalRect(innerLeftSide + xVar * 16 - moveBackgroundX, innerTopSide + yVar * 16 - moveBackgroundY, icon, 16, 16);
 				*/
 			}
@@ -239,7 +239,7 @@ public class LogicLayoutGui extends LogisticsBaseGuiScreen {
 		drawTexturedModalRect(leftSide, topSide, 0, 0, 256, 202);
 
 		GL11.glPopMatrix();
-		zLevel = 0.0F;
+		blitOffset = 0.0F;
 		GL11.glDepthFunc(GL11.GL_LEQUAL);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL11.glEnable(GL11.GL_TEXTURE_2D);

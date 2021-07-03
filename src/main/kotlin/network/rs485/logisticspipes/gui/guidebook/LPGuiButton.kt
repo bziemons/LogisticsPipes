@@ -37,11 +37,10 @@
 
 package network.rs485.logisticspipes.gui.guidebook
 
-import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.GuiButton
+import net.minecraft.client.gui.widget.button.Button
 import network.rs485.logisticspipes.util.math.Rectangle
 
-open class LPGuiButton(id: Int, x: Int, y: Int, width: Int, height: Int) : GuiButton(id, 24, 24, "") {
+open class LPGuiButton(x: Int, y: Int, width: Int, height: Int, onPress: IPressable) : Button(1, 1, 24, 24, "", onPress) {
     val body = Rectangle(x, y, width, height)
 
     // Position relative to body.
@@ -58,21 +57,9 @@ open class LPGuiButton(id: Int, x: Int, y: Int, width: Int, height: Int) : GuiBu
         body.setSize(newWidth = width, body.roundedHeight)
     }
 
-    override fun getHoverState(mouseOver: Boolean): Int = if (!enabled) 2 else if (hovered) 1 else 0
-
-    internal fun isHovered(mouseX: Int, mouseY: Int): Boolean =
-        enabled && visible && bodyTrigger.translated(body.x0, body.y0).contains(mouseX, mouseY)
-
     open fun setPos(newX: Int, newY: Int) {
         body.setPos(newX, newY)
     }
-
-    open fun setOnClickAction(newOnClickAction: (Int) -> Boolean): LPGuiButton {
-        onClickAction = newOnClickAction
-        return this
-    }
-
-    open fun click(mouseButton: Int): Boolean = onClickAction?.invoke(mouseButton) ?: false
 
     open fun getTooltipText(): String = ""
 

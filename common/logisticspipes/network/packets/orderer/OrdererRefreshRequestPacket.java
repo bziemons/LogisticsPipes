@@ -1,16 +1,18 @@
 package logisticspipes.network.packets.orderer;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.dimension.Dimension;
 
+import logisticspipes.LogisticsPipes;
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.request.RequestHandler;
-import logisticspipes.utils.StaticResolve;
 
-@StaticResolve
+// FIXME: @StaticResolve
 public class OrdererRefreshRequestPacket extends IntegerCoordinatesPacket {
 
 	public OrdererRefreshRequestPacket(int id) {
@@ -23,9 +25,15 @@ public class OrdererRefreshRequestPacket extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
-		int dimension = (getInteger() - (getInteger() % 10)) / 10;
-		final LogisticsTileGenericPipe pipe = MainProxy.proxy.getPipeInDimensionAt(dimension, getPosX(), getPosY(), getPosZ(), player);
+	public void processPacket(PlayerEntity player) {
+		Dimension dim = MainProxy.getDimension(player, (getInteger() - (getInteger() % 10)) / 10);
+		if (dim == null) {
+			LogisticsPipes.getLOGGER().warn("Could not find dimension for packet " + this);
+			return;
+		}
+		final BlockPos pos = new BlockPos(getPosX(), getPosY(), getPosZ());
+		final LogisticsTileGenericPipe pipe = MainProxy.proxy.getPipeInDimensionAt(dim,
+				pos, player);
 		if (pipe == null || !(pipe.pipe instanceof CoreRoutedPipe)) {
 			return;
 		}
@@ -46,4 +54,5 @@ public class OrdererRefreshRequestPacket extends IntegerCoordinatesPacket {
 		}
 		RequestHandler.refresh(player, (CoreRoutedPipe) pipe.pipe, option);
 	}
+
 }

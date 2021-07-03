@@ -11,37 +11,38 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.vecmath.Matrix4f;
 
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.block.model.ItemOverrideList;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.client.renderer.texture.AtlasTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.item.Item;
 import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.client.model.ICustomModelLoader;
 import net.minecraftforge.client.model.IModel;
 import net.minecraftforge.client.model.PerspectiveMapWrapper;
 import net.minecraftforge.common.model.IModelState;
 import net.minecraftforge.common.property.IExtendedBlockState;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import com.google.common.cache.Cache;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import logisticspipes.LPBlocks;
+import logisticspipes.LPConstants;
 import logisticspipes.items.ItemLogisticsPipe;
 import logisticspipes.pipes.PipeBlockRequestTable;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
@@ -65,7 +66,7 @@ public class LogisticsNewPipeModel implements IModel {
 	public static TextureAtlasSprite BASE_TEXTURE_SPRITE;
 	public static TextureTransformation BASE_TEXTURE_TRANSFORM;
 
-	public static void registerTextures(TextureMap iconRegister) {
+	public static void registerTextures(AtlasTexture iconRegister) {
 		BASE_TEXTURE_SPRITE = iconRegister.registerSprite(BASE_TEXTURE);
 		if (BASE_TEXTURE_TRANSFORM == null) {
 			BASE_TEXTURE_TRANSFORM = SimpleServiceLocator.cclProxy.createIconTransformer(BASE_TEXTURE_SPRITE);
@@ -78,9 +79,9 @@ public class LogisticsNewPipeModel implements IModel {
 
 		@Override
 		public boolean accepts(ResourceLocation modelLocation) {
-			if (modelLocation.getResourceDomain().equals("logisticspipes")) {
+			if (modelLocation.getNamespace().equals(LPConstants.LP_MOD_ID)) {
 				if (modelLocation instanceof ModelResourceLocation) {
-					ResourceLocation rl = new ResourceLocation(modelLocation.getResourceDomain(), modelLocation.getResourcePath());
+					ResourceLocation rl = new ResourceLocation(modelLocation.getNamespace(), modelLocation.getPath());
 					if (((ModelResourceLocation) modelLocation).getVariant().equals("inventory")) {
 						Item item = ForgeRegistries.ITEMS.getValue(rl);
 						if (item instanceof ItemLogisticsPipe) {
@@ -129,16 +130,16 @@ public class LogisticsNewPipeModel implements IModel {
 	}
 
 	@Override
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	@Nonnull
 	public IBakedModel bake(@Nonnull IModelState state, @Nonnull VertexFormat format, @Nonnull Function<ResourceLocation, TextureAtlasSprite> bakedTextureGetter) {
 		return new IBakedModel() {
 			private ArrayList<BakedQuad> quads = null;
 
 			@Override
-			@SideOnly(Side.CLIENT)
+			@OnlyIn(Dist.CLIENT)
 			@Nonnull
-			public List<BakedQuad> getQuads(@Nullable IBlockState blockstate, @Nullable EnumFacing side, long rand) {
+			public List<BakedQuad> getQuads(@Nullable BlockState blockstate, @Nullable Direction side, long rand) {
 				BlockRenderLayer layer = MinecraftForgeClient.getRenderLayer();
 				ArrayList<BakedQuad> result;
 				if (layer == BlockRenderLayer.CUTOUT || layer == null || blockstate == null) {
@@ -150,13 +151,13 @@ public class LogisticsNewPipeModel implements IModel {
 				return result;
 			}
 
-			private void addOtherQuads(@Nonnull List<BakedQuad> list, IBlockState blockstate, EnumFacing side, long rand) {
+			private void addOtherQuads(@Nonnull List<BakedQuad> list, BlockState blockstate, Direction side, long rand) {
 				if (blockstate != null) {
 					SimpleServiceLocator.mcmpProxy.addQuads(list, blockstate, side, rand);
 				}
 			}
 
-			private ArrayList<BakedQuad> getLPQuads(@Nullable IBlockState blockstate, @Nullable EnumFacing side) {
+			private ArrayList<BakedQuad> getLPQuads(@Nullable BlockState blockstate, @Nullable Direction side) {
 				if (blockstate != null) {
 					if (side == null) {
 						IExtendedBlockState eState = (IExtendedBlockState) blockstate;
@@ -220,7 +221,7 @@ public class LogisticsNewPipeModel implements IModel {
 		};
 	}
 
-	private List<RenderEntry> generatePipeRenderList(IBlockState blockstate) {
+	private List<RenderEntry> generatePipeRenderList(BlockState blockstate) {
 		List<RenderEntry> objectsToRender = new ArrayList<>();
 
 		if (blockstate.getValue(LogisticsBlockGenericPipe.modelTypeProperty) == LogisticsBlockGenericPipe.PipeRenderModel.REQUEST_TABLE) {
@@ -314,7 +315,7 @@ public class LogisticsNewPipeModel implements IModel {
 			}
 
 			//ArrayList<Pair<CCModel, IconTransformation>> objectsToRender2 = new ArrayList<Pair<CCModel, IconTransformation>>();
-			for (EnumFacing dir : EnumFacing.VALUES) {
+			for (Direction dir : Direction.values()) {
 				for (IModel3D model : LogisticsNewRenderPipe.texturePlate_Outer.get(dir)) {
 					TextureTransformation icon = Textures.LPnewPipeIconProvider.getIcon(getPipe().getTextureIndex());
 					if (icon != null) {

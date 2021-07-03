@@ -3,9 +3,9 @@ package logisticspipes.commands.chathelper;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.command.ICommandSource;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.text.StringTextComponent;
 
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.gui.OpenChatGui;
@@ -24,21 +24,21 @@ public class MorePageDisplay {
 	private int currentpagecount = 0;
 	private boolean terminated = false;
 
-	public MorePageDisplay(ArrayList<String> header, ICommandSender name) {
+	public MorePageDisplay(ArrayList<String> header, ICommandSource name) {
 		if (header.size() <= (row - 2)) {
 			this.header = header;
 		}
 		LPChatListener.register(this, name.getName());
-		name.sendMessage(new TextComponentString("%LPSTORESENDMESSAGE%"));
+		name.sendMessage(new StringTextComponent("%LPSTORESENDMESSAGE%"));
 	}
 
-	public MorePageDisplay(String[] header, ICommandSender name) {
+	public MorePageDisplay(String[] header, ICommandSource name) {
 		if (header.length <= (row - 2)) {
 			this.header = new ArrayList<>();
 			this.header.addAll(Arrays.asList(header));
 		}
 		LPChatListener.register(this, name.getName());
-		name.sendMessage(new TextComponentString("%LPSTORESENDMESSAGE%"));
+		name.sendMessage(new StringTextComponent("%LPSTORESENDMESSAGE%"));
 	}
 
 	public int getRow() {
@@ -61,11 +61,11 @@ public class MorePageDisplay {
 		return terminated;
 	}
 
-	public void display(ICommandSender sender) {
+	public void display(ICommandSource sender) {
 		display(sender, 1);
 	}
 
-	public void display(ICommandSender player, int page) {
+	public void display(ICommandSource player, int page) {
 		display(player, page, false);
 	}
 
@@ -147,22 +147,22 @@ public class MorePageDisplay {
 		return output2.toString();
 	}
 
-	public boolean handleChat(String input, ICommandSender sender) {
+	public boolean handleChat(String input, ICommandSource sender) {
 		if (terminated) {
 			return false;
 		}
 		if (input.equalsIgnoreCase("exit") || input.equalsIgnoreCase("quit") || input.equalsIgnoreCase("q") || input.equalsIgnoreCase("e")) {
 			terminated = true;
-			sender.sendMessage(new TextComponentString("%LPCLEARCHAT%"));
+			sender.sendMessage(new StringTextComponent("%LPCLEARCHAT%"));
 			for (Object zeilenobject : header.toArray()) {
 				if (!(zeilenobject instanceof String)) {
 					continue;
 				}
-				sender.sendMessage(new TextComponentString(replaceMeta((String) zeilenobject, 0, -1)));
+				sender.sendMessage(new StringTextComponent(replaceMeta((String) zeilenobject, 0, -1)));
 			}
 			clearscreen(sender, 19 - header.size());
-			sender.sendMessage(new TextComponentString(ChatColor.AQUA + "Pageview: " + ChatColor.RED + "Exit."));
-			sender.sendMessage(new TextComponentString("%LPRESTORESENDMESSAGE%"));
+			sender.sendMessage(new StringTextComponent(ChatColor.AQUA + "Pageview: " + ChatColor.RED + "Exit."));
+			sender.sendMessage(new StringTextComponent("%LPRESTORESENDMESSAGE%"));
 		} else if (input.equalsIgnoreCase("next") || input.equalsIgnoreCase("nex") || input.equalsIgnoreCase("n")) {
 			if (currentpage > (currentpagecount - 1)) {
 				display(sender, 0);
@@ -170,8 +170,8 @@ public class MorePageDisplay {
 				currentpage++;
 				display(sender, currentpage);
 			}
-			if (sender instanceof EntityPlayer) {
-				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (EntityPlayer) sender);
+			if (sender instanceof PlayerEntity) {
+				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (PlayerEntity) sender);
 			}
 		} else if (input.equalsIgnoreCase("previous") || input.equalsIgnoreCase("prev") || input.equalsIgnoreCase("pre") || input.equalsIgnoreCase("p")) {
 			if (currentpage < 2) {
@@ -185,32 +185,32 @@ public class MorePageDisplay {
 				display(sender, MorePageDisplay.toNumber(input));
 			} else {
 				display(sender, currentpage, true);
-				sender.sendMessage(new TextComponentString(ChatColor.AQUA + "Pageview:" + ChatColor.RED + " Not a valid number."));
+				sender.sendMessage(new StringTextComponent(ChatColor.AQUA + "Pageview:" + ChatColor.RED + " Not a valid number."));
 			}
 		} else if (input.equalsIgnoreCase("reprint")) {
 			display(sender, currentpage);
 		} else if (input.equalsIgnoreCase("all")) {
 			display(sender, currentpage, false, true, 0);
 		} else if (input.startsWith("save ")) {
-			sender.sendMessage(new TextComponentString("%LPADDTOSENDMESSAGE%" + input.substring(5)));
+			sender.sendMessage(new StringTextComponent("%LPADDTOSENDMESSAGE%" + input.substring(5)));
 			display(sender, currentpage, true, false, 1);
-			sender.sendMessage(new TextComponentString(ChatColor.AQUA + "Added '" + ChatColor.YELLOW + input.substring(5) + ChatColor.AQUA + "' to your chat history."));
+			sender.sendMessage(new StringTextComponent(ChatColor.AQUA + "Added '" + ChatColor.YELLOW + input.substring(5) + ChatColor.AQUA + "' to your chat history."));
 			printLastLine(sender, false);
-			if (sender instanceof EntityPlayer) {
-				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (EntityPlayer) sender);
+			if (sender instanceof PlayerEntity) {
+				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (PlayerEntity) sender);
 			}
 		} else if (input.equals("save")) {
 			display(sender, currentpage, true, false, 2);
-			sender.sendMessage(new TextComponentString(ChatColor.AQUA + "Add an command after the '" + ChatColor.YELLOW + "save " + ChatColor.AQUA + "' and it will be added to your chat history."));
+			sender.sendMessage(new StringTextComponent(ChatColor.AQUA + "Add an command after the '" + ChatColor.YELLOW + "save " + ChatColor.AQUA + "' and it will be added to your chat history."));
 			printLastLine(sender, false);
-			if (sender instanceof EntityPlayer) {
-				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (EntityPlayer) sender);
+			if (sender instanceof PlayerEntity) {
+				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (PlayerEntity) sender);
 			}
 		} else {
 			//display(sender,currentpage,true);
 			printLastLine(sender, true);
-			if (sender instanceof EntityPlayer) {
-				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (EntityPlayer) sender);
+			if (sender instanceof PlayerEntity) {
+				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (PlayerEntity) sender);
 			}
 		}
 		return true;
@@ -234,22 +234,22 @@ public class MorePageDisplay {
 		return -1;
 	}
 
-	private void clearscreen(ICommandSender sender, int count) {
+	private void clearscreen(ICommandSource sender, int count) {
 		for (int i = 0; i < count; i++) {
-			sender.sendMessage(new TextComponentString(""));
+			sender.sendMessage(new StringTextComponent(""));
 		}
 	}
 
-	public void display(ICommandSender sender, int page, boolean flag) {
+	public void display(ICommandSource sender, int page, boolean flag) {
 		display(sender, page, flag, false, 0);
 	}
 
-	public void printLastLine(ICommandSender sender) {
+	public void printLastLine(ICommandSource sender) {
 		printLastLine(sender, false);
 	}
 
-	public void printLastLine(ICommandSender sender, boolean flag) {
-		sender.sendMessage(new TextComponentString((flag ? "! " : "") + ChatColor.AQUA + "Pageview:" + ChatColor.WHITE + " Enter " + ChatColor.RED + "Pre" + ChatColor.WHITE + "/" + ChatColor.GREEN + "Next" + ChatColor.WHITE + ", a " + ChatColor.AQUA + "number" + ChatColor.WHITE + ", " + ChatColor.AQUA + "all"
+	public void printLastLine(ICommandSource sender, boolean flag) {
+		sender.sendMessage(new StringTextComponent((flag ? "! " : "") + ChatColor.AQUA + "Pageview:" + ChatColor.WHITE + " Enter " + ChatColor.RED + "Pre" + ChatColor.WHITE + "/" + ChatColor.GREEN + "Next" + ChatColor.WHITE + ", a " + ChatColor.AQUA + "number" + ChatColor.WHITE + ", " + ChatColor.AQUA + "all"
 				+ ChatColor.WHITE + ", " + ChatColor.AQUA + "reprint" + ChatColor.WHITE + ", " + ChatColor.AQUA + "save" + ChatColor.WHITE + " or " + ChatColor.RED + "exit" + ChatColor.WHITE + (flag ? " !" : ".")));
 	}
 
@@ -269,11 +269,11 @@ public class MorePageDisplay {
 		return currentPage + 1;
 	}
 
-	public void display(ICommandSender sender, int page, boolean flag, boolean all, int linesub) {
+	public void display(ICommandSource sender, int page, boolean flag, boolean all, int linesub) {
 		if (terminated) {
 			return;
 		}
-		sender.sendMessage(new TextComponentString("%LPCLEARCHAT%"));
+		sender.sendMessage(new StringTextComponent("%LPCLEARCHAT%"));
 		int count = row - header.size() - 1 - linesub;
 		page = (page > 0 && !all ? page : 1);
 		currentpage = page;
@@ -285,14 +285,14 @@ public class MorePageDisplay {
 			if (!(zeilenobject instanceof String)) {
 				continue;
 			}
-			sender.sendMessage(new TextComponentString(replaceMeta((String) zeilenobject, page, count)));
+			sender.sendMessage(new StringTextComponent(replaceMeta((String) zeilenobject, page, count)));
 		}
 		int currentPage = 0;
 		int lineOnCurentPage = 0;
 		int doneLines = 0;
 		for (int i = 0; i < content.size(); i++, lineOnCurentPage++) {
 			if (all) {
-				sender.sendMessage(new TextComponentString(content.get(i).content));
+				sender.sendMessage(new StringTextComponent(content.get(i).content));
 			} else {
 				int I;
 				for (I = i; I < (content.size() - 1) && content.get(I + 1).connected; I++) {
@@ -303,7 +303,7 @@ public class MorePageDisplay {
 					lineOnCurentPage = 0;
 				}
 				if (page == currentPage + 1) {
-					sender.sendMessage(new TextComponentString(content.get(i).content));
+					sender.sendMessage(new StringTextComponent(content.get(i).content));
 					doneLines = lineOnCurentPage;
 				}
 			}
@@ -317,8 +317,8 @@ public class MorePageDisplay {
 		if (!flag) {
 			printLastLine(sender);
 		}
-		if (sender instanceof EntityPlayer) {
-			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (EntityPlayer) sender);
+		if (sender instanceof PlayerEntity) {
+			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), (PlayerEntity) sender);
 		}
 	}
 

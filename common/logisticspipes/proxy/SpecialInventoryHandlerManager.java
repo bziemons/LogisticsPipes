@@ -1,9 +1,5 @@
 package logisticspipes.proxy;
 
-import net.minecraftforge.fml.common.Loader;
-
-import static logisticspipes.LPConstants.appliedenergisticsModID;
-import static logisticspipes.LPConstants.betterStorageModID;
 import static logisticspipes.LPConstants.factorizationModID;
 
 import logisticspipes.proxy.specialinventoryhandler.AEInterfaceInventoryHandler;
@@ -14,15 +10,15 @@ import network.rs485.logisticspipes.proxy.StorageDrawersProxy;
 public class SpecialInventoryHandlerManager {
 
 	public static void load() {
-		if (Loader.isModLoaded(factorizationModID)) {
+		if (ModList.get().isLoaded(factorizationModID)) {
 			SimpleServiceLocator.inventoryUtilFactory.registerHandler(new BarrelInventoryHandler());
 		}
 
-		if (Loader.isModLoaded(betterStorageModID)) {
+		if (ModList.get().isLoaded(betterStorageModID)) {
 			SimpleServiceLocator.inventoryUtilFactory.registerHandler(new CrateInventoryHandler());
 		}
 
-		if (Loader.isModLoaded(appliedenergisticsModID)) {
+		if (ModList.get().isLoaded(appliedenergisticsModID)) {
 			SimpleServiceLocator.inventoryUtilFactory.registerHandler(new AEInterfaceInventoryHandler());
 		}
 

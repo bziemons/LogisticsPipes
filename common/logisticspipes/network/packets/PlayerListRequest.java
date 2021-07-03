@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import net.minecraftforge.common.DimensionManager;
 
@@ -29,11 +29,11 @@ public class PlayerListRequest extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		Stream<?> allPlayers = Arrays.stream(DimensionManager.getWorlds()).map(worldServer -> worldServer.playerEntities).flatMap(Collection::stream);
-		Stream<EntityPlayer> allPlayerEntities = allPlayers.filter(o -> o instanceof EntityPlayer).map(o -> (EntityPlayer) o);
+		Stream<PlayerEntity> allPlayerEntities = allPlayers.filter(o -> o instanceof PlayerEntity).map(o -> (PlayerEntity) o);
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(PlayerList.class)
-				.setStringList(allPlayerEntities.map(entityPlayer -> entityPlayer.getGameProfile().getName()).collect(Collectors.toList())), player);
+				.setStringList(allPlayerEntities.map(PlayerEntity -> PlayerEntity.getGameProfile().getName()).collect(Collectors.toList())), player);
 	}
 
 	@Override

@@ -1,7 +1,7 @@
 package logisticspipes.gui;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Direction;
 
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.pipes.signs.ItemAmountPipeSign;
@@ -11,8 +11,8 @@ import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
 
 public class ItemAmountSignCreationGui extends LogisticsBaseGuiScreen {
 
-	public ItemAmountSignCreationGui(EntityPlayer player, CoreRoutedPipe pipe, EnumFacing dir) {
-		super(180, 125, 0, 0);
+	public ItemAmountSignCreationGui(PlayerEntity player, CoreRoutedPipe pipe, Direction dir) {
+		super(inv, titleIn, 180, 125, 0, 0);
 		ItemAmountPipeSign sign = ((ItemAmountPipeSign) pipe.getPipeSign(dir));
 		DummyContainer dummy = new DummyContainer(player.inventory, sign.itemTypeInv);
 		dummy.addDummySlot(0, 10, 13);
@@ -22,7 +22,7 @@ public class ItemAmountSignCreationGui extends LogisticsBaseGuiScreen {
 
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int i, int j) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		GuiGraphics.drawPlayerInventoryBackground(mc, guiLeft + 10, guiTop + 40);
 		GuiGraphics.drawSlotBackground(mc, guiLeft + 9, guiTop + 12);
 	}

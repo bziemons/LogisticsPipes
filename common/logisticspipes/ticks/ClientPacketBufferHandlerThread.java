@@ -10,9 +10,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import net.minecraft.entity.player.EntityPlayer;
-
-import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
@@ -75,7 +73,7 @@ public class ClientPacketBufferHandlerThread {
 		clientDecompressorThread.clear();
 	}
 
-	public void queuePacket(ModernPacket packet, EntityPlayer player) {
+	public void queuePacket(ModernPacket packet, PlayerEntity player) {
 		clientDecompressorThread.queuePacket(packet, player);
 	}
 
@@ -185,10 +183,10 @@ public class ClientPacketBufferHandlerThread {
 		//Received compressed S->C data
 		private final LinkedList<byte[]> queue = new LinkedList<>();
 		//FIFO for deserialized S->C packets, decompressor adds, tickEnd removes
-		private final LinkedList<Pair<EntityPlayer, byte[]>> PacketBuffer = new LinkedList<>();
+		private final LinkedList<Pair<PlayerEntity, byte[]>> PacketBuffer = new LinkedList<>();
 		private final ReentrantLock packetBufferLock = new ReentrantLock();
 		//List of packets that that should be reattempted to apply in the next tick
-		private final LinkedList<Pair<EntityPlayer, ModernPacket>> retryPackets = new LinkedList<>();
+		private final LinkedList<Pair<PlayerEntity, ModernPacket>> retryPackets = new LinkedList<>();
 		private final ReentrantLock retryPacketsLock = new ReentrantLock();
 		//decompressed serialized S->C data
 		private byte[] ByteBuffer = new byte[] {};
@@ -201,12 +199,12 @@ public class ClientPacketBufferHandlerThread {
 			start();
 		}
 
-		private void handlePacketData(final Pair<EntityPlayer, byte[]> playerDataPair) {
+		private void handlePacketData(final Pair<PlayerEntity, byte[]> playerDataPair) {
 			LPDataIOWrapper.provideData(playerDataPair.getValue2(), input -> PacketHandler.onPacketData(input, playerDataPair.getValue1()));
 		}
 
 		public void clientTickEnd() {
-			Pair<EntityPlayer, byte[]> part;
+			Pair<PlayerEntity, byte[]> part;
 			while (true) {
 				part = null;
 				packetBufferLock.lock();
@@ -224,7 +222,7 @@ public class ClientPacketBufferHandlerThread {
 
 				handlePacketData(part);
 			}
-			Pair<EntityPlayer, ModernPacket> partB;
+			Pair<PlayerEntity, ModernPacket> partB;
 			while (true) {
 				partB = null;
 				retryPacketsLock.lock();
@@ -308,7 +306,7 @@ public class ClientPacketBufferHandlerThread {
 			retryPackets.clear();
 		}
 
-		public void queuePacket(ModernPacket packet, EntityPlayer player) {
+		public void queuePacket(ModernPacket packet, PlayerEntity player) {
 			retryPackets.add(new Pair<>(player, packet));
 		}
 	}

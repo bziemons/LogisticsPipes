@@ -6,10 +6,10 @@ import java.util.Map;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,7 +36,7 @@ public class LogisticsTileRenderController {
 	@AllArgsConstructor
 	private static class LaserKey {
 
-		final EnumFacing dir;
+		final Direction dir;
 		final int color;
 	}
 
@@ -65,15 +65,15 @@ public class LogisticsTileRenderController {
 
 	private class LaserBeamDataClient extends LaserBeamData {
 
-		public LaserBeamDataClient(float length, int timeout, boolean reverse, EnumFacing dir, int color) {
+		public LaserBeamDataClient(float length, int timeout, boolean reverse, Direction dir, int color) {
 			super(length, timeout, reverse);
 			entity = new PipeFXLaserPowerBeam(pipe.getWorld(), new DoubleCoordinates((TileEntity) pipe), length, dir, color, pipe).setReverse(reverse);
-			Minecraft.getMinecraft().effectRenderer.addEffect(entity);
+			Minecraft.getInstance().particles.addEffect(entity);
 
 		}
 
 		@Getter
-		@SideOnly(Side.CLIENT)
+		@OnlyIn(Dist.CLIENT)
 		final PipeFXLaserPowerBeam entity;
 
 		@Override
@@ -124,11 +124,11 @@ public class LogisticsTileRenderController {
 		public LaserBallDataClient(float length, int timeout, int color) {
 			super(length, timeout);
 			entity = new PipeFXLaserPowerBall(pipe.getWorld(), new DoubleCoordinates((TileEntity) pipe), color, pipe);
-			Minecraft.getMinecraft().effectRenderer.addEffect(entity);
+			Minecraft.getInstance().particles.addEffect(entity);
 		}
 
 		@Getter
-		@SideOnly(Side.CLIENT)
+		@OnlyIn(Dist.CLIENT)
 		final PipeFXLaserPowerBall entity;
 
 		@Override
@@ -189,7 +189,7 @@ public class LogisticsTileRenderController {
 		}
 	}
 
-	public void addLaser(EnumFacing dir, float length, int color, boolean reverse, boolean renderBall) {
+	public void addLaser(Direction dir, float length, int color, boolean reverse, boolean renderBall) {
 		if (!Configs.ENABLE_PARTICLE_FX) {
 			return;
 		}
@@ -221,7 +221,7 @@ public class LogisticsTileRenderController {
 		}
 	}
 
-	public void removeLaser(EnumFacing dir, int color, boolean isBall) {
+	public void removeLaser(Direction dir, int color, boolean isBall) {
 		if (!MainProxy.isClient(pipe.getWorld())) {
 			return;
 		}

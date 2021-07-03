@@ -2,7 +2,7 @@ package logisticspipes.network.packets.routingdebug;
 
 import java.util.EnumSet;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -37,7 +37,7 @@ public class RoutingUpdateDebugClosedSet extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		ClientViewController.instance().handlePacket(this);
 	}
 

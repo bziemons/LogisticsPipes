@@ -2,10 +2,10 @@ package logisticspipes.pipes;
 
 import java.util.UUID;
 
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.item.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.modules.LogisticsModule;
@@ -30,14 +30,14 @@ public class PipeItemsSystemEntranceLogistics extends CoreRoutedPipe {
 		if (inv.getStackInSlot(0) == null) {
 			return null;
 		}
-		if (!inv.getStackInSlot(0).hasTagCompound()) {
+		if (!inv.getStackInSlot(0).hasTag()) {
 			return null;
 		}
-		if (!inv.getStackInSlot(0).getTagCompound().hasKey("UUID")) {
+		if (!inv.getStackInSlot(0).getTag().contains("UUID")) {
 			return null;
 		}
 		spawnParticle(Particles.WhiteParticle, 2);
-		return UUID.fromString(inv.getStackInSlot(0).getTagCompound().getString("UUID"));
+		return UUID.fromString(inv.getStackInSlot(0).getTag().getString("UUID"));
 	}
 
 	@Override
@@ -56,15 +56,15 @@ public class PipeItemsSystemEntranceLogistics extends CoreRoutedPipe {
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		super.writeToNBT(nbttagcompound);
-		inv.writeToNBT(nbttagcompound);
+	public void writeToNBT(CompoundNBT tag) {
+		super.writeToNBT(tag);
+		inv.writeToNBT(CompoundNBT);
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		super.readFromNBT(nbttagcompound);
-		inv.readFromNBT(nbttagcompound);
+	public void readFromNBT(CompoundNBT tag) {
+		super.readFromNBT(CompoundNBT);
+		inv.readFromNBT(CompoundNBT);
 	}
 
 	@Override
@@ -76,13 +76,13 @@ public class PipeItemsSystemEntranceLogistics extends CoreRoutedPipe {
 		if (inv.getStackInSlot(0) == null) {
 			return;
 		}
-		EntityItem item = new EntityItem(getWorld(), getX(), getY(), getZ(), inv.getStackInSlot(0));
+		ItemEntity item = new ItemEntity(getWorld(), getX(), getY(), getZ(), inv.getStackInSlot(0));
 		getWorld().spawnEntity(item);
 		inv.clearInventorySlotContents(0);
 	}
 
 	@Override
-	public void onWrenchClicked(EntityPlayer entityplayer) {
-		entityplayer.openGui(LogisticsPipes.instance, GuiIDs.GUI_Freq_Card_ID, getWorld(), getX(), getY(), getZ());
+	public void onWrenchClicked(PlayerEntity player) {
+		PlayerEntity.openGui(LogisticsPipes.instance, GuiIDs.GUI_Freq_Card_ID, getWorld(), getX(), getY(), getZ());
 	}
 }

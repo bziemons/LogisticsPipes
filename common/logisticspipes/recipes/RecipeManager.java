@@ -135,7 +135,7 @@ public class RecipeManager {
 				} else if (index.getValue() instanceof ItemStack) {
 					ItemStack stack = (ItemStack) index.getValue();
 					key.addProperty("item", stack.getItem().getRegistryName().toString());
-					if (stack.getHasSubtypes()) key.addProperty("data", stack.getItemDamage());
+					if (stack.getHasSubtypes()) key.addProperty("data", stack.getDamage());
 				} else if (index.getValue() instanceof Item) {
 					key.addProperty("item", ((Item) index.getValue()).getRegistryName().toString());
 				} else if (index.getValue() instanceof Block) {
@@ -146,7 +146,7 @@ public class RecipeManager {
 					//					ItemStack stack = value.getMatchingStacks()[0];
 					//					if (value.getMatchingStacks().length > 1) throw new NotImplementedException("valid stacks size > 1");
 					//					key.addProperty("item", stack.getItem().getRegistryName().toString());
-					//					if (stack.getHasSubtypes()) key.addProperty("data", stack.getItemDamage());
+					//					if (stack.getHasSubtypes()) key.addProperty("data", stack.getDamage());
 					//					JsonObject nbt = new JsonObject();
 					//					// TODO
 					//					key.add("nbt", nbt);
@@ -159,7 +159,7 @@ public class RecipeManager {
 
 			JsonObject r = new JsonObject();
 			r.addProperty("item", result.getItem().getRegistryName().toString());
-			if (result.getItemDamage() > 0) r.addProperty("data", result.getItemDamage());
+			if (result.getDamage() > 0) r.addProperty("data", result.getDamage());
 			if (result.getCount() > 1) r.addProperty("count", result.getCount());
 			obj.add("result", r);
 			obj.add("key", keys);
@@ -167,9 +167,9 @@ public class RecipeManager {
 
 			String format;
 			if (result.getHasSubtypes()) {
-				format = String.format("generated_recipes/%s.%d.json", result.getItem().getRegistryName().getResourcePath(), result.getItemDamage());
+				format = String.format("generated_recipes/%s.%d.json", result.getItem().getRegistryName().getPath(), result.getDamage());
 			} else {
-				format = String.format("generated_recipes/%s.json", result.getItem().getRegistryName().getResourcePath());
+				format = String.format("generated_recipes/%s.json", result.getItem().getRegistryName().getPath());
 			}
 
 			File out = new File(format);
@@ -210,7 +210,7 @@ public class RecipeManager {
 				for (int i = 0; i < var1.getInventoryStackLimit(); i++) {
 					ItemStack stack = var1.getStackInSlot(i);
 					if (!stack.isEmpty() && stack.getItem() instanceof RemoteOrderer) {
-						result.setTagCompound(stack.getTagCompound());
+						result.setTag(stack.getTag());
 						break;
 					}
 				}
@@ -224,12 +224,12 @@ public class RecipeManager {
 	}
 
 	private static ResourceLocation getFreeRecipeResourceLocation(Item item) {
-		ResourceLocation baseLoc = new ResourceLocation(LPConstants.LP_MOD_ID, item.getRegistryName().getResourcePath());
+		ResourceLocation baseLoc = new ResourceLocation(LPConstants.LP_MOD_ID, item.getRegistryName().getPath());
 		ResourceLocation recipeLoc = baseLoc;
 		int index = 0;
 		while (CraftingManager.REGISTRY.containsKey(recipeLoc)) {
 			index++;
-			recipeLoc = new ResourceLocation(LPConstants.LP_MOD_ID, baseLoc.getResourcePath() + "_" + index);
+			recipeLoc = new ResourceLocation(LPConstants.LP_MOD_ID, baseLoc.getPath() + "_" + index);
 		}
 		return recipeLoc;
 	}

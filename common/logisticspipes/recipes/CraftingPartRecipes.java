@@ -6,7 +6,7 @@ import javax.annotation.Nonnull;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.LPItems;
 import logisticspipes.items.ItemLogisticsProgrammer;
@@ -50,9 +50,9 @@ public abstract class CraftingPartRecipes implements IRecipeProvider {
 	@Nonnull
 	protected Ingredient programmerIngredient(String recipeTarget) {
 		ItemStack programmerStack = new ItemStack(LPItems.logisticsProgrammer);
-		final NBTTagCompound tag = new NBTTagCompound();
-		tag.setString(ItemLogisticsProgrammer.RECIPE_TARGET, recipeTarget);
-		programmerStack.setTagCompound(tag);
+		final CompoundNBT tag = new CompoundNBT();
+		tag.putString(ItemLogisticsProgrammer.RECIPE_TARGET, recipeTarget);
+		programmerStack.setTag(tag);
 		return NBTIngredient.fromStacks(programmerStack);
 	}
 

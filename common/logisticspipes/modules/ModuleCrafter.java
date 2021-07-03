@@ -12,18 +12,20 @@ import java.util.concurrent.DelayQueue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.ItemBlock;
+import net.minecraft.block.BlockState;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
+import net.minecraft.util.Direction;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.Vec3d;
 
 import net.minecraftforge.common.util.Constants;
 
@@ -54,7 +56,7 @@ import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider;
 import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.guis.module.inhand.CraftingModuleInHand;
 import logisticspipes.network.guis.module.inpipe.CraftingModuleSlot;
@@ -694,52 +696,6 @@ public class ModuleCrafter extends LogisticsModule
 		return SimpleServiceLocator.routerManager.getRouter(satelliteRouterId);
 	}
 
-	@Override
-	public void readFromNBT(@Nonnull NBTTagCompound tag) {
-		super.readFromNBT(tag);
-
-		// FIXME: remove after 1.12
-		for (int i = 0; i < 9; i++) {
-			String advancedSatelliteUUIDArrayString = tag.getString("advancedSatelliteUUID" + i);
-			if (!advancedSatelliteUUIDArrayString.isEmpty()) {
-				advancedSatelliteUUIDList.set(i, UUID.fromString(advancedSatelliteUUIDArrayString));
-			}
-		}
-
-		// FIXME: remove after 1.12
-		for (int i = 0; i < ItemUpgrade.MAX_LIQUID_CRAFTER; i++) {
-			String liquidSatelliteUUIDArrayString = tag.getString("liquidSatelliteUUIDArray" + i);
-			if (!liquidSatelliteUUIDArrayString.isEmpty()) {
-				liquidSatelliteUUIDList.set(i, UUID.fromString(liquidSatelliteUUIDArrayString));
-			}
-		}
-
-		// FIXME: remove after 1.12
-		if (tag.hasKey("fuzzyFlags")) {
-			NBTTagList lst = tag.getTagList("fuzzyFlags", Constants.NBT.TAG_COMPOUND);
-			for (int i = 0; i < 9; i++) {
-				FuzzyUtil.INSTANCE.readFromNBT(inputFuzzy(i), lst.getCompoundTagAt(i));
-			}
-		}
-		// FIXME: remove after 1.12
-		if (tag.hasKey("outputFuzzyFlags")) {
-			FuzzyUtil.INSTANCE.readFromNBT(outputFuzzy(), tag.getCompoundTag("outputFuzzyFlags"));
-		}
-
-		// FIXME: remove after 1.12
-		if (tag.hasKey("satelliteid")) {
-			updateSatelliteFromIDs = new UpgradeSatelliteFromIDs();
-			updateSatelliteFromIDs.satelliteId = tag.getInteger("satelliteid");
-			for (int i = 0; i < 9; i++) {
-				updateSatelliteFromIDs.advancedSatelliteIdArray[i] = tag.getInteger("advancedSatelliteId" + i);
-			}
-			for (int i = 0; i < ItemUpgrade.MAX_LIQUID_CRAFTER; i++) {
-				updateSatelliteFromIDs.liquidSatelliteIdArray[i] = tag.getInteger("liquidSatelliteIdArray" + i);
-			}
-			updateSatelliteFromIDs.liquidSatelliteId = tag.getInteger("liquidSatelliteId");
-		}
-	}
-
 	public IBitSet outputFuzzy() {
 		final int startIdx = 4 * 9; // after the 9th slot
 		return fuzzyFlags.get(startIdx, startIdx + 3);
@@ -748,7 +704,6 @@ public class ModuleCrafter extends LogisticsModule
 	public IBitSet inputFuzzy(int slot) {
 		final int startIdx = 4 * slot;
 		return fuzzyFlags.get(startIdx, startIdx + 3);
-	}
 
 	public ModernPacket getCPipePacket() {
 		return PacketHandler.getPacket(CraftingPipeUpdatePacket.class).setAmount(liquidAmounts.getArray())
@@ -813,7 +768,7 @@ public class ModuleCrafter extends LogisticsModule
 				.setCleanupExclude(cleanupModeIsExclude.getValue());
 	}
 
-	public void importFromCraftingTable(@Nullable EntityPlayer player) {
+	public void importFromCraftingTable(@Nullable PlayerEntity player) {
 		if (MainProxy.isClient(getWorld())) {
 			// Send packet asking for import
 			final CoordinatesPacket packet = PacketHandler.getPacket(CPipeSatelliteImport.class).setModulePos(this);
@@ -855,7 +810,7 @@ public class ModuleCrafter extends LogisticsModule
 		return FluidIdentifier.get(stack.getItem());
 	}
 
-	public void changeFluidAmount(int change, int slot, EntityPlayer player) {
+	public void changeFluidAmount(int change, int slot, PlayerEntity player) {
 		if (MainProxy.isClient(player.world)) {
 			MainProxy.sendPacketToServer(
 					PacketHandler.getPacket(FluidCraftingAmount.class).setInteger2(slot).setInteger(change)
@@ -881,11 +836,11 @@ public class ModuleCrafter extends LogisticsModule
 	 *
 	 * @return true, if a GUI was opened (server-side only)
 	 */
-	public boolean openAttachedGui(EntityPlayer player) {
+	public boolean openAttachedGui(PlayerEntity player) {
 		if (MainProxy.isClient(player.world)) {
-			if (player instanceof EntityPlayerMP) {
+			if (player instanceof ServerPlayerEntity) {
 				player.closeScreen();
-			} else if (player instanceof EntityPlayerSP) {
+			} else if (player instanceof ClientPlayerEntity) {
 				player.closeScreen();
 			}
 			MainProxy.sendPacketToServer(
@@ -913,7 +868,7 @@ public class ModuleCrafter extends LogisticsModule
 		if (!foundSlot) {
 			for (int i = 0; i < 9; i++) {
 				ItemStack is = player.inventory.getStackInSlot(i);
-				if (is.getItem() instanceof ItemBlock) {
+				if (is.getItem() instanceof BlockItem) {
 					foundSlot = true;
 					player.inventory.currentItem = i;
 					break;
@@ -929,17 +884,17 @@ public class ModuleCrafter extends LogisticsModule
 			if (neighbor.canHandleItems() || SimpleServiceLocator.craftingRecipeProviders.stream()
 					.anyMatch(provider -> provider.canOpenGui(neighbor.getTileEntity()))) {
 				final BlockPos pos = neighbor.getTileEntity().getPos();
-				IBlockState blockState = worldProvider.getWorld().getBlockState(pos);
+				BlockState blockState = worldProvider.getWorld().getBlockState(pos);
 				return !blockState.getBlock().isAir(blockState, worldProvider.getWorld(), pos) && blockState.getBlock()
 						.onBlockActivated(worldProvider.getWorld(), pos,
-								neighbor.getTileEntity().getWorld().getBlockState(pos), player, EnumHand.MAIN_HAND,
-								EnumFacing.UP, 0, 0, 0);
+								neighbor.getTileEntity().getWorld().getBlockState(pos), player, Hand.MAIN_HAND,
+								new BlockRayTraceResult(new Vec3d(0, -1, 0), Direction.DOWN, pos.offset(Direction.UP), false));
 			} else {
 				return false;
 			}
 		});
 		if (!guiOpened) {
-			LogisticsPipes.log.warn("Ignored open attached GUI request at " + player.world + " @ " + getBlockPos());
+			LogisticsPipes.getLOGGER().warn("Ignored open attached GUI request at " + player.world + " @ " + getBlockPos());
 		}
 		player.inventory.currentItem = savedEquipped;
 		return guiOpened;
@@ -981,7 +936,7 @@ public class ModuleCrafter extends LogisticsModule
 						.ifPresent(extracted -> {
 							service.queueRoutedItem(
 									SimpleServiceLocator.routedItemHelper.createNewTravelItem(extracted),
-									EnumFacing.UP);
+									Direction.UP);
 							service.getCacheHolder().trigger(CacheTypes.Inventory);
 						});
 			}
@@ -1046,7 +1001,7 @@ public class ModuleCrafter extends LogisticsModule
 						}
 						stacksleft -= 1;
 						itemsleft -= numtosend;
-						ItemStack stackToSend = extracted.splitStack(numtosend);
+						ItemStack stackToSend = extracted.split(numtosend);
 						//Route the unhandled item
 
 						service.sendStack(stackToSend, -1, ItemSendMode.Normal, null, adjacent.getDirection());
@@ -1060,7 +1015,7 @@ public class ModuleCrafter extends LogisticsModule
 				}
 				stacksleft -= 1;
 				itemsleft -= numtosend;
-				ItemStack stackToSend = extracted.splitStack(numtosend);
+				ItemStack stackToSend = extracted.split(numtosend);
 				if (nextOrder.getDestination() != null) {
 					SinkReply reply = LogisticsManager
 							.canSink(stackToSend, nextOrder.getDestination().getRouter(), null, true,
@@ -1302,12 +1257,12 @@ public class ModuleCrafter extends LogisticsModule
 	}
 
 	@Override
-	public void startWatching(EntityPlayer player) {
+	public void startWatching(PlayerEntity player) {
 		localModeWatchers.add(player);
 	}
 
 	@Override
-	public void stopWatching(EntityPlayer player) {
+	public void stopWatching(PlayerEntity player) {
 		localModeWatchers.remove(player);
 	}
 
@@ -1362,12 +1317,12 @@ public class ModuleCrafter extends LogisticsModule
 	}
 
 	@Override
-	public void guiOpenedByPlayer(EntityPlayer player) {
+	public void guiOpenedByPlayer(PlayerEntity player) {
 		guiWatcher.add(player);
 	}
 
 	@Override
-	public void guiClosedByPlayer(EntityPlayer player) {
+	public void guiClosedByPlayer(PlayerEntity player) {
 		guiWatcher.remove(player);
 	}
 

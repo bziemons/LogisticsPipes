@@ -1,10 +1,10 @@
 package logisticspipes.network.packets.block;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.gui.GuiSecurityStation;
@@ -26,7 +26,7 @@ public class SecurityStationAutoDestroy extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsSecurityTileEntity tile = this.getTileAs(player.world, LogisticsSecurityTileEntity.class);
 		if (tile instanceof LogisticsSecurityTileEntity) {
 			if (MainProxy.isClient(player.world)) {
@@ -38,8 +38,8 @@ public class SecurityStationAutoDestroy extends IntegerCoordinatesPacket {
 		}
 	}
 
-	@SideOnly(Side.CLIENT)
-	private void handleClientSide(EntityPlayer player) {
+	@OnlyIn(Dist.CLIENT)
+	private void handleClientSide(PlayerEntity player) {
 		if (FMLClientHandler.instance().getClient().currentScreen instanceof GuiSecurityStation) {
 			((GuiSecurityStation) FMLClientHandler.instance().getClient().currentScreen).refreshCheckBoxes();
 		}

@@ -2,10 +2,9 @@ package logisticspipes.request.resources;
 
 import javax.annotation.Nonnull;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
 import logisticspipes.routing.IRouter;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -15,7 +14,7 @@ import network.rs485.logisticspipes.util.LPFinalSerializable;
 /**
  * With Destination and amount
  */
-public interface IResource extends ILPCCTypeHolder, LPFinalSerializable {
+public interface IResource extends LPFinalSerializable {
 
 	ItemIdentifier getAsItem();
 
@@ -36,7 +35,7 @@ public interface IResource extends ILPCCTypeHolder, LPFinalSerializable {
 
 	IResource copyForDisplayWith(int amount);
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	String getDisplayText(ColorCode missing);
 
 	ItemIdentifierStack getDisplayItem();

@@ -4,14 +4,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import net.minecraft.world.World;
+import net.minecraft.world.IWorld;
 
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
-import net.minecraftforge.fml.common.gameevent.TickEvent.ServerTickEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent.WorldTickEvent;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import com.google.common.collect.MapMaker;
 import lombok.AccessLevel;
@@ -19,21 +17,22 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import logisticspipes.LPConstants;
 import logisticspipes.commands.commands.debug.DebugGuiController;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.routing.pathfinder.changedetection.LPWorldAccess;
 import logisticspipes.utils.FluidIdentifier;
 import network.rs485.grow.ServerTickDispatcher;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
+@Mod.EventBusSubscriber(modid = LPConstants.LP_MOD_ID)
 public class LPTickHandler {
 
 	public static int adjChecksDone = 0;
 
 	@SubscribeEvent
-	public void clientTick(ClientTickEvent event) {
-		if (event.phase == Phase.END) {
+	public void clientTick(TickEvent.ClientTickEvent event) {
+		if (event.phase == TickEvent.Phase.END) {
 			FluidIdentifier.initFromForge(true);
 			SimpleServiceLocator.clientBufferHandler.clientTick();
 			MainProxy.proxy.tickClient();
@@ -42,8 +41,8 @@ public class LPTickHandler {
 	}
 
 	@SubscribeEvent
-	public void serverTick(ServerTickEvent event) {
-		if (event.phase == Phase.END) {
+	public void serverTick(TickEvent.ServerTickEvent event) {
+		if (event.phase == TickEvent.Phase.END) {
 			HudUpdateTick.tick();
 			SimpleServiceLocator.serverBufferHandler.serverTick();
 			MainProxy.proxy.tickServer();
@@ -53,26 +52,24 @@ public class LPTickHandler {
 		}
 	}
 
-	private static Map<World, LPWorldInfo> worldInfo = new MapMaker().weakKeys().makeMap();
+	private static Map<IWorld, LPWorldInfo> worldInfo = new MapMaker().weakKeys().makeMap();
 
 	@SubscribeEvent
-	public void worldTick(WorldTickEvent event) {
-		if (event.phase != Phase.END) {
+	public void worldTick(TickEvent.WorldTickEvent event) {
+		if (event.phase != TickEvent.Phase.END) {
 			return;
 		}
-		if (event.side != Side.SERVER) {
-			return;
+		if (event.side.isServer()) {
+			LPWorldInfo info = LPTickHandler.getWorldInfo(event.world);
+			info.worldTick++;
 		}
-		LPWorldInfo info = LPTickHandler.getWorldInfo(event.world);
-		info.worldTick++;
 	}
 
-	public static LPWorldInfo getWorldInfo(World world) {
+	public static LPWorldInfo getWorldInfo(IWorld world) {
 		LPWorldInfo info = LPTickHandler.worldInfo.get(world);
 		if (info == null) {
 			info = new LPWorldInfo();
 			LPTickHandler.worldInfo.put(world, info);
-			world.addEventListener(new LPWorldAccess(world, info));
 		}
 		return info;
 	}

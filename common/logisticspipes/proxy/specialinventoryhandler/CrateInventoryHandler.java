@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.proxy.bs.ICrateStorageProxy;
@@ -39,13 +39,13 @@ public class CrateInventoryHandler extends SpecialInventoryHandler implements Sp
 	}
 
 	@Override
-	public boolean isType(@Nonnull TileEntity tile, @Nullable EnumFacing dir) {
+	public boolean isType(@Nonnull TileEntity tile, @Nullable Direction direction) {
 		return SimpleServiceLocator.betterStorageProxy.isBetterStorageCrate(tile);
 	}
 
 	@Nullable
 	@Override
-	public SpecialInventoryHandler getUtilForTile(@Nonnull TileEntity tile, @Nullable EnumFacing direction, @Nonnull ProviderMode mode) {
+	public SpecialInventoryHandler getUtilForTile(@Nonnull TileEntity tile, @Nullable Direction direction, @Nonnull ProviderMode mode) {
 		return new CrateInventoryHandler(tile, mode);
 	}
 
@@ -107,7 +107,7 @@ public class CrateInventoryHandler extends SpecialInventoryHandler implements Sp
 
 	@Override
 	@Nonnull
-	public ItemStack add(@Nonnull ItemStack stack, EnumFacing from, boolean doAdd) {
+	public ItemStack add(@Nonnull ItemStack stack, Direction from, boolean doAdd) {
 		ItemStack st = stack.copy();
 		st.setCount(0);
 		if (doAdd) {

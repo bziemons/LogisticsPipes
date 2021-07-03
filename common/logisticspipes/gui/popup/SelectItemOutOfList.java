@@ -70,7 +70,7 @@ public class SelectItemOutOfList extends SubGuiScreen implements IItemSearch {
 	@Override
 	protected void renderToolTips(int mouseX, int mouseY, float par3) {
 		if (!hasSubGui()) {
-			GuiGraphics.displayItemToolTip(itemDisplay.getToolTip(), this, zLevel, 0, 0);
+			GuiGraphics.displayItemToolTip(itemDisplay.getToolTip(), this, blitOffset, 0, 0);
 		}
 	}
 
@@ -79,7 +79,7 @@ public class SelectItemOutOfList extends SubGuiScreen implements IItemSearch {
 
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		fontRenderer.drawString(TextUtil.translate("misc.selectType"), guiLeft + 8, guiTop + 6, 0x404040, false); //TODO
 
 		itemDisplay.renderPageNumber(right - 47, guiTop + 6);
@@ -88,7 +88,7 @@ public class SelectItemOutOfList extends SubGuiScreen implements IItemSearch {
 		search.drawTextBox();
 
 		//itemDisplay.renderSortMode(xCenter, bottom - 52);
-		itemDisplay.renderItemArea(zLevel);
+		itemDisplay.renderItemArea(blitOffset);
 	}
 
 	@Override

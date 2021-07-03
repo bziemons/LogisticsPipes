@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.IWorld;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.model.IModelState;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 import codechicken.lib.render.CCModel;
 import codechicken.lib.render.CCRenderState;
@@ -57,7 +57,7 @@ public class CCLProxy implements ICCLProxy {
 	}
 
 	@Override
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public TextureTransformation createIconTransformer(TextureAtlasSprite registerIcon) {
 		final IconTransformation icon = new IconTransformation(registerIcon);
 		return new TextureTransformation() {
@@ -101,12 +101,12 @@ public class CCLProxy implements ICCLProxy {
 			}
 
 			@Override
-			public void setBrightness(IBlockAccess world, BlockPos pos) {
+			public void setBrightness(IWorld world, BlockPos pos) {
 				CCRenderState.instance().setBrightness(world, pos);
 			}
 
 			@Override
-			@SideOnly(Side.CLIENT)
+			@OnlyIn(Dist.CLIENT)
 			public void startDrawing(int mode, VertexFormat format) {
 				CCRenderState.instance().startDrawing(mode, format);
 			}

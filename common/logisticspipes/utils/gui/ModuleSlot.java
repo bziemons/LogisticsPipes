@@ -2,7 +2,7 @@ package logisticspipes.utils.gui;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 
@@ -27,7 +27,7 @@ public class ModuleSlot extends RestrictedSlot {
 
 	@Nonnull
 	@Override
-	public ItemStack onTake(@Nonnull EntityPlayer player, @Nonnull ItemStack itemStack) {
+	public ItemStack onTake(PlayerEntity player, @Nonnull ItemStack itemStack) {
 		ItemModuleInformationManager.saveInformation(itemStack, _pipe.getSubModule(_moduleIndex));
 		return super.onTake(player, itemStack);
 	}

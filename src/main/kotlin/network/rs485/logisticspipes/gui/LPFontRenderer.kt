@@ -37,13 +37,13 @@
 
 package network.rs485.logisticspipes.gui
 
+import com.mojang.blaze3d.platform.GlStateManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import logisticspipes.LPConstants
 import logisticspipes.LogisticsPipes
 import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.renderer.Tessellator
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats
 import net.minecraft.util.ResourceLocation
@@ -77,13 +77,13 @@ class LPFontRenderer(private val fontName: String) {
                 }.forEach { deferred ->
                     deferred.invokeOnCompletion {
                         if (it != null) {
-                            LogisticsPipes.log.error("Error while preloading fonts:\n${it.stackTraceToString()}")
+                            LogisticsPipes.getLOGGER().error("Error while preloading fonts:\n${it.stackTraceToString()}")
                         } else {
                             val fontRenderer = deferred.getCompleted()
-                            LogisticsPipes.log.info("Preloaded font files: ${fontRenderer.fontName}")
-                            Minecraft.getMinecraft().addScheduledTask {
+                            LogisticsPipes.getLOGGER().info("Preloaded font files: ${fontRenderer.fontName}")
+                            Minecraft.getInstance().deferTask {
                                 fontRenderer::wrapperPlain.get()
-                                LogisticsPipes.log.info("Created font textures for: ${fontRenderer.fontName}")
+                                LogisticsPipes.getLOGGER().info("Created font textures for: ${fontRenderer.fontName}")
                             }
                         }
                     }
@@ -95,12 +95,12 @@ class LPFontRenderer(private val fontName: String) {
     private val fontPlain: IFont by lazy {
         val initialTime = System.currentTimeMillis()
         val fontResourcePlain = ResourceLocation(LPConstants.LP_MOD_ID, "fonts/$fontName.bdf")
-        FontParser.read(fontResourcePlain).also {  LogisticsPipes.log.info("Elapsed time parsing font: ${System.currentTimeMillis() - initialTime}ms") } ?: throw IOException("Failed to load ${fontResourcePlain.resourcePath}, this is not tolerated.")
+        FontParser.read(fontResourcePlain).also {  LogisticsPipes.getLOGGER().info("Elapsed time parsing font: ${System.currentTimeMillis() - initialTime}ms") } ?: throw IOException("Failed to load ${fontResourcePlain.path}, this is not tolerated.")
     }
 
     private val wrapperPlain: FontWrapper by lazy {
         val initialTime = System.currentTimeMillis()
-        FontWrapper(fontPlain).also {  LogisticsPipes.log.info("Elapsed time wrapping font: ${System.currentTimeMillis() - initialTime}ms") }
+        FontWrapper(fontPlain).also {  LogisticsPipes.getLOGGER().info("Elapsed time wrapping font: ${System.currentTimeMillis() - initialTime}ms") }
     }
 
     private val shadowColor = 0xEE3C3F41.toInt()
@@ -110,23 +110,23 @@ class LPFontRenderer(private val fontName: String) {
         get() = Tessellator.getInstance()
 
     private fun start() {
-        GlStateManager.enableTexture2D()
-        GlStateManager.enableAlpha()
+        GlStateManager.enableTexture()
+        GlStateManager.enableAlphaTest()
         GlStateManager.enableBlend()
         tessellator.buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR)
     }
 
     private fun startUntextured() {
-        GlStateManager.enableAlpha()
+        GlStateManager.enableAlphaTest()
         GlStateManager.enableBlend()
-        GlStateManager.disableTexture2D()
+        GlStateManager.disableTexture()
         tessellator.buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR)
     }
 
     private fun render() {
         tessellator.draw()
-        GlStateManager.disableAlpha()
-        GlStateManager.enableTexture2D()
+        GlStateManager.disableAlphaTest()
+        GlStateManager.enableTexture()
     }
 
     /**
@@ -185,8 +185,8 @@ class LPFontRenderer(private val fontName: String) {
         // The offset distance requires a tan calculation because merely adding a fixed value independent of the character's height would lead to slightly different angles for each character.
         val italicsOffset = if (italics) glyph.height * tan(0.2181662f) else 0f
         // Set the Magnification filter to Nearest neighbour to have sharp looking characters. (For some reason this wasn't working when applied in the start() method
-        GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST)
-        GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST)
+        GlStateManager.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
         // Bind the texture atlas where the current character is to GL11
         GlStateManager.bindTexture(texIndex)
         // Add character quad to buffer

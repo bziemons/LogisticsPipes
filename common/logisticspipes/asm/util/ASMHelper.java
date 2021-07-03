@@ -30,7 +30,7 @@ public class ASMHelper {
 	public static String getContentForMethod(ClassReader classReader, String methodName, String desc, boolean newLine) {
 		StringWriter stringWriter = new StringWriter();
 		PrintWriter printWriter = new PrintWriter(stringWriter);
-		TraceClassVisitor traceClassVisitor = new TraceClassVisitor(null, new MethodTextifier(), printWriter);
+		ClassVisitor traceClassVisitor = new TraceClassVisitor(null, new MethodTextifier(), printWriter);
 		FilterClassVisitor myClassVisitor = new FilterClassVisitor(traceClassVisitor, methodName, desc);
 		classReader.accept(myClassVisitor, ClassReader.SKIP_DEBUG);
 		BufferedReader reader = new BufferedReader(new StringReader(stringWriter.toString()));

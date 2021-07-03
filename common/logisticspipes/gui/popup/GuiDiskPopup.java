@@ -5,10 +5,8 @@ import java.io.IOException;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-
-import org.lwjgl.input.Keyboard;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
 
 import logisticspipes.interfaces.IDiskProvider;
 import logisticspipes.network.PacketHandler;
@@ -38,8 +36,8 @@ public class GuiDiskPopup extends SubGuiScreen {
 		super(150, 200, 0, 0);
 		this.diskProvider = diskProvider;
 		name2 = "";
-		if (diskProvider.getDisk().hasTagCompound()) {
-			name1 = diskProvider.getDisk().getTagCompound().getString("name");
+		if (diskProvider.getDisk().hasTag()) {
+			name1 = diskProvider.getDisk().getTag().getString("name");
 		} else {
 			name1 = "Disk";
 		}
@@ -47,34 +45,34 @@ public class GuiDiskPopup extends SubGuiScreen {
 
 			@Override
 			public int getSize() {
-				NBTTagCompound nbt = diskProvider.getDisk().getTagCompound();
+				CompoundNBT nbt = diskProvider.getDisk().getTag();
 				if (nbt == null) {
-					diskProvider.getDisk().setTagCompound(new NBTTagCompound());
-					nbt = diskProvider.getDisk().getTagCompound();
+					diskProvider.getDisk().setTag(new CompoundNBT());
+					nbt = diskProvider.getDisk().getTag();
 				}
 
-				if (!nbt.hasKey("macroList")) {
-					NBTTagList list = new NBTTagList();
+				if (!nbt.contains("macroList")) {
+					ListNBT list = new ListNBT();
 					nbt.setTag("macroList", list);
 				}
-				NBTTagList list = nbt.getTagList("macroList", 10);
-				return list.tagCount();
+				ListNBT list = nbt.getList("macroList", 10);
+				return list.size();
 			}
 
 			@Override
 			public String getTextAt(int index) {
-				NBTTagCompound nbt = diskProvider.getDisk().getTagCompound();
+				CompoundNBT nbt = diskProvider.getDisk().getTag();
 				if (nbt == null) {
-					diskProvider.getDisk().setTagCompound(new NBTTagCompound());
-					nbt = diskProvider.getDisk().getTagCompound();
+					diskProvider.getDisk().setTag(new CompoundNBT());
+					nbt = diskProvider.getDisk().getTag();
 				}
 
-				if (!nbt.hasKey("macroList")) {
-					NBTTagList list = new NBTTagList();
+				if (!nbt.contains("macroList")) {
+					ListNBT list = new ListNBT();
 					nbt.setTag("macroList", list);
 				}
-				NBTTagList list = nbt.getTagList("macroList", 10);
-				return list.getCompoundTagAt(index).getString("name");
+				ListNBT list = nbt.getList("macroList", 10);
+				return list.getCompound(index).getString("name");
 			}
 
 			@Override
@@ -104,13 +102,13 @@ public class GuiDiskPopup extends SubGuiScreen {
 
 	private void writeDiskName() {
 		editname = false;
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(DiskSetNamePacket.class).setString(name1 + name2).setPosX(diskProvider.getX()).setPosY(diskProvider.getY()).setPosZ(diskProvider.getZ()));
-		NBTTagCompound nbt = new NBTTagCompound();
-		if (diskProvider.getDisk().hasTagCompound()) {
-			nbt = diskProvider.getDisk().getTagCompound();
+		MainProxy.sendPacketToServer(PacketHandler.getPacket(DiskSetNamePacket.class).putString(name1 + name2).setPosX(diskProvider.getX()).setPosY(diskProvider.getY()).setPosZ(diskProvider.getZ()));
+		CompoundNBT nbt = new CompoundNBT();
+		if (diskProvider.getDisk().hasTag()) {
+			nbt = diskProvider.getDisk().getTag();
 		}
-		nbt.setString("name", name1 + name2);
-		diskProvider.getDisk().setTagCompound(nbt);
+		nbt.putString("name", name1 + name2);
+		diskProvider.getDisk().setTag(nbt);
 		MainProxy.sendPacketToServer(PacketHandler.getPacket(DiscContent.class).setStack(diskProvider.getDisk()).setPosX(diskProvider.getX()).setPosY(diskProvider.getY()).setPosZ(diskProvider.getZ()));
 	}
 
@@ -128,7 +126,7 @@ public class GuiDiskPopup extends SubGuiScreen {
 
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		mc.fontRenderer.drawStringWithShadow("Disk", xCenter - (mc.fontRenderer.getStringWidth("Disk") / 2), guiTop + 10, 0xFFFFFF);
 
 		//NameInput
@@ -176,23 +174,23 @@ public class GuiDiskPopup extends SubGuiScreen {
 	}
 
 	private void handleDelete() {
-		NBTTagCompound nbt = diskProvider.getDisk().getTagCompound();
+		CompoundNBT nbt = diskProvider.getDisk().getTag();
 		if (nbt == null) {
-			diskProvider.getDisk().setTagCompound(new NBTTagCompound());
-			nbt = diskProvider.getDisk().getTagCompound();
+			diskProvider.getDisk().setTag(new CompoundNBT());
+			nbt = diskProvider.getDisk().getTag();
 		}
 
-		if (!nbt.hasKey("macroList")) {
-			NBTTagList list = new NBTTagList();
+		if (!nbt.contains("macroList")) {
+			ListNBT list = new ListNBT();
 			nbt.setTag("macroList", list);
 		}
 
-		NBTTagList list = nbt.getTagList("macroList", 10);
-		NBTTagList listnew = new NBTTagList();
+		ListNBT list = nbt.getList("macroList", 10);
+		ListNBT listnew = new ListNBT();
 
-		for (int i = 0; i < list.tagCount(); i++) {
+		for (int i = 0; i < list.size(); i++) {
 			if (i != textList.getSelected()) {
-				listnew.appendTag(list.getCompoundTagAt(i));
+				listnew.add(list.getCompound(i));
 			}
 		}
 		textList.setSelected(-1);
@@ -202,12 +200,12 @@ public class GuiDiskPopup extends SubGuiScreen {
 
 	private void handleAddEdit() {
 		String macroname = "";
-		NBTTagCompound nbt = diskProvider.getDisk().getTagCompound();
+		CompoundNBT nbt = diskProvider.getDisk().getTag();
 		if (nbt != null) {
-			if (nbt.hasKey("macroList")) {
-				NBTTagList list = nbt.getTagList("macroList", 10);
-				if (textList.getSelected() != -1 && textList.getSelected() < list.tagCount()) {
-					NBTTagCompound entry = list.getCompoundTagAt(textList.getSelected());
+			if (nbt.contains("macroList")) {
+				ListNBT list = nbt.getList("macroList", 10);
+				if (textList.getSelected() != -1 && textList.getSelected() < list.size()) {
+					CompoundNBT entry = list.getCompound(textList.getSelected());
 					macroname = entry.getString("name");
 				}
 			}
@@ -240,7 +238,7 @@ public class GuiDiskPopup extends SubGuiScreen {
 			if (c == 13) {
 				writeDiskName();
 				return;
-			} else if (i == 47 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
+			} else if (i == 47 && InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL)) {
 				name1 = name1 + GuiScreen.getClipboardString();
 			} else if (c == 8) {
 				if (name1.length() > 0) {
@@ -277,9 +275,9 @@ public class GuiDiskPopup extends SubGuiScreen {
 					name2 = name2.substring(1);
 				}
 			}
-			//		} else if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)){
+			//		} else if (InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LSHIFT) || InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_RSHIFT)){
 			//			super.keyTyped(c, i);
-			//		} else if (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) || Keyboard.isKeyDown(Keyboard.KEY_RCONTROL)){
+			//		} else if (InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL) || InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_RCONTROL)){
 			//			super.keyTyped(c, i);
 		} else {
 			super.keyTyped(c, i);

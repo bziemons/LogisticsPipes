@@ -12,7 +12,7 @@ import logisticspipes.network.packets.DeleteChannelPacket;
 import logisticspipes.network.packets.gui.OpenAddChannelGUIPacket;
 import logisticspipes.network.packets.gui.OpenEditChannelGUIPacket;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.routing.channels.ChannelInformation;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.gui.SubGuiScreen;
@@ -64,7 +64,7 @@ public class GuiManageChannelPopup extends SubGuiScreen implements IGUIChannelIn
 
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		drawTitle();
 
 		textList.renderGuiBackground(mouseX, mouseY);

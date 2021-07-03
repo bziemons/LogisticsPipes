@@ -8,18 +8,19 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 
 import net.minecraft.block.Block;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.StringNBT;
 import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
+import net.minecraft.network.play.server.SUpdateTileEntityPacket;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.math.BlockPos;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.common.thread.EffectiveSide;
 
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
@@ -55,7 +56,7 @@ public class LogisticsTileGenericSubMultiBlock extends TileEntity implements ISu
 	@Override
 	public void setPos(BlockPos posIn) {
 		super.setPos(posIn);
-		if (MainProxy.isClient()) {
+		if (EffectiveSide.get().isClient()) {
 			System.out.println("Multi Pipe Created at: " + posIn);
 		}
 	}
@@ -74,7 +75,7 @@ public class LogisticsTileGenericSubMultiBlock extends TileEntity implements ISu
 		if (MainProxy.isServer(world)) {
 			boolean allInvalid = true;
 			for (LogisticsTileGenericPipe pipe : mainPipe) {
-				if (!pipe.isInvalid()) {
+				if (!pipe.isRemoved()) {
 					allInvalid = false;
 					break;
 				}
@@ -105,28 +106,28 @@ public class LogisticsTileGenericSubMultiBlock extends TileEntity implements ISu
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbt) {
+	public void readFromNBT(CompoundNBT nbt) {
 		super.readFromNBT(nbt);
-		if (nbt.hasKey("MainPipePos_xPos")) {
+		if (nbt.contains("MainPipePos_xPos")) {
 			mainPipePos.clear();
 			DoubleCoordinates pos = DoubleCoordinates.readFromNBT("MainPipePos_", nbt);
 			if (pos != null) {
 				mainPipePos.add(pos);
 			}
 		}
-		if (nbt.hasKey("MainPipePosList")) {
-			NBTTagList list = nbt.getTagList("MainPipePosList", new NBTTagCompound().getId());
-			for (int i = 0; i < list.tagCount(); i++) {
-				DoubleCoordinates pos = DoubleCoordinates.readFromNBT("MainPipePos_", list.getCompoundTagAt(i));
+		if (nbt.contains("MainPipePosList")) {
+			ListNBT list = nbt.getList("MainPipePosList", new CompoundNBT().getId());
+			for (int i = 0; i < list.size(); i++) {
+				DoubleCoordinates pos = DoubleCoordinates.readFromNBT("MainPipePos_", list.getCompound(i));
 				if (pos != null) {
 					mainPipePos.add(pos);
 				}
 			}
 		}
-		if (nbt.hasKey("SubTypeList")) {
-			NBTTagList list = nbt.getTagList("SubTypeList", new NBTTagString().getId());
+		if (nbt.contains("SubTypeList")) {
+			ListNBT list = nbt.getList("SubTypeList", new StringNBT().getId());
 			subTypes.clear();
-			for (int i = 0; i < list.tagCount(); i++) {
+			for (int i = 0; i < list.size(); i++) {
 				String name = list.getStringTagAt(i);
 				CoreMultiBlockPipe.SubBlockTypeForShare type = CoreMultiBlockPipe.SubBlockTypeForShare.valueOf(name);
 				if (type != null) {
@@ -139,19 +140,19 @@ public class LogisticsTileGenericSubMultiBlock extends TileEntity implements ISu
 
 	@Nonnull
 	@Override
-	public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+	public CompoundNBT writeToNBT(CompoundNBT nbt) {
 		nbt = super.writeToNBT(nbt);
-		NBTTagList nbtList = new NBTTagList();
+		ListNBT nbtList = new ListNBT();
 		for (DoubleCoordinates pos : mainPipePos) {
-			NBTTagCompound compound = new NBTTagCompound();
+			CompoundNBT compound = new CompoundNBT();
 			pos.writeToNBT("MainPipePos_", compound);
-			nbtList.appendTag(compound);
+			nbtList.add(compound);
 		}
 		nbt.setTag("MainPipePosList", nbtList);
-		NBTTagList nbtTypeList = new NBTTagList();
+		ListNBT nbtTypeList = new ListNBT();
 		for (CoreMultiBlockPipe.SubBlockTypeForShare type : subTypes) {
 			if (type == null) continue;
-			nbtTypeList.appendTag(new NBTTagString(type.name()));
+			nbtTypeList.add(new StringNBT(type.name()));
 		}
 		nbt.setTag("SubTypeList", nbtTypeList);
 		return nbt;
@@ -159,8 +160,8 @@ public class LogisticsTileGenericSubMultiBlock extends TileEntity implements ISu
 
 	@Nonnull
 	@Override
-	public NBTTagCompound getUpdateTag() {
-		NBTTagCompound nbt = super.getUpdateTag();
+	public CompoundNBT getUpdateTag() {
+		CompoundNBT nbt = super.getUpdateTag();
 		try {
 			PacketHandler.addPacketToNBT(getLPDescriptionPacket(), nbt);
 		} catch (Exception e) {
@@ -170,25 +171,25 @@ public class LogisticsTileGenericSubMultiBlock extends TileEntity implements ISu
 	}
 
 	@Override
-	@SideOnly(Side.CLIENT)
-	public void handleUpdateTag(@Nonnull NBTTagCompound tag) {
+	@OnlyIn(Dist.CLIENT)
+	public void handleUpdateTag(@Nonnull CompoundNBT tag) {
 		PacketHandler.queueAndRemovePacketFromNBT(tag);
 		super.handleUpdateTag(tag);
 	}
 
 	@Override
-	public SPacketUpdateTileEntity getUpdatePacket() {
-		NBTTagCompound nbt = new NBTTagCompound();
+	public SUpdateTileEntityPacket getUpdatePacket() {
+		CompoundNBT nbt = new CompoundNBT();
 		try {
 			PacketHandler.addPacketToNBT(getLPDescriptionPacket(), nbt);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return new SPacketUpdateTileEntity(getPos(), 1, nbt);
+		return new SUpdateTileEntityPacket(getPos(), 1, nbt);
 	}
 
 	@Override
-	public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity packet) {
+	public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket packet) {
 		PacketHandler.queueAndRemovePacketFromNBT(packet.getNbtCompound());
 	}
 
@@ -210,11 +211,11 @@ public class LogisticsTileGenericSubMultiBlock extends TileEntity implements ISu
 		return this;
 	}
 
-	public TileEntity getTile(EnumFacing to) {
+	public TileEntity getTile(Direction to) {
 		return getTile(to, false);
 	}
 
-	public TileEntity getTile(EnumFacing to, boolean force) {
+	public TileEntity getTile(Direction to, boolean force) {
 		TileBuffer[] cache = getTileCache();
 		if (cache != null) {
 			if (force) {
@@ -226,7 +227,7 @@ public class LogisticsTileGenericSubMultiBlock extends TileEntity implements ISu
 		}
 	}
 
-	public Block getBlock(EnumFacing to) {
+	public Block getBlock(Direction to) {
 		TileBuffer[] cache = getTileCache();
 		if (cache != null) {
 			return cache[to.ordinal()].getBlock();

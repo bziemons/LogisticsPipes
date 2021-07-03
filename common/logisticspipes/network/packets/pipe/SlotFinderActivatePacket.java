@@ -1,12 +1,12 @@
 package logisticspipes.network.packets.pipe;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.network.abstractpackets.ModernPacket;
-import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.ModuleCoordinatesPacket;
 import logisticspipes.renderer.LogisticsGuiOverrenderer;
 import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
@@ -56,7 +56,7 @@ public class SlotFinderActivatePacket extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsGuiOverrenderer.getInstance().setPipePosX(getPosX());
 		LogisticsGuiOverrenderer.getInstance().setPipePosY(getPosY());
 		LogisticsGuiOverrenderer.getInstance().setPipePosZ(getPosZ());

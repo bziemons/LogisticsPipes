@@ -37,7 +37,7 @@
 
 package network.rs485.logisticspipes.gui.guidebook
 
-import net.minecraft.nbt.NBTTagCompound
+import net.minecraft.nbt.CompoundNBT
 import network.rs485.logisticspipes.guidebook.BookContents
 import network.rs485.logisticspipes.util.LPDataInput
 import network.rs485.logisticspipes.util.LPDataOutput
@@ -51,19 +51,19 @@ interface IPageData : LPSerializable {
     var color: Int?
     var progress: Float
 
-    fun fromTag(tag: NBTTagCompound) {
+    fun fromTag(tag: CompoundNBT) {
         page = tag.getString("page")
-        color = if (tag.hasKey("color")) tag.getInteger("color") else null
+        color = if (tag.contains("color")) tag.getInt("color") else null
         progress = tag.getFloat("progress")
     }
 
-    fun toTag(): NBTTagCompound {
-        val nbt = NBTTagCompound()
-        nbt.setString("page", page)
+    fun toTag(): CompoundNBT {
+        val nbt = CompoundNBT()
+        nbt.putString("page", page)
         color?.also {
-            nbt.setInteger("color", it)
+            nbt.putInt("color", it)
         }
-        nbt.setFloat("progress", progress)
+        nbt.putFloat("progress", progress)
         return nbt
     }
 
@@ -71,7 +71,7 @@ interface IPageData : LPSerializable {
      * Takes in an LPDataOutput buffer and turns a SavedPage object into bytes and puts them inside the buffer.
      * @param output data to send
      */
-    override fun write(output: LPDataOutput) = output.writeNBTTagCompound(toTag())
+    override fun write(output: LPDataOutput) = output.writeCompoundNBT(toTag())
 
     /**
      * Takes in an LPDataInput buffer and turns the buffered bytes object into a SavedPage object.
@@ -79,7 +79,7 @@ interface IPageData : LPSerializable {
      * @return SavedPage object created from the buffered data
      */
     override fun read(input: LPDataInput) {
-        input.readNBTTagCompound()?.apply(::fromTag)
+        input.readCompoundNBT()?.apply(::fromTag)
     }
 }
 
@@ -94,7 +94,7 @@ class PageData : IPageData {
         read(input)
     }
 
-    constructor(tag: NBTTagCompound) {
+    constructor(tag: CompoundNBT) {
         fromTag(tag)
     }
 
@@ -120,8 +120,8 @@ class Page(data: PageData) : IPageData by data {
         if (visibleArea.roundedHeight < drawable.height) drawable.height - visibleArea.roundedHeight else 0
 
     fun mouseClicked(
-        mouseX: Int,
-        mouseY: Int,
+        mouseX: Double,
+        mouseY: Double,
         visibleArea: Rectangle,
         guideActionListener: GuiGuideBook.ActionListener,
     ) {

@@ -1,9 +1,9 @@
 package logisticspipes.commands.commands.debug;
 
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.command.ICommandSource;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.StringTextComponent;
 
 import logisticspipes.commands.abstracts.ICommandHandler;
 
@@ -15,8 +15,8 @@ public class HandCommand implements ICommandHandler {
 	}
 
 	@Override
-	public boolean isCommandUsableBy(ICommandSender sender) {
-		return sender instanceof EntityPlayer;
+	public boolean isCommandUsableBy(ICommandSource sender) {
+		return sender instanceof PlayerEntity;
 	}
 
 	@Override
@@ -25,12 +25,12 @@ public class HandCommand implements ICommandHandler {
 	}
 
 	@Override
-	public void executeCommand(ICommandSender sender, String[] args) {
-		EntityPlayer player = (EntityPlayer) sender;
+	public void executeCommand(ICommandSource sender, String[] args) {
+		PlayerEntity player = (PlayerEntity) sender;
 		ItemStack item = player.inventory.mainInventory.get(player.inventory.currentItem);
 		if (!item.isEmpty()) {
 			DebugGuiController.instance().startWatchingOf(item, player);
-			sender.sendMessage(new TextComponentString("Starting HandDebuging"));
+			sender.sendMessage(new StringTextComponent("Starting HandDebuging"));
 		}
 	}
 }

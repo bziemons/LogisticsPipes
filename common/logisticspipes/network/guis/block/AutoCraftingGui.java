@@ -2,7 +2,7 @@ package logisticspipes.network.guis.block;
 
 import java.util.BitSet;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.blocks.crafting.LogisticsCraftingTableTileEntity;
 import logisticspipes.gui.GuiLogisticsCraftingTable;
@@ -26,7 +26,7 @@ public class AutoCraftingGui extends CoordinatesGuiProvider {
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		LogisticsCraftingTableTileEntity tile = getTileAs(player.world, LogisticsCraftingTableTileEntity.class);
 		if (tile.isFuzzy()) {
 			tile.fuzzyFlags.replaceWith(fuzzyFlags);
@@ -36,7 +36,7 @@ public class AutoCraftingGui extends CoordinatesGuiProvider {
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		LogisticsCraftingTableTileEntity tile = getTileAs(player.world, LogisticsCraftingTableTileEntity.class);
 		DummyContainer dummy = new DummyContainer(player, tile.matrix, tile);
 

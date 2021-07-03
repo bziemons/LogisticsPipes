@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.StringTextComponent;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.routing.IRequestItems;
@@ -53,17 +53,17 @@ public class PipeItemsRequestLogistics extends CoreRoutedPipe implements IReques
 		return null;
 	}
 
-	public void openGui(EntityPlayer entityplayer) {
-		entityplayer.openGui(LogisticsPipes.instance, GuiIDs.GUI_Normal_Orderer_ID, getWorld(), getX(), getY(), getZ());
+	public void openGui(PlayerEntity player) {
+		PlayerEntity.openGui(LogisticsPipes.instance, GuiIDs.GUI_Normal_Orderer_ID, getWorld(), getX(), getY(), getZ());
 	}
 
 	@Override
-	public boolean handleClick(EntityPlayer entityplayer, SecuritySettings settings) {
+	public boolean handleClick(PlayerEntity player, SecuritySettings settings) {
 		if (MainProxy.isServer(getWorld())) {
 			if (settings == null || settings.openRequest) {
-				openGui(entityplayer);
+				openGui(PlayerEntity);
 			} else {
-				entityplayer.sendMessage(new TextComponentString("Permission denied"));
+				PlayerEntity.sendMessage(new StringTextComponent("Permission denied"));
 			}
 		}
 		return true;

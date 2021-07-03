@@ -40,7 +40,7 @@ package network.rs485.logisticspipes.property
 import logisticspipes.utils.item.ItemIdentifierInventory
 import logisticspipes.utils.item.ItemIdentifierStack
 import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NBTTagCompound
+import net.minecraft.nbt.CompoundNBT
 import network.rs485.logisticspipes.inventory.IItemIdentifierInventory
 import network.rs485.logisticspipes.inventory.SlotAccess
 import java.util.concurrent.CopyOnWriteArraySet
@@ -68,8 +68,6 @@ class InventoryProperty(private val inv: ItemIdentifierInventory, override val t
     override fun setInventorySlotContents(i: Int, itemstack: ItemIdentifierStack?) =
         inv.setInventorySlotContents(i, itemstack).alsoIChanged()
 
-    override fun setField(id: Int, value: Int) = inv.setField(id, value).alsoIChanged()
-
     override fun handleItemIdentifierList(_allItems: Collection<ItemIdentifierStack>) =
         inv.handleItemIdentifierList(_allItems).alsoIChanged()
 
@@ -79,12 +77,12 @@ class InventoryProperty(private val inv: ItemIdentifierInventory, override val t
 
     override fun clearInventorySlotContents(i: Int) = inv.clearInventorySlotContents(i).alsoIChanged()
 
-    override fun readFromNBT(tag: NBTTagCompound) {
+    override fun readFromNBT(tag: CompoundNBT) {
         // FIXME: after 1.12 remove this items appending crap
-        if (tagKey.isEmpty() || tag.hasKey(tagKey + "items")) inv.readFromNBT(tag, tagKey).alsoIChanged()
+        if (tagKey.isEmpty() || tag.contains(tagKey + "items")) inv.readFromNBT(tag, tagKey).alsoIChanged()
     }
 
-    override fun writeToNBT(tag: NBTTagCompound) = inv.writeToNBT(tag, tagKey)
+    override fun writeToNBT(tag: CompoundNBT) = inv.writeToNBT(tag, tagKey)
 
     override fun copyValue(): ItemIdentifierInventory = ItemIdentifierInventory(inv)
 

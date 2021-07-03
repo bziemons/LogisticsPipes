@@ -1,0 +1,5 @@
+<root>
+    <item name='net.minecraft.inventory.container.Slot boolean canTakeStack(net.minecraft.entity.player.PlayerEntity) 0'>
+        <annotation name='javax.annotation.Nullable'/>
+    </item>
+</root>

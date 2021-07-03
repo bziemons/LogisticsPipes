@@ -7,11 +7,12 @@
 
 package logisticspipes.gui;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
@@ -47,8 +48,8 @@ public class GuiChassisPipe extends LogisticsBaseGuiScreen {
 
 	private final boolean hasUpgradeModuleUpgarde;
 
-	public GuiChassisPipe(EntityPlayer player, PipeLogisticsChassis chassis, boolean hasUpgradeModuleUpgarde) { //, GuiScreen previousGui) {
-		super(null);
+	public GuiChassisPipe(PlayerEntity player, PipeLogisticsChassis chassis, boolean hasUpgradeModuleUpgarde) { //, GuiScreen previousGui) {
+		super(null, inv, titleIn);
 		_chassiPipe = chassis;
 		_moduleInventory = chassis.getModuleInventory();
 		//_previousGui = previousGui;
@@ -172,7 +173,7 @@ public class GuiChassisPipe extends LogisticsBaseGuiScreen {
 
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int x, int y) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		for (int i = 0; i < _chassiPipe.getChassisSize(); i++)
 			GuiGraphics.drawSlotBackground(mc, guiLeft + 17, guiTop + 8 + 20 * i);
 

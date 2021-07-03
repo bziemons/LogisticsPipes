@@ -5,12 +5,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
@@ -48,7 +48,7 @@ public class PipeItemsFluidSupplier extends CoreRoutedPipe implements IRequestIt
 		super(new PipeTransportLogistics(true) {
 
 			@Override
-			public boolean canPipeConnect(TileEntity tile, EnumFacing dir) {
+			public boolean canPipeConnect(TileEntity tile, Direction dir) {
 				if (super.canPipeConnect(tile, dir)) {
 					return true;
 				}
@@ -97,9 +97,9 @@ public class PipeItemsFluidSupplier extends CoreRoutedPipe implements IRequestIt
 
 	public void endReached(LPTravelingItemServer data, TileEntity tile) {
 		getCacheHolder().trigger(CacheTypes.Inventory);
-		transport.markChunkModified(tile);
+		tile.markDirty();
 		notifyOfItemArival(data.getInfo());
-		EnumFacing orientation = data.output.getOpposite();
+		Direction orientation = data.output.getOpposite();
 		if (getOriginalUpgradeManager().hasSneakyUpgrade()) {
 			orientation = getOriginalUpgradeManager().getSneakyOrientation();
 		}
@@ -249,17 +249,17 @@ public class PipeItemsFluidSupplier extends CoreRoutedPipe implements IRequestIt
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		super.readFromNBT(nbttagcompound);
-		dummyInventory.readFromNBT(nbttagcompound, "");
-		_requestPartials = nbttagcompound.getBoolean("requestpartials");
+	public void readFromNBT(CompoundNBT tag) {
+		super.readFromNBT(CompoundNBT);
+		dummyInventory.readFromNBT(CompoundNBT, "");
+		_requestPartials = CompoundNBT.getBoolean("requestpartials");
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		super.writeToNBT(nbttagcompound);
-		dummyInventory.writeToNBT(nbttagcompound, "");
-		nbttagcompound.setBoolean("requestpartials", _requestPartials);
+	public void writeToNBT(CompoundNBT tag) {
+		super.writeToNBT(tag);
+		dummyInventory.writeToNBT(CompoundNBT, "");
+		tag.putBoolean("requestpartials", _requestPartials);
 	}
 
 	private void decreaseRequested(ItemIdentifierStack item) {
@@ -308,8 +308,8 @@ public class PipeItemsFluidSupplier extends CoreRoutedPipe implements IRequestIt
 	}
 
 	@Override
-	public void onWrenchClicked(EntityPlayer entityplayer) {
-		entityplayer.openGui(LogisticsPipes.instance, GuiIDs.GUI_FluidSupplier_ID, getWorld(), getX(), getY(), getZ());
+	public void onWrenchClicked(PlayerEntity player) {
+		PlayerEntity.openGui(LogisticsPipes.instance, GuiIDs.GUI_FluidSupplier_ID, getWorld(), getX(), getY(), getZ());
 	}
 
 	/*** GUI ***/

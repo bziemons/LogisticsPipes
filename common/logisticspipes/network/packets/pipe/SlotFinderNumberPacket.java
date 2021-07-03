@@ -1,12 +1,12 @@
 package logisticspipes.network.packets.pipe;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.inventory.Slot;
+import net.minecraft.block.Blocks;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.util.text.TranslationTextComponent;
 
 import net.minecraftforge.items.CapabilityItemHandler;
 
@@ -16,14 +16,13 @@ import lombok.Setter;
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.modules.ModuleActiveSupplier;
 import logisticspipes.network.abstractpackets.ModernPacket;
-import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.ModuleCoordinatesPacket;
 import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.item.ItemIdentifier;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 
-@StaticResolve
+// FIXME: @StaticResolve
 public class SlotFinderNumberPacket extends ModuleCoordinatesPacket {
 
 	@Getter
@@ -51,8 +50,9 @@ public class SlotFinderNumberPacket extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
-		TileEntity inv = this.getTileAs(player.world, tile -> tile.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null));
+	public void processPacket(PlayerEntity player) {
+		TileEntity inv = this.getTileAs(player.world,
+				tile -> tile.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null).isPresent());
 		IInventoryUtil util = SimpleServiceLocator.inventoryUtilFactory.getInventoryUtil(inv, null);
 		if (util == null) return;
 		Slot result = null;
@@ -68,7 +68,7 @@ public class SlotFinderNumberPacket extends ModuleCoordinatesPacket {
 			}
 		}
 		if (result == null) {
-			player.sendMessage(new TextComponentTranslation("lp.chat.slotnotfound"));
+			player.sendMessage(new TranslationTextComponent("lp.chat.slotnotfound"));
 			return;
 		}
 		int resultIndex = -1;
@@ -81,10 +81,10 @@ public class SlotFinderNumberPacket extends ModuleCoordinatesPacket {
 				}
 			}
 		} else {
-			ItemStack dummyStack = new ItemStack(Blocks.DIRT, 1, 0);
-			NBTTagCompound nbt = new NBTTagCompound();
-			nbt.setBoolean("LPStackFinderBoolean", true); //Make it unique
-			dummyStack.setTagCompound(nbt); // dummyStack: yay, I am unique
+			ItemStack dummyStack = new ItemStack(Blocks.DIRT, 1);
+			CompoundNBT nbt = new CompoundNBT();
+			nbt.putBoolean("LPStackFinderBoolean", true); //Make it unique
+			dummyStack.setTag(nbt); // dummyStack: yay, I am unique
 			result.putStack(dummyStack);
 			for (int i = 0; i < util.getSizeInventory(); i++) {
 				if (dummyStack == util.getStackInSlot(i)) {
@@ -98,7 +98,8 @@ public class SlotFinderNumberPacket extends ModuleCoordinatesPacket {
 					if (stack.isEmpty()) {
 						continue;
 					}
-					if (ItemIdentifier.get(stack).equals(ItemIdentifier.get(dummyStack)) && stack.getCount() == dummyStack.getCount()) {
+					if (ItemIdentifier.get(stack).equals(ItemIdentifier.get(dummyStack))
+							&& stack.getCount() == dummyStack.getCount()) {
 						resultIndex = i;
 						break;
 					}
@@ -108,7 +109,7 @@ public class SlotFinderNumberPacket extends ModuleCoordinatesPacket {
 		}
 
 		if (resultIndex == -1) {
-			player.sendMessage(new TextComponentTranslation("lp.chat.slotnotfound"));
+			player.sendMessage(new TranslationTextComponent("lp.chat.slotnotfound"));
 		} else {
 			//Copy pipe to coordinates to use the getPipe method
 			setPosX(getPipePosX());

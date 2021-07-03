@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.block;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import net.minecraftforge.fml.client.FMLClientHandler;
 
@@ -17,7 +17,7 @@ public class AmountTaskSubGui extends InventoryModuleCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		if (FMLClientHandler.instance().getClient().currentScreen instanceof GuiStatistics) {
 			((GuiStatistics) FMLClientHandler.instance().getClient().currentScreen).handlePacket1(getIdentList());
 		}

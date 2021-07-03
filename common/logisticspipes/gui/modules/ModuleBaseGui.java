@@ -19,7 +19,7 @@ public abstract class ModuleBaseGui extends LogisticsBaseGuiScreen {
 	protected LogisticsModule module;
 
 	public ModuleBaseGui(Container par1Container, LogisticsModule module) {
-		super(par1Container);
+		super(par1Container, inv, titleIn);
 		this.module = module;
 	}
 

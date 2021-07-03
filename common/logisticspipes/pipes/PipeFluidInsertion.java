@@ -5,8 +5,8 @@ import java.util.List;
 import javax.annotation.Nonnull;
 
 import net.minecraft.item.Item;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 
 import net.minecraftforge.fluids.FluidStack;
 
@@ -25,8 +25,8 @@ import logisticspipes.utils.tuples.Pair;
 public class PipeFluidInsertion extends FluidRoutedPipe {
 
 	private final List<Pair<Integer, Integer>> localJamList = new ArrayList<>();
-	private int[] nextSendMax = new int[EnumFacing.VALUES.length];
-	private int[] nextSendMin = new int[EnumFacing.VALUES.length];
+	private int[] nextSendMax = new int[Direction.values().length];
+	private int[] nextSendMin = new int[Direction.values().length];
 
 	public PipeFluidInsertion(Item item) {
 		super(item);
@@ -51,7 +51,7 @@ public class PipeFluidInsertion extends FluidRoutedPipe {
 			}
 		}
 		PipeFluidTransportLogistics transport = (PipeFluidTransportLogistics) this.transport;
-		for (EnumFacing dir : EnumFacing.VALUES) {
+		for (Direction dir : Direction.values()) {
 			FluidStack stack = transport.sideTanks[dir.ordinal()].getFluid();
 			if (stack == null) {
 				continue;
@@ -92,14 +92,14 @@ public class PipeFluidInsertion extends FluidRoutedPipe {
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound tag) {
+	public void writeToNBT(@Nonnull CompoundNBT tag) {
 		super.writeToNBT(tag);
-		tag.setIntArray("nextSendMax", nextSendMax);
-		tag.setIntArray("nextSendMin", nextSendMin);
+		tag.putIntArray("nextSendMax", nextSendMax);
+		tag.putIntArray("nextSendMin", nextSendMin);
 	}
 
 	@Override
-	public void readFromNBT(@Nonnull NBTTagCompound tag) {
+	public void readFromNBT(@Nonnull CompoundNBT tag) {
 		super.readFromNBT(tag);
 		nextSendMax = tag.getIntArray("nextSendMax");
 		if (nextSendMax.length < 6) {

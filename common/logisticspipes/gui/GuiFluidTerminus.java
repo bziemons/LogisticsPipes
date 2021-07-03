@@ -1,6 +1,6 @@
 package logisticspipes.gui;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
 
 import logisticspipes.network.packets.pipe.PipePropertiesUpdate;
@@ -20,7 +20,7 @@ public class GuiFluidTerminus extends LogisticsBaseGuiScreen {
 	private final BlockPos pipePosition;
 	private final PropertyLayer.PropertyOverlay<ItemIdentifierInventory, InventoryProperty> sinkInventoryOverlay;
 
-	public GuiFluidTerminus(EntityPlayer player, PipeFluidTerminus pipe) {
+	public GuiFluidTerminus(PlayerEntity player, PipeFluidTerminus pipe) {
 		super(null);
 
 		pipePosition = pipe.getPos();

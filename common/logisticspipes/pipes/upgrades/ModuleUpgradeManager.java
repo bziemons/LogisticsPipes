@@ -2,8 +2,8 @@ package logisticspipes.pipes.upgrades;
 
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 
 import lombok.Getter;
 
@@ -23,7 +23,7 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 	private final IPipeUpgrade[] upgrades = new IPipeUpgrade[2];
 	private final PipeLogisticsChassis pipe;
 
-	private EnumFacing sneakyOrientation = null;
+	private Direction sneakyOrientation = null;
 	private boolean isAdvancedCrafter = false;
 	private boolean isFuzzyUpgrade = false;
 	private int liquidCrafter = 0;
@@ -81,7 +81,7 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 	}
 
 	@Override
-	public EnumFacing getSneakyOrientation() {
+	public Direction getSneakyOrientation() {
 		if (sneakyOrientation != null) {
 			return sneakyOrientation;
 		}
@@ -170,13 +170,13 @@ public class ModuleUpgradeManager implements ISimpleInventoryEventHandler, ISlot
 		}
 	}
 
-	public void readFromNBT(NBTTagCompound nbttagcompound, String prefix) {
-		inv.readFromNBT(nbttagcompound, "ModuleUpgradeInventory_" + prefix);
+	public void readFromNBT(CompoundNBT tag, String prefix) {
+		inv.readFromNBT(CompoundNBT, "ModuleUpgradeInventory_" + prefix);
 		InventoryChanged(inv);
 	}
 
-	public void writeToNBT(NBTTagCompound nbttagcompound, String prefix) {
-		inv.writeToNBT(nbttagcompound, "ModuleUpgradeInventory_" + prefix);
+	public void writeToNBT(CompoundNBT tag, String prefix) {
+		inv.writeToNBT(CompoundNBT, "ModuleUpgradeInventory_" + prefix);
 		InventoryChanged(inv);
 	}
 

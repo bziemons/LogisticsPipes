@@ -1,6 +1,6 @@
 package logisticspipes.network.guis.pipe;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.gui.GuiInvSysConnector;
 import logisticspipes.network.abstractguis.CoordinatesGuiProvider;
@@ -18,7 +18,7 @@ public class InvSysConGuiProvider extends CoordinatesGuiProvider {
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		LogisticsTileGenericPipe pipe = getTileAs(player.world, LogisticsTileGenericPipe.class);
 		if (!(pipe.pipe instanceof PipeItemsInvSysConnector)) {
 			return null;
@@ -27,7 +27,7 @@ public class InvSysConGuiProvider extends CoordinatesGuiProvider {
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		LogisticsTileGenericPipe pipe = getTileAs(player.world, LogisticsTileGenericPipe.class);
 		if (!(pipe.pipe instanceof PipeItemsInvSysConnector)) {
 			return null;

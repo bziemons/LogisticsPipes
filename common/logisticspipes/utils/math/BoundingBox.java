@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nonnull;
 
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
@@ -42,7 +42,7 @@ public class BoundingBox {
 	}
 
 	@Nonnull
-	public List<Vertex> getCornersWithUvForFace(@Nonnull EnumFacing face, float minU, float maxU, float minV, float maxV) {
+	public List<Vertex> getCornersWithUvForFace(@Nonnull Direction face, float minU, float maxU, float minV, float maxV) {
 		List<Vertex> result = new ArrayList<>(4);
 		switch (face) {
 			case NORTH:

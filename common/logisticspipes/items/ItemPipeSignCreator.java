@@ -6,14 +6,14 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
+import net.minecraft.util.Direction;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -49,42 +49,42 @@ public class ItemPipeSignCreator extends LogisticsItem {
 
 	@Nonnull
 	@Override
-	public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+	public ActionResultType onItemUse(PlayerEntity player, World world, BlockPos pos, Hand hand, Direction facing, float hitX, float hitY, float hitZ) {
 		if (MainProxy.isClient(world)) {
-			return EnumActionResult.FAIL;
+			return ActionResultType.FAIL;
 		}
 		ItemStack itemStack = player.inventory.getCurrentItem();
-		if (itemStack.isEmpty() || itemStack.getItemDamage() > this.getMaxDamage()) {
-			return EnumActionResult.FAIL;
+		if (itemStack.isEmpty() || itemStack.getDamage() > this.getMaxDamage()) {
+			return ActionResultType.FAIL;
 		}
 		TileEntity tile = world.getTileEntity(pos);
 		if (!(tile instanceof LogisticsTileGenericPipe)) {
-			return EnumActionResult.FAIL;
+			return ActionResultType.FAIL;
 		}
 
-		if (!itemStack.hasTagCompound()) {
-			itemStack.setTagCompound(new NBTTagCompound());
+		if (!itemStack.hasTag()) {
+			itemStack.setTag(new CompoundNBT());
 		}
-		itemStack.getTagCompound().setInteger("PipeClicked", 0);
+		itemStack.getTag().putInt("PipeClicked", 0);
 
-		int mode = itemStack.getTagCompound().getInteger("CreatorMode");
+		int mode = itemStack.getTag().getInt("CreatorMode");
 
 		if (facing == null) {
-			return EnumActionResult.FAIL;
+			return ActionResultType.FAIL;
 		}
 
 		if (!(((LogisticsTileGenericPipe) tile).pipe instanceof CoreRoutedPipe)) {
-			return EnumActionResult.FAIL;
+			return ActionResultType.FAIL;
 		}
 
 		CoreRoutedPipe pipe = (CoreRoutedPipe) ((LogisticsTileGenericPipe) tile).pipe;
 		if (pipe == null) {
-			return EnumActionResult.FAIL;
+			return ActionResultType.FAIL;
 		}
 		if (!player.isSneaking()) {
 			if (pipe.hasPipeSign(facing)) {
 				pipe.activatePipeSign(facing, player);
-				return EnumActionResult.SUCCESS;
+				return ActionResultType.SUCCESS;
 			} else if (mode >= 0 && mode < ItemPipeSignCreator.signTypes.size()) {
 				Class<? extends IPipeSign> signClass = ItemPipeSignCreator.signTypes.get(mode);
 				try {
@@ -92,29 +92,29 @@ public class ItemPipeSignCreator extends LogisticsItem {
 					if (sign.isAllowedFor(pipe)) {
 						itemStack.damageItem(1, player);
 						sign.addSignTo(pipe, facing, player);
-						return EnumActionResult.SUCCESS;
+						return ActionResultType.SUCCESS;
 					} else {
-						return EnumActionResult.FAIL;
+						return ActionResultType.FAIL;
 					}
 				} catch (InstantiationException | IllegalAccessException e) {
 					throw new RuntimeException(e);
 				}
 			} else {
-				return EnumActionResult.FAIL;
+				return ActionResultType.FAIL;
 			}
 		} else {
 			if (pipe.hasPipeSign(facing)) {
 				pipe.removePipeSign(facing, player);
 				itemStack.damageItem(-1, player);
 			}
-			return EnumActionResult.SUCCESS;
+			return ActionResultType.SUCCESS;
 		}
 	}
 
 	@Override
 	public int getMetadata(@Nonnull ItemStack stack) {
-		if (stack.isEmpty() || !stack.hasTagCompound()) return 0;
-		int mode = Objects.requireNonNull(stack.getTagCompound()).getInteger("CreatorMode");
+		if (stack.isEmpty() || !stack.hasTag()) return 0;
+		int mode = Objects.requireNonNull(stack.getTag()).getInt("CreatorMode");
 		return Math.min(mode, ItemPipeSignCreator.signTypes.size() - 1);
 	}
 
@@ -125,28 +125,28 @@ public class ItemPipeSignCreator extends LogisticsItem {
 
 	@Nonnull
 	@Override
-	public ActionResult<ItemStack> onItemRightClick(final World world, final EntityPlayer player, @Nonnull final EnumHand hand) {
+	public ActionResult<ItemStack> onItemRightClick(final World world, final PlayerEntity player, @Nonnull final Hand hand) {
 		ItemStack stack = player.inventory.getCurrentItem();
 		if (MainProxy.isClient(world)) {
-			return ActionResult.newResult(EnumActionResult.PASS, stack);
+			return ActionResult.newResult(ActionResultType.PASS, stack);
 		}
 		if (player.isSneaking()) {
-			if (!stack.hasTagCompound()) {
-				stack.setTagCompound(new NBTTagCompound());
+			if (!stack.hasTag()) {
+				stack.setTag(new CompoundNBT());
 			}
-			if (!stack.getTagCompound().hasKey("PipeClicked")) {
-				int mode = stack.getTagCompound().getInteger("CreatorMode");
+			if (!stack.getTag().contains("PipeClicked")) {
+				int mode = stack.getTag().getInt("CreatorMode");
 				mode++;
 				if (mode >= ItemPipeSignCreator.signTypes.size()) {
 					mode = 0;
 				}
-				stack.getTagCompound().setInteger("CreatorMode", mode);
+				stack.getTag().putInt("CreatorMode", mode);
 			}
 		}
-		if (stack.hasTagCompound()) {
-			stack.getTagCompound().removeTag("PipeClicked");
+		if (stack.hasTag()) {
+			stack.getTag().remove("PipeClicked");
 		}
-		return ActionResult.newResult(EnumActionResult.SUCCESS, stack);
+		return ActionResult.newResult(ActionResultType.SUCCESS, stack);
 	}
 
 	public static void registerPipeSignTypes() {

@@ -1,6 +1,6 @@
 package logisticspipes.commands.commands.wrapper;
 
-import net.minecraft.command.ICommandSender;
+import net.minecraft.command.ICommandSource;
 
 import logisticspipes.asm.wrapper.AbstractWrapper;
 import logisticspipes.asm.wrapper.LogisticsWrapperHandler;
@@ -17,7 +17,7 @@ public class ListCommand implements ICommandHandler {
 	}
 
 	@Override
-	public boolean isCommandUsableBy(ICommandSender sender) {
+	public boolean isCommandUsableBy(ICommandSource sender) {
 		return true;
 	}
 
@@ -27,7 +27,7 @@ public class ListCommand implements ICommandHandler {
 	}
 
 	@Override
-	public void executeCommand(ICommandSender sender, String[] args) {
+	public void executeCommand(ICommandSource sender, String[] args) {
 		MorePageDisplay display = new MorePageDisplay(new String[] { "|< Wrapper status - Page: %/$ >|" }, sender);
 		for (AbstractWrapper controller : LogisticsWrapperHandler.wrapperController) {
 			StringBuilder builder = new StringBuilder();

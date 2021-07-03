@@ -9,10 +9,10 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.entity.item.ItemEntity;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.world.World;
 
 import lombok.Getter;
@@ -30,7 +30,7 @@ import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.IRouter;
 import logisticspipes.routing.ItemRoutingInformation;
 import logisticspipes.routing.order.IDistanceTracker;
-import logisticspipes.utils.EnumFacingUtil;
+import logisticspipes.utils.DirectionUtil;
 import logisticspipes.utils.FluidIdentifierStack;
 import logisticspipes.utils.SlidingWindowBitSet;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -54,15 +54,15 @@ public abstract class LPTravelingItem {
 	protected TileEntity container;
 	protected float position = 0;
 	protected float yaw = 0;
-	public EnumFacing input = null;
-	public EnumFacing output = null;
-	public final EnumSet<EnumFacing> blacklist = EnumSet.noneOf(EnumFacing.class);
+	public Direction input = null;
+	public Direction output = null;
+	public final EnumSet<Direction> blacklist = EnumSet.noneOf(Direction.class);
 
 	public LPTravelingItem() {
 		id = getNextId();
 	}
 
-	public LPTravelingItem(int id, float position, EnumFacing input, EnumFacing output, float yaw) {
+	public LPTravelingItem(int id, float position, Direction input, Direction output, float yaw) {
 		this.id = id;
 		this.position = position;
 		this.input = input;
@@ -139,7 +139,7 @@ public abstract class LPTravelingItem {
 		private int age;
 		private float hoverStart = (float) (Math.random() * Math.PI * 2.0D);
 
-		public LPTravelingItemClient(int id, float position, EnumFacing input, EnumFacing output, float yaw) {
+		public LPTravelingItemClient(int id, float position, Direction input, Direction output, float yaw) {
 			super(id, position, input, output, yaw);
 		}
 
@@ -153,7 +153,7 @@ public abstract class LPTravelingItem {
 			return item;
 		}
 
-		public void updateInformation(EnumFacing input, EnumFacing output, float speed, float position, float yaw) {
+		public void updateInformation(Direction input, Direction output, float speed, float position, float yaw) {
 			this.input = input;
 			this.output = output;
 			this.speed = speed;
@@ -204,7 +204,7 @@ public abstract class LPTravelingItem {
 			this.info = info;
 		}
 
-		public LPTravelingItemServer(NBTTagCompound data) {
+		public LPTravelingItemServer(CompoundNBT data) {
 			super();
 			info = new ItemRoutingInformation();
 			readFromNBT(data);
@@ -220,36 +220,36 @@ public abstract class LPTravelingItem {
 		}
 
 		@Override
-		public void readFromNBT(NBTTagCompound data) {
-			setPosition(data.getFloat("position"));
-			setSpeed(data.getFloat("speed"));
-			if (data.hasKey("input")) {
-				input = EnumFacingUtil.getOrientation(data.getInteger("input"));
+		public void readFromNBT(CompoundNBT tag) {
+			setPosition(tag.getFloat("position"));
+			setSpeed(tag.getFloat("speed"));
+			if (tag.contains("input")) {
+				input = DirectionUtil.getOrientation(tag.getInt("input"));
 			} else {
 				input = null;
 			}
-			if (data.hasKey("output")) {
-				output = EnumFacingUtil.getOrientation(data.getInteger("output"));
+			if (tag.contains("output")) {
+				output = DirectionUtil.getOrientation(tag.getInt("output"));
 			} else {
 				output = null;
 			}
-			info.readFromNBT(data);
+			info.readFromNBT(tag);
 		}
 
 		@Override
-		public void writeToNBT(NBTTagCompound data) {
-			data.setFloat("position", getPosition());
-			data.setFloat("speed", getSpeed());
+		public void writeToNBT(CompoundNBT tag) {
+			tag.putFloat("position", getPosition());
+			tag.putFloat("speed", getSpeed());
 			if (input != null) {
-				data.setInteger("input", input.ordinal());
+				tag.putInt("input", input.ordinal());
 			}
 			if (output != null) {
-				data.setInteger("output", output.ordinal());
+				tag.putInt("output", output.ordinal());
 			}
-			info.writeToNBT(data);
+			info.writeToNBT(tag);
 		}
 
-		public EntityItem toEntityItem() {
+		public ItemEntity toItemEntity() {
 			World world = container.getWorld();
 			if (MainProxy.isServer(world)) {
 				if (getItemIdentifierStack().getStackSize() <= 0) {
@@ -261,7 +261,7 @@ public abstract class LPTravelingItem {
 					return null;
 				}
 
-				EnumFacing exitdirection = output;
+				Direction exitdirection = output;
 				if (exitdirection == null) {
 					exitdirection = input;
 				}
@@ -288,19 +288,19 @@ public abstract class LPTravelingItem {
 				DoubleCoordinates motion = new DoubleCoordinates(0, 0, 0);
 				CoordinateUtils.add(motion, exitdirection, getSpeed() * 2.0);
 
-				EntityItem entityitem = getItemIdentifierStack().makeEntityItem(world, position.getXCoord(), position.getYCoord(), position.getZCoord());
+				ItemEntity itemEntity = getItemIdentifierStack().makeItemEntity(world, position.getXCoord(), position.getYCoord(), position.getZCoord());
 
-				//entityitem.lifespan = 1200;
-				//entityitem.delayBeforeCanPickup = 10;
+				//itemEntity.lifespan = 1200;
+				//itemEntity.delayBeforeCanPickup = 10;
 
 				//uniformly distributed in -0.005 .. 0.01 to increase bias toward smaller values
 				float f3 = world.rand.nextFloat() * 0.015F - 0.005F;
-				entityitem.motionX = (float) world.rand.nextGaussian() * f3 + motion.getXCoord();
-				entityitem.motionY = (float) world.rand.nextGaussian() * f3 + motion.getYCoord();
-				entityitem.motionZ = (float) world.rand.nextGaussian() * f3 + motion.getZCoord();
+				itemEntity.motionX = (float) world.rand.nextGaussian() * f3 + motion.getXCoord();
+				itemEntity.motionY = (float) world.rand.nextGaussian() * f3 + motion.getYCoord();
+				itemEntity.motionZ = (float) world.rand.nextGaussian() * f3 + motion.getZCoord();
 				itemWasLost();
 
-				return entityitem;
+				return ItemEntity;
 			} else {
 				return null;
 			}
@@ -387,7 +387,7 @@ public abstract class LPTravelingItem {
 		}
 
 		@Override
-		public void split(int itemsToTake, EnumFacing orientation) {
+		public void split(int itemsToTake, Direction orientation) {
 			if (getItemIdentifierStack().getItem().isFluidContainer()) {
 				throw new UnsupportedOperationException("Can't split up a FluidContainer");
 			}

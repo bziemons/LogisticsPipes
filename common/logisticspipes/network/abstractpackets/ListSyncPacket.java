@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import logisticspipes.network.IReadListObject;
 import logisticspipes.network.IWriteListObject;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 

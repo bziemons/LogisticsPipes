@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,7 +23,7 @@ public class SpecialPipeConnection {
 		}
 	}
 
-	public List<ConnectionInformation> getConnectedPipes(IPipeInformationProvider startPipe, EnumSet<PipeRoutingConnectionType> connection, EnumFacing side) {
+	public List<ConnectionInformation> getConnectedPipes(IPipeInformationProvider startPipe, EnumSet<PipeRoutingConnectionType> connection, Direction side) {
 		for (ISpecialPipedConnection connectionHandler : handler) {
 			if (connectionHandler.isType(startPipe)) {
 				return connectionHandler.getConnections(startPipe, connection, side);
@@ -38,8 +38,8 @@ public class SpecialPipeConnection {
 
 		private IPipeInformationProvider connectedPipe;
 		private EnumSet<PipeRoutingConnectionType> connectionFlags;
-		private EnumFacing insertOrientation;
-		private EnumFacing exitOrientation;
+		private Direction insertOrientation;
+		private Direction exitOrientation;
 		private double distance;
 	}
 }

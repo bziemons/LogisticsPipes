@@ -8,15 +8,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.PacketBuffer;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.common.FMLLog;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.fml.common.network.internal.FMLProxyPacket;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.network.NetworkRegistry;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -116,7 +115,7 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, ModernP
 		LPDataIOWrapper.writeData(buffer, msg::writeData);
 	}
 
-	public static void addPacketToNBT(ModernPacket packet, NBTTagCompound nbt) {
+	public static void addPacketToNBT(ModernPacket packet, CompoundNBT nbt) {
 		ByteBuf dataBuffer = buffer();
 		PacketHandler.fillByteBuf(packet, dataBuffer);
 
@@ -127,8 +126,8 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, ModernP
 		nbt.setByteArray("LogisticsPipes:PacketData", data);
 	}
 
-	@SideOnly(Side.CLIENT)
-	public static void queueAndRemovePacketFromNBT(NBTTagCompound nbt) {
+	@OnlyIn(Dist.CLIENT)
+	public static void queueAndRemovePacketFromNBT(CompoundNBT nbt) {
 		byte[] data = nbt.getByteArray("LogisticsPipes:PacketData");
 		if (data.length > 0) {
 			LPDataIOWrapper.provideData(data, dataInput -> {
@@ -139,12 +138,12 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, ModernP
 				SimpleServiceLocator.clientBufferHandler.queuePacket(packet, MainProxy.proxy.getClientPlayer());
 			});
 		}
-		nbt.removeTag("LogisticsPipes:PacketData");
+		nbt.remove("LogisticsPipes:PacketData");
 	}
 
 	//hacky callback to process packets coming from by the packetbufferhandler decompressors
 	//TODO replace with proper netty implementation
-	public static void onPacketData(final LPDataInput data, final EntityPlayer player) {
+	public static void onPacketData(final LPDataInput data, final PlayerEntity player) {
 		if (player == null) {
 			return;
 		}
@@ -155,7 +154,7 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, ModernP
 		PacketHandler.onPacketData(packet, player);
 	}
 
-	public static void onPacketData(ModernPacket packet, final EntityPlayer player) {
+	public static void onPacketData(ModernPacket packet, final PlayerEntity player) {
 		try {
 			packet.processPacket(player);
 			if (LogisticsPipes.isDEBUG()) {
@@ -165,8 +164,8 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, ModernP
 			if (packet.retry() && MainProxy.isClient(player.getEntityWorld())) {
 				SimpleServiceLocator.clientBufferHandler.queuePacket(packet, player);
 			} else if (LogisticsPipes.isDEBUG()) {
-				LogisticsPipes.log.error(packet.getClass().getName());
-				LogisticsPipes.log.error(packet.toString());
+				LogisticsPipes.getLOGGER().error(packet.getClass().getName());
+				LogisticsPipes.getLOGGER().error(packet.toString());
 				e.printStackTrace();
 			}
 		} catch (Exception e) {
@@ -200,7 +199,7 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, ModernP
 
 		LPDataIOWrapper.provideData(payload.slice(), packet::readData);
 
-		EntityPlayer player = MainProxy.proxy.getEntityPlayerFromNetHandler(msg.handler());
+		PlayerEntity player = MainProxy.proxy.getPlayerEntityFromNetHandler(msg.handler());
 
 		if (player != null) {
 			out.add(new InboundModernPacketWrapper(packet, player));
@@ -217,9 +216,9 @@ public class PacketHandler extends MessageToMessageCodec<FMLProxyPacket, ModernP
 	static class InboundModernPacketWrapper {
 
 		final ModernPacket packet;
-		final EntityPlayer player;
+		final PlayerEntity player;
 
-		InboundModernPacketWrapper(ModernPacket p, EntityPlayer e) {
+		InboundModernPacketWrapper(ModernPacket p, PlayerEntity e) {
 			packet = p;
 			player = e;
 		}

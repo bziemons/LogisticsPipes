@@ -67,14 +67,14 @@ public class LogisticsWrapperHandler {
 		} catch (NoClassDefFoundError | ClassNotFoundException ignored) {}
 		GenericLPPipeConfigToolWrapper instance = new GenericLPPipeConfigToolWrapper(wrapper, name);
 		if (wrapper != null) {
-			LogisticsPipes.log.info("Loaded " + name + " PipeConfigToolWrapper");
+			LogisticsPipes.getLOGGER().info("Loaded " + name + " PipeConfigToolWrapper");
 		} else {
 			if (e != null) {
 				instance.setState(WrapperState.Exception);
 				instance.setReason(e);
-				LogisticsPipes.log.info("Couldn't load " + name + " PipeConfigToolWrapper");
+				LogisticsPipes.getLOGGER().info("Couldn't load " + name + " PipeConfigToolWrapper");
 			} else {
-				LogisticsPipes.log.info("Didn't load " + name + " PipeConfigToolWrapper");
+				LogisticsPipes.getLOGGER().info("Didn't load " + name + " PipeConfigToolWrapper");
 				instance.setState(WrapperState.ModMissing);
 			}
 		}
@@ -101,14 +101,14 @@ public class LogisticsWrapperHandler {
 		}
 		GenericProgressProviderWrapper instance = new GenericProgressProviderWrapper(provider, modId + ": " + name);
 		if (provider != null) {
-			LogisticsPipes.log.info("Loaded " + modId + ", " + name + " ProgressProvider");
+			LogisticsPipes.getLOGGER().info("Loaded " + modId + ", " + name + " ProgressProvider");
 		} else {
 			if (e != null) {
 				instance.setState(WrapperState.Exception);
 				instance.setReason(e);
-				LogisticsPipes.log.info("Couldn't load " + modId + ", " + name + " ProgressProvider");
+				LogisticsPipes.getLOGGER().info("Couldn't load " + modId + ", " + name + " ProgressProvider");
 			} else {
-				LogisticsPipes.log.info("Didn't load " + modId + ", " + name + " ProgressProvider");
+				LogisticsPipes.getLOGGER().info("Didn't load " + modId + ", " + name + " ProgressProvider");
 				instance.setState(WrapperState.ModMissing);
 			}
 		}
@@ -136,14 +136,14 @@ public class LogisticsWrapperHandler {
 		}
 		CraftingRecipeProviderWrapper instance = new CraftingRecipeProviderWrapper(provider, name);
 		if (provider != null) {
-			LogisticsPipes.log.info("Loaded " + name + " RecipeProvider");
+			LogisticsPipes.getLOGGER().info("Loaded " + name + " RecipeProvider");
 		} else {
 			if (e != null) {
 				instance.setState(WrapperState.Exception);
 				instance.setReason(e);
-				LogisticsPipes.log.info("Couldn't load " + name + " RecipeProvider");
+				LogisticsPipes.getLOGGER().info("Couldn't load " + name + " RecipeProvider");
 			} else {
-				LogisticsPipes.log.info("Didn't load " + name + " RecipeProvider");
+				LogisticsPipes.getLOGGER().info("Didn't load " + name + " RecipeProvider");
 				instance.setState(WrapperState.ModMissing);
 			}
 		}
@@ -237,7 +237,7 @@ public class LogisticsWrapperHandler {
 						LogisticsWrapperHandler.saveGeneratedClass(bytes, lookfor, "LP_WRAPPER_CLASSES");
 					}
 					ClassReader cr = new ClassReader(bytes);
-					org.objectweb.asm.util.CheckClassAdapter.verify(cr, Launch.classLoader, false, new PrintWriter(System.err));
+					org.objectweb.asm.util.CheckClassAdapter.verify(cr, Launcher.INSTANCE.classLoader, false, new PrintWriter(System.err));
 				}
 
 				try {
@@ -249,7 +249,7 @@ public class LogisticsWrapperHandler {
 							System.err.println(e.getMessage());
 							System.err.printf("Already loaded: %s%n", prev);
 							String resourcePath = className.replace('.', '/').concat(".class");
-							URL classResource = Launch.classLoader.findResource(resourcePath);
+							URL classResource = Launcher.INSTANCE.classLoader.findResource(resourcePath);
 							if (classResource != null) {
 								String path = classResource.getPath();
 								System.err.println("Class source: " + path);
@@ -288,9 +288,9 @@ public class LogisticsWrapperHandler {
 		}
 		T instance = (T) clazz.getConstructor(new Class<?>[] { interfaze, interfaze }).newInstance(dummyProxy, proxy);
 		if (proxy != null) {
-			LogisticsPipes.log.info("Loaded " + proxyName + "Proxy");
+			LogisticsPipes.getLOGGER().info("Loaded " + proxyName + "Proxy");
 		} else {
-			LogisticsPipes.log.info("Loaded " + proxyName + " DummyProxy");
+			LogisticsPipes.getLOGGER().info("Loaded " + proxyName + " DummyProxy");
 			if (e != null) {
 				((AbstractWrapper) instance).setState(WrapperState.Exception);
 				((AbstractWrapper) instance).setReason(e);
@@ -382,7 +382,7 @@ public class LogisticsWrapperHandler {
 						LogisticsWrapperHandler.saveGeneratedClass(bytes, lookfor, "LP_WRAPPER_CLASSES");
 					}
 					ClassReader cr = new ClassReader(bytes);
-					org.objectweb.asm.util.CheckClassAdapter.verify(cr, Launch.classLoader, false, new PrintWriter(System.err));
+					org.objectweb.asm.util.CheckClassAdapter.verify(cr, Launcher.INSTANCE.classLoader, false, new PrintWriter(System.err));
 				}
 
 				try {
@@ -394,7 +394,7 @@ public class LogisticsWrapperHandler {
 							System.err.println(e.getMessage());
 							System.err.printf("Already loaded: %s%n", prev);
 							String resourcePath = className.replace('.', '/').concat(".class");
-							URL classResource = Launch.classLoader.findResource(resourcePath);
+							URL classResource = Launcher.INSTANCE.classLoader.findResource(resourcePath);
 							if (classResource != null) {
 								String path = classResource.getPath();
 								System.err.println("Class source: " + path);
@@ -421,7 +421,7 @@ public class LogisticsWrapperHandler {
 			LogisticsWrapperHandler.m_defineClass = ClassLoader.class.getDeclaredMethod("defineClass", byte[].class, int.class, int.class);
 			LogisticsWrapperHandler.m_defineClass.setAccessible(true);
 		}
-		return (Class<?>) LogisticsWrapperHandler.m_defineClass.invoke(Launch.classLoader, data, 0, data.length);
+		return (Class<?>) LogisticsWrapperHandler.m_defineClass.invoke(Launcher.INSTANCE.classLoader, data, 0, data.length);
 	}
 
 	private static void addGetTypeName(ClassWriter cw, String className, String type) {

@@ -1,6 +1,5 @@
 package logisticspipes.modules;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -10,7 +9,7 @@ import javax.annotation.Nullable;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 
 import kotlin.Unit;
@@ -18,15 +17,10 @@ import lombok.Getter;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.IPipeServiceProvider;
-import logisticspipes.interfaces.IQueueCCEvent;
 import logisticspipes.interfaces.ISlotUpgradeManager;
 import logisticspipes.interfaces.IWorldProvider;
 import logisticspipes.interfaces.routing.ISaveState;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.computers.interfaces.CCCommand;
-import logisticspipes.proxy.computers.interfaces.CCType;
-import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
-import logisticspipes.proxy.computers.objects.CCSinkResponder;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -35,8 +29,7 @@ import network.rs485.logisticspipes.property.Property;
 import network.rs485.logisticspipes.property.PropertyHolder;
 import network.rs485.logisticspipes.property.UtilKt;
 
-@CCType(name = "LogisticsModule")
-public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder, PropertyHolder {
+public abstract class LogisticsModule implements ISaveState, PropertyHolder {
 
 	private final Object[] ccTypeHolder = new Object[1];
 	@Nullable
@@ -56,7 +49,7 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder, Pr
 		_world = world;
 		_service = service;
 		if (service != null) {
-			final IBlockAccess blockAccess = world == null ? null : world.getWorld();
+			final IWorld blockAccess = world == null ? null : world.getWorld();
 			MainProxy.runOnServer(blockAccess, () -> () ->
 					UtilKt.addObserver(getProperties(), (prop) -> {
 						_service.markTileDirty();
@@ -101,7 +94,7 @@ public abstract class LogisticsModule implements ISaveState, ILPCCTypeHolder, Pr
 			if (LogisticsPipes.isDEBUG()) {
 				throw new IllegalStateException("Module is not in world, but getBlockPos was called");
 			}
-			return BlockPos.ORIGIN;
+			return BlockPos.ZERO;
 		}
 	}
 

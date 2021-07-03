@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.ListIterator;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.network.abstractpackets.ListSyncPacket;
 import logisticspipes.proxy.MainProxy;
@@ -69,7 +69,7 @@ public class SyncList<E> implements List<E> {
 		}
 	}
 
-	public void addWatcher(EntityPlayer player) {
+	public void addWatcher(PlayerEntity player) {
 		if (watcherList == null) {
 			watcherList = new PlayerCollectionList();
 		}
@@ -79,7 +79,7 @@ public class SyncList<E> implements List<E> {
 		watcherList.add(player);
 	}
 
-	public boolean removeWatcher(EntityPlayer player) {
+	public boolean removeWatcher(PlayerEntity player) {
 		if (watcherList == null) {
 			watcherList = new PlayerCollectionList();
 		}

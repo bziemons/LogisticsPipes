@@ -10,11 +10,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import net.minecraft.nbt.NBTTagCompound;
-
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.event.FMLInterModComms;
-
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
 import lombok.Data;
@@ -79,7 +74,7 @@ public final class VersionChecker implements Callable<VersionChecker.VersionInfo
 			} catch (InterruptedException e) {
 				return "The version check task was interrupted and there is no version information available.";
 			} catch (ExecutionException e) {
-				LogisticsPipes.log.warn("The version check task had an exception while getting the newest version information", e);
+				LogisticsPipes.getLOGGER().warn("The version check task had an exception while getting the newest version information", e);
 				return "The version check task had an exception. See the log file for more information.";
 			}
 		} else {
@@ -110,7 +105,7 @@ public final class VersionChecker implements Callable<VersionChecker.VersionInfo
 		versionInfo.setNewVersionAvailable(hasNew);
 		if (hasNew) {
 			versionInfo.setNewestBuild(String.valueOf(part.get("build")));
-			LogisticsPipes.log.info("New Logistics Pipes build found: #" + versionInfo.getNewestBuild());
+			LogisticsPipes.getLOGGER().info("New Logistics Pipes build found: #" + versionInfo.getNewestBuild());
 
 			@SuppressWarnings("unchecked")
 			LinkedTreeMap<String, List<String>> changelog = (LinkedTreeMap<String, List<String>>) part.get("changelog");
@@ -151,31 +146,8 @@ public final class VersionChecker implements Callable<VersionChecker.VersionInfo
 			}
 
 			versionInfo.setChangelog(changeLogList);
-			sendIMCOutdatedMessage(versionInfo);
 		}
 		return versionInfo;
-	}
-
-	/**
-	 * Integration with Version Checker
-	 * (http://www.minecraftforum.net/topic/2721902-/)
-	 */
-	private void sendIMCOutdatedMessage(VersionInfo versionInfo) {
-		if (Loader.isModLoaded("VersionChecker")) {
-			NBTTagCompound tag = new NBTTagCompound();
-			tag.setString("oldVersion", LogisticsPipes.getVERSION());
-			tag.setString("newVersion", versionInfo.getNewestBuild());
-			tag.setString("updateUrl", "http://ci.rs485.network/view/Logistics%20Pipes/");
-			tag.setBoolean("isDirectLink", false);
-
-			StringBuilder stringBuilder = new StringBuilder();
-			for (String changeLogLine : versionInfo.getChangelog()) {
-				stringBuilder.append(changeLogLine).append("\n");
-			}
-			tag.setString("changeLog", stringBuilder.toString());
-			FMLInterModComms.sendRuntimeMessage("LogisticsPipes", "VersionChecker", "addUpdate", tag);
-			versionInfo.setImcMessageSent(true);
-		}
 	}
 
 	@Data

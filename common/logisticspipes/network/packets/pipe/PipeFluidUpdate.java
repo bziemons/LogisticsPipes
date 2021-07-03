@@ -2,8 +2,8 @@ package logisticspipes.network.packets.pipe;
 
 import java.util.BitSet;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Direction;
 
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
@@ -12,7 +12,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.transport.PipeFluidTransportLogistics;
@@ -25,7 +25,7 @@ public class PipeFluidUpdate extends CoordinatesPacket {
 
 	@Getter(value = AccessLevel.PRIVATE)
 	@Setter
-	private FluidStack[] renderCache = new FluidStack[EnumFacing.VALUES.length];
+	private FluidStack[] renderCache = new FluidStack[Direction.values().length];
 	private BitSet bits = new BitSet();
 
 	public PipeFluidUpdate(int id) {
@@ -38,7 +38,7 @@ public class PipeFluidUpdate extends CoordinatesPacket {
 		bits = input.readBitSet();
 		for (int i = 0; i < renderCache.length; i++) {
 			if (bits.get(i)) {
-				renderCache[i] = new FluidStack(FluidRegistry.getFluid(input.readUTF()), input.readInt(), input.readNBTTagCompound());
+				renderCache[i] = new FluidStack(FluidRegistry.getFluid(input.readUTF()), input.readInt(), input.readCompoundNBT());
 			}
 		}
 	}
@@ -54,13 +54,13 @@ public class PipeFluidUpdate extends CoordinatesPacket {
 			if (aRenderCache != null) {
 				output.writeUTF(aRenderCache.getFluid().getName());
 				output.writeInt(aRenderCache.amount);
-				output.writeNBTTagCompound(aRenderCache.tag);
+				output.writeCompoundNBT(aRenderCache.tag);
 			}
 		}
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsTileGenericPipe pipe = this.getPipe(player.world);
 		if (pipe == null || pipe.pipe == null) {
 			return;

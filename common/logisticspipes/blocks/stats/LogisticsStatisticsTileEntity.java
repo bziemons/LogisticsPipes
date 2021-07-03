@@ -3,7 +3,7 @@ package logisticspipes.blocks.stats;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.blocks.LogisticsSolidTileEntity;
 import logisticspipes.interfaces.IGuiTileEntity;
@@ -44,11 +44,11 @@ public class LogisticsStatisticsTileEntity extends LogisticsSolidTileEntity impl
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbt) {
+	public void readFromNBT(CompoundNBT nbt) {
 		super.readFromNBT(nbt);
-		int size = nbt.getInteger("taskSize");
+		int size = nbt.getInt("taskSize");
 		for (int i = 0; i < size; i++) {
-			NBTTagCompound tag = (NBTTagCompound) nbt.getTag("Task_" + i);
+			CompoundNBT tag = (CompoundNBT) nbt.getTag("Task_" + i);
 			TrackingTask task = new TrackingTask();
 			task.readFromNBT(tag);
 			tasks.add(task);
@@ -56,12 +56,12 @@ public class LogisticsStatisticsTileEntity extends LogisticsSolidTileEntity impl
 	}
 
 	@Override
-	public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+	public CompoundNBT writeToNBT(CompoundNBT nbt) {
 		nbt = super.writeToNBT(nbt);
-		nbt.setInteger("taskSize", tasks.size());
+		nbt.putInt("taskSize", tasks.size());
 		int count = 0;
 		for (TrackingTask task : tasks) {
-			NBTTagCompound tag = new NBTTagCompound();
+			CompoundNBT tag = new CompoundNBT();
 			task.writeToNBT(tag);
 			nbt.setTag("Task_" + count, tag);
 			count++;

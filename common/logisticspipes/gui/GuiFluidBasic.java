@@ -1,6 +1,6 @@
 package logisticspipes.gui;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.IInventory;
 
 import logisticspipes.utils.gui.DummyContainer;
@@ -11,8 +11,8 @@ import network.rs485.logisticspipes.util.TextUtil;
 
 public class GuiFluidBasic extends LogisticsBaseGuiScreen {
 
-	public GuiFluidBasic(EntityPlayer player, IInventory inventory) {
-		super(180, 130, 0, 0);
+	public GuiFluidBasic(PlayerEntity player, IInventory inventory) {
+		super(inv, titleIn, 180, 130, 0, 0);
 		DummyContainer dummy = new DummyContainer(player.inventory, inventory);
 		dummy.addFluidSlot(0, inventory, 28, 13);
 		dummy.addNormalSlotsForPlayerInventory(10, 45);
@@ -26,7 +26,7 @@ public class GuiFluidBasic extends LogisticsBaseGuiScreen {
 
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		GuiGraphics.drawPlayerInventoryBackground(mc, guiLeft + 10, guiTop + 45);
 		GuiGraphics.drawSlotBackground(mc, guiLeft + 27, guiTop + 12);
 	}

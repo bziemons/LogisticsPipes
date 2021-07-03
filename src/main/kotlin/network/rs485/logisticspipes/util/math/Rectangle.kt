@@ -177,6 +177,7 @@ class Rectangle constructor(private var _x: Float = 0.0f, private var _y: Float 
 
     // Logic checks
     fun contains(x: Float, y: Float): Boolean = x in _x..x1 && y in _y..y1
+    fun contains(x: Double, y: Double): Boolean = x in _x..x1 && y in _y..y1
     fun contains(x: Int, y: Int): Boolean = contains(x.toFloat(), y.toFloat())
     fun contains(rect: Rectangle): Boolean = contains(rect._x, rect._y) && contains(rect.x1, rect.y1)
     fun intersects(rect: Rectangle): Boolean = !(right < rect.left || rect.right < left || bottom < rect.top || rect.bottom < top)

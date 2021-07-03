@@ -31,7 +31,7 @@ public class GuiFluidSupplierMk2Pipe extends LogisticsBaseGuiScreen {
 	private PipeFluidSupplierMk2 logic;
 
 	public GuiFluidSupplierMk2Pipe(IInventory playerInventory, IInventory dummyInventory, PipeFluidSupplierMk2 logic) {
-		super(null);
+		super(null, inv, titleIn);
 
 		DummyContainer dummy = new DummyContainer(playerInventory, dummyInventory);
 		dummy.addNormalSlotsForPlayerInventory(13, 92);
@@ -60,7 +60,7 @@ public class GuiFluidSupplierMk2Pipe extends LogisticsBaseGuiScreen {
 
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int x, int y) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, blitOffset, true);
 		GuiGraphics.drawPlayerInventoryBackground(mc, guiLeft + 13, guiTop + 92);
 		GuiGraphics.drawSlotBackground(mc, guiLeft + 59, guiTop + 17);
 		//GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);

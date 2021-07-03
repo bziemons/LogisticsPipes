@@ -54,18 +54,18 @@ import logisticspipes.network.packets.hud.HUDStopModuleWatchingPacket
 import logisticspipes.network.packets.module.ModuleInventory
 import logisticspipes.network.packets.modules.AdvancedExtractorInclude
 import logisticspipes.proxy.MainProxy
-import logisticspipes.proxy.computers.interfaces.CCCommand
 import logisticspipes.utils.ISimpleInventoryEventHandler
 import logisticspipes.utils.item.ItemIdentifierInventory
 import logisticspipes.utils.item.ItemIdentifierStack
-import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
-import net.minecraft.util.EnumFacing
 import network.rs485.logisticspipes.inventory.IItemIdentifierInventory
 import network.rs485.logisticspipes.property.BooleanProperty
 import network.rs485.logisticspipes.property.InventoryProperty
 import network.rs485.logisticspipes.property.Property
+import net.minecraft.nbt.CompoundNBT
+import net.minecraft.util.Direction
 import network.rs485.logisticspipes.util.matchingSequence
 
 
@@ -87,7 +87,7 @@ class AsyncAdvancedExtractor : AsyncModule<Channel<Pair<Int, ItemStack>>?, List<
         it.isEmpty || itemsIncluded.value != filterInventory.matchingSequence(it).any()
     })
 
-    override var sneakyDirection: EnumFacing?
+    override var sneakyDirection: Direction?
         get() = extractor.sneakyDirection
         set(value) {
             extractor.sneakyDirection = value
@@ -148,7 +148,6 @@ class AsyncAdvancedExtractor : AsyncModule<Channel<Pair<Int, ItemStack>>?, List<
 
     override fun runSyncWork() = extractor.runSyncWork()
 
-    @CCCommand(description = "Returns the FilterInventory of this Module")
     override fun getFilterInventory(): IItemIdentifierInventory {
         return filterInventory
     }
@@ -177,7 +176,7 @@ class AsyncAdvancedExtractor : AsyncModule<Channel<Pair<Int, ItemStack>>?, List<
         return clientInformation
     }
 
-    override fun startWatching(player: EntityPlayer?) {
+    override fun startWatching(player: PlayerEntity?) {
         extractor.startWatching(player)
         MainProxy.sendPacketToPlayer(
             PacketHandler.getPacket(ModuleInventory::class.java)
@@ -193,7 +192,7 @@ class AsyncAdvancedExtractor : AsyncModule<Channel<Pair<Int, ItemStack>>?, List<
         )
     }
 
-    override fun stopWatching(player: EntityPlayer?) = extractor.stopWatching(player)
+    override fun stopWatching(player: PlayerEntity?) = extractor.stopWatching(player)
 
     override fun startHUDWatching() {
         MainProxy.sendPacketToServer(PacketHandler.getPacket(HUDStartModuleWatchingPacket::class.java)

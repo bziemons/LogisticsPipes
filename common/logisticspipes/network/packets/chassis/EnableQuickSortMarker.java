@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.chassis;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.utils.QuickSortChestMarkerStorage;
@@ -19,7 +19,7 @@ public class EnableQuickSortMarker extends ModernPacket {
 	public void readData(LPDataInput input) {}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		QuickSortChestMarkerStorage.getInstance().enable();
 	}
 

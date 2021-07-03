@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.orderer;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.LPItems;
 import logisticspipes.network.abstractpackets.ItemPacket;
@@ -24,7 +24,7 @@ public class DiscContent extends ItemPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		final LogisticsTileGenericPipe tile = this.getPipe(player.world);
 		if (tile == null) {
 			return;
@@ -33,7 +33,7 @@ public class DiscContent extends ItemPacket {
 			if (MainProxy.isServer(tile.getWorld())) {
 				if (!((PipeItemsRequestLogisticsMk2) tile.pipe).getDisk().isEmpty() && ((PipeItemsRequestLogisticsMk2) tile.pipe).getDisk().getItem().equals(LPItems.disk)) {
 					if (!getStack().isEmpty() && getStack().getItem().equals(LPItems.disk)) {
-						((PipeItemsRequestLogisticsMk2) tile.pipe).getDisk().setTagCompound(getStack().getTagCompound());
+						((PipeItemsRequestLogisticsMk2) tile.pipe).getDisk().setTag(getStack().getTag());
 					}
 				}
 			} else {
@@ -44,7 +44,7 @@ public class DiscContent extends ItemPacket {
 			if (MainProxy.isServer(tile.getWorld())) {
 				if (!((PipeBlockRequestTable) tile.pipe).diskInv.getStackInSlot(0).isEmpty() && ((PipeBlockRequestTable) tile.pipe).diskInv.getStackInSlot(0).getItem().equals(LPItems.disk)) {
 					if (!getStack().isEmpty() && getStack().getItem().equals(LPItems.disk)) {
-						((PipeBlockRequestTable) tile.pipe).diskInv.getStackInSlot(0).setTagCompound(getStack().getTagCompound());
+						((PipeBlockRequestTable) tile.pipe).diskInv.getStackInSlot(0).setTag(getStack().getTag());
 					}
 				}
 			} else {

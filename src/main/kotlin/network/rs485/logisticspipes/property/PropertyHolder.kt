@@ -38,16 +38,16 @@
 package network.rs485.logisticspipes.property
 
 import logisticspipes.interfaces.routing.ISaveState
-import net.minecraft.nbt.NBTTagCompound
+import net.minecraft.nbt.CompoundNBT
 
 /**
- * Holds a [properties] list and can read and write [NBT][NBTTagCompound] via [ISaveState].
+ * Holds a [properties] list and can read and write [NBT][CompoundNBT] via [ISaveState].
  */
 interface PropertyHolder : ISaveState {
     val properties: List<Property<*>>
 
-    override fun readFromNBT(tag: NBTTagCompound) = properties.readFromNBT(tag)
+    override fun readFromNBT(tag: CompoundNBT) = properties.readFromNBT(tag)
 
-    override fun writeToNBT(tag: NBTTagCompound) = properties.writeToNBT(tag)
+    override fun writeToNBT(tag: CompoundNBT) = properties.writeToNBT(tag)
 
 }

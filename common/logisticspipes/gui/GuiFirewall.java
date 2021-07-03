@@ -1,7 +1,7 @@
 package logisticspipes.gui;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.pipes.PipeItemsFirewall;
 import logisticspipes.utils.gui.DummyContainer;
@@ -16,8 +16,8 @@ public class GuiFirewall extends LogisticsBaseGuiScreen {
 
 	private PipeItemsFirewall pipe;
 
-	public GuiFirewall(PipeItemsFirewall pipe, EntityPlayer player) {
-		super(230, 260, 0, 0);
+	public GuiFirewall(PipeItemsFirewall pipe, PlayerEntity player) {
+		super(inv, titleIn, 230, 260, 0, 0);
 		this.pipe = pipe;
 		DummyContainer dummy = new DummyContainer(player.inventory, pipe.inv);
 		dummy.addNormalSlotsForPlayerInventory(33, 175);
@@ -67,7 +67,7 @@ public class GuiFirewall extends LogisticsBaseGuiScreen {
 
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		GuiGraphics.drawPlayerInventoryBackground(mc, guiLeft + 33, guiTop + 175);
 		mc.fontRenderer.drawString(TextUtil.translate(GuiFirewall.PREFIX + "Firewall"), guiLeft + 45, guiTop + 8, 0x404040);
 		mc.fontRenderer.drawString(TextUtil.translate(GuiFirewall.PREFIX + "Filter") + ":", guiLeft + 14, guiTop + 28, 0x404040);

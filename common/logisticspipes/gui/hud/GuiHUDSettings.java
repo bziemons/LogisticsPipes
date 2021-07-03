@@ -3,7 +3,7 @@ package logisticspipes.gui.hud;
 import java.io.IOException;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.SneakyThrows;
 
@@ -21,10 +21,10 @@ import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
 public class GuiHUDSettings extends LogisticsBaseGuiScreen {
 
 	private int slot;
-	private EntityPlayer player;
+	private PlayerEntity player;
 
-	public GuiHUDSettings(EntityPlayer player, int slot) {
-		super(180, 160, 0, 0);
+	public GuiHUDSettings(PlayerEntity player, int slot) {
+		super(inv, titleIn, 180, 160, 0, 0);
 		this.slot = slot;
 		this.player = player;
 		DummyContainer dummy = new DummyContainer(player.inventory, null);
@@ -39,12 +39,12 @@ public class GuiHUDSettings extends LogisticsBaseGuiScreen {
 		super.initGui();
 		if (!player.inventory.getStackInSlot(slot).isEmpty()) {
 			IHUDConfig config = new HUDConfig(player.inventory.getStackInSlot(slot));
-			buttonList.add(new GuiCheckBox(0, guiLeft + 30, guiTop + 10, 12, 12, config.isChassisHUD()));
-			buttonList.add(new GuiCheckBox(1, guiLeft + 30, guiTop + 30, 12, 12, config.isHUDCrafting()));
-			buttonList.add(new GuiCheckBox(2, guiLeft + 30, guiTop + 50, 12, 12, config.isHUDInvSysCon()));
-			buttonList.add(new GuiCheckBox(3, guiLeft + 30, guiTop + 70, 12, 12, config.isHUDPowerLevel()));
-			buttonList.add(new GuiCheckBox(4, guiLeft + 30, guiTop + 90, 12, 12, config.isHUDProvider()));
-			buttonList.add(new GuiCheckBox(5, guiLeft + 30, guiTop + 110, 12, 12, config.isHUDSatellite()));
+			buttonList.add(new GuiCheckBox(guiLeft + 30, guiTop + 10, 12, 12, "isChassisHUD", config.isChassisHUD()));
+			buttonList.add(new GuiCheckBox(guiLeft + 30, guiTop + 30, 12, 12, "isHUDCrafting", config.isHUDCrafting()));
+			buttonList.add(new GuiCheckBox(guiLeft + 30, guiTop + 50, 12, 12, "isHUDInvSysCon", config.isHUDInvSysCon()));
+			buttonList.add(new GuiCheckBox(guiLeft + 30, guiTop + 70, 12, 12, "isHUDPowerLevel", config.isHUDPowerLevel()));
+			buttonList.add(new GuiCheckBox(guiLeft + 30, guiTop + 90, 12, 12, "isHUDProvider", config.isHUDProvider()));
+			buttonList.add(new GuiCheckBox(guiLeft + 30, guiTop + 110, 12, 12, "isHUDSatellite", config.isHUDSatellite()));
 		} else {
 			closeGui();
 		}
@@ -63,7 +63,7 @@ public class GuiHUDSettings extends LogisticsBaseGuiScreen {
 		if (player.inventory.getStackInSlot(slot).isEmpty() || player.inventory.getStackInSlot(slot).getItem() != LPItems.hudGlasses) {
 			mc.player.closeScreen();
 		}
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		mc.fontRenderer.drawString("HUD Chassis Pipe", guiLeft + 50, guiTop + 13, 0x4c4c4c);
 		mc.fontRenderer.drawString("HUD Crafting Pipe", guiLeft + 50, guiTop + 33, 0x4c4c4c);
 		mc.fontRenderer.drawString("HUD InvSysCon Pipe", guiLeft + 50, guiTop + 53, 0x4c4c4c);

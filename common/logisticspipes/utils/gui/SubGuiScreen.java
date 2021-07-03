@@ -3,15 +3,15 @@ package logisticspipes.utils.gui;
 import java.io.IOException;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import lombok.Getter;
 import org.lwjgl.opengl.GL11;
 
-public abstract class SubGuiScreen extends GuiScreen implements ISubGuiControler, IGuiAccess {
+public abstract class SubGuiScreen extends Screen implements ISubGuiControler, IGuiAccess {
 
 	@Getter
 	protected int guiLeft;
@@ -73,7 +73,7 @@ public abstract class SubGuiScreen extends GuiScreen implements ISubGuiControler
 		renderGuiBackground(mouseX, mouseY);
 		GlStateManager.disableRescaleNormal();
 		GlStateManager.disableLighting();
-		GlStateManager.disableDepth();
+		GlStateManager.disableDepthTest();
 		super.drawScreen(mouseX, mouseY, partialTicks);
 		RenderHelper.enableGUIStandardItemLighting();
 
@@ -90,7 +90,7 @@ public abstract class SubGuiScreen extends GuiScreen implements ISubGuiControler
 		GlStateManager.popMatrix();
 
 		GlStateManager.enableLighting();
-		GlStateManager.enableDepth();
+		GlStateManager.enableDepthTest();
 		if (subGui != null) {
 			GL11.glPushAttrib(GL11.GL_DEPTH_BUFFER_BIT);
 			if (!subGui.hasSubGui()) {

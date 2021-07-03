@@ -1,6 +1,6 @@
 package logisticspipes.commands.commands;
 
-import net.minecraft.command.ICommandSender;
+import net.minecraft.command.ICommandSource;
 
 import logisticspipes.commands.abstracts.SubCommandHandler;
 import logisticspipes.commands.commands.wrapper.EnableCommand;
@@ -15,7 +15,7 @@ public class WrapperCommand extends SubCommandHandler {
 	}
 
 	@Override
-	public boolean isCommandUsableBy(ICommandSender sender) {
+	public boolean isCommandUsableBy(ICommandSource sender) {
 		return true;
 	}
 

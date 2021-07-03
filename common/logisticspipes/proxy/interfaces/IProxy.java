@@ -1,8 +1,12 @@
 package logisticspipes.proxy.interfaces;
 
-import net.minecraft.entity.player.EntityPlayer;
+import javax.annotation.Nullable;
+
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.INetHandler;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.Dimension;
 
 import logisticspipes.items.ItemLogisticsPipe;
 import logisticspipes.modules.LogisticsModule;
@@ -18,9 +22,7 @@ public interface IProxy {
 
 	void registerTileEntities();
 
-	EntityPlayer getClientPlayer();
-
-	void addLogisticsPipesOverride(Object par1IIconRegister, int index, String override1, String override2, boolean flag);
+	PlayerEntity getClientPlayer();
 
 	void registerParticles();
 
@@ -30,9 +32,10 @@ public interface IProxy {
 
 	void tick();
 
-	void sendNameUpdateRequest(EntityPlayer player);
+	void sendNameUpdateRequest(PlayerEntity player);
 
-	LogisticsTileGenericPipe getPipeInDimensionAt(int dimension, int x, int y, int z, EntityPlayer player);
+	@Nullable
+	LogisticsTileGenericPipe getPipeInDimensionAt(Dimension dim, BlockPos pos, PlayerEntity player);
 
 	void sendBroadCast(String message);
 
@@ -40,7 +43,7 @@ public interface IProxy {
 
 	void tickClient();
 
-	EntityPlayer getEntityPlayerFromNetHandler(INetHandler handler);
+	PlayerEntity getPlayerEntityFromNetHandler(INetHandler handler);
 
 	void setIconProviderFromPipe(ItemLogisticsPipe item, CoreUnroutedPipe dummyPipe);
 

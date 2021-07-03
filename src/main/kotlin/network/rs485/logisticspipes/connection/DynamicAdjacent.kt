@@ -39,22 +39,22 @@ package network.rs485.logisticspipes.connection
 
 import logisticspipes.pipes.basic.CoreRoutedPipe
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.EnumFacing
+import net.minecraft.util.Direction
 import net.minecraft.util.math.BlockPos
 import java.util.*
 import kotlin.collections.LinkedHashMap
 
 class DynamicAdjacent(private val parent: CoreRoutedPipe, private val cache: Array<ConnectionType?>) : Adjacent {
     override fun connectedPos(): Map<BlockPos, ConnectionType> = cache
-        .mapIndexedNotNull { index, type -> type?.let { parent.pos.offset(EnumFacing.VALUES[index]) to type } }
+        .mapIndexedNotNull { index, type -> type?.let { parent.pos.offset(Direction.values()[index]) to type } }
         .let { it.associateTo(LinkedHashMap(it.size)) { pair -> pair } }
 
-    override fun optionalGet(direction: EnumFacing): Optional<ConnectionType> = Optional.ofNullable(cache[direction.index])
+    override fun optionalGet(direction: Direction): Optional<ConnectionType> = Optional.ofNullable(cache[direction.index])
 
     override fun neighbors(): Map<NeighborTileEntity<TileEntity>, ConnectionType> = cache
         .mapIndexedNotNull { index, connectionType ->
             connectionType?.let {
-                EnumFacing.VALUES[index].let { dir ->
+                Direction.values()[index].let { dir ->
                     parent.world.getTileEntity(parent.pos.offset(dir))?.let { LPNeighborTileEntity(it, dir) to connectionType }
                 }
             }
@@ -64,7 +64,7 @@ class DynamicAdjacent(private val parent: CoreRoutedPipe, private val cache: Arr
     override fun inventories() = cache
         .filter { it?.isItem() ?: false }
         .mapIndexedNotNull { index, _ ->
-            EnumFacing.VALUES[index].let { dir ->
+            Direction.values()[index].let { dir ->
                 parent.world.getTileEntity(parent.pos.offset(dir))?.let { it to dir }
             }
         }
@@ -73,11 +73,11 @@ class DynamicAdjacent(private val parent: CoreRoutedPipe, private val cache: Arr
     override fun fluidTanks(): List<NeighborTileEntity<TileEntity>> = cache
         .filter { it?.isFluid() ?: false }
         .mapIndexedNotNull { index, _ ->
-            EnumFacing.VALUES[index].let { dir ->
+            Direction.values()[index].let { dir ->
                 parent.world.getTileEntity(parent.pos.offset(dir))?.let { it to dir }
             }
         }
         .mapNotNull { (tile, dir) -> LPNeighborTileEntity(tile, dir).takeIf { it.canHandleFluids() } }
 
-    override fun toString(): String = "DynamicAdjacent(${EnumFacing.VALUES.withIndex().joinToString { "{${it.value.name2}: ${cache[it.index]}}" }})"
+    override fun toString(): String = "DynamicAdjacent(${Direction.values().withIndex().joinToString { "{${it.value.name2}: ${cache[it.index]}}" }})"
 }

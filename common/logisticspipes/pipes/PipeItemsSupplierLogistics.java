@@ -10,7 +10,7 @@ package logisticspipes.pipes;
 import java.util.List;
 
 import net.minecraft.item.Item;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.interfaces.routing.IAdditionalTargetInformation;
 import logisticspipes.interfaces.routing.IRequestItems;
@@ -56,15 +56,15 @@ public class PipeItemsSupplierLogistics extends CoreRoutedPipe implements IReque
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		super.readFromNBT(nbttagcompound);
-		supplierModule.readFromNBT(nbttagcompound);
+	public void readFromNBT(CompoundNBT tag) {
+		super.readFromNBT(CompoundNBT);
+		supplierModule.readFromNBT(CompoundNBT);
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		super.writeToNBT(nbttagcompound);
-		supplierModule.writeToNBT(nbttagcompound);
+	public void writeToNBT(CompoundNBT tag) {
+		super.writeToNBT(tag);
+		supplierModule.writeToNBT(CompoundNBT);
 	}
 
 	@Override

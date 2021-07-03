@@ -67,7 +67,7 @@ public class GuiSelectSatellitePopup extends SubGuiScreen {
 
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		drawTitle();
 
 		textList.renderGuiBackground(mouseX, mouseY);

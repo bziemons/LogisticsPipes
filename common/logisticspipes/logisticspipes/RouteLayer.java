@@ -8,7 +8,7 @@ package logisticspipes.logisticspipes;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import logisticspipes.logisticspipes.IRoutedItem.TransportMode;
 import logisticspipes.pipes.basic.CoreRoutedPipe;
@@ -32,7 +32,7 @@ public class RouteLayer {
 		_pipe = pipe;
 	}
 
-	public EnumFacing getOrientationForItem(IRoutedItem item, EnumFacing blocked) {
+	public Direction getOrientationForItem(IRoutedItem item, Direction blocked) {
 
 		item.checkIDFromUUID();
 		//If a item has no destination, find one

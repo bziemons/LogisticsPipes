@@ -4,7 +4,7 @@ import java.io.IOException;
 import javax.annotation.Nonnull;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 
 import org.lwjgl.opengl.GL11;
@@ -26,8 +26,8 @@ public class NormalMk2GuiOrderer extends NormalGuiOrderer implements IDiskProvid
 	public PipeItemsRequestLogisticsMk2 pipe;
 	private SmallGuiButton Macrobutton;
 
-	public NormalMk2GuiOrderer(PipeItemsRequestLogisticsMk2 RequestPipeMK2, EntityPlayer entityPlayer) {
-		super(RequestPipeMK2.getX(), RequestPipeMK2.getY(), RequestPipeMK2.getZ(), RequestPipeMK2.getWorld().provider.getDimension(), entityPlayer);
+	public NormalMk2GuiOrderer(PipeItemsRequestLogisticsMk2 RequestPipeMK2, PlayerEntity player) {
+		super(RequestPipeMK2.getX(), RequestPipeMK2.getY(), RequestPipeMK2.getZ(), RequestPipeMK2.getWorld().getDimension(), PlayerEntity);
 		pipe = RequestPipeMK2;
 		MainProxy.sendPacketToServer(PacketHandler.getPacket(DiskRequestConectPacket.class).setPosX(pipe.getX()).setPosY(pipe.getY()).setPosZ(pipe.getZ()));
 	}
@@ -47,7 +47,7 @@ public class NormalMk2GuiOrderer extends NormalGuiOrderer implements IDiskProvid
 		drawRect(right - 37, bottom - 45, right - 21, bottom - 29, Color.DARKER_GREY);
 
 		if (pipe.getDisk() != null) {
-			itemRender.renderItemIntoGUI(pipe.getDisk(), right - 37, bottom - 45);
+			itemRenderer.renderItemIntoGUI(pipe.getDisk(), right - 37, bottom - 45);
 			Macrobutton.enabled = true;
 		} else {
 			Macrobutton.enabled = false;

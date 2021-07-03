@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.routingdebug;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.RayTraceResult;
 
 import net.minecraftforge.fml.client.FMLClientHandler;
@@ -26,7 +26,7 @@ public class RoutingUpdateAskForTarget extends ModernPacket {
 
 	@Override
 	@ClientSideOnlyMethodContent
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		RayTraceResult box = FMLClientHandler.instance().getClient().objectMouseOver;
 		if (box == null) {
 			MainProxy.sendPacketToServer(PacketHandler.getPacket(RoutingUpdateTargetResponse.class).setMode(TargetMode.None));

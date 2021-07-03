@@ -46,7 +46,7 @@ public class GuiFluidSupplier extends ModuleBaseGui {
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int x, int y) {
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-		mc.renderEngine.bindTexture(GuiFluidSupplier.TEXTURE);
+		mc.textureManager.bindTexture(GuiFluidSupplier.TEXTURE);
 		int j = guiLeft;
 		int k = guiTop;
 		drawTexturedModalRect(j, k, 0, 0, xSize, ySize);

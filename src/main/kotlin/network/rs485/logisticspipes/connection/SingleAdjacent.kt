@@ -39,33 +39,33 @@ package network.rs485.logisticspipes.connection
 
 import logisticspipes.pipes.basic.CoreRoutedPipe
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.EnumFacing
+import net.minecraft.util.Direction
 import net.minecraft.util.math.BlockPos
 import java.util.*
 
-class SingleAdjacent(private val parent: CoreRoutedPipe, val dir: EnumFacing, private val adjacentType: ConnectionType) : Adjacent {
-    override fun connectedPos(): Map<BlockPos, ConnectionType> = mapOf(parent.pos.offset(dir) to adjacentType)
+class SingleAdjacent(private val parent: CoreRoutedPipe, val direction: Direction, private val adjacentType: ConnectionType) : Adjacent {
+    override fun connectedPos(): Map<BlockPos, ConnectionType> = mapOf(parent.pos.offset(direction) to adjacentType)
 
-    override fun optionalGet(direction: EnumFacing): Optional<ConnectionType> = Optional.of(adjacentType)
+    override fun optionalGet(direction: Direction): Optional<ConnectionType> = Optional.of(adjacentType)
 
     override fun neighbors(): Map<NeighborTileEntity<TileEntity>, ConnectionType> =
-        parent.world.getTileEntity(parent.pos.offset(dir))
-            ?.let { mapOf(LPNeighborTileEntity(it, dir) to adjacentType) }
+        parent.world.getTileEntity(parent.pos.offset(direction))
+            ?.let { mapOf(LPNeighborTileEntity(it, direction) to adjacentType) }
             ?: emptyMap()
 
     override fun inventories(): List<NeighborTileEntity<TileEntity>> =
         if (adjacentType.isItem()) {
-            listOfNotNull(parent.world.getTileEntity(parent.pos.offset(dir))?.let { tile ->
-                LPNeighborTileEntity(tile, dir).takeIf { it.canHandleItems() }
+            listOfNotNull(parent.world.getTileEntity(parent.pos.offset(direction))?.let { tile ->
+                LPNeighborTileEntity(tile, direction).takeIf { it.canHandleItems() }
             })
         } else emptyList()
 
     override fun fluidTanks(): List<NeighborTileEntity<TileEntity>> =
         if (adjacentType.isFluid()) {
-            listOfNotNull(parent.world.getTileEntity(parent.pos.offset(dir))?.let { tile ->
-                LPNeighborTileEntity(tile, dir).takeIf { it.canHandleFluids() }
+            listOfNotNull(parent.world.getTileEntity(parent.pos.offset(direction))?.let { tile ->
+                LPNeighborTileEntity(tile, direction).takeIf { it.canHandleFluids() }
             })
         } else emptyList()
 
-    override fun toString(): String = "SingleAdjacent(${dir.name2}: $adjacentType)"
+    override fun toString(): String = "SingleAdjacent(${direction.name2}: $adjacentType)"
 }

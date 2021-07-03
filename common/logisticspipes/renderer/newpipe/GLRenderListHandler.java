@@ -5,8 +5,8 @@ import java.util.List;
 
 import net.minecraft.client.renderer.GLAllocation;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class GLRenderListHandler {
 
@@ -21,7 +21,7 @@ public class GLRenderListHandler {
 		return list;
 	}
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public void tick() {
 		synchronized (lockCollection) {
 			List<GLRenderList> newCollection = new ArrayList<>(collection);

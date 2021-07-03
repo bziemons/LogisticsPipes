@@ -1,25 +1,17 @@
 package logisticspipes.interfaces;
 
-import net.minecraft.item.Item;
+import java.util.Objects;
 
-import org.apache.commons.lang3.NotImplementedException;
+import net.minecraftforge.common.extensions.IForgeItem;
 
-public interface ILogisticsItem {
+public interface ILogisticsItem extends IForgeItem {
 
 	default String getModelPath() {
-		return getItem().getRegistryName().getResourcePath();
+		return Objects.requireNonNull(getItem().getRegistryName(), "Registry not set").getPath();
 	}
 
 	default int getModelCount() {
 		return 1;
-	}
-
-	default Item getItem() {
-		if (this instanceof Item) {
-			return (Item) this;
-		} else {
-			throw new NotImplementedException("not implemented");
-		}
 	}
 
 }

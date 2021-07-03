@@ -38,8 +38,8 @@
 package network.rs485.logisticspipes.gui.guidebook
 
 import logisticspipes.utils.MinecraftColor
-import net.minecraft.client.Minecraft
 import network.rs485.logisticspipes.util.TextUtil
+import logisticspipes.utils.string.StringUtils
 import network.rs485.logisticspipes.util.math.Rectangle
 
 private val homeButtonTexture = Rectangle(16, 64, 24, 32)
@@ -54,7 +54,7 @@ class HomeButton(x: Int, y: Int, onClickAction: (Int) -> Boolean) : LPGuiButton(
 
     init {
         this.setOnClickAction(onClickAction)
-        zLevel = GuideBookConstants.Z_TITLE_BUTTONS
+        blitOffset = GuideBookConstants.Z_TITLE_BUTTONS
         val offset = (body.width - homeIconTexture.width) / 2
         homeIconBody = Rectangle(offset, offset, homeIconTexture.width, homeIconTexture.height)
     }
@@ -63,10 +63,10 @@ class HomeButton(x: Int, y: Int, onClickAction: (Int) -> Boolean) : LPGuiButton(
         body.setPos(newX - 24, newY + 8)
     }
 
-    override fun drawButton(mc: Minecraft, mouseX: Int, mouseY: Int, partialTicks: Float) {
+    override fun renderButton(mouseX: Int, mouseY: Int, partialTick: Float) {
         if (this.visible) {
-            hovered = isHovered(mouseX, mouseY)
-            if (hovered) {
+            isHovered = isHovered()
+            if (isHovered) {
                 drawTooltip(
                     x = body.roundedRight,
                     y = body.roundedTop,
@@ -74,7 +74,7 @@ class HomeButton(x: Int, y: Int, onClickAction: (Int) -> Boolean) : LPGuiButton(
                     verticalAlign = GuiGuideBook.VerticalAlignment.BOTTOM
                 )
             }
-            GuiGuideBook.drawStretchingRectangle(body, zLevel, homeButtonTexture, false, MinecraftColor.WHITE.colorCode)
+            GuiGuideBook.drawStretchingRectangle(body, blitOffset, homeButtonTexture, false, MinecraftColor.WHITE.colorCode)
             drawButtonForegroundLayer(mouseX, mouseY)
         }
     }
@@ -85,6 +85,6 @@ class HomeButton(x: Int, y: Int, onClickAction: (Int) -> Boolean) : LPGuiButton(
 
     override fun drawButtonForegroundLayer(mouseX: Int, mouseY: Int) {
         val hoverStateOffset = getHoverState(hovered) * homeIconTexture.roundedHeight
-        GuiGuideBook.drawStretchingRectangle(homeIconBody.translated(body), zLevel, homeIconTexture.translated(0, hoverStateOffset), false, MinecraftColor.WHITE.colorCode)
+        GuiGuideBook.drawStretchingRectangle(homeIconBody.translated(body), blitOffset, homeIconTexture.translated(0, hoverStateOffset), false, MinecraftColor.WHITE.colorCode)
     }
 }

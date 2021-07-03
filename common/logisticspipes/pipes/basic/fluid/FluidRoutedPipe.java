@@ -4,7 +4,7 @@ import java.util.List;
 
 import net.minecraft.item.Item;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTank;
@@ -52,7 +52,7 @@ public abstract class FluidRoutedPipe extends CoreRoutedPipe {
 	}
 
 	@Override
-	public boolean logisitcsIsPipeConnected(TileEntity tile, EnumFacing dir) {
+	public boolean logisitcsIsPipeConnected(TileEntity tile, Direction dir) {
 		if (SimpleServiceLocator.enderIOProxy.isBundledPipe(tile)) {
 			return SimpleServiceLocator.enderIOProxy.isFluidConduit(tile, dir.getOpposite());
 		}
@@ -67,14 +67,14 @@ public abstract class FluidRoutedPipe extends CoreRoutedPipe {
 	}
 
 	@Override
-	public TextureType getNonRoutedTexture(EnumFacing connection) {
+	public TextureType getNonRoutedTexture(Direction connection) {
 		if (isFluidSidedTexture(connection)) {
 			return Textures.LOGISTICSPIPE_LIQUID_TEXTURE;
 		}
 		return super.getNonRoutedTexture(connection);
 	}
 
-	private boolean isFluidSidedTexture(EnumFacing connection) {
+	private boolean isFluidSidedTexture(Direction connection) {
 		return getAvailableAdjacent().fluidTanks().stream()
 				.filter(neighbor -> neighbor.getDirection() == connection)
 				.findFirst()
@@ -100,20 +100,9 @@ public abstract class FluidRoutedPipe extends CoreRoutedPipe {
 	 *            Weather to list a Nearby Pipe or not
 	 */
 
-	public final boolean isConnectableTank(TileEntity tile, EnumFacing dir, boolean flag) {
-		if (SimpleServiceLocator.specialTankHandler.hasHandlerFor(tile)) {
-			return true;
-		}
-		boolean fluidTile = false;
-		if (tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir)) {
-			IFluidHandler fluidHandler = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
-			if (fluidHandler != null) {
-				fluidTile = true;
-			}
-		}
-		if (tile instanceof IFluidHandler) {
-			fluidTile = true;
-		}
+	public final boolean isConnectableTank(TileEntity tile, Direction dir, boolean flag) {
+		boolean fluidTile = tile instanceof IFluidHandler ||
+				(tile != null && tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir).isPresent());
 		if (!fluidTile) {
 			return false;
 		}

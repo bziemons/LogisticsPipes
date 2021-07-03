@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 
 import lombok.Getter;
@@ -80,12 +80,12 @@ public class LogicController {
 		//*/
 	}
 
-	public void writeToNBT(NBTTagCompound nbt) {
+	public void writeToNBT(CompoundNBT nbt) {
 		diskInv.writeToNBT(nbt, "LogicDiskInv");
 		//TODO
 	}
 
-	public void readFromNBT(NBTTagCompound nbt) {
+	public void readFromNBT(CompoundNBT nbt) {
 		diskInv.readFromNBT(nbt, "LogicDiskInv");
 		//TODO
 	}

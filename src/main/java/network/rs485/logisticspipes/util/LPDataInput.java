@@ -47,15 +47,15 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
 
 import io.netty.buffer.ByteBuf;
 
 import logisticspipes.network.IReadListObject;
-import logisticspipes.routing.channels.ChannelInformation;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 import logisticspipes.utils.PlayerIdentifier;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -107,7 +107,7 @@ public interface LPDataInput {
 	String readUTF();
 
 	@Nullable
-	EnumFacing readFacing();
+	Direction readFacing();
 
 	@Nullable
 	ResourceLocation readResourceLocation();
@@ -119,7 +119,7 @@ public interface LPDataInput {
 	BitSet readBitSet();
 
 	@Nullable
-	NBTTagCompound readNBTTagCompound();
+	CompoundNBT readCompoundNBT();
 
 	@Nullable
 	boolean[] readBooleanArray();

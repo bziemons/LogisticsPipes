@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.gui;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.network.abstractguis.UpgradeCoordinatesGuiProvider;
 import logisticspipes.network.abstractpackets.ModernPacket;
@@ -18,7 +18,7 @@ public class OpenUpgradePacket extends SlotPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		UpgradeSlot slot = getSlot(player, UpgradeSlot.class);
 		IPipeUpgrade upgrade = slot.getUpgrade();
 		if (upgrade instanceof IConfigPipeUpgrade) {

@@ -41,6 +41,7 @@ import logisticspipes.LogisticsPipes
 import logisticspipes.utils.MinecraftColor
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.texture.PngSizeInfo
+import net.minecraft.resources.IResource
 import net.minecraft.util.ResourceLocation
 import network.rs485.logisticspipes.util.math.Rectangle
 import java.io.IOException
@@ -78,13 +79,18 @@ class DrawableImageParagraph(private val alternativeText: List<DrawableWord>, va
 
 class DrawableImage(private var imageResource: ResourceLocation) : Drawable() {
 
-    private var imageSize: PngSizeInfo? = try {
-        val resource = Minecraft.getMinecraft().resourceManager.getResource(imageResource)
-        PngSizeInfo.makeFromResource(resource)
-    } catch (e: IOException) {
-        LogisticsPipes.log.error("File not found: ${imageResource.resourcePath}")
-        null
+    private var imageSize: PngSizeInfo? = Minecraft.getInstance().resourceManager.getResource(imageResource)
+        .let(this@DrawableImage::makePngSizeInfoFromResource)
+        ?: LogisticsPipes.getLOGGER().error("File not found: ${imageResource.path}").let { null }
+
+    private fun makePngSizeInfoFromResource(resource: IResource): PngSizeInfo? {
+        return try {
+            PngSizeInfo(resource.toString(), resource.inputStream)
+        } catch (e: IOException) {
+            null
+        }
     }
+
     val broken: Boolean get() = imageSize == null
 
     override fun draw(mouseX: Int, mouseY: Int, delta: Float, visibleArea: Rectangle) {
@@ -98,8 +104,8 @@ class DrawableImage(private var imageResource: ResourceLocation) : Drawable() {
     override fun setPos(x: Int, y: Int): Int {
         if (imageSize != null) {
             // Checks width of image to scale down to a size that fits on the page
-            relativeBody.setSize(imageSize!!.pngWidth, imageSize!!.pngHeight)
-            if (imageSize!!.pngWidth > parent!!.width) {
+            relativeBody.setSize(imageSize!!.width, imageSize!!.height)
+            if (imageSize!!.width > parent!!.width) {
                 val downScaleFactor = parent!!.width.toFloat() / width
                 relativeBody.scale(downScaleFactor)
             }

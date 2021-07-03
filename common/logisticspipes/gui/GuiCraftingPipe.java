@@ -10,15 +10,12 @@ package logisticspipes.gui;
 import java.io.IOException;
 import java.util.List;
 
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 
 import kotlin.Unit;
+import com.mojang.blaze3d.platform.GlStateManager;
 import lombok.Getter;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -56,7 +53,7 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 
 	@Getter
 	private final ModuleCrafter craftingModule;
-	private final EntityPlayer _player;
+	private final PlayerEntity _player;
 	private final GuiButton[] normalButtonArray;
 	private final GuiButton[][] advancedSatButtonArray;
 	private final GuiButton[][] liquidGuiParts;
@@ -76,7 +73,7 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 	private final Label[] satellitePipeLabels;
 	private Label satellitePipeLabel;
 
-	public GuiCraftingPipe(EntityPlayer player, ModuleCrafter module, boolean isAdvancedSat,
+	public GuiCraftingPipe(PlayerEntity player, ModuleCrafter module, boolean isAdvancedSat,
 			int liquidCrafter, int[] amount, boolean hasByproductExtractor, boolean isFuzzy, int cleanupSize,
 			boolean cleanupExclude) {
 		super(null, module);
@@ -347,7 +344,7 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 	protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
 		super.drawGuiContainerForegroundLayer(mouseX, mouseY);
 		GL11.glDisable(GL11.GL_LIGHTING);
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 		mc.fontRenderer.drawString(TextUtil.translate(GuiCraftingPipe.PREFIX + "Inputs"), 18, 7, 0x404040);
 		mc.fontRenderer.drawString(TextUtil.translate(GuiCraftingPipe.PREFIX + "Inventory"), 10, ySize - 93, 0x404040);
 
@@ -384,7 +381,7 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int x, int y) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, guiLeft + xSize - (hasByproductExtractor ? 40 : 0), guiTop + ySize, zLevel, true, true, true, true, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, guiLeft + xSize - (hasByproductExtractor ? 40 : 0), guiTop + ySize, blitOffset, true, true, true, true, true);
 
 		if (!isAdvancedSat) {
 			Gui.drawRect(guiLeft + 115, guiTop + 4, guiLeft + 170, guiTop + 70, 0xff8B8B8B);
@@ -435,17 +432,18 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 		public void renderForground(int left, int top) {
 			if (!isFullyExtended()) {
 				GL11.glEnable(GL12.GL_RESCALE_NORMAL);
-				OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240 / 1.0F, 240 / 1.0F);
+				// FIXME: cannot access the lightmap
+				//OpenGlHelper.setLightmapTextureCoords(minecraft.gameRenderer.lightmapTexUnit, 240 / 1.0F, 240 / 1.0F);
 				GL11.glEnable(GL11.GL_LIGHTING);
 				GL11.glEnable(GL11.GL_DEPTH_TEST);
 				RenderHelper.enableGUIStandardItemLighting();
 				ItemStack stack = new ItemStack(ItemUpgrade.getAndCheckUpgrade(LPItems.upgrades.get(FluidCraftingUpgrade.getName())));
-				itemRender.renderItemAndEffectIntoGUI(stack, left + 5, top + 5);
-				itemRender.renderItemOverlayIntoGUI(fontRenderer, stack, left + 5, top + 5, "");
+				itemRenderer.renderItemAndEffectIntoGUI(stack, left + 5, top + 5);
+				itemRenderer.renderItemOverlayIntoGUI(fontRenderer, stack, left + 5, top + 5, "");
 				GL11.glDisable(GL11.GL_LIGHTING);
 				GL11.glDisable(GL11.GL_DEPTH_TEST);
 			}
-			itemRender.zLevel = 0.0F;
+			itemRenderer.zLevel = 0.0F;
 
 			if (!isAdvancedSat && liquidCrafter > 1 && !isFullyExtended()) {
 				String s = Integer.toString(liquidCrafter);
@@ -551,11 +549,11 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 				GL11.glEnable(GL11.GL_DEPTH_TEST);
 				RenderHelper.enableGUIStandardItemLighting();
 				ItemStack stack = new ItemStack(ItemUpgrade.getAndCheckUpgrade(LPItems.upgrades.get(CraftingByproductUpgrade.getName())));
-				itemRender.renderItemAndEffectIntoGUI(stack, left + 5, top + 5);
-				itemRender.renderItemOverlayIntoGUI(fontRenderer, stack, left + 5, top + 5, "");
+				itemRenderer.renderItemAndEffectIntoGUI(stack, left + 5, top + 5);
+				itemRenderer.renderItemOverlayIntoGUI(fontRenderer, stack, left + 5, top + 5, "");
 				GL11.glDisable(GL11.GL_LIGHTING);
 				GL11.glDisable(GL11.GL_DEPTH_TEST);
-				itemRender.zLevel = 0.0F;
+				itemRenderer.zLevel = 0.0F;
 			} else {
 				GuiGraphics.drawBigSlotBackground(mc, left + 9, top + 20);
 				fontRenderer.drawString(TextUtil.translate(GuiCraftingPipe.PREFIX + "Extra"), left + 9, top + 8, 0x404040);
@@ -584,11 +582,11 @@ public class GuiCraftingPipe extends ModuleBaseGui {
 				GL11.glEnable(GL11.GL_DEPTH_TEST);
 				RenderHelper.enableGUIStandardItemLighting();
 				ItemStack stack = new ItemStack(ItemUpgrade.getAndCheckUpgrade(LPItems.upgrades.get(CraftingCleanupUpgrade.getName())));
-				itemRender.renderItemAndEffectIntoGUI(stack, left + 5, top + 5);
-				itemRender.renderItemOverlayIntoGUI(fontRenderer, stack, left + 5, top + 5, "");
+				itemRenderer.renderItemAndEffectIntoGUI(stack, left + 5, top + 5);
+				itemRenderer.renderItemOverlayIntoGUI(fontRenderer, stack, left + 5, top + 5, "");
 				GL11.glDisable(GL11.GL_LIGHTING);
 				GL11.glDisable(GL11.GL_DEPTH_TEST);
-				itemRender.zLevel = 0.0F;
+				itemRenderer.zLevel = 0.0F;
 			} else {
 				for (int y = 0; y < cleanupSize; y++) {
 					for (int x = 0; x < 3; x++) {

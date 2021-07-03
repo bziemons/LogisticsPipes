@@ -1,6 +1,6 @@
 package logisticspipes.network.guis.module.inpipe;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -51,7 +51,7 @@ public class CraftingModuleSlot extends ModuleCoordinatesGuiProvider {
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		ModuleCrafter module = this.getLogisticsModule(player.getEntityWorld(), ModuleCrafter.class);
 		if (module == null) {
 			return null;
@@ -61,7 +61,7 @@ public class CraftingModuleSlot extends ModuleCoordinatesGuiProvider {
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		ModuleCrafter module = this.getLogisticsModule(player.getEntityWorld(), ModuleCrafter.class);
 		if (module == null) {
 			return null;

@@ -3,16 +3,19 @@ package logisticspipes.proxy.side;
 import java.io.File;
 import java.util.List;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
+import javax.annotation.Nullable;
+
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.network.INetHandler;
 import net.minecraft.network.NetHandlerPlayServer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.Dimension;
 
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.config.Configuration;
@@ -54,7 +57,7 @@ public class ServerProxy implements IProxy {
 	}
 
 	@Override
-	public EntityPlayer getClientPlayer() {
+	public PlayerEntity getClientPlayer() {
 		return null;
 	}
 
@@ -134,13 +137,13 @@ public class ServerProxy implements IProxy {
 			if (saveThreadTime < System.currentTimeMillis()) {
 				saveThreadTime = 0;
 				langDatabase.save();
-				LogisticsPipes.log.info("LangDatabase saved");
+				LogisticsPipes.getLOGGER().info("LangDatabase saved");
 			}
 		}
 	}
 
 	@Override
-	public void sendNameUpdateRequest(EntityPlayer player) {
+	public void sendNameUpdateRequest(PlayerEntity player) {
 		for (String category : langDatabase.getCategoryNames()) {
 			if (!category.startsWith("itemNames.")) {
 				continue;
@@ -162,8 +165,9 @@ public class ServerProxy implements IProxy {
 	}
 
 	@Override
-	public LogisticsTileGenericPipe getPipeInDimensionAt(int dimension, int x, int y, int z, EntityPlayer player) {
-		return ServerProxy.getPipe(DimensionManager.getWorld(dimension), x, y, z);
+	public @Nullable LogisticsTileGenericPipe getPipeInDimensionAt(Dimension dim, BlockPos pos,
+			PlayerEntity player) {
+		return ServerProxy.getPipe(DimensionManager.getWorld(dim), pos, y, z);
 	}
 
 	// BuildCraft method
@@ -193,21 +197,14 @@ public class ServerProxy implements IProxy {
 		return (LogisticsTileGenericPipe) tile;
 	}
 
-	// BuildCraft method end
-	@Override
-	public void addLogisticsPipesOverride(Object par1IIconRegister, int index, String override1, String override2, boolean flag) {
-		// TODO Auto-generated method stub
-
-	}
-
 	@Override
 	@SuppressWarnings("rawtypes")
 	public void sendBroadCast(String message) {
 		MinecraftServer server = FMLServerHandler.instance().getServer();
 		if (server != null && server.getPlayerList() != null) {
-			List<EntityPlayerMP> list = server.getPlayerList().getPlayers();
+			List<ServerPlayerEntity> list = server.getPlayerList().getPlayers();
 			if (list != null && !list.isEmpty()) {
-				list.forEach(obj -> obj.sendMessage(new TextComponentString("[LP] Server: " + message)));
+				list.forEach(obj -> obj.sendMessage(new StringTextComponent("[LP] Server: " + message)));
 			}
 		}
 	}
@@ -221,7 +218,7 @@ public class ServerProxy implements IProxy {
 	public void tickClient() {}
 
 	@Override
-	public EntityPlayer getEntityPlayerFromNetHandler(INetHandler handler) {
+	public PlayerEntity getPlayerEntityFromNetHandler(INetHandler handler) {
 		if (handler instanceof NetHandlerPlayServer) {
 			return ((NetHandlerPlayServer) handler).player;
 		}

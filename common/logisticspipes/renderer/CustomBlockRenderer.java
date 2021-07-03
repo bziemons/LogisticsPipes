@@ -8,7 +8,7 @@ import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.init.Blocks;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.IWorld;
 
 public final class CustomBlockRenderer {
 
@@ -45,8 +45,8 @@ public final class CustomBlockRenderer {
 			setBounds(minX, minY, minZ, maxX, maxY, maxZ);
 		}
 
-		public float getBlockBrightness(IBlockAccess iblockaccess, int i, int j, int k) {
-			return baseBlock.getMixedBrightnessForBlock(iblockaccess, i, j, k);
+		public float getBlockBrightness(IWorld IWorld, int i, int j, int k) {
+			return baseBlock.getMixedBrightnessForBlock(IWorld, i, j, k);
 		}
 
 		public final void setBounds(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
@@ -108,11 +108,11 @@ public final class CustomBlockRenderer {
 		}
 	}
 
-	public void renderBlock(RenderInfo info, IBlockAccess blockAccess, int x, int y, int z, boolean doLight, boolean doTessellating) {
+	public void renderBlock(RenderInfo info, IWorld blockAccess, int x, int y, int z, boolean doLight, boolean doTessellating) {
 		renderBlock(info, blockAccess, x, y, z, x, y, z, doLight, doTessellating);
 	}
 
-	public void renderBlock(RenderInfo info, IBlockAccess blockAccess, double x, double y, double z, int lightX, int lightY, int lightZ, boolean doLight, boolean doTessellating) {
+	public void renderBlock(RenderInfo info, IWorld blockAccess, double x, double y, double z, int lightX, int lightY, int lightZ, boolean doLight, boolean doTessellating) {
 		float lightBottom = 0.5F;
 		float lightTop = 1.0F;
 		float lightEastWest = 0.8F;

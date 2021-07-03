@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.hud;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.interfaces.IWatchingHandler;
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
@@ -21,7 +21,7 @@ public class HUDStopWatchingPacket extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		final LogisticsTileGenericPipe pipe = this.getPipe(player.world);
 		if (pipe == null) {
 			return;

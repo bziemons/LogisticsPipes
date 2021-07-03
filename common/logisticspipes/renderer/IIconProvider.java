@@ -2,13 +2,12 @@ package logisticspipes.renderer;
 
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public interface IIconProvider {
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	TextureAtlasSprite getIcon(int iconIndex);
 
-	void registerIcons(Object textureMap);
 }

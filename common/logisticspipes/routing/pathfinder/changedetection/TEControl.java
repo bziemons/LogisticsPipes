@@ -3,8 +3,9 @@ package logisticspipes.routing.pathfinder.changedetection;
 import java.util.ArrayList;
 
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 
 import logisticspipes.asm.te.ILPTEInformation;
@@ -23,7 +24,7 @@ import network.rs485.logisticspipes.world.DoubleCoordinates;
 public class TEControl {
 
 	public static void validate(final TileEntity tile) {
-		final World world = tile.getWorld();
+		final IWorld world = tile.getWorld();
 		if (!MainProxy.isServer(world)) {
 			return;
 		}
@@ -46,9 +47,9 @@ public class TEControl {
 				if (!SimpleServiceLocator.pipeInformationManager.isPipe(tile, true, ConnectionType.UNDEFINED)) {
 					return null;
 				}
-				for (EnumFacing dir : EnumFacing.VALUES) {
+				for (Direction dir : Direction.values()) {
 					DoubleCoordinates newPos = CoordinateUtils.sum(pos, dir);
-					if (!newPos.blockExists(world)) {
+					if (newPos.isAir(world)) {
 						continue;
 					}
 					TileEntity nextTile = newPos.getTileEntity(world);
@@ -81,9 +82,9 @@ public class TEControl {
 		if (((ILPTEInformation) tile).getObject() != null) {
 			QueuedTasks.queueTask(() -> {
 				DoubleCoordinates pos = new DoubleCoordinates(tile);
-				for (EnumFacing dir : EnumFacing.VALUES) {
+				for (Direction dir : Direction.values()) {
 					DoubleCoordinates newPos = CoordinateUtils.sum(pos, dir);
-					if (!newPos.blockExists(world)) {
+					if (newPos.isAir(world)) {
 						continue;
 					}
 					TileEntity nextTile = newPos.getTileEntity(world);
@@ -101,7 +102,7 @@ public class TEControl {
 		}
 	}
 
-	public static void handleBlockUpdate(final World world, final LPWorldInfo info, BlockPos blockPos) {
+	public static void handleBlockUpdate(final IWorld world, final LPWorldInfo info, BlockPos blockPos) {
 		if (info.isSkipBlockUpdateForWorld()) {
 			return;
 		}
@@ -112,34 +113,19 @@ public class TEControl {
 		if (info.getUpdateQueued().contains(pos)) {
 			return;
 		}
-		if (!pos.blockExists(world)) {
+		if (pos.isAir(world)) {
 			return;
 		}
 		final TileEntity tile = pos.getTileEntity(world);
-		if (SimpleServiceLocator.enderIOProxy.isBundledPipe(tile)) {
-			QueuedTasks.queueTask(() -> {
-				for (EnumFacing dir : EnumFacing.VALUES) {
-					DoubleCoordinates newPos = CoordinateUtils.sum(pos, dir);
-					if (!newPos.blockExists(world)) {
-						continue;
-					}
-					TileEntity nextTile = newPos.getTileEntity(world);
-					if (nextTile instanceof LogisticsTileGenericPipe) {
-						((LogisticsTileGenericPipe) nextTile).scheduleNeighborChange();
-					}
-				}
-				return null;
-			});
-		}
 		if (tile == null || ((ILPTEInformation) tile).getObject() == null) {
 			return;
 		}
 		if (SimpleServiceLocator.pipeInformationManager.isItemPipe(tile) || SimpleServiceLocator.specialtileconnection.isType(tile)) {
 			info.getUpdateQueued().add(pos);
 			QueuedTasks.queueTask(() -> {
-				for (EnumFacing dir : EnumFacing.VALUES) {
+				for (Direction dir : Direction.values()) {
 					DoubleCoordinates newPos = CoordinateUtils.sum(pos, dir);
-					if (!newPos.blockExists(world)) {
+					if (newPos.isAir(world)) {
 						continue;
 					}
 					TileEntity nextTile = newPos.getTileEntity(world);

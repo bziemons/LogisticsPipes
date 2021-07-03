@@ -3,7 +3,7 @@ package logisticspipes.datafixer;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.datafix.FixTypes;
 import net.minecraft.util.datafix.IFixableData;
 
@@ -34,10 +34,10 @@ public class DataFixerTE implements IFixableData {
 
 	@Nonnull
 	@Override
-	public NBTTagCompound fixTagCompound(NBTTagCompound compound) {
+	public CompoundNBT fixTagCompound(CompoundNBT compound) {
 		String teName = compound.getString("id");
 
-		compound.setString("id", tileIDMap.getOrDefault(teName, teName));
+		compound.putString("id", tileIDMap.getOrDefault(teName, teName));
 
 		return compound;
 	}

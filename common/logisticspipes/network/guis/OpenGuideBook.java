@@ -2,20 +2,18 @@ package logisticspipes.network.guis;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumHand;
+import net.minecraft.util.Hand;
 
 import logisticspipes.network.abstractpackets.ModernPacket;
-import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.guidebook.ItemGuideBook;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 
-@StaticResolve
 public class OpenGuideBook extends ModernPacket {
 
-	private EnumHand hand;
+	private Hand hand;
 	private ItemStack stack;
 
 	public OpenGuideBook(int id) {
@@ -25,7 +23,7 @@ public class OpenGuideBook extends ModernPacket {
 	@Override
 	public void readData(LPDataInput input) {
 		super.readData(input);
-		hand = input.readEnum(EnumHand.class);
+		hand = input.readEnum(Hand.class);
 		stack = input.readItemStack();
 	}
 
@@ -37,7 +35,7 @@ public class OpenGuideBook extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		ItemGuideBook.openGuideBook(hand, stack);
 	}
 
@@ -47,7 +45,7 @@ public class OpenGuideBook extends ModernPacket {
 	}
 
 	@Nonnull
-	public OpenGuideBook setHand(@Nonnull EnumHand hand) {
+	public OpenGuideBook setHand(@Nonnull Hand hand) {
 		this.hand = hand;
 		return this;
 	}

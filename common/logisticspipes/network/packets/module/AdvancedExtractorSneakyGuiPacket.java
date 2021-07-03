@@ -1,12 +1,12 @@
 package logisticspipes.network.packets.module;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.LogisticsModule.ModulePositionType;
 import logisticspipes.network.NewGuiHandler;
 import logisticspipes.network.abstractpackets.ModernPacket;
-import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.ModuleCoordinatesPacket;
 import logisticspipes.network.guis.module.inhand.SneakyModuleInHandGuiProvider;
 import logisticspipes.network.guis.module.inpipe.SneakyModuleInSlotGuiProvider;
 import logisticspipes.pipes.PipeLogisticsChassis;
@@ -27,7 +27,7 @@ public class AdvancedExtractorSneakyGuiPacket extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		if (getType() == ModulePositionType.IN_HAND) {
 			if (player.openContainer instanceof DummyModuleContainer) {
 				DummyModuleContainer dummy = (DummyModuleContainer) player.openContainer;

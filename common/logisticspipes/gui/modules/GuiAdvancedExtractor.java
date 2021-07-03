@@ -94,7 +94,7 @@ public class GuiAdvancedExtractor extends ModuleBaseGui {
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int x, int y) {
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-		mc.renderEngine.bindTexture(LogisticsBaseGuiScreen.ITEMSINK);
+		mc.textureManager.bindTexture(LogisticsBaseGuiScreen.ITEMSINK);
 		int j = guiLeft;
 		int k = guiTop;
 		drawTexturedModalRect(j, k, 0, 0, xSize, ySize);

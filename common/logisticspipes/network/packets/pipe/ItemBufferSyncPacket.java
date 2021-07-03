@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.pipe;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.network.abstractpackets.ListSyncPacket;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
@@ -36,7 +36,7 @@ public class ItemBufferSyncPacket
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsTileGenericPipe pipe = this.getPipe(player.getEntityWorld());
 		if (pipe == null || pipe.pipe == null || pipe.pipe.transport == null) {
 			return;

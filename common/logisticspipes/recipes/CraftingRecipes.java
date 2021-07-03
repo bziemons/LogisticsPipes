@@ -2,8 +2,9 @@ package logisticspipes.recipes;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.registry.Registry;
 
 import logisticspipes.LPItems;
 import logisticspipes.items.ItemModule;
@@ -39,13 +40,13 @@ public class CraftingRecipes implements IRecipeProvider {
 
 	private void registerResetRecipe(String[] dyes) {
 		for (ResourceLocation moduleResource : LPItems.modules.values()) {
-			final Item item = Item.REGISTRY.getObject(moduleResource);
+			final Item item = Registry.ITEM.getOrDefault(moduleResource);
 			if (item instanceof ItemModule) {
 				LogisticsModule module = ((ItemModule) item).getModuleForItem(new ItemStack(item), null, null, null);
 				if (module == null) continue;
-				NBTTagCompound tag = new NBTTagCompound();
+				CompoundNBT tag = new CompoundNBT();
 				module.writeToNBT(tag);
-				if (!tag.hasNoTags()) {
+				if (!tag.isEmpty()) {
 					RecipeManager.craftingManager.addShapelessResetRecipe(item, 0);
 				}
 			}

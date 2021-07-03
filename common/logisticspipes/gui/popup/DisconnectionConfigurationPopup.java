@@ -60,7 +60,7 @@ public class DisconnectionConfigurationPopup extends SubGuiScreen {
 	protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY, float partialTick) {
 		drawRect(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height, 0xff000000);
 
-		Minecraft mc = Minecraft.getMinecraft();
+		Minecraft mc = Minecraft.getInstance();
 		ScaledResolution scaledresolution = new ScaledResolution(mc);
 
 		int vpx = bounds.x * scaledresolution.getScaleFactor();
@@ -83,7 +83,7 @@ public class DisconnectionConfigurationPopup extends SubGuiScreen {
 
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 	}
 
 	@Override

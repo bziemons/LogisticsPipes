@@ -19,7 +19,7 @@ import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatAllowedCharacters;
 
@@ -69,7 +69,7 @@ import network.rs485.logisticspipes.util.TextUtil;
 public class GuiRequestTable extends LogisticsBaseGuiScreen implements IItemSearch, ISpecialItemRenderer, IDiskProvider {
 
 	public final PipeBlockRequestTable _table;
-	public final EntityPlayer _entityPlayer;
+	public final PlayerEntity _PlayerEntity;
 	protected final String _title = "Request items";
 	public ItemDisplay itemDisplay;
 	public int dimension;
@@ -86,16 +86,16 @@ public class GuiRequestTable extends LogisticsBaseGuiScreen implements IItemSear
 	private IChainAddList<GuiButton> hideWhileSmall = new ChainAddArrayList<>();
 	private GuiButton hideShowButton;
 
-	public GuiRequestTable(EntityPlayer entityPlayer, PipeBlockRequestTable table) {
-		super(410, 240, 0, 0);
+	public GuiRequestTable(PlayerEntity player, PipeBlockRequestTable table) {
+		super(inv, titleIn, 410, 240, 0, 0);
 		_table = table;
-		_entityPlayer = entityPlayer;
+		_PlayerEntity = PlayerEntity;
 		if (GuiOrderer.cachetime + 100 < System.currentTimeMillis()) {
-			dimension = _table.getWorld().provider.getDimension();
+			dimension = _table.getWorld().getDimension();
 		} else {
 			dimension = GuiOrderer.dimensioncache;
 		}
-		DummyContainer dummy = new DummyContainer(entityPlayer.inventory, _table.matrix);
+		DummyContainer dummy = new DummyContainer(PlayerEntity.inventory, _table.matrix);
 		dummy.guiHolderForJEI = this;
 
 		int i = 0;
@@ -141,7 +141,7 @@ public class GuiRequestTable extends LogisticsBaseGuiScreen implements IItemSear
 		buttonList.add(hideWhileSmall.addChain(new SmallGuiButton(6, right - 86, bottom - 26, 10, 10, "+"))); // +1
 		buttonList.add(hideWhileSmall.addChain(new SmallGuiButton(7, right - 74, bottom - 26, 15, 10, "++"))); // +10
 		buttonList.add(hideWhileSmall.addChain(new SmallGuiButton(11, right - 86, bottom - 15, 26, 10, "+++"))); // +64
-		buttonList.add(hideWhileSmall.addChain(new GuiCheckBox(8, guiLeft + 209, bottom - 60, 14, 14, Configs.DISPLAY_POPUP))); // Popup
+		buttonList.add(hideWhileSmall.addChain(new GuiCheckBox(guiLeft + 209, bottom - 60, 14, 14, "displayPopup", Configs.DISPLAY_POPUP))); // Popup
 
 		buttonList.add(hideWhileSmall.addChain(new SmallGuiButton(3, guiLeft + 210, bottom - 15, 46, 10, "Refresh"))); // Refresh
 		buttonList.add(hideWhileSmall.addChain(new SmallGuiButton(13, guiLeft + 210, bottom - 28, 46, 10, "Content"))); // Component
@@ -201,7 +201,7 @@ public class GuiRequestTable extends LogisticsBaseGuiScreen implements IItemSear
 		for (GuiButton sycleButton : sycleButtons) {
 			sycleButton.visible = _table.targetType != null;
 		}
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right - (showRequest ? 0 : 105), bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right - (showRequest ? 0 : 105), bottom, blitOffset, true);
 
 		drawRect(guiLeft + 162, guiTop + 23, guiLeft + 182, guiTop + 43, Color.BLACK);
 		drawRect(guiLeft + 164, guiTop + 25, guiLeft + 180, guiTop + 41, Color.DARKER_GREY);
@@ -221,7 +221,7 @@ public class GuiRequestTable extends LogisticsBaseGuiScreen implements IItemSear
 			search.drawTextBox();
 
 			itemDisplay.renderSortMode(right - 103, bottom - 52);
-			itemDisplay.renderItemArea(zLevel);
+			itemDisplay.renderItemArea(blitOffset);
 		}
 
 		for (int x = 0; x < 9; x++) {
@@ -278,15 +278,15 @@ public class GuiRequestTable extends LogisticsBaseGuiScreen implements IItemSear
 						String s;
 						if (resource != null) {
 							stack = resource.getDisplayItem().makeNormalStack();
-							itemRender.renderItemAndEffectIntoGUI(stack, left + 5, top + 5);
-							itemRender.renderItemOverlayIntoGUI(mc.fontRenderer, stack, left + 5, top + 5, "");
+							itemRenderer.renderItemAndEffectIntoGUI(stack, left + 5, top + 5);
+							itemRenderer.renderItemOverlayIntoGUI(mc.fontRenderer, stack, left + 5, top + 5, "");
 							s = TextUtil.getThreeDigitFormattedNumber(stack.getCount(), false);
 						} else {
 							s = "List";
 						}
 						GL11.glDisable(GL11.GL_LIGHTING);
 						GL11.glDisable(GL11.GL_DEPTH_TEST);
-						itemRender.zLevel = 0.0F;
+						itemRenderer.zLevel = 0.0F;
 
 						// Draw number
 						mc.fontRenderer.drawStringWithShadow(s, left + 22 - mc.fontRenderer.getStringWidth(s), top + 14, 16777215);
@@ -313,12 +313,12 @@ public class GuiRequestTable extends LogisticsBaseGuiScreen implements IItemSear
 								GL11.glEnable(GL11.GL_LIGHTING);
 								GL11.glEnable(GL11.GL_DEPTH_TEST);
 								RenderHelper.enableGUIStandardItemLighting();
-								itemRender.renderItemAndEffectIntoGUI(stack, x, y);
-								itemRender.renderItemOverlayIntoGUI(fontRenderer, stack, x, y, "");
+								itemRenderer.renderItemAndEffectIntoGUI(stack, x, y);
+								itemRenderer.renderItemOverlayIntoGUI(fontRenderer, stack, x, y, "");
 								s = TextUtil.getThreeDigitFormattedNumber(stack.getCount(), false);
 								GL11.glDisable(GL11.GL_LIGHTING);
 								GL11.glDisable(GL11.GL_DEPTH_TEST);
-								itemRender.zLevel = 0.0F;
+								itemRenderer.zLevel = 0.0F;
 
 								// Draw number
 								mc.fontRenderer.drawStringWithShadow(s, x + 17 - mc.fontRenderer.getStringWidth(s), y + 9, 16777215);
@@ -394,12 +394,12 @@ public class GuiRequestTable extends LogisticsBaseGuiScreen implements IItemSear
 								list.add(ChatColor.BLUE + "Send to Router ID: " + ChatColor.YELLOW + order
 										.getRouterId());
 								GuiGraphics.displayItemToolTip(new Object[] { xPos - 10, yPos, order
-										.getAsDisplayItem().makeNormalStack(), true, list }, zLevel, guiLeft, guiTop, false);
+										.getAsDisplayItem().makeNormalStack(), true, list }, blitOffset, guiLeft, guiTop, false);
 							});
 						} else if (entry.getValue() != null && entry.getValue().getValue1() != null && entry.getValue().getValue1().getDisplayItem() != null) {
 							List<String> list = new ArrayList<>();
 							list.add(ChatColor.BLUE + "Request ID: " + ChatColor.YELLOW + entry.getKey());
-							GuiGraphics.displayItemToolTip(new Object[] { xPos - 10, yPos, entry.getValue().getValue1().getDisplayItem().makeNormalStack(), true, list }, zLevel, guiLeft, guiTop, false);
+							GuiGraphics.displayItemToolTip(new Object[] { xPos - 10, yPos, entry.getValue().getValue1().getDisplayItem().makeNormalStack(), true, list }, blitOffset, guiLeft, guiTop, false);
 						}
 					}
 				});
@@ -570,7 +570,7 @@ public class GuiRequestTable extends LogisticsBaseGuiScreen implements IItemSear
 		if (super.hasSubGui()) {
 			return;
 		}
-		GuiGraphics.displayItemToolTip(itemDisplay.getToolTip(), this, zLevel, guiLeft, guiTop);
+		GuiGraphics.displayItemToolTip(itemDisplay.getToolTip(), this, blitOffset, guiLeft, guiTop);
 		Macrobutton.enabled = !_table.diskInv.getStackInSlot(0).isEmpty() && _table.diskInv.getStackInSlot(0).getItem().equals(LPItems.disk);
 	}
 
@@ -626,22 +626,22 @@ public class GuiRequestTable extends LogisticsBaseGuiScreen implements IItemSear
 		super.handleMouseInputSub();
 	}
 
-	public void handleRequestAnswer(Collection<IResource> items, boolean error, ISubGuiControler control, EntityPlayer player) {
+	public void handleRequestAnswer(Collection<IResource> items, boolean error, ISubGuiControler control, PlayerEntity player) {
 		while (control.hasSubGui()) {
 			control = control.getSubGui();
 		}
 		if (error) {
-			control.setSubGui(new GuiRequestPopup(_entityPlayer, "You are missing:", items));
+			control.setSubGui(new GuiRequestPopup(_PlayerEntity, "You are missing:", items));
 		} else {
-			control.setSubGui(new GuiRequestPopup(_entityPlayer, "Request successful!", items));
+			control.setSubGui(new GuiRequestPopup(_PlayerEntity, "Request successful!", items));
 		}
 	}
 
-	public void handleSimulateAnswer(Collection<IResource> used, Collection<IResource> missing, ISubGuiControler control, EntityPlayer player) {
+	public void handleSimulateAnswer(Collection<IResource> used, Collection<IResource> missing, ISubGuiControler control, PlayerEntity player) {
 		while (control.hasSubGui()) {
 			control = control.getSubGui();
 		}
-		control.setSubGui(new GuiRequestPopup(_entityPlayer, "Components: ", used, "Missing: ", missing));
+		control.setSubGui(new GuiRequestPopup(_PlayerEntity, "Components: ", used, "Missing: ", missing));
 	}
 
 	@Override

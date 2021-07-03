@@ -1,6 +1,6 @@
 package logisticspipes.network.guis.module.inpipe;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.gui.modules.GuiStringBasedItemSink;
 import logisticspipes.interfaces.IStringBasedModule;
@@ -19,7 +19,7 @@ public class StringBasedItemSinkModuleGuiSlot extends NBTModuleCoordinatesGuiPro
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		LogisticsModule module = this.getLogisticsModule(player.getEntityWorld(), LogisticsModule.class);
 		if (!(module instanceof IStringBasedModule)) {
 			return null;
@@ -29,7 +29,7 @@ public class StringBasedItemSinkModuleGuiSlot extends NBTModuleCoordinatesGuiPro
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		IStringBasedModule module = this.getLogisticsModule(player.getEntityWorld(), IStringBasedModule.class);
 		if (module == null) {
 			return null;

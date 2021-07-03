@@ -9,8 +9,6 @@ import javax.annotation.Nullable;
 
 import net.minecraft.item.ItemStack;
 
-import net.minecraftforge.oredict.OreDictionary;
-
 import logisticspipes.LogisticsPipes;
 
 public class DictItemIdentifier {
@@ -19,14 +17,15 @@ public class DictItemIdentifier {
 
 	@Nullable
 	public static DictItemIdentifier getDictItemIdentifier(@Nonnull ItemIdentifier itemIdent) {
+		itemIdent.item.getTags();
 		BitSet ids = new BitSet();
 		boolean hasDict = false;
 		final ItemStack stack = itemIdent.unsafeMakeNormalStack(1);
 		if (stack.isEmpty()) {
-			LogisticsPipes.log.error("Cannot make stack from item " + itemIdent.toString() + " -- item creates and empty stack!");
+			LogisticsPipes.getLOGGER().error("Cannot make stack from item " + itemIdent.toString() + " -- item creates and empty stack!");
 			return null;
 		}
-		for (int oreId : OreDictionary.getOreIDs(stack)) {
+		for (int oreId : OreDiction.getOreIDs(stack)) {
 			ids.set(oreId);
 			hasDict = true;
 		}
@@ -41,7 +40,7 @@ public class DictItemIdentifier {
 		return dictIdent;
 	}
 
-	private final List<DictIdentifier> parts = new ArrayList<>();
+	private final List<DictItemIdentifier> parts = new ArrayList<>();
 
 	private DictItemIdentifier(BitSet set) {
 		int id = -1;

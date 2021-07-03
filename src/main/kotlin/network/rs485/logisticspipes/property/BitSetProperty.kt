@@ -37,7 +37,7 @@
 
 package network.rs485.logisticspipes.property
 
-import net.minecraft.nbt.NBTTagCompound
+import net.minecraft.nbt.CompoundNBT
 import java.util.*
 import java.util.concurrent.CopyOnWriteArraySet
 
@@ -89,11 +89,11 @@ class BitSetProperty(private val bitset: BitSet, override val tagKey: String) : 
             ?.alsoIChanged()
     }
 
-    override fun readFromNBT(tag: NBTTagCompound) {
-        if (tag.hasKey(tagKey)) replaceWith(BitSet.valueOf(tag.getByteArray(tagKey)))
+    override fun readFromNBT(tag: CompoundNBT) {
+        if (tag.contains(tagKey)) replaceWith(BitSet.valueOf(tag.getByteArray(tagKey)))
     }
 
-    override fun writeToNBT(tag: NBTTagCompound) = tag.setByteArray(tagKey, bitset.toByteArray())
+    override fun writeToNBT(tag: CompoundNBT) = tag.putByteArray(tagKey, bitset.toByteArray())
 
     override fun get(bit: Int): Boolean = bitset.get(bit)
     override fun set(bit: Int, value: Boolean) = bitset.set(bit, value).alsoIChanged()

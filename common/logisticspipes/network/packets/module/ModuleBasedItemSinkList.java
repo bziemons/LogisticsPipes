@@ -1,14 +1,14 @@
 package logisticspipes.network.packets.module;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
 
 import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.interfaces.IStringBasedModule;
 import logisticspipes.network.abstractpackets.ModernPacket;
-import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.ModuleCoordinatesPacket;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
@@ -19,7 +19,7 @@ public class ModuleBasedItemSinkList extends ModuleCoordinatesPacket {
 
 	@Getter
 	@Setter
-	private NBTTagCompound nbt;
+	private CompoundNBT nbt;
 
 	public ModuleBasedItemSinkList(int id) {
 		super(id);
@@ -31,7 +31,7 @@ public class ModuleBasedItemSinkList extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		IStringBasedModule module = this.getLogisticsModule(player, IStringBasedModule.class);
 		if (module == null) {
 			return;
@@ -45,12 +45,12 @@ public class ModuleBasedItemSinkList extends ModuleCoordinatesPacket {
 	@Override
 	public void writeData(LPDataOutput output) {
 		super.writeData(output);
-		output.writeNBTTagCompound(nbt);
+		output.writeCompoundNBT(nbt);
 	}
 
 	@Override
 	public void readData(LPDataInput input) {
 		super.readData(input);
-		nbt = input.readNBTTagCompound();
+		nbt = input.readCompoundNBT();
 	}
 }

@@ -8,11 +8,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.registry.Registry;
 
 import logisticspipes.LPItems;
 import logisticspipes.blocks.LogisticsProgramCompilerTileEntity;
@@ -49,8 +50,8 @@ public class UpgradeChippedCraftingRecipes extends CraftingPartRecipes {
 
 	private void registerUpgradeRecipe(CraftingParts parts, RecipeType type, ResourceLocation recipeCategory, String upgradeName, int amount) {
 		ResourceLocation upgradeResource = LPItems.upgrades.get(upgradeName);
-		Item upgrade = Item.REGISTRY.getObject(upgradeResource);
-		if (upgrade == null) return;
+		Item upgrade = Registry.ITEM.getOrDefault(upgradeResource);
+		if (upgrade == Items.AIR) return;
 
 		Ingredient programmer = programmerIngredient(upgradeResource.toString());
 		final Set<ResourceLocation> compilerPrograms = LogisticsProgramCompilerTileEntity.programByCategory.putIfAbsent(recipeCategory, new HashSet<>());

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -46,7 +46,7 @@ public class ClientRouter implements IRouter {
 	public void update(boolean doFullRefresh, CoreRoutedPipe pipe) {}
 
 	@Override
-	public boolean isRoutedExit(EnumFacing connection) {
+	public boolean isRoutedExit(Direction connection) {
 		if (LogisticsPipes.isDEBUG()) {
 			throw new UnsupportedOperationException("noClientRouting");
 		}
@@ -146,7 +146,7 @@ public class ClientRouter implements IRouter {
 	}
 
 	@Override
-	public boolean isSideDisconnected(EnumFacing dir) {
+	public boolean isSideDisconnected(Direction dir) {
 		return false;
 	}
 
@@ -167,7 +167,7 @@ public class ClientRouter implements IRouter {
 	public void forceLsaUpdate() {}
 
 	@Override
-	public boolean isSubPoweredExit(EnumFacing connection) {
+	public boolean isSubPoweredExit(Direction connection) {
 		return false;
 	}
 
@@ -182,12 +182,12 @@ public class ClientRouter implements IRouter {
 	}
 
 	@Override
-	public List<ExitRoute> getRoutersOnSide(EnumFacing exitOrientation) {
+	public List<ExitRoute> getRoutersOnSide(Direction exitOrientation) {
 		return null;
 	}
 
 	@Override
-	public int getDistanceToNextPowerPipe(EnumFacing dir) {
+	public int getDistanceToNextPowerPipe(Direction dir) {
 		return 0;
 	}
 

@@ -3,10 +3,10 @@ package logisticspipes.proxy;
 public class SpecialTankHandlerManager {
 
 	public static void load() {
-		/*if (Loader.isModLoaded("BuildCraft|Factory")) {
+		/*if (ModList.get().isLoaded("BuildCraft|Factory")) {
 			SimpleServiceLocator.specialTankHandler.registerHandler(new BuildCraftTankHandler());
 		}
-		if (Loader.isModLoaded("AppliedEnergistics2-Core") || Loader.isModLoaded("appliedenergistics2-core")) {
+		if (ModList.get().isLoaded("AppliedEnergistics2-Core") || ModList.get().isLoaded("appliedenergistics2-core")) {
 			SimpleServiceLocator.specialTankHandler.registerHandler(new AETankHandler());
 		}*/
 	}

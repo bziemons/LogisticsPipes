@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.debuggui;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -44,7 +44,7 @@ public class DebugPanelOpen extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		try {
 			DebugGuiController.instance().createNewDebugGui(getName(), getIdentification());
 		} catch (Exception e) {

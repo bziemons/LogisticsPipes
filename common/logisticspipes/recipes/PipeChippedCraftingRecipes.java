@@ -10,7 +10,7 @@ import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.ResourceLocation;
 
 import logisticspipes.LPItems;
@@ -102,8 +102,8 @@ public class PipeChippedCraftingRecipes extends CraftingPartRecipes {
 
 	private Ingredient getIngredientForProgrammer(Item targetPipe) {
 		ItemStack programmerStack = new ItemStack(LPItems.logisticsProgrammer);
-		programmerStack.setTagCompound(new NBTTagCompound());
-		programmerStack.getTagCompound().setString(ItemLogisticsProgrammer.RECIPE_TARGET, targetPipe.getRegistryName().toString());
+		programmerStack.setTag(new CompoundNBT());
+		programmerStack.getTag().putString(ItemLogisticsProgrammer.RECIPE_TARGET, targetPipe.getRegistryName().toString());
 		return NBTIngredient.fromStacks(programmerStack);
 	}
 

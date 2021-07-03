@@ -5,19 +5,19 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import logisticspipes.api.ILPPipe;
 import logisticspipes.config.Configs;
@@ -26,7 +26,6 @@ import logisticspipes.interfaces.IPipeUpgradeManager;
 import logisticspipes.pipes.basic.debug.DebugLogController;
 import logisticspipes.pipes.basic.debug.StatusEntry;
 import logisticspipes.proxy.SimpleServiceLocator;
-import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
 import logisticspipes.renderer.IIconProvider;
 import logisticspipes.renderer.newpipe.IHighlightPlacementRenderer;
 import logisticspipes.renderer.newpipe.ISpecialPipeRenderer;
@@ -38,7 +37,7 @@ import logisticspipes.utils.item.ItemIdentifier;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
-public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTypeHolder {
+public abstract class CoreUnroutedPipe implements IClientState, ILPPipe {
 
 	private final Object[] ccTypeHolder = new Object[1];
 	@Nullable
@@ -59,7 +58,7 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 		transport.setTile((LogisticsTileGenericPipe) tile);
 	}
 
-	public boolean blockActivated(EntityPlayer entityplayer) {
+	public boolean blockActivated(PlayerEntity player) {
 		return false;
 	}
 
@@ -67,13 +66,13 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 		transport.onBlockPlaced();
 	}
 
-	public void onBlockPlacedBy(EntityLivingBase placer) {}
+	public void onBlockPlacedBy(LivingEntity placer) {}
 
 	public void onNeighborBlockChange() {
 		transport.onNeighborBlockChange();
 	}
 
-	public boolean canPipeConnect(TileEntity tile, EnumFacing side) {
+	public boolean canPipeConnect(TileEntity tile, Direction side) {
 		CoreUnroutedPipe otherPipe;
 
 		if (tile instanceof LogisticsTileGenericPipe) {
@@ -100,7 +99,7 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 	 *
 	 * @return An array of icons
 	 */
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public IIconProvider getIconProvider() {
 		return Textures.LPpipeIconProvider;
 	}
@@ -113,17 +112,17 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 	 *                  Unknown for pipe center
 	 * @return An index valid in the array returned by getTextureIcons()
 	 */
-	public abstract int getIconIndex(EnumFacing direction);
+	public abstract int getIconIndex(Direction direction);
 
 	public void updateEntity() {
 		transport.updateEntity();
 	}
 
-	public void writeToNBT(NBTTagCompound data) {
+	public void writeToNBT(CompoundNBT data) {
 		transport.writeToNBT(data);
 	}
 
-	public void readFromNBT(NBTTagCompound data) {
+	public void readFromNBT(CompoundNBT data) {
 		transport.readFromNBT(data);
 	}
 
@@ -160,7 +159,7 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 	/**
 	 * Called when TileGenericPipe.onChunkUnload is called
 	 */
-	public void onChunkUnload() {}
+	public void onChunkUnloaded() {}
 
 	public World getWorld() {
 		if (container == null) return null;
@@ -171,11 +170,11 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 
 	}
 
-	public boolean canPipeConnect(TileEntity tile, EnumFacing direction, boolean flag) {
+	public boolean canPipeConnect(TileEntity tile, Direction direction, boolean flag) {
 		return canPipeConnect(tile, direction);
 	}
 
-	public boolean isSideBlocked(EnumFacing side, boolean ignoreSystemDisconnection) {
+	public boolean isSideBlocked(Direction side, boolean ignoreSystemDisconnection) {
 		return false;
 	}
 
@@ -275,7 +274,7 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 			}
 
 			@Override
-			public boolean isSideDisconnected(EnumFacing side) {
+			public boolean isSideDisconnected(Direction side) {
 				return false;
 			}
 
@@ -305,15 +304,15 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 			}
 
 			@Override
-			public EnumFacing[] getCombinedSneakyOrientation() {
+			public Direction[] getCombinedSneakyOrientation() {
 				return null;
 			}
 		};
 	}
 
-	public double getDistanceTo(int destinationint, EnumFacing ignore, ItemIdentifier ident, boolean isActive, double travled, double max, List<DoubleCoordinates> visited) {
+	public double getDistanceTo(int destinationint, Direction ignore, ItemIdentifier ident, boolean isActive, double travled, double max, List<DoubleCoordinates> visited) {
 		double lowest = Integer.MAX_VALUE;
-		for (EnumFacing dir : EnumFacing.VALUES) {
+		for (Direction dir : Direction.values()) {
 			if (ignore == dir) {
 				continue;
 			}
@@ -345,12 +344,12 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 		return false;
 	}
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public ISpecialPipeRenderer getSpecialRenderer() {
 		return null;
 	}
 
-	public boolean hasSpecialPipeEndAt(EnumFacing dir) {
+	public boolean hasSpecialPipeEndAt(Direction dir) {
 		return false;
 	}
 
@@ -410,11 +409,6 @@ public abstract class CoreUnroutedPipe implements IClientState, ILPPipe, ILPCCTy
 
 	public boolean isMultipartAllowedInPipe() {
 		return true;
-	}
-
-	@Override
-	public Object[] getTypeHolder() {
-		return ccTypeHolder;
 	}
 
 	protected void updateAdjacentCache() {}

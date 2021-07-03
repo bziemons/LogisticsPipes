@@ -8,6 +8,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 
 import logisticspipes.utils.item.ItemIdentifierStack;
+import network.rs485.logisticspipes.network.packets.ModuleCoordinatesPacket;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 

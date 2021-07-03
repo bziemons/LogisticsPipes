@@ -3,7 +3,7 @@ package logisticspipes.network.packets.pipe;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -34,7 +34,7 @@ public class RoutingLaserPacket extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsHUDRenderer.instance().setLasers(getLasers());
 	}
 

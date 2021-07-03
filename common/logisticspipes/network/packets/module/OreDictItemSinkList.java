@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.module;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.modules.ModuleOreDictItemSink;
 import logisticspipes.network.abstractpackets.ModernPacket;
@@ -21,7 +21,7 @@ public class OreDictItemSinkList extends NBTModuleCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		ModuleOreDictItemSink module = this.getLogisticsModule(player, ModuleOreDictItemSink.class);
 		if (module == null) {
 			return;

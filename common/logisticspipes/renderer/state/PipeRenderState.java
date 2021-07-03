@@ -4,12 +4,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.IWorld;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -63,11 +63,11 @@ public class PipeRenderState implements IClientState {
 		return pipeConnectionMatrix.isDirty() || textureMatrix.isDirty();
 	}
 
-	public void checkForRenderUpdate(IBlockAccess worldIn, BlockPos blockPos) {
+	public void checkForRenderUpdate(IWorld worldIn, BlockPos blockPos) {
 		boolean[] solidSides = new boolean[6];
-		for (EnumFacing dir : EnumFacing.VALUES) {
+		for (Direction dir : Direction.values()) {
 			DoubleCoordinates pos = CoordinateUtils.add(new DoubleCoordinates(blockPos), dir);
-			IBlockState blockSide = pos.getBlockState(worldIn);
+			BlockState blockSide = pos.getBlockState(worldIn);
 			if (blockSide != null && blockSide.isSideSolid(worldIn, pos.getBlockPos(), dir.getOpposite()) && !pipeConnectionMatrix.isConnected(dir)) {
 				solidSides[dir.ordinal()] = true;
 			}

@@ -39,7 +39,7 @@ package network.rs485.logisticspipes.util
 
 import logisticspipes.utils.item.ItemIdentifier
 import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NBTTagCompound
+import net.minecraft.nbt.CompoundNBT
 import network.rs485.logisticspipes.property.IBitSet
 import java.util.*
 
@@ -54,11 +54,8 @@ typealias FuzzyFlagger = (flag: FuzzyFlag) -> Boolean
 
 object FuzzyUtil {
 
-    fun readFromNBT(fuzzyBitSet: IBitSet, tag: NBTTagCompound) =
+    fun readFromNBT(fuzzyBitSet: IBitSet, tag: CompoundNBT) =
         FuzzyFlag.values().forEach { fuzzyBitSet[it.bit] = tag.getBoolean(it.nbtName) }
-
-//    fun writeToNBT(fuzzyBitSet: IBitSet, tag: NBTTagCompound) =
-//        FuzzyFlag.values().forEach { tag.setBoolean(it.nbtName, fuzzyBitSet[it.bit]) }
 
     fun set(fuzzyBitSet: IBitSet, flag: FuzzyFlag, value: Boolean) = fuzzyBitSet.set(flag.bit, value)
     fun set(fuzzyBitSet: BitSet, flag: FuzzyFlag, value: Boolean) = fuzzyBitSet.set(flag.bit, value)
@@ -87,20 +84,16 @@ object FuzzyUtil {
         if (firstStack.item !== secondStack.item) {
             return false
         }
-        if (firstStack.itemDamage != secondStack.itemDamage) {
-            if (firstStack.hasSubtypes) {
-                return false
-            } else if (!fuzzyFlagger(FuzzyFlag.IGNORE_DAMAGE)) {
-                return false
-            }
+        if (firstStack.damage != secondStack.damage && !fuzzyFlagger(FuzzyFlag.IGNORE_DAMAGE)) {
+            return false
         }
         if (fuzzyFlagger(FuzzyFlag.IGNORE_NBT)) {
             return true
         }
-        if (firstStack.hasTagCompound() xor secondStack.hasTagCompound()) {
+        if (firstStack.hasTag() xor secondStack.hasTag()) {
             return false
         }
-        return if (!firstStack.hasTagCompound() && !secondStack.hasTagCompound()) {
+        return if (!firstStack.hasTag() && !secondStack.hasTag()) {
             true
         } else ItemStack.areItemStackTagsEqual(firstStack, secondStack)
     }

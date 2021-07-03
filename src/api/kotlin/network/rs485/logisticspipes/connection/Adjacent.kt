@@ -38,14 +38,14 @@
 package network.rs485.logisticspipes.connection
 
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.EnumFacing
+import net.minecraft.util.Direction
 import net.minecraft.util.math.BlockPos
 import java.util.*
 
 interface Adjacent {
     fun connectedPos(): Map<BlockPos, ConnectionType>
 
-    fun optionalGet(direction: EnumFacing): Optional<ConnectionType>
+    fun optionalGet(direction: Direction): Optional<ConnectionType>
 
     fun neighbors(): Map<NeighborTileEntity<TileEntity>, ConnectionType>
 

@@ -1,36 +1,17 @@
 package logisticspipes.asm;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.jar.Manifest;
-import java.util.stream.Collectors;
 
-import net.minecraft.launchwrapper.IClassTransformer;
-import net.minecraft.launchwrapper.Launch;
-import net.minecraft.launchwrapper.LaunchClassLoader;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModContainer;
-import net.minecraftforge.fml.common.asm.transformers.AccessTransformer;
-import net.minecraftforge.fml.common.asm.transformers.ModAccessTransformer;
-import net.minecraftforge.fml.common.versioning.ArtifactVersion;
-import net.minecraftforge.fml.common.versioning.DefaultArtifactVersion;
-import net.minecraftforge.fml.common.versioning.VersionParser;
-import net.minecraftforge.fml.common.versioning.VersionRange;
-import net.minecraftforge.fml.relauncher.Side;
-
+import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
+import org.apache.maven.artifact.versioning.VersionRange;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
@@ -43,16 +24,12 @@ import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import logisticspipes.LogisticsPipes;
-import logisticspipes.asm.mcmp.ClassBlockMultipartContainerHandler;
-import logisticspipes.asm.td.ClassRenderDuctItemsHandler;
-import logisticspipes.asm.td.ClassTravelingItemHandler;
 import logisticspipes.utils.ModStatusHelper;
 
-public class LogisticsClassTransformer implements IClassTransformer {
+public class LogisticsClassTransformer {
 
 	public List<String> interfacesToClearA = new ArrayList<>();
 	public List<String> interfacesToClearB = new ArrayList<>();
-	private LaunchClassLoader cl = (LaunchClassLoader) LogisticsClassTransformer.class.getClassLoader();
 	private Field negativeResourceCache;
 	private Field invalidClasses;
 
@@ -60,25 +37,9 @@ public class LogisticsClassTransformer implements IClassTransformer {
 
 	public LogisticsClassTransformer() {
 		LogisticsClassTransformer.instance = this;
-		try {
-			negativeResourceCache = LaunchClassLoader.class.getDeclaredField("negativeResourceCache");
-			negativeResourceCache.setAccessible(true);
-		} catch (Exception e) {
-			//e.printStackTrace();
-		}
-		try {
-			invalidClasses = LaunchClassLoader.class.getDeclaredField("invalidClasses");
-			invalidClasses.setAccessible(true);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
-	@Override
 	public byte[] transform(String name, String transformedName, byte[] bytes) {
-		// if dev environment and transform on first class is launched, boot the AT remapper
-		if (LogisticsPipesCoreLoader.isDevelopmentEnvironment() && name.equals("net.minecraftforge.fml.common.Loader")) bootATRemapper();
-
 		Thread thread = Thread.currentThread();
 		if (thread.getName().equals("Minecraft main thread") || thread.getName().equals("main") || thread.getName().equals("Server thread")) { //Only clear when called from the main thread to avoid ConcurrentModificationException on start
 			clearNegativeInterfaceCache();
@@ -103,73 +64,6 @@ public class LogisticsClassTransformer implements IClassTransformer {
 		return ParamProfiler.handleClass(bytes);
 	}
 
-	private void bootATRemapper() {
-		System.err.println("Fetching ModAccessTransformers");
-		final List<IClassTransformer> modATs = Launch.classLoader.getTransformers().stream().filter(transformer -> transformer instanceof ModAccessTransformer).collect(Collectors.toList());
-		System.err.println("Found " + modATs);
-		if (modATs.size() == 0) return;
-
-		System.err.println("Inserting missing ATs from classpath");
-		try {
-			readClasspathATs(modATs);
-		} catch (IllegalStateException e) {
-			System.err.println("Could not inject classpath FMLATs");
-			e.printStackTrace();
-		}
-
-		System.err.println("Booting Logistics Pipes ModAccessTransformerRemapper");
-		final ModAccessTransformerRemapper remapper;
-		try {
-			remapper = new ModAccessTransformerRemapper();
-		} catch (IllegalStateException e) {
-			System.err.println("Could not initialize ModAccessTransformerRemapper:");
-			e.printStackTrace();
-			return;
-		}
-
-		modATs.forEach(remapper::apply);
-	}
-
-	private void readClasspathATs(List<IClassTransformer> modATs) {
-		final Method readMapFile;
-		try {
-			readMapFile = AccessTransformer.class.getDeclaredMethod("readMapFile", String.class);
-		} catch (NoSuchMethodException e) {
-			throw new IllegalStateException("Could not find method readMapFile on AccessTransformer class", e);
-		}
-		final boolean wasAccessible = readMapFile.isAccessible();
-		if (!wasAccessible) readMapFile.setAccessible(true);
-		try {
-			readClasspathATsInner(path -> {
-				final IClassTransformer classTransformer = modATs.get(0);
-				try {
-					readMapFile.invoke(classTransformer, path);
-				} catch (IllegalAccessException | InvocationTargetException e) {
-					throw new IllegalStateException("Could not access readMapFile method of " + classTransformer);
-				}
-			});
-		} catch (IOException e) {
-			throw new IllegalArgumentException("IO Error when fetching FMLATs", e);
-		} finally {
-			if (!wasAccessible) readMapFile.setAccessible(false);
-		}
-	}
-
-	private void readClasspathATsInner(Consumer<String> readMapFile) throws IOException {
-		final Enumeration<URL> manifestEntries = Launch.classLoader.findResources("META-INF/MANIFEST.MF");
-		while (manifestEntries.hasMoreElements()) {
-			final String accessTransformer;
-			try (InputStream manifestInputStream = manifestEntries.nextElement().openStream()) {
-				final Manifest manifest = new Manifest(manifestInputStream);
-				accessTransformer = manifest.getMainAttributes().getValue(ModAccessTransformer.FMLAT);
-			}
-			final Enumeration<URL> atEntries = Launch.classLoader.findResources("META-INF/" + accessTransformer);
-			while (atEntries.hasMoreElements()) {
-				readMapFile.accept(atEntries.nextElement().toString());
-			}
-		}
-	}
-
 	private byte[] applyLPTransforms(String name, byte[] bytes) {
 		try {
 			if (name.equals("net.minecraft.tileentity.TileEntity")) {
@@ -183,21 +77,6 @@ public class LogisticsClassTransformer implements IClassTransformer {
 			}
 			if (name.equals("net.minecraftforge.fluids.Fluid")) {
 				return handleFluidClass(bytes);
-			}
-			if (name.equals("mcmultipart.block.BlockMultipartContainer")) {
-				return ClassBlockMultipartContainerHandler.handleClass(bytes);
-			}
-			if (name.equals("dan200.computercraft.core.lua.LuaJLuaMachine")) {
-				return handleCCLuaJLuaMachine(bytes);
-			}
-			if (name.equals("dan200.computercraft.core.lua.CobaltLuaMachine")) {
-				return handleCCLuaJLuaMachine(bytes);
-			}
-			if (name.equals("cofh.thermaldynamics.duct.item.TravelingItem")) {
-				return ClassTravelingItemHandler.handleTravelingItemClass(bytes);
-			}
-			if (name.equals("cofh.thermaldynamics.render.RenderDuctItems")) {
-				return ClassRenderDuctItemsHandler.handleRenderDuctItemsClass(bytes);
 			}
 			if (!name.startsWith("logisticspipes.")) {
 				return bytes;
@@ -230,7 +109,7 @@ public class LogisticsClassTransformer implements IClassTransformer {
 	@SuppressWarnings("unchecked")
 	private void handleField(Field field, List<String> toClear) {
 		try {
-			Set<String> set = (Set<String>) field.get(cl);
+			Set<String> set = (Set<String>) field.get(getClass().getClassLoader());
 			Iterator<String> it = toClear.iterator();
 			while (it.hasNext()) {
 				String content = it.next();
@@ -295,7 +174,7 @@ public class LogisticsClassTransformer implements IClassTransformer {
 							throw new UnsupportedOperationException("Can't parse the annotation correctly");
 						}
 					} else if (a.desc.equals("Llogisticspipes/asm/ClientSideOnlyMethodContent;")) {
-						if (FMLCommonHandler.instance().getSide().equals(Side.SERVER)) {
+						if (FMLEnvironment.dist.isDedicatedServer()) {
 							m.instructions.clear();
 							m.localVariables.clear();
 							m.tryCatchBlocks.clear();
@@ -309,7 +188,7 @@ public class LogisticsClassTransformer implements IClassTransformer {
 							Label l2 = new Label();
 							m.visitLabel(l2);
 							m.visitLocalVariable("this", "Llogisticspipes/network/packets/DummyPacket;", null, l0, l2, 0);
-							m.visitLocalVariable("player", "Lnet/minecraft/entity/player/EntityPlayer;", null, l0, l2, 1);
+							m.visitLocalVariable("player", "Lnet/minecraft/entity/player/PlayerEntity;", null, l0, l2, 1);
 							m.visitMaxs(0, 2);
 							m.visitEnd();
 							changed = true;
@@ -322,14 +201,14 @@ public class LogisticsClassTransformer implements IClassTransformer {
 							final String version = a.values.get(5).toString();
 							boolean loaded = ModStatusHelper.isModLoaded(modId);
 							if (loaded && !version.equals("")) {
-								ModContainer mod = Loader.instance().getIndexedModList().get(modId);
-								if (mod != null) {
-									VersionRange range = VersionParser.parseRange(version);
-									ArtifactVersion artifactVersion = new DefaultArtifactVersion("Version", mod.getVersion());
-									loaded = range.containsVersion(artifactVersion);
-								} else {
-									loaded = false;
-								}
+								loaded = ModList.get().getModContainerById(modId).map(mod -> {
+									try {
+										return VersionRange.createFromVersionSpec(version).containsVersion(mod.getModInfo().getVersion());
+									} catch (InvalidVersionSpecificationException e) {
+										// ignored
+									}
+									return null;
+								}).orElse(false);
 							}
 							if (loaded) {
 								final String oldName = m.name;
@@ -457,7 +336,7 @@ public class LogisticsClassTransformer implements IClassTransformer {
 
 			protected String getCommonSuperClass(final String type1, final String type2) {
 				Class<?> c, d;
-				ClassLoader classLoader = Launch.classLoader; // Change Classloader to the MC one
+				ClassLoader classLoader = getClass().getClassLoader(); // Change Classloader to the MC one
 				try {
 					c = Class.forName(type1.replace('/', '.'), false, classLoader);
 					d = Class.forName(type2.replace('/', '.'), false, classLoader);

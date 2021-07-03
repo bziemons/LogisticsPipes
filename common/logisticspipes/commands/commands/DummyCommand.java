@@ -1,6 +1,6 @@
 package logisticspipes.commands.commands;
 
-import net.minecraft.command.ICommandSender;
+import net.minecraft.command.ICommandSource;
 
 import logisticspipes.commands.abstracts.ICommandHandler;
 
@@ -12,7 +12,7 @@ public class DummyCommand implements ICommandHandler {
 	}
 
 	@Override
-	public boolean isCommandUsableBy(ICommandSender sender) {
+	public boolean isCommandUsableBy(ICommandSource sender) {
 		return true;
 	}
 
@@ -22,5 +22,5 @@ public class DummyCommand implements ICommandHandler {
 	}
 
 	@Override
-	public void executeCommand(ICommandSender sender, String[] args) {}
+	public void executeCommand(ICommandSource sender, String[] args) {}
 }

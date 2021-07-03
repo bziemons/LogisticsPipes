@@ -7,9 +7,9 @@
 
 package logisticspipes.utils.gui;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.Slot;
+import net.minecraft.inventory.container.Slot;
 
 import lombok.Setter;
 
@@ -23,7 +23,7 @@ public class DummySlot extends Slot {
 	}
 
 	@Override
-	public boolean canTakeStack(EntityPlayer par1EntityPlayer) {
+	public boolean canTakeStack(PlayerEntity par1PlayerEntity) {
 		return false;
 	}
 

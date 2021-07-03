@@ -5,10 +5,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import net.minecraftforge.fluids.FluidTank;
 
@@ -208,21 +208,21 @@ public class PipeFluidSupplierMk2 extends FluidRoutedPipe implements IRequestFlu
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		super.readFromNBT(nbttagcompound);
-		dummyInventory.readFromNBT(nbttagcompound, "");
-		_requestPartials = nbttagcompound.getBoolean("requestpartials");
-		amount = nbttagcompound.getInteger("amount");
-		_bucketMinimum = MinMode.values()[nbttagcompound.getByte("_bucketMinimum")];
+	public void readFromNBT(CompoundNBT tag) {
+		super.readFromNBT(CompoundNBT);
+		dummyInventory.readFromNBT(CompoundNBT, "");
+		_requestPartials = CompoundNBT.getBoolean("requestpartials");
+		amount = tag.getInt("amount");
+		_bucketMinimum = MinMode.values()[CompoundNBT.getByte("_bucketMinimum")];
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		super.writeToNBT(nbttagcompound);
-		dummyInventory.writeToNBT(nbttagcompound, "");
-		nbttagcompound.setBoolean("requestpartials", _requestPartials);
-		nbttagcompound.setInteger("amount", amount);
-		nbttagcompound.setByte("_bucketMinimum", (byte) _bucketMinimum.ordinal());
+	public void writeToNBT(CompoundNBT tag) {
+		super.writeToNBT(tag);
+		dummyInventory.writeToNBT(CompoundNBT, "");
+		tag.putBoolean("requestpartials", _requestPartials);
+		tag.putInt("amount", amount);
+		tag.putByte("_bucketMinimum", (byte) _bucketMinimum.ordinal());
 	}
 
 	private void decreaseRequested(FluidIdentifier liquid, int remaining) {
@@ -281,8 +281,8 @@ public class PipeFluidSupplierMk2 extends FluidRoutedPipe implements IRequestFlu
 	}
 
 	@Override
-	public void onWrenchClicked(EntityPlayer entityplayer) {
-		entityplayer.openGui(LogisticsPipes.instance, GuiIDs.GUI_FluidSupplier_MK2_ID, getWorld(), getX(), getY(), getZ());
+	public void onWrenchClicked(PlayerEntity player) {
+		PlayerEntity.openGui(LogisticsPipes.instance, GuiIDs.GUI_FluidSupplier_MK2_ID, getWorld(), getX(), getY(), getZ());
 	}
 
 	public IInventory getDummyInventory() {
@@ -299,7 +299,7 @@ public class PipeFluidSupplierMk2 extends FluidRoutedPipe implements IRequestFlu
 		}
 	}
 
-	public void changeFluidAmount(int change, EntityPlayer player) {
+	public void changeFluidAmount(int change, PlayerEntity player) {
 		amount += change;
 		if (amount <= 0) {
 			amount = 0;

@@ -1,27 +1,18 @@
 package logisticspipes.utils;
 
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModAPIManager;
-import net.minecraftforge.fml.common.ModContainer;
-import net.minecraftforge.fml.common.versioning.ComparableVersion;
+import net.minecraftforge.fml.ModList;
+
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 
 public class ModStatusHelper {
 
 	public static boolean isModLoaded(String modId) {
 		if (modId.contains("@")) {
-			String version = modId.substring(modId.indexOf('@') + 1);
+			final String version = modId.substring(modId.indexOf('@') + 1);
 			modId = modId.substring(0, modId.indexOf('@'));
-			if (Loader.isModLoaded(modId)) {
-				ModContainer mod = Loader.instance().getIndexedModList().get(modId);
-				if (mod != null) {
-					return mod.getVersion().startsWith(version);
-				}
-			}
-			return false;
-		} else if (Loader.isModLoaded(modId)) {
-			return true;
+			return ModList.get().getModContainerById(modId).map(mod -> mod.getModInfo().getVersion().compareTo(new DefaultArtifactVersion(version)) == 0).orElse(false);
 		} else {
-			return ModAPIManager.INSTANCE.hasAPI(modId);
+			return ModList.get().isLoaded(modId);
 		}
 	}
 
@@ -39,12 +30,6 @@ public class ModStatusHelper {
 	}
 
 	public static boolean isModVersionEqualsOrHigher(String modId, String version) {
-		ComparableVersion v1 = new ComparableVersion(version);
-		ModContainer mod = Loader.instance().getIndexedModList().get(modId);
-		if (mod != null) {
-			ComparableVersion v2 = new ComparableVersion(mod.getVersion());
-			return v1.compareTo(v2) <= 0;
-		}
-		return false;
+		return ModList.get().getModContainerById(modId).map(mod -> mod.getModInfo().getVersion().compareTo(new DefaultArtifactVersion(version)) >= 0).orElse(false);
 	}
 }

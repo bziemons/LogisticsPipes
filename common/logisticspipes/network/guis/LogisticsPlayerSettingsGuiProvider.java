@@ -1,6 +1,6 @@
 package logisticspipes.network.guis;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Container;
 
 import logisticspipes.gui.GuiLogisticsSettings;
@@ -16,12 +16,12 @@ public class LogisticsPlayerSettingsGuiProvider extends GuiProvider {
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		return new GuiLogisticsSettings(player);
 	}
 
 	@Override
-	public Container getContainer(EntityPlayer player) {
+	public Container getContainer(PlayerEntity player) {
 		DummyContainer dummy = new DummyContainer(player.inventory, null);
 		dummy.addNormalSlotsForPlayerInventory(0, 0); // server does not care where the slots are
 		return dummy;

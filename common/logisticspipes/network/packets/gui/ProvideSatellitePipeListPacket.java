@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -45,9 +45,9 @@ public class ProvideSatellitePipeListPacket extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
-		if (Minecraft.getMinecraft().currentScreen instanceof LogisticsBaseGuiScreen) {
-			SubGuiScreen subGUI = ((LogisticsBaseGuiScreen) Minecraft.getMinecraft().currentScreen).getSubGui();
+	public void processPacket(PlayerEntity player) {
+		if (Minecraft.getInstance().currentScreen instanceof LogisticsBaseGuiScreen) {
+			SubGuiScreen subGUI = ((LogisticsBaseGuiScreen) Minecraft.getInstance().currentScreen).getSubGui();
 			if (subGUI instanceof GuiSelectSatellitePopup) {
 				((GuiSelectSatellitePopup) subGUI).handleSatelliteList(list);
 			}

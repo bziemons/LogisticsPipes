@@ -2,7 +2,7 @@ package logisticspipes.network.packets.pipe;
 
 import java.lang.ref.WeakReference;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.IntegerPacket;
@@ -20,7 +20,7 @@ public class PipeContentRequest extends IntegerPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		WeakReference<LPTravelingItemServer> ref = LPTravelingItem.serverList.get(getInteger());
 		LPTravelingItemServer item = null;
 		if (ref != null) {

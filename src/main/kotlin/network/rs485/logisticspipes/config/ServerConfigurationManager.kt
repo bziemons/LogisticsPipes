@@ -41,32 +41,33 @@ import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import logisticspipes.LogisticsPipes
 import logisticspipes.utils.PlayerIdentifier
-import net.minecraftforge.fml.common.FMLCommonHandler
-import java.io.File
+import net.minecraft.client.Minecraft
 import java.io.FileNotFoundException
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.util.*
 
 class ServerConfigurationManager {
     private val fileName = "logisticspipes.json"
 
-    private val configFile: File
+    private val configFile: Path
     private val gson = Gson()
     private val internalRepresentation: ServerConfiguration
 
     init {
-        configFile = File(FMLCommonHandler.instance().savesDirectory, fileName)
+        val savesDirectory: Path = Minecraft.getInstance().saveLoader.func_215781_c()
+        configFile = savesDirectory.resolve(fileName)
         internalRepresentation = try {
-            configFile.bufferedReader(Charsets.UTF_8).use {
+            configFile.toFile().bufferedReader(Charsets.UTF_8).use {
                 gson.fromJson(gson.newJsonReader(it), ServerConfiguration::class.java)
             }
         } catch (e: JsonParseException) {
-            LogisticsPipes.log.error("Cannot read LP configuration! Moving current configuration away and starting a new one!")
-            Files.move(configFile.toPath(), getTimedFile(".bkp").toPath())
+            LogisticsPipes.getLOGGER().error("Cannot read LP configuration! Moving current configuration away and starting a new one!")
+            Files.move(configFile, getTimedPath(".bkp"))
             ServerConfiguration()
         } catch (e: FileNotFoundException) {
-            LogisticsPipes.log.info("Starting a new LP configuration")
+            LogisticsPipes.getLOGGER().info("Starting a new LP configuration")
             ServerConfiguration()
         }
     }
@@ -94,20 +95,20 @@ class ServerConfigurationManager {
     }
 
     private fun writeChange() {
-        val tmpFile = getTimedFile(".tmp")
+        val newConfig = getTimedPath(".tmp")
         try {
-            tmpFile.bufferedWriter(Charsets.UTF_8).use {
+            newConfig.toFile().bufferedWriter(Charsets.UTF_8).use {
                 val jsonElement = gson.toJsonTree(internalRepresentation, ServerConfiguration::class.java)
                 gson.toJson(jsonElement, gson.newJsonWriter(it))
             }
-            Files.move(tmpFile.toPath(), configFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            Files.move(newConfig, configFile, StandardCopyOption.REPLACE_EXISTING)
         } finally {
-            Files.deleteIfExists(tmpFile.toPath())
+            Files.deleteIfExists(newConfig)
         }
     }
 
-    private fun getTimedFile(suffix: String = ""): File {
+    private fun getTimedPath(suffix: String = ""): Path {
         val time = Calendar.getInstance().timeInMillis.toString()
-        return File(configFile.parentFile, "${configFile.name}.$time$suffix")
+        return configFile.parent.resolve("${configFile.fileName}.$time$suffix")
     }
 }

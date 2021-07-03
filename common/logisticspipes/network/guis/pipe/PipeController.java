@@ -3,8 +3,8 @@ package logisticspipes.network.guis.pipe;
 import java.util.Objects;
 import java.util.UUID;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.LPItems;
 import logisticspipes.gui.GuiPipeController;
@@ -29,7 +29,7 @@ public class PipeController extends CoordinatesGuiProvider {
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		LogisticsTileGenericPipe pipe = getTileAs(player.world, LogisticsTileGenericPipe.class);
 		if (!(pipe.pipe instanceof CoreRoutedPipe)) {
 			return null;
@@ -38,7 +38,7 @@ public class PipeController extends CoordinatesGuiProvider {
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		LogisticsTileGenericPipe tile = getTileAs(player.world, LogisticsTileGenericPipe.class);
 		if (!(tile.pipe instanceof CoreRoutedPipe)) {
 			return null;
@@ -48,12 +48,12 @@ public class PipeController extends CoordinatesGuiProvider {
 
 			//Network Statistics
 			@Override
-			public void guiOpenedByPlayer(EntityPlayer player) {
+			public void guiOpenedByPlayer(PlayerEntity player) {
 				pipe.playerStartWatching(player, 0);
 			}
 
 			@Override
-			public void guiClosedByPlayer(EntityPlayer player) {
+			public void guiClosedByPlayer(PlayerEntity player) {
 				pipe.playerStopWatching(player, 0);
 			}
 		});
@@ -84,10 +84,10 @@ public class PipeController extends CoordinatesGuiProvider {
 			if (itemStack.getItem() != LPItems.itemCard) {
 				return false;
 			}
-			if (itemStack.getItemDamage() != LogisticsItemCard.SEC_CARD) {
+			if (itemStack.getDamage() != LogisticsItemCard.SEC_CARD) {
 				return false;
 			}
-			final NBTTagCompound tag = Objects.requireNonNull(itemStack.getTagCompound());
+			final CompoundNBT tag = Objects.requireNonNull(itemStack.getTag());
 			return SimpleServiceLocator.securityStationManager.isAuthorized(UUID.fromString(tag.getString("UUID")));
 		}, 1);
 		dummy.addRestrictedSlot(0, tile.logicController.diskInv, 14, 36, LPItems.disk);

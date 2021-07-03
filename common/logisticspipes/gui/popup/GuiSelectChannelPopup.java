@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.util.math.BlockPos;
 
-import logisticspipes.routing.channels.ChannelInformation;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 import logisticspipes.utils.gui.SmallGuiButton;
 import network.rs485.logisticspipes.util.TextUtil;
 

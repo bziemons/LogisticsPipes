@@ -1,8 +1,8 @@
 package logisticspipes.pipes;
 
 import net.minecraft.item.Item;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 
 import net.minecraftforge.fluids.FluidStack;
 
@@ -33,7 +33,7 @@ public class PipeFluidExtractor extends PipeFluidInsertion {
 				.forEach(tankData -> extractFrom(tankData.getValue2(), tankData.getValue1().getDirection()));
 	}
 
-	private void extractFrom(ITankUtil container, EnumFacing side) {
+	private void extractFrom(ITankUtil container, Direction side) {
 		int sideID = side.ordinal();
 		FluidStack contained = ((PipeFluidTransportLogistics) transport).getTankProperties(side)[0].getContents();
 		int amountMissing = ((PipeFluidTransportLogistics) transport).getSideCapacity() - (contained != null ? contained.amount : 0);
@@ -53,15 +53,15 @@ public class PipeFluidExtractor extends PipeFluidInsertion {
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		super.writeToNBT(nbttagcompound);
-		nbttagcompound.setIntArray("liquidToExtract", liquidToExtract);
+	public void writeToNBT(CompoundNBT tag) {
+		super.writeToNBT(tag);
+		tag.putIntArray("liquidToExtract", liquidToExtract);
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		super.readFromNBT(nbttagcompound);
-		liquidToExtract = nbttagcompound.getIntArray("liquidToExtract");
+	public void readFromNBT(CompoundNBT tag) {
+		super.readFromNBT(CompoundNBT);
+		liquidToExtract = CompoundNBT.getIntArray("liquidToExtract");
 		if (liquidToExtract.length < 6) {
 			liquidToExtract = new int[6];
 		}

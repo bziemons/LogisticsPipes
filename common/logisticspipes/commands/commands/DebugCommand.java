@@ -2,7 +2,7 @@ package logisticspipes.commands.commands;
 
 import java.util.Arrays;
 
-import net.minecraft.command.ICommandSender;
+import net.minecraft.command.ICommandSource;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.commands.abstracts.SubCommandHandler;
@@ -22,7 +22,7 @@ public class DebugCommand extends SubCommandHandler {
 	}
 
 	@Override
-	public boolean isCommandUsableBy(ICommandSender sender) {
+	public boolean isCommandUsableBy(ICommandSource sender) {
 		return LogisticsPipes.isDEBUG() || Arrays.asList(DebugCommand.allowedPlayers).contains(sender.getName());
 	}
 

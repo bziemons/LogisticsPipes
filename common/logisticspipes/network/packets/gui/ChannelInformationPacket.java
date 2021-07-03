@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.gui;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -9,7 +9,7 @@ import logisticspipes.interfaces.IGUIChannelInformationReceiver;
 import logisticspipes.network.abstractpackets.GuiPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.network.exception.TargetNotFoundException;
-import logisticspipes.routing.channels.ChannelInformation;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
@@ -44,7 +44,7 @@ public class ChannelInformationPacket extends GuiPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		IGUIChannelInformationReceiver screen = this.getGui(IGUIChannelInformationReceiver.class);
 		if (screen != null) {
 			screen.handleChannelInformation(information, targeted);

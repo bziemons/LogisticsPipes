@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import javax.annotation.Nonnull;
 
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.routing.IRouter;
@@ -29,13 +29,13 @@ public class PipeTransportLayer extends TransportLayer {
 	}
 
 	@Override
-	public EnumFacing itemArrived(IRoutedItem item, EnumFacing denied) {
+	public Direction itemArrived(IRoutedItem item, Direction denied) {
 		if (item.getItemIdentifierStack() != null) {
 			_trackStatistics.recievedItem(item.getItemIdentifierStack().getStackSize());
 		}
 
 		// 1st prio, deliver to adjacent inventories
-		LinkedList<EnumFacing> possibleEnumFacing = new LinkedList<>();
+		LinkedList<Direction> possibleDirection = new LinkedList<>();
 		for (NeighborTileEntity<TileEntity> adjacent : routedPipe.getAvailableAdjacent().inventories()) {
 			if (_router.isRoutedExit(adjacent.getDirection())) {
 				continue;
@@ -51,10 +51,10 @@ public class PipeTransportLayer extends TransportLayer {
 				}
 			}
 
-			possibleEnumFacing.add(adjacent.getDirection());
+			possibleDirection.add(adjacent.getDirection());
 		}
-		if (possibleEnumFacing.size() != 0) {
-			return possibleEnumFacing.get(routedPipe.getWorld().rand.nextInt(possibleEnumFacing.size()));
+		if (possibleDirection.size() != 0) {
+			return possibleDirection.get(routedPipe.getWorld().rand.nextInt(possibleDirection.size()));
 		}
 
 		// 2nd prio, deliver to non-routed exit
@@ -64,13 +64,13 @@ public class PipeTransportLayer extends TransportLayer {
 					final CoreRoutedPipe routerPipe = _router.getPipe();
 					return routerPipe == null || !routerPipe.isLockedExit(neighbor.getDirection());
 				})
-				.forEach(neighbor -> possibleEnumFacing.add(neighbor.getDirection()));
+				.forEach(neighbor -> possibleDirection.add(neighbor.getDirection()));
 
-		if (possibleEnumFacing.size() == 0) {
+		if (possibleDirection.size() == 0) {
 			// last resort, drop item
 			return null;
 		} else {
-			return possibleEnumFacing.get(routedPipe.getWorld().rand.nextInt(possibleEnumFacing.size()));
+			return possibleDirection.get(routedPipe.getWorld().rand.nextInt(possibleDirection.size()));
 		}
 	}
 

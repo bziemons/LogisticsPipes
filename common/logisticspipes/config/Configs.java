@@ -138,7 +138,7 @@ public class Configs {
 				"Whether or not special particles will spawn.")
 				.getBoolean(false);
 
-		if(Configs.CONFIGURATION.hasKey(Configs.CATEGORY_MULTITHREAD, "enabled")) {
+		if(Configs.CONFIGURATION.contains(Configs.CATEGORY_MULTITHREAD, "enabled")) {
 			//ConfigCategory.remove is deprecated, but there's no other way to remove a key-value pair without completely recreating the config...
 			Configs.CONFIGURATION.getCategory(Configs.CATEGORY_MULTITHREAD).remove("enabled");
 		}

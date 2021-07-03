@@ -12,16 +12,16 @@ import java.util.LinkedList;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.item.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.World;
 
 import logisticspipes.LogisticsPipes;
@@ -33,7 +33,7 @@ import network.rs485.logisticspipes.util.items.ItemStackLoader;
 
 public class SimpleStackInventory implements IInventory, ISaveState, Iterable<Pair<ItemStack, Integer>> {
 
-	private static final TextComponentString TEXT_COMPONENT_EMPTY = new TextComponentString("");
+	private static final StringTextComponent TEXT_COMPONENT_EMPTY = new StringTextComponent("");
 
 	private final NonNullList<ItemStack> stackList;
 	private final String _name;
@@ -113,53 +113,53 @@ public class SimpleStackInventory implements IInventory, ISaveState, Iterable<Pa
 	}
 
 	@Override
-	public boolean isUsableByPlayer(@Nonnull EntityPlayer entityplayer) {
+	public boolean isUsableByPlayer(@Nonnull PlayerEntity player) {
 		return false;
 	}
 
 	@Override
-	public void openInventory(@Nonnull EntityPlayer player) {}
+	public void openInventory(@Nonnull PlayerEntity player) {}
 
 	@Override
-	public void closeInventory(@Nonnull EntityPlayer player) {}
+	public void closeInventory(@Nonnull PlayerEntity player) {}
 
 	@Override
-	public void readFromNBT(@Nonnull NBTTagCompound nbttagcompound) {
-		readFromNBT(nbttagcompound, "");
+	public void readFromNBT(@Nonnull CompoundNBT tag) {
+		readFromNBT(CompoundNBT, "");
 	}
 
-	public void readFromNBT(NBTTagCompound nbttagcompound, String prefix) {
-		NBTTagList nbttaglist = nbttagcompound.getTagList(prefix + "items", nbttagcompound.getId());
+	public void readFromNBT(CompoundNBT tag, String prefix) {
+		ListNBT ListNBT = CompoundNBT.getList(prefix + "items", CompoundNBT.getId());
 
-		for (int j = 0; j < nbttaglist.tagCount(); ++j) {
-			NBTTagCompound nbttagcompound2 = nbttaglist.getCompoundTagAt(j);
-			int index = nbttagcompound2.getInteger("index");
+		for (int j = 0; j < ListNBT.size(); ++j) {
+			CompoundNBT tag2 = ListNBT.getCompound(j);
+			int index = CompoundNBT2.getInt("index");
 			if (index < stackList.size()) {
-				stackList.set(index, ItemStackLoader.loadAndFixItemStackFromNBT(nbttagcompound2));
+				stackList.set(index, ItemStackLoader.loadAndFixItemStackFromNBT(CompoundNBT2));
 			} else {
-				LogisticsPipes.log.fatal("SimpleInventory: java.lang.ArrayIndexOutOfBoundsException: " + index + " of " + stackList.size());
+				LogisticsPipes.getLOGGER().fatal("SimpleInventory: java.lang.ArrayIndexOutOfBoundsException: " + index + " of " + stackList.size());
 			}
 		}
 	}
 
 	@Override
-	public void writeToNBT(@Nonnull NBTTagCompound nbttagcompound) {
-		writeToNBT(nbttagcompound, "");
+	public void writeToNBT(@Nonnull CompoundNBT tag) {
+		writeToNBT(CompoundNBT, "");
 	}
 
-	public void writeToNBT(NBTTagCompound nbttagcompound, String prefix) {
-		NBTTagList nbttaglist = new NBTTagList();
+	public void writeToNBT(CompoundNBT tag, String prefix) {
+		ListNBT ListNBT = new ListNBT();
 		for (int j = 0; j < stackList.size(); ++j) {
 			final ItemStack stack = stackList.get(j);
 			if (!stack.isEmpty()) {
-				NBTTagCompound nbttagcompound2 = new NBTTagCompound();
-				nbttaglist.appendTag(nbttagcompound2);
-				nbttagcompound2.setInteger("index", j);
-				stack.writeToNBT(nbttagcompound2);
+				CompoundNBT tag2 = new CompoundNBT();
+				ListNBT.add(CompoundNBT2);
+				CompoundNBT2.putInt("index", j);
+				stack.writeToNBT(CompoundNBT2);
 			}
 		}
-		nbttagcompound.setTag(prefix + "items", nbttaglist);
-		nbttagcompound.setInteger(prefix + "itemsCount", stackList.size());
+		tag.put(prefix + "items", ListNBT);
+		tag.putInt(prefix + "itemsCount", stackList.size());
 	}
 
 	public void dropContents(World world, BlockPos pos) {
@@ -180,9 +180,9 @@ public class SimpleStackInventory implements IInventory, ISaveState, Iterable<Pa
 					double d = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
 					double d1 = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
 					double d2 = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
-					EntityItem entityitem = new EntityItem(world, pos.getX() + d, pos.getY() + d1, pos.getZ() + d2, dropStack);
-					entityitem.setDefaultPickupDelay();
-					world.spawnEntity(entityitem);
+					ItemEntity entityItem = new ItemEntity(world, pos.getX() + d, pos.getY() + d1, pos.getZ() + d2, dropStack);
+					ItemEntity.setDefaultPickupDelay();
+					world.spawnEntity(ItemEntity);
 				});
 	}
 

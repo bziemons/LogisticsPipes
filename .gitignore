@@ -3,8 +3,9 @@
 /logs
 
 # ForgeGradle's auto-generated run configurations
-.idea/runConfigurations/runClient.xml
-.idea/runConfigurations/runServer.xml
+/.idea/runConfigurations/runClient.xml
+/.idea/runConfigurations/runServer.xml
+/.idea/runConfigurations/runData.xml
 
 # Created by https://www.gitignore.io/api/java,gradle,kotlin,forgegradle,intellij+iml
 # Edit at https://www.gitignore.io/?templates=java,gradle,kotlin,forgegradle,intellij+iml

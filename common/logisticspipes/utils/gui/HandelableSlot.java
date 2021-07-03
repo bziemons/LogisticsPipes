@@ -2,9 +2,9 @@ package logisticspipes.utils.gui;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.Slot;
+import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.ItemStack;
 
 import logisticspipes.interfaces.ISlotClick;
@@ -29,7 +29,7 @@ public class HandelableSlot extends Slot {
 	}
 
 	@Override
-	public boolean canTakeStack(EntityPlayer p_82869_1_) {
+	public boolean canTakeStack(PlayerEntity player) {
 		return false;
 	}
 

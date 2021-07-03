@@ -7,8 +7,6 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 
-import org.lwjgl.input.Keyboard;
-
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.block.SecurityAddCCIdPacket;
@@ -58,7 +56,7 @@ public class GuiEditCCAccessTable extends SubGuiScreen {
 
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		mc.fontRenderer.drawString("(" + (page + 1) + "/" + ((int) ((_tile.excludedCC.size() / 9D) + 1 - (_tile.excludedCC.size() % 9 == 0 && _tile.excludedCC.size() != 0 ? 1 : 0))) + ")", guiLeft + 100, guiTop + 5, 0x4F4F4F);
 
 		boolean dark = true;
@@ -219,7 +217,7 @@ public class GuiEditCCAccessTable extends SubGuiScreen {
 			if (c == 13) {
 				editsearch = false;
 				return;
-			} else if (i == 47 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
+			} else if (i == 47 && InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL)) {
 				try {
 					Integer.valueOf(GuiScreen.getClipboardString());
 					searchinput1 = searchinput1 + GuiScreen.getClipboardString();

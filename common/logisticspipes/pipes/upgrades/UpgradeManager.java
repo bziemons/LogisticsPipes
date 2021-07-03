@@ -4,12 +4,12 @@ import java.util.EnumSet;
 import java.util.Objects;
 import java.util.UUID;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 import net.minecraft.world.World;
 
 import logisticspipes.LPItems;
@@ -23,7 +23,6 @@ import logisticspipes.pipes.upgrades.power.BCPowerSupplierUpgrade;
 import logisticspipes.pipes.upgrades.power.IC2PowerSupplierUpgrade;
 import logisticspipes.pipes.upgrades.power.RFPowerSupplierUpgrade;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.utils.ISimpleInventoryEventHandler;
 import logisticspipes.utils.PlayerCollectionList;
 import logisticspipes.utils.item.ItemIdentifier;
@@ -41,10 +40,10 @@ public class UpgradeManager implements ISimpleInventoryEventHandler, ISlotUpgrad
 	private int securityDelay = 0;
 
 	/* cached attributes */
-	private EnumFacing sneakyOrientation = null;
-	private EnumFacing[] combinedSneakyOrientation = new EnumFacing[9];
+	private Direction sneakyOrientation = null;
+	private Direction[] combinedSneakyOrientation = new Direction[9];
 	private int speedUpgradeCount = 0;
-	private final EnumSet<EnumFacing> disconnectedSides = EnumSet.noneOf(EnumFacing.class);
+	private final EnumSet<Direction> disconnectedSides = EnumSet.noneOf(Direction.class);
 	private boolean isAdvancedCrafter = false;
 	private boolean isFuzzyUpgrade = false;
 	private boolean isCombinedSneakyUpgrade = false;
@@ -78,13 +77,13 @@ public class UpgradeManager implements ISimpleInventoryEventHandler, ISlotUpgrad
 		secInv.addListener(this);
 	}
 
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		inv.readFromNBT(nbttagcompound, "UpgradeInventory_");
-		sneakyInv.readFromNBT(nbttagcompound, "SneakyUpgradeInventory_");
-		secInv.readFromNBT(nbttagcompound, "SecurityInventory_");
+	public void readFromNBT(CompoundNBT tag) {
+		inv.readFromNBT(tag, "UpgradeInventory_");
+		sneakyInv.readFromNBT(tag, "SneakyUpgradeInventory_");
+		secInv.readFromNBT(tag, "SecurityInventory_");
 
 		if (!sneakyInv.getStackInSlot(8).isEmpty()) {
-			if (sneakyInv.getStackInSlot(8).getItem() == LPItems.itemCard && sneakyInv.getStackInSlot(8).getItemDamage() == LogisticsItemCard.SEC_CARD) {
+			if (sneakyInv.getStackInSlot(8).getItem() == LPItems.itemCard && sneakyInv.getStackInSlot(8).getDamage() == LogisticsItemCard.SEC_CARD) {
 				secInv.setInventorySlotContents(0, sneakyInv.getStackInSlot(8));
 				sneakyInv.setInventorySlotContents(8, ItemStack.EMPTY);
 			}
@@ -93,10 +92,10 @@ public class UpgradeManager implements ISimpleInventoryEventHandler, ISlotUpgrad
 		InventoryChanged(inv);
 	}
 
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		inv.writeToNBT(nbttagcompound, "UpgradeInventory_");
-		sneakyInv.writeToNBT(nbttagcompound, "SneakyUpgradeInventory_");
-		secInv.writeToNBT(nbttagcompound, "SecurityInventory_");
+	public void writeToNBT(CompoundNBT tag) {
+		inv.writeToNBT(tag, "UpgradeInventory_");
+		sneakyInv.writeToNBT(tag, "SneakyUpgradeInventory_");
+		secInv.writeToNBT(tag, "SecurityInventory_");
 		InventoryChanged(inv);
 	}
 
@@ -248,16 +247,16 @@ public class UpgradeManager implements ISimpleInventoryEventHandler, ISlotUpgrad
 		if (stack.isEmpty()) {
 			return;
 		}
-		if (stack.getItem() != LPItems.itemCard || stack.getItemDamage() != LogisticsItemCard.SEC_CARD) {
+		if (stack.getItem() != LPItems.itemCard || stack.getDamage() != LogisticsItemCard.SEC_CARD) {
 			return;
 		}
-		if (!stack.hasTagCompound()) {
+		if (!stack.hasTag()) {
 			return;
 		}
-		if (!stack.getTagCompound().hasKey("UUID")) {
+		if (!stack.getTag().contains("UUID")) {
 			return;
 		}
-		uuid = UUID.fromString(stack.getTagCompound().getString("UUID"));
+		uuid = UUID.fromString(stack.getTag().getString("UUID"));
 		uuidS = uuid.toString();
 	}
 
@@ -269,7 +268,7 @@ public class UpgradeManager implements ISimpleInventoryEventHandler, ISlotUpgrad
 	}
 
 	@Override
-	public EnumFacing getSneakyOrientation() {
+	public Direction getSneakyOrientation() {
 		return sneakyOrientation;
 	}
 
@@ -284,7 +283,7 @@ public class UpgradeManager implements ISimpleInventoryEventHandler, ISlotUpgrad
 	}
 
 	@Override
-	public EnumFacing[] getCombinedSneakyOrientation() {
+	public Direction[] getCombinedSneakyOrientation() {
 		return combinedSneakyOrientation;
 	}
 
@@ -294,12 +293,12 @@ public class UpgradeManager implements ISimpleInventoryEventHandler, ISlotUpgrad
 			PlayerCollectionList players = new PlayerCollectionList();
 
 			@Override
-			public void guiOpenedByPlayer(EntityPlayer player) {
+			public void guiOpenedByPlayer(PlayerEntity player) {
 				players.add(player);
 			}
 
 			@Override
-			public void guiClosedByPlayer(EntityPlayer player) {
+			public void guiClosedByPlayer(PlayerEntity player) {
 				players.remove(player);
 				if (players.isEmpty() && !isCombinedSneakyUpgrade) {
 					sneakyInv.dropContents(pipe.getWorld(), pipe.getPos());
@@ -320,12 +319,12 @@ public class UpgradeManager implements ISimpleInventoryEventHandler, ISlotUpgrad
 	}
 
 	@Override
-	public boolean isSideDisconnected(EnumFacing side) {
+	public boolean isSideDisconnected(Direction side) {
 		return disconnectedSides.contains(side);
 	}
 
-	public boolean tryIserting(World world, EntityPlayer entityplayer) {
-		ItemStack itemStackInMainHand = entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
+	public boolean tryIserting(World world, PlayerEntity player) {
+		ItemStack itemStackInMainHand = PlayerEntity.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
 		if (!itemStackInMainHand.isEmpty() && itemStackInMainHand.getItem() instanceof ItemUpgrade) {
 			if (MainProxy.isClient(world)) {
 				return true;
@@ -334,22 +333,22 @@ public class UpgradeManager implements ISimpleInventoryEventHandler, ISlotUpgrad
 			if (upgrade.isAllowedForPipe(pipe)) {
 				if (isCombinedSneakyUpgrade) {
 					if (upgrade instanceof SneakyUpgradeConfig) {
-						if (insertIntInv(entityplayer, sneakyInv)) {
+						if (insertIntInv(PlayerEntity, sneakyInv)) {
 							return true;
 						}
 					}
 				}
-				if (insertIntInv(entityplayer, inv)) {
+				if (insertIntInv(PlayerEntity, inv)) {
 					return true;
 				}
 			}
 		}
-		if (!itemStackInMainHand.isEmpty() && itemStackInMainHand.getItem() == LPItems.itemCard && itemStackInMainHand.getItemDamage() == LogisticsItemCard.SEC_CARD) {
+		if (!itemStackInMainHand.isEmpty() && itemStackInMainHand.getItem() == LPItems.itemCard && itemStackInMainHand.getDamage() == LogisticsItemCard.SEC_CARD) {
 			if (MainProxy.isClient(world)) {
 				return true;
 			}
 			if (secInv.getStackInSlot(0).isEmpty()) {
-				ItemStack newItem = itemStackInMainHand.splitStack(1);
+				ItemStack newItem = itemStackInMainHand.split(1);
 				secInv.setInventorySlotContents(0, newItem);
 				InventoryChanged(secInv);
 				return true;
@@ -358,17 +357,17 @@ public class UpgradeManager implements ISimpleInventoryEventHandler, ISlotUpgrad
 		return false;
 	}
 
-	private boolean insertIntInv(EntityPlayer entityplayer, SimpleStackInventory inv) {
+	private boolean insertIntInv(PlayerEntity player, SimpleStackInventory inv) {
 		for (int i = 0; i < inv.getSizeInventory(); i++) {
 			ItemStack item = inv.getStackInSlot(i);
 			if (item.isEmpty()) {
-				inv.setInventorySlotContents(i, entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).splitStack(1));
+				inv.setInventorySlotContents(i, PlayerEntity.getItemStackFromSlot(EquipmentSlotType.MAINHAND).split(1));
 				InventoryChanged(inv);
 				return true;
-			} else if (ItemIdentifier.get(item).equals(ItemIdentifier.get(entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND)))) {
+			} else if (ItemIdentifier.get(item).equals(ItemIdentifier.get(PlayerEntity.getItemStackFromSlot(EquipmentSlotType.MAINHAND)))) {
 				if (item.getCount() < inv.getInventoryStackLimit()) {
 					item.grow(1);
-					entityplayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).splitStack(1);
+					PlayerEntity.getItemStackFromSlot(EquipmentSlotType.MAINHAND).split(1);
 					inv.setInventorySlotContents(i, item);
 					InventoryChanged(inv);
 					return true;
@@ -384,9 +383,9 @@ public class UpgradeManager implements ISimpleInventoryEventHandler, ISlotUpgrad
 
 	public void insetSecurityID(UUID id) {
 		ItemStack stack = new ItemStack(LPItems.itemCard, 1, LogisticsItemCard.SEC_CARD);
-		stack.setTagCompound(new NBTTagCompound());
-		final NBTTagCompound tag = Objects.requireNonNull(stack.getTagCompound());
-		tag.setString("UUID", id.toString());
+		stack.setTag(new CompoundNBT());
+		final CompoundNBT tag = Objects.requireNonNull(stack.getTag());
+		tag.putString("UUID", id.toString());
 		secInv.setInventorySlotContents(0, stack);
 		InventoryChanged(secInv);
 	}

@@ -2,7 +2,7 @@ package logisticspipes.network.guis.block;
 
 import java.util.List;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Container;
 
 import lombok.Getter;
@@ -30,7 +30,7 @@ public class StatisticsGui extends CoordinatesGuiProvider {
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		LogisticsStatisticsTileEntity statisticsTable = getTileAs(player.world, LogisticsStatisticsTileEntity.class);
 		statisticsTable.tasks = trackingList;
 		GuiStatistics gui = new GuiStatistics(statisticsTable);
@@ -39,7 +39,7 @@ public class StatisticsGui extends CoordinatesGuiProvider {
 	}
 
 	@Override
-	public Container getContainer(EntityPlayer player) {
+	public Container getContainer(PlayerEntity player) {
 		// ensures tile at position is a statistics table
 		getTileAs(player.world, LogisticsStatisticsTileEntity.class);
 		return new DummyContainer(player, null);

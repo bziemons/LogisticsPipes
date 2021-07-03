@@ -47,9 +47,9 @@ import logisticspipes.utils.FluidIdentifierStack
 import logisticspipes.utils.FluidSinkReply
 import logisticspipes.utils.PlayerCollectionList
 import logisticspipes.utils.item.ItemIdentifierInventory
-import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.Item
-import net.minecraft.nbt.NBTTagCompound
+import net.minecraft.nbt.CompoundNBT
 import network.rs485.logisticspipes.property.InventoryProperty
 import network.rs485.logisticspipes.property.Property
 import network.rs485.logisticspipes.property.PropertyHolder
@@ -68,12 +68,12 @@ abstract class FluidSinkPipe(
 
     abstract val priority: FluidSinkReply.FixedFluidPriority
 
-    override fun readFromNBT(tag: NBTTagCompound) {
+    override fun readFromNBT(tag: CompoundNBT) {
         super<FluidRoutedPipe>.readFromNBT(tag)
         super<PropertyHolder>.readFromNBT(tag)
     }
 
-    override fun writeToNBT(tag: NBTTagCompound) {
+    override fun writeToNBT(tag: CompoundNBT) {
         super<FluidRoutedPipe>.writeToNBT(tag)
         super<PropertyHolder>.writeToNBT(tag)
     }
@@ -113,11 +113,11 @@ abstract class FluidSinkPipe(
         return null
     }
 
-    fun guiOpenedByPlayer(player: EntityPlayer?) {
+    fun guiOpenedByPlayer(player: PlayerEntity?) {
         guiOpenedBy.add(player)
     }
 
-    fun guiClosedByPlayer(player: EntityPlayer?) {
+    fun guiClosedByPlayer(player: PlayerEntity?) {
         guiOpenedBy.remove(player)
     }
 

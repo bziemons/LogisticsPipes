@@ -1,87 +1,66 @@
 package logisticspipes.items;
 
+import java.util.Collection;
 import javax.annotation.Nonnull;
 
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.item.ItemArmor;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.inventory.EquipmentSlotType;
+import net.minecraft.item.ArmorItem;
+import net.minecraft.item.ArmorMaterial;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.translation.I18n;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Hand;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
 
-import net.minecraftforge.common.ISpecialArmor;
+import com.google.common.collect.Lists;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.api.IHUDArmor;
 import logisticspipes.interfaces.ILogisticsItem;
-import logisticspipes.network.GuiIDs;
-import logisticspipes.proxy.MainProxy;
 
-public class ItemHUDArmor extends ItemArmor implements ISpecialArmor, IHUDArmor, ILogisticsItem {
+public class ItemHUDArmor extends ArmorItem implements IHUDArmor, ILogisticsItem {
 
 	public ItemHUDArmor() {
-		super(ArmorMaterial.LEATHER, 0, EntityEquipmentSlot.HEAD);
-	}
-
-	@Override
-	public ArmorProperties getProperties(EntityLivingBase player, @Nonnull ItemStack armor, DamageSource source, double damage, int slot) {
-		return new ArmorProperties(0, 0, 0);
-	}
-
-	@Override
-	public int getArmorDisplay(EntityPlayer player, @Nonnull ItemStack armor, int slot) {
-		return 0;
-	}
-
-	@Override
-	public void damageArmor(EntityLivingBase entity, @Nonnull ItemStack stack, DamageSource source, int damage, int slot) {
-		// Does not get dammaged
-	}
-
-	@Override
-	public boolean getShareTag() {
-		return true;
+		super(ArmorMaterial.LEATHER, EquipmentSlotType.HEAD, new Item.Properties().group(LogisticsPipes.LP_ITEM_GROUP));
 	}
 
 	@Nonnull
 	@Override
-	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand handIn) {
-		ItemStack stack = player.getHeldItem(handIn);
-		if (MainProxy.isClient(world)) {
-			return new ActionResult<>(EnumActionResult.PASS, stack);
+	public ActionResult<ItemStack> onItemRightClick(@Nonnull World world, @Nonnull PlayerEntity player, @Nonnull Hand hand) {
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) {
+			useItem((ServerPlayerEntity) player, world);
+			return new ActionResult<>(ActionResultType.SUCCESS, stack);
 		}
-		useItem(player, world);
-		return new ActionResult<>(EnumActionResult.SUCCESS, stack);
+		return new ActionResult<>(ActionResultType.PASS, stack);
 	}
 
 	@Nonnull
 	@Override
-	public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
-		useItem(player, world);
-		if (MainProxy.isClient(world)) {
-			return EnumActionResult.PASS;
+	public ItemStack onItemUseFinish(@Nonnull ItemStack stack, @Nonnull World world, @Nonnull LivingEntity livingEntity) {
+		if (world.isRemote) {
+			useItem((ServerPlayerEntity) livingEntity, world);
 		}
-		return EnumActionResult.SUCCESS;
+		return stack;
 	}
 
-	private void useItem(EntityPlayer player, World world) {
-		player.openGui(LogisticsPipes.instance, GuiIDs.GUI_HUD_Settings, world, player.inventory.currentItem, -1, 0);
+	private void useItem(@Nonnull ServerPlayerEntity player, @Nonnull World world) {
+		// player.openGui(LogisticsPipes.instance, GuiIDs.GUI_HUD_Settings, world, player.inventory.currentItem, -1, 0);
 	}
 
 	@Nonnull
 	@Override
-	public CreativeTabs[] getCreativeTabs() {
+	public Collection<ItemGroup> getCreativeTabs() {
 		// is visible in the LP creative tab and the ItemArmor creative tab
-		return new CreativeTabs[] { getCreativeTab(), LogisticsPipes.CREATIVE_TAB_LP };
+		return Lists.newArrayList(getGroup(), LogisticsPipes.LP_ITEM_GROUP);
 	}
 
 	@Override
@@ -90,14 +69,14 @@ public class ItemHUDArmor extends ItemArmor implements ISpecialArmor, IHUDArmor,
 	}
 
 	@Override
-	public String getArmorTexture(@Nonnull ItemStack stack, Entity entity, EntityEquipmentSlot slot, String type) {
+	public String getArmorTexture(@Nonnull ItemStack stack, Entity entity, EquipmentSlotType slot, String type) {
 		return "logisticspipes:textures/armor/LogisticsHUD_1.png";
 	}
 
 	@Nonnull
 	@Override
-	public String getItemStackDisplayName(@Nonnull ItemStack itemstack) {
-		return I18n.translateToLocal(getUnlocalizedName(itemstack) + ".name").trim();
+	public ITextComponent getDisplayName(@Nonnull ItemStack stack) {
+		return new TranslationTextComponent(stack.getTranslationKey() + ".name");
 	}
 
 }

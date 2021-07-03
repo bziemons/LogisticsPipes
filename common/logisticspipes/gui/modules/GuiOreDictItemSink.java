@@ -1,16 +1,13 @@
 package logisticspipes.gui.modules;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import javax.annotation.Nonnull;
+import java.util.HashSet;
+import java.util.Set;
 
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-
-import net.minecraftforge.oredict.OreDictionary;
+import net.minecraft.util.ResourceLocation;
 
 import logisticspipes.modules.ModuleOreDictItemSink;
 import logisticspipes.utils.Color;
@@ -18,6 +15,7 @@ import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.GuiGraphics;
 import logisticspipes.utils.gui.SmallGuiButton;
 import logisticspipes.utils.item.ItemIdentifierInventory;
+import logisticspipes.utils.item.ItemIdentifierStack;
 
 public class GuiOreDictItemSink extends ModuleBaseGui {
 
@@ -25,7 +23,7 @@ public class GuiOreDictItemSink extends ModuleBaseGui {
 
 	// FIXME please…
 	private final ArrayList<String> guiLocalOreList;
-	private final List<String> unsunkNames = new ArrayList<>();
+	private final Set<ResourceLocation> unsunkNames = new HashSet<>();
 	private int mouseX = 0;
 	private int mouseY = 0;
 	private int currentOffset = 0;
@@ -82,13 +80,13 @@ public class GuiOreDictItemSink extends ModuleBaseGui {
 	protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
 		int pointerX = var2 - guiLeft;
 		int pointerY = var3 - guiTop;
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		GuiGraphics.drawPlayerInventoryBackground(mc, guiLeft + 7, guiTop + 126);
 		GuiGraphics.drawSlotBackground(mc, guiLeft + 6, guiTop + 7);
 
-		if (tmpInv.getIDStackInSlot(0) != null) {
-			List<String> oreNames = getOreNames(tmpInv.getStackInSlot(0));
-			oreNames.stream().filter(name -> !unsunkNames.contains(name)).forEach(unsunkNames::add);
+		final ItemIdentifierStack itemidStack = tmpInv.getIDStackInSlot(0);
+		if (itemidStack != null) {
+			unsunkNames.addAll(itemidStack.getItem().item.getTags());
 			tmpInv.clearInventorySlotContents(0);
 		}
 
@@ -141,15 +139,4 @@ public class GuiOreDictItemSink extends ModuleBaseGui {
 		}
 	}
 
-	private List<String> getOreNames(@Nonnull ItemStack stack) {
-		int[] oreids = OreDictionary.getOreIDs(stack);
-		List<String> oreNames = new ArrayList<>(oreids.length);
-		for (int oreid : oreids) {
-			String oreName = OreDictionary.getOreName(oreid);
-			if (oreName != null && !oreName.equals("Unknown") && !oreNames.contains(oreName)) {
-				oreNames.add(oreName);
-			}
-		}
-		return oreNames;
-	}
 }

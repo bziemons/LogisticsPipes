@@ -1,7 +1,7 @@
 package logisticspipes.network.guis.module.inpipe;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Direction;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -32,14 +32,14 @@ public class ProviderModuleGuiProvider extends ModuleCoordinatesGuiProvider {
 
 	@Getter
 	@Setter
-	private EnumFacing sneakyOrientation;
+	private Direction sneakyOrientation;
 
 	public ProviderModuleGuiProvider(int id) {
 		super(id);
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		ModuleProvider module = this.getLogisticsModule(player.getEntityWorld(), ModuleProvider.class);
 		if (module == null) {
 			return null;
@@ -52,7 +52,7 @@ public class ProviderModuleGuiProvider extends ModuleCoordinatesGuiProvider {
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		ModuleProvider module = this.getLogisticsModule(player.getEntityWorld(), ModuleProvider.class);
 		if (module == null) {
 			return null;

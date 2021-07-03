@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import net.minecraft.command.ICommandSender;
+import net.minecraft.command.ICommandSource;
 
 import logisticspipes.commands.chathelper.MorePageDisplay;
 import logisticspipes.commands.exception.CommandNotFoundException;
@@ -35,7 +35,7 @@ public abstract class SubCommandHandler implements ICommandHandler {
 		subCommands.add(newHandler);
 	}
 
-	public final void displayHelp(ICommandSender sender) {
+	public final void displayHelp(ICommandSource sender) {
 		MorePageDisplay display = new MorePageDisplay(new String[] { "|< Help - " + getNames()[0] + " - Page: %/$ >|" }, sender);
 		for (ICommandHandler command : subCommands) {
 			if (!command.getDescription()[0].startsWith("#")) {
@@ -63,7 +63,7 @@ public abstract class SubCommandHandler implements ICommandHandler {
 	}
 
 	@Override
-	public final void executeCommand(ICommandSender sender, String[] args) {
+	public final void executeCommand(ICommandSource sender, String[] args) {
 		if (args.length < 1) {
 			throw new MissingArgumentException();
 		}

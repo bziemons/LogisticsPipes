@@ -11,36 +11,33 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.client.gui.inventory.GuiChest;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.block.BlockState;
+import net.minecraft.client.gui.screen.inventory.ChestScreen;
+import net.minecraft.entity.item.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
-import net.minecraftforge.event.world.ChunkWatchEvent.UnWatch;
-import net.minecraftforge.event.world.ChunkWatchEvent.Watch;
+import net.minecraftforge.event.world.ChunkWatchEvent;
 import net.minecraftforge.event.world.WorldEvent;
-import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.PlayerEvent;
-import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
-import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent;
-import net.minecraftforge.fml.common.network.FMLNetworkEvent.ClientConnectedToServerEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.common.Mod;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -75,24 +72,25 @@ import network.rs485.logisticspipes.module.AsyncQuicksortModule;
 import network.rs485.logisticspipes.util.TextUtil;
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper;
 
+@Mod.EventBusSubscriber(modid = LPConstants.LP_MOD_ID)
 public class LogisticsEventListener {
 
-	public static final WeakHashMap<EntityPlayer, List<WeakReference<AsyncQuicksortModule>>> chestQuickSortConnection = new WeakHashMap<>();
+	public static final WeakHashMap<PlayerEntity, List<WeakReference<AsyncQuicksortModule>>> chestQuickSortConnection = new WeakHashMap<>();
 	public static Map<ChunkPos, PlayerCollectionList> watcherList = new ConcurrentHashMap<>();
 
 	@SubscribeEvent
 	public void onEntitySpawn(EntityJoinWorldEvent event) {
-		if (event != null && event.getEntity() instanceof EntityItem && event.getEntity().world != null && !event.getEntity().world.isRemote) {
-			ItemStack stack = ((EntityItem) event.getEntity()).getItem(); //Get ItemStack
+		if (event != null && event.getEntity() instanceof ItemEntity && event.getEntity().world != null && !event.getEntity().world.isRemote) {
+			ItemStack stack = ((ItemEntity) event.getEntity()).getItem(); //Get ItemStack
 			if (!stack.isEmpty() && stack.getItem() instanceof IItemAdvancedExistance && !((IItemAdvancedExistance) stack.getItem()).canExistInWorld(stack)) {
 				event.setCanceled(true);
 			}
-			if (stack.hasTagCompound()) {
-				for (String key : Objects.requireNonNull(stack.getTagCompound(), "nbt for stack must be non-null").getKeySet()) {
+			if (stack.hasTag()) {
+				for (String key : Objects.requireNonNull(stack.getTag(), "nbt for stack must be non-null").keySet()) {
 					if (key.startsWith("logisticspipes:routingdata")) {
-						ItemRoutingInformation info = ItemRoutingInformation.restoreFromNBT(stack.getTagCompound().getCompoundTag(key));
+						ItemRoutingInformation info = ItemRoutingInformation.restoreFromNBT(stack.getTag().getCompound(key));
 						info.setItemTimedout();
-						((EntityItem) event.getEntity()).setItem(info.getItem().getItem().makeNormalStack(stack.getCount()));
+						((ItemEntity) event.getEntity()).setItem(info.getItem().getItem().makeNormalStack(stack.getCount()));
 						break;
 					}
 				}
@@ -102,18 +100,18 @@ public class LogisticsEventListener {
 
 	@SubscribeEvent
 	public void onPlayerLeftClickBlock(final PlayerInteractEvent.LeftClickBlock event) {
-		if (MainProxy.isServer(event.getEntityPlayer().world)) {
-			final TileEntity tile = event.getEntityPlayer().world.getTileEntity(event.getPos());
+		if (MainProxy.isServer(event.getPlayer().world)) {
+			final TileEntity tile = event.getPlayer().world.getTileEntity(event.getPos());
 			if (tile instanceof LogisticsTileGenericPipe) {
 				if (((LogisticsTileGenericPipe) tile).pipe instanceof CoreRoutedPipe) {
-					if (!((CoreRoutedPipe) ((LogisticsTileGenericPipe) tile).pipe).canBeDestroyedByPlayer(event.getEntityPlayer())) {
+					if (!((CoreRoutedPipe) ((LogisticsTileGenericPipe) tile).pipe).canBeDestroyedByPlayer(event.getPlayer())) {
 						event.setCanceled(true);
-						event.getEntityPlayer().sendMessage(new TextComponentTranslation("lp.chat.permissiondenied"));
+						event.getPlayer().sendMessage(new TranslationTextComponent("lp.chat.permissiondenied"));
 						((LogisticsTileGenericPipe) tile).scheduleNeighborChange();
-						World world = event.getEntityPlayer().world;
+						World world = event.getPlayer().world;
 						BlockPos pos = tile.getPos();
-						IBlockState state = world.getBlockState(pos);
-						world.markAndNotifyBlock(tile.getPos(), world.getChunkFromBlockCoords(pos), state, state, 2);
+						BlockState state = world.getBlockState(pos);
+						world.markAndNotifyBlock(tile.getPos(), world.getChunkAt(pos), state, state, 2);
 						((CoreRoutedPipe) ((LogisticsTileGenericPipe) tile).pipe).delayTo = System.currentTimeMillis() + 200;
 						((CoreRoutedPipe) ((LogisticsTileGenericPipe) tile).pipe).repeatFor = 10;
 					} else {
@@ -126,14 +124,14 @@ public class LogisticsEventListener {
 
 	@SubscribeEvent
 	public void onPlayerLeftClickBlock(final PlayerInteractEvent.RightClickBlock event) {
-		if (MainProxy.isServer(event.getEntityPlayer().world)) {
-			WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(event.getEntityPlayer().world, event.getPos());
+		if (MainProxy.isServer(event.getPlayer().world)) {
+			WorldCoordinatesWrapper worldCoordinates = new WorldCoordinatesWrapper(event.getPlayer().world, event.getPos());
 			TileEntity tileEntity = worldCoordinates.getTileEntity();
-			if (tileEntity instanceof TileEntityChest || SimpleServiceLocator.ironChestProxy.isIronChest(tileEntity)) {
+			if (tileEntity instanceof ChestTileEntity || SimpleServiceLocator.ironChestProxy.isIronChest(tileEntity)) {
 				List<WeakReference<AsyncQuicksortModule>> list = worldCoordinates.allNeighborTileEntities().stream()
 						.filter(NeighborTileEntity::isLogisticsPipe)
 						.filter(adjacent -> ((LogisticsTileGenericPipe) adjacent.getTileEntity()).pipe instanceof PipeLogisticsChassis)
-						.filter(adjacent -> ((PipeLogisticsChassis) ((LogisticsTileGenericPipe) adjacent.getTileEntity()).pipe).getPointedOrientation()
+						.filter(adjacent -> ((PipeLogisticsChassis) ((LogisticsTileGenericPipe) adjacent.getTileEntity()).pipe).getPointedDirection()
 								== adjacent.getOurDirection())
 						.map(adjacent -> (PipeLogisticsChassis) ((LogisticsTileGenericPipe) adjacent.getTileEntity()).pipe)
 						.flatMap(chassis -> chassis.getModules().getModules())
@@ -142,7 +140,7 @@ public class LogisticsEventListener {
 						.collect(Collectors.toList());
 
 				if (!list.isEmpty()) {
-					LogisticsEventListener.chestQuickSortConnection.put(event.getEntityPlayer(), list);
+					LogisticsEventListener.chestQuickSortConnection.put(event.getPlayer(), list);
 				}
 			}
 		}
@@ -153,7 +151,7 @@ public class LogisticsEventListener {
 	@SubscribeEvent
 	public void WorldLoad(WorldEvent.Load event) {
 		if (MainProxy.isServer(event.getWorld())) {
-			int dim = event.getWorld().provider.getDimension();
+			int dim = event.getWorld().getDimension().getType().getId();
 			if (!LogisticsEventListener.WorldLoadTime.containsKey(dim)) {
 				LogisticsEventListener.WorldLoadTime.put(dim, System.currentTimeMillis());
 			}
@@ -167,14 +165,14 @@ public class LogisticsEventListener {
 	@SubscribeEvent
 	public void WorldUnload(WorldEvent.Unload event) {
 		if (MainProxy.isServer(event.getWorld())) {
-			int dim = event.getWorld().provider.getDimension();
+			int dim = event.getWorld().getDimension().getType().getId();
 			SimpleServiceLocator.routerManager.dimensionUnloaded(dim);
 		}
 	}
 
 	@SubscribeEvent
-	public void watchChunk(Watch event) {
-		ChunkPos pos = event.getChunkInstance().getPos();
+	public void watchChunk(ChunkWatchEvent.Watch event) {
+		ChunkPos pos = event.getPos();
 		if (!LogisticsEventListener.watcherList.containsKey(pos)) {
 			LogisticsEventListener.watcherList.put(pos, new PlayerCollectionList());
 		}
@@ -182,27 +180,47 @@ public class LogisticsEventListener {
 	}
 
 	@SubscribeEvent
-	public void unWatchChunk(UnWatch event) {
-		ChunkPos pos = event.getChunkInstance().getPos();
+	public void unWatchChunk(ChunkWatchEvent.UnWatch event) {
+		ChunkPos pos = event.getPos();
 		if (LogisticsEventListener.watcherList.containsKey(pos)) {
 			LogisticsEventListener.watcherList.get(pos).remove(event.getPlayer());
 		}
 	}
 
 	@SubscribeEvent
-	public void onPlayerLogin(PlayerLoggedInEvent event) {
-		if (MainProxy.isServer(event.player.world)) {
-			SimpleServiceLocator.securityStationManager.sendClientAuthorizationList(event.player);
-		}
+	public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		DistExecutor.runForDist(() -> () -> {
+			SimpleServiceLocator.clientBufferHandler.clear();
 
-		SimpleServiceLocator.serverBufferHandler.clear(event.player);
-		ClientConfiguration config = LogisticsPipes.getServerConfigManager().getPlayerConfiguration(PlayerIdentifier.get(event.player));
-		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(PlayerConfigToClientPacket.class).setConfig(config), event.player);
+			if (Configs.CHECK_FOR_UPDATES) {
+				LogisticsPipes.singleThreadExecutor.execute(() -> {
+					VersionChecker checker = LogisticsPipes.versionChecker;
+
+					// send player message
+					String versionMessage = checker.getVersionCheckerStatus();
+
+					if (checker.isVersionCheckDone() && checker.getVersionInfo().isNewVersionAvailable() && !checker.getVersionInfo().isImcMessageSent()) {
+						event.getPlayer().sendMessage(new StringTextComponent(versionMessage));
+						event.getPlayer().sendMessage(new StringTextComponent("Use \"/logisticspipes changelog\" to see a changelog."));
+					} else if (!checker.isVersionCheckDone()) {
+						event.getPlayer().sendMessage(new StringTextComponent(versionMessage));
+					}
+				});
+			}
+			return null;
+		}, () -> () -> {
+			SimpleServiceLocator.securityStationManager.sendClientAuthorizationList(event.getPlayer());
+
+			SimpleServiceLocator.serverBufferHandler.clear(event.getPlayer());
+			ClientConfiguration config = LogisticsPipes.getServerConfigManager().getPlayerConfiguration(PlayerIdentifier.get(event.getPlayer()));
+			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(PlayerConfigToClientPacket.class).setConfig(config), event.getPlayer());
+			return null;
+		});
 	}
 
 	@SubscribeEvent
-	public void onPlayerLogout(PlayerLoggedOutEvent event) {
-		SimpleServiceLocator.serverBufferHandler.clear(event.player);
+	public void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+		SimpleServiceLocator.serverBufferHandler.clear(event.getPlayer());
 	}
 
 	@AllArgsConstructor
@@ -225,8 +243,8 @@ public class LogisticsEventListener {
 	private static final Queue<GuiEntry> guiPos = new LinkedList<>();
 
 	//Handle GuiRepoen
+	@OnlyIn(Dist.CLIENT)
 	@SubscribeEvent
-	@SideOnly(Side.CLIENT)
 	public void onGuiOpen(GuiOpenEvent event) {
 		if (!LogisticsEventListener.getGuiPos().isEmpty()) {
 			if (event.getGui() == null) {
@@ -244,7 +262,7 @@ public class LogisticsEventListener {
 		if (event.getGui() == null) {
 			LogisticsGuiOverrenderer.getInstance().setOverlaySlotActive(false);
 		}
-		if (event.getGui() instanceof GuiChest || (SimpleServiceLocator.ironChestProxy != null && SimpleServiceLocator.ironChestProxy.isChestGui(event.getGui()))) {
+		if (event.getGui() instanceof ChestScreen || (SimpleServiceLocator.ironChestProxy != null && SimpleServiceLocator.ironChestProxy.isChestGui(event.getGui()))) {
 			MainProxy.sendPacketToServer(PacketHandler.getPacket(ChestGuiOpened.class));
 		} else {
 			QuickSortChestMarkerStorage.getInstance().disable();
@@ -252,47 +270,10 @@ public class LogisticsEventListener {
 		}
 	}
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
+	@SubscribeEvent
 	public static void addGuiToReopen(int xCoord, int yCoord, int zCoord, int guiID) {
 		LogisticsEventListener.getGuiPos().add(new GuiEntry(xCoord, yCoord, zCoord, guiID, false));
-	}
-
-	@SubscribeEvent
-	public void clientLoggedIn(ClientConnectedToServerEvent event) {
-		SimpleServiceLocator.clientBufferHandler.clear();
-
-		if (Configs.CHECK_FOR_UPDATES) {
-			LogisticsPipes.singleThreadExecutor.execute(() -> {
-				// try to get player entity ten times, once a second
-				int times = 0;
-				EntityPlayerSP playerEntity;
-				do {
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						return;
-					}
-					playerEntity = FMLClientHandler.instance().getClientPlayerEntity();
-					++times;
-				} while (playerEntity == null && times <= 10);
-
-				if (times > 10) {
-					return;
-				}
-
-				VersionChecker checker = LogisticsPipes.versionChecker;
-
-				// send player message
-				String versionMessage = checker.getVersionCheckerStatus();
-
-				if (checker.isVersionCheckDone() && checker.getVersionInfo().isNewVersionAvailable() && !checker.getVersionInfo().isImcMessageSent()) {
-					playerEntity.sendMessage(new TextComponentString(versionMessage));
-					playerEntity.sendMessage(new TextComponentString("Use \"/logisticspipes changelog\" to see a changelog."));
-				} else if (!checker.isVersionCheckDone()) {
-					playerEntity.sendMessage(new TextComponentString(versionMessage));
-				}
-			});
-		}
 	}
 
 	@SubscribeEvent
@@ -300,18 +281,18 @@ public class LogisticsEventListener {
 		TEControl.handleBlockUpdate(event.getWorld(), LPTickHandler.getWorldInfo(event.getWorld()), event.getPos());
 	}
 
+	@OnlyIn(Dist.CLIENT)
 	@SubscribeEvent
-	@SideOnly(Side.CLIENT)
 	public void onItemStackToolTip(ItemTooltipEvent event) {
-		if (event.getItemStack().hasTagCompound()) {
-			for (String key : event.getItemStack().getTagCompound().getKeySet()) {
+		if (event.getItemStack().hasTag()) {
+			for (String key : event.getItemStack().getTag().keySet()) {
 				if (key.startsWith("logisticspipes:routingdata")) {
-					ItemRoutingInformation info = ItemRoutingInformation.restoreFromNBT(event.getItemStack().getTagCompound().getCompoundTag(key));
-					List<String> list = event.getToolTip();
-					list.set(0, ChatColor.RED + "!!! " + ChatColor.WHITE + list.get(0) + ChatColor.RED + " !!!" + ChatColor.WHITE);
-					list.add(1, TextUtil.translate("itemstackinfo.lprouteditem"));
-					list.add(2, TextUtil.translate("itemstackinfo.lproutediteminfo"));
-					list.add(3, TextUtil.translate("itemstackinfo.lprouteditemtype") + ": " + info.getItem().toString());
+					ItemRoutingInformation info = ItemRoutingInformation.restoreFromNBT(event.getItemStack().getTag().getCompound(key));
+					List<ITextComponent> list = event.getToolTip();
+					list.set(0, new StringTextComponent(ChatColor.RED + "!!! " + ChatColor.WHITE + list.get(0) + ChatColor.RED + " !!!" + ChatColor.WHITE));
+					list.add(1, new TranslationTextComponent("itemstackinfo.lprouteditem"));
+					list.add(2, new TranslationTextComponent("itemstackinfo.lproutediteminfo"));
+					list.add(3, new StringTextComponent(TextUtil.translate("itemstackinfo.lprouteditemtype") + ": " + info.getItem().toString()));
 				}
 			}
 		}
@@ -319,13 +300,13 @@ public class LogisticsEventListener {
 
 	@SubscribeEvent
 	public void onItemCrafting(PlayerEvent.ItemCraftedEvent event) {
-		if (event.player.isServerWorld() && !event.crafting.isEmpty()) {
-			if (event.crafting.getItem().getRegistryName().getResourceDomain().equals(LPConstants.LP_MOD_ID)) {
-				PlayerIdentifier identifier = PlayerIdentifier.get(event.player);
+		if (event.getPlayer().isServerWorld() && !event.getCrafting().isEmpty()) {
+			if (event.getCrafting().getItem().getRegistryName().getNamespace().equals(LPConstants.LP_MOD_ID)) {
+				PlayerIdentifier identifier = PlayerIdentifier.get(event.getPlayer());
 				PlayerConfiguration config = LogisticsPipes.getServerConfigManager().getPlayerConfiguration(identifier);
 				if (!config.getHasCraftedLPItem() && !LogisticsPipes.isDEBUG()) {
 					ItemStack book = new ItemStack(LPItems.itemGuideBook, 1);
-					event.player.addItemStackToInventory(book);
+					event.getPlayer().addItemStackToInventory(book);
 
 					config.setHasCraftedLPItem(true);
 					LogisticsPipes.getServerConfigManager().setPlayerConfiguration(identifier, config);

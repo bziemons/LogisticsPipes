@@ -10,10 +10,8 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-
-import org.lwjgl.input.Keyboard;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
 
 import logisticspipes.interfaces.IDiskProvider;
 import logisticspipes.network.PacketHandler;
@@ -67,30 +65,30 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 		if ((name1 + name2).equals("")) {
 			return;
 		}
-		NBTTagList inventar = null;
+		ListNBT inventar = null;
 
-		NBTTagList list = diskProvider.getDisk().getTagCompound().getTagList("macroList", 10);
-		for (int i = 0; i < list.tagCount(); i++) {
-			NBTTagCompound tag = list.getCompoundTagAt(i);
+		ListNBT list = diskProvider.getDisk().getTag().getList("macroList", 10);
+		for (int i = 0; i < list.size(); i++) {
+			CompoundNBT tag = list.getCompound(i);
 			String name = tag.getString("name");
 			if (name.equals(name1 + name2)) {
-				inventar = tag.getTagList("inventar", 10);
+				inventar = tag.getList("inventar", 10);
 				break;
 			}
 		}
 		if (inventar == null) {
 			return;
 		}
-		for (int i = 0; i < inventar.tagCount(); i++) {
-			NBTTagCompound itemNBT = inventar.getCompoundTagAt(i);
-			int itemID = itemNBT.getInteger("id");
-			int itemData = itemNBT.getInteger("data");
-			NBTTagCompound tag = null;
-			if (itemNBT.hasKey("nbt")) {
-				tag = itemNBT.getCompoundTag("nbt");
+		for (int i = 0; i < inventar.size(); i++) {
+			CompoundNBT itemNBT = inventar.getCompound(i);
+			int itemID = itemNBT.getInt("id");
+			int itemData = itemNBT.getInt("data");
+			CompoundNBT tag = null;
+			if (itemNBT.contains("nbt")) {
+				tag = itemNBT.getCompound("nbt");
 			}
 			ItemIdentifier item = ItemIdentifier.get(Item.getItemById(itemID), itemData, tag);
-			int amount = itemNBT.getInteger("amount");
+			int amount = itemNBT.getInt("amount");
 			ItemIdentifierStack stack = new ItemIdentifierStack(item, amount);
 			macroItems.add(stack);
 		}
@@ -143,7 +141,7 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 	@Override
 	protected void renderToolTips(int mouseX, int mouseY, float par3) {
 		if (!hasSubGui()) {
-			GuiGraphics.displayItemToolTip(tooltip, zLevel, guiLeft, guiTop, false);
+			GuiGraphics.displayItemToolTip(tooltip, blitOffset, guiLeft, guiTop, false);
 		}
 	}
 
@@ -292,7 +290,7 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, false);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, false);
 		mc.fontRenderer.drawString("Add Macro", guiLeft + mc.fontRenderer.getStringWidth("Add Macro") / 2, guiTop + 6, 0x404040);
 
 		maxPageAll = (int) Math.floor((getSearchedItemNumber(diskProvider.getItemDisplay()._allItems) - 1) / 45F);
@@ -445,23 +443,23 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 			prevPageMacro();
 		} else if (guibutton.id == 4) {
 			if (!(name1 + name2).equals("") && macroItems.size() != 0) {
-				NBTTagList inventar = new NBTTagList();
+				ListNBT inventar = new ListNBT();
 				for (ItemIdentifierStack stack : macroItems) {
-					NBTTagCompound itemNBT = new NBTTagCompound();
-					itemNBT.setInteger("id", Item.getIdFromItem(stack.getItem().item));
-					itemNBT.setInteger("data", stack.getItem().itemDamage);
+					CompoundNBT itemNBT = new CompoundNBT();
+					itemNBT.putInt("id", Item.getIdFromItem(stack.getItem().item));
+					itemNBT.putInt("data", stack.getItem().itemDamage);
 					if (stack.getItem().tag != null) {
 						itemNBT.setTag("nbt", stack.getItem().tag);
 					}
-					itemNBT.setInteger("amount", stack.getStackSize());
-					inventar.appendTag(itemNBT);
+					itemNBT.putInt("amount", stack.getStackSize());
+					inventar.add(itemNBT);
 				}
 
 				boolean flag = false;
-				NBTTagList list = diskProvider.getDisk().getTagCompound().getTagList("macroList", 10);
+				ListNBT list = diskProvider.getDisk().getTag().getList("macroList", 10);
 
-				for (int i = 0; i < list.tagCount(); i++) {
-					NBTTagCompound tag = list.getCompoundTagAt(i);
+				for (int i = 0; i < list.size(); i++) {
+					CompoundNBT tag = list.getCompound(i);
 					String name = tag.getString("name");
 					if (name.equals(name1 + name2)) {
 						flag = true;
@@ -470,12 +468,12 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 					}
 				}
 				if (!flag) {
-					NBTTagCompound nbt = new NBTTagCompound();
-					nbt.setString("name", name1 + name2);
+					CompoundNBT nbt = new CompoundNBT();
+					nbt.putString("name", name1 + name2);
 					nbt.setTag("inventar", inventar);
-					list.appendTag(nbt);
+					list.add(nbt);
 				}
-				diskProvider.getDisk().getTagCompound().setTag("macroList", list);
+				diskProvider.getDisk().getTag().setTag("macroList", list);
 				MainProxy.sendPacketToServer(PacketHandler.getPacket(DiscContent.class).setStack(diskProvider.getDisk()).setPosX(diskProvider.getX()).setPosY(diskProvider.getY()).setPosZ(diskProvider.getZ()));
 				exitGui();
 			} else if (macroItems.size() != 0) {
@@ -494,7 +492,7 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 			if (c == 13) {
 				editname = false;
 				return;
-			} else if (i == 47 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
+			} else if (i == 47 && InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL)) {
 				name1 = name1 + GuiScreen.getClipboardString();
 			} else if (c == 8) {
 				if (name1.length() > 0) {
@@ -535,7 +533,7 @@ public class GuiAddMacro extends SubGuiScreen implements IItemSearch {
 			if (c == 13) {
 				editsearch = false;
 				return;
-			} else if (i == 47 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
+			} else if (i == 47 && InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL)) {
 				Search1 = Search1 + GuiScreen.getClipboardString();
 			} else if (c == 8) {
 				if (Search1.length() > 0) {

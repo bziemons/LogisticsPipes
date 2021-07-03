@@ -6,9 +6,9 @@ import java.util.UUID;
 import net.minecraft.client.gui.GuiButton;
 
 import logisticspipes.network.PacketHandler;
-import logisticspipes.network.packets.EditChannelPacket;
+import network.rs485.logisticspipes.network.packets.CEditChannelPacket;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.routing.channels.ChannelInformation;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 import logisticspipes.utils.gui.GuiCheckBox;
 import logisticspipes.utils.gui.SmallGuiButton;
 import network.rs485.logisticspipes.util.TextUtil;
@@ -66,7 +66,7 @@ public class GuiEditChannelPopup extends GuiAddChannelPopup {
 					rights = ChannelInformation.AccessRights.PRIVATE;
 				}
 				MainProxy.sendPacketToServer(
-						PacketHandler.getPacket(EditChannelPacket.class).setChannelIdentifier(channelIdentifier).setName(this.textInput.getText()).setRights(rights).setSecurityStationID(security));
+						PacketHandler.getPacket(CEditChannelPacket.class).setChannelIdentifier(channelIdentifier).setName(this.textInput.getText()).setRights(rights).setSecurityStationID(security));
 				exitGui();
 				break;
 		}

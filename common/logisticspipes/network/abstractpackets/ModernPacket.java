@@ -3,7 +3,7 @@ package logisticspipes.network.abstractpackets;
 import java.util.Collections;
 import java.util.List;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.World;
 
 import lombok.Getter;
@@ -48,7 +48,7 @@ public abstract class ModernPacket {
 	}
 
 	public ModernPacket setDimension(World world) {
-		this.dimension = world.provider.getDimension();
+		this.dimension = world.getDimension();
 		return this;
 	}
 
@@ -57,7 +57,7 @@ public abstract class ModernPacket {
 		content.forEach(it -> it.readData(input));
 	}
 
-	public abstract void processPacket(EntityPlayer player);
+	public abstract void processPacket(PlayerEntity player);
 
 	public void writeData(LPDataOutput output) {
 		output.writeInt(dimension);

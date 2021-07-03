@@ -9,6 +9,9 @@ import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.modules.ModuleProvider;
+import logisticspipes.network.PacketHandler;
+import network.rs485.logisticspipes.network.packets.CProviderModuleIncludePacket;
+import logisticspipes.network.packets.module.ProviderModuleNextModePacket;
 import logisticspipes.network.packets.module.ModulePropertiesUpdate;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.gui.DummyContainer;
@@ -88,7 +91,7 @@ public class GuiProvider extends ModuleBaseGui {
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int x, int y) {
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-		mc.renderEngine.bindTexture(GuiProvider.TEXTURE);
+		mc.textureManager.bindTexture(GuiProvider.TEXTURE);
 		int j = guiLeft;
 		int k = guiTop;
 		drawTexturedModalRect(j, k, 0, 0, xSize, ySize);

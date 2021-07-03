@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.pipe;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.interfaces.ISendQueueContentRecieiver;
 import logisticspipes.network.abstractpackets.InventoryModuleCoordinatesPacket;
@@ -21,7 +21,7 @@ public class SendQueueContent extends InventoryModuleCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		final LogisticsTileGenericPipe pipe = this.getPipe(player.world);
 		if (pipe == null) {
 			return;

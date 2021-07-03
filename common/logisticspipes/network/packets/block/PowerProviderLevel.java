@@ -1,9 +1,9 @@
 package logisticspipes.network.packets.block;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.blocks.powertile.LogisticsPowerProviderTileEntity;
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
@@ -45,7 +45,7 @@ public class PowerProviderLevel extends CoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsPowerProviderTileEntity tile = this.getTileAs(player.world, LogisticsPowerProviderTileEntity.class);
 		if (tile != null) {
 			tile.handlePowerPacket(getDouble());

@@ -1,10 +1,10 @@
 package logisticspipes.network.packets.hud;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.interfaces.IModuleWatchReciver;
 import logisticspipes.network.abstractpackets.ModernPacket;
-import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.ModuleCoordinatesPacket;
 import logisticspipes.utils.StaticResolve;
 
 @StaticResolve
@@ -20,7 +20,7 @@ public class HUDStopModuleWatchingPacket extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		IModuleWatchReciver handler = this.getLogisticsModule(player, IModuleWatchReciver.class);
 		if (handler == null) {
 			return;

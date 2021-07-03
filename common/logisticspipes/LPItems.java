@@ -3,7 +3,7 @@ package logisticspipes;
 import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
 
-import net.minecraftforge.fml.common.registry.GameRegistry.ObjectHolder;
+import net.minecraftforge.registries.ObjectHolder;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;

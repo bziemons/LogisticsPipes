@@ -7,11 +7,11 @@ import javax.annotation.Nonnull;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.WorldServer;
+import net.minecraft.world.server.ServerWorld;
 
 import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.fml.common.FMLCommonHandler;
 
 import com.mojang.authlib.GameProfile;
 
@@ -22,9 +22,9 @@ public class FakePlayerLP extends FakePlayer {
 
 	public String myName = "[LogisticsPipes]";
 
-	public FakePlayerLP(WorldServer world) {
+	public FakePlayerLP(ServerWorld world) {
 		super(world, LPPLAYER);
-		connection = new FakeNetServerHandler(FMLCommonHandler.instance().getMinecraftServerInstance(), this);
+		connection = new FakeNetServerHandler(world.getServer(), this);
 		this.addedToChunk = false;
 		this.posX = 0;
 		this.posY = 0;
@@ -34,7 +34,7 @@ public class FakePlayerLP extends FakePlayer {
 	@Nonnull
 	@Override
 	public ITextComponent getDisplayName() {
-		return new TextComponentString(getName());
+		return new StringTextComponent(getName());
 	}
 
 	@Override

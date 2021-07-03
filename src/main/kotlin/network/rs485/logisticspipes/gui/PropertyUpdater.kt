@@ -41,7 +41,7 @@ import logisticspipes.modules.LogisticsModule
 import logisticspipes.network.PacketHandler
 import logisticspipes.network.packets.module.ModulePropertiesUpdate
 import logisticspipes.proxy.MainProxy
-import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.entity.player.PlayerEntity
 import network.rs485.grow.Coroutines.scheduleServerTask
 import network.rs485.logisticspipes.property.Property
 import network.rs485.logisticspipes.property.addObserver
@@ -51,12 +51,12 @@ import java.lang.ref.WeakReference
 import java.util.function.Consumer
 
 class PropertyUpdater(
-    player: EntityPlayer,
+    player: PlayerEntity,
     moduleIn: LogisticsModule,
     propertiesIn: List<Property<*>>
 ) : Consumer<Property<*>> {
 
-    private val weakPlayer: WeakReference<EntityPlayer> = WeakReference(player)
+    private val weakPlayer: WeakReference<PlayerEntity> = WeakReference(player)
     private val properties: List<Property<*>> = propertiesIn.also { it.addObserver(this::accept) }
     private val changedProperties = HashSet<Property<*>>()
     private val module: LogisticsModule = moduleIn
@@ -81,9 +81,9 @@ class PropertyUpdater(
         }
     }
 
-    internal fun removeForPlayer(entityPlayer: EntityPlayer): Boolean {
+    internal fun removeForPlayer(player: PlayerEntity): Boolean {
         val shouldBeRemoved = (weakPlayer.isEnqueued
-                || weakPlayer.get() == null || weakPlayer.get() === entityPlayer)
+                || weakPlayer.get() == null || weakPlayer.get() === player)
         if (shouldBeRemoved) {
             properties.removeObserver(this::accept)
             shouldUpdate = false

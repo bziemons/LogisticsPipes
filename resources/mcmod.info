@@ -10,7 +10,7 @@
     "logoFile": "",
     "screenshots": [],
     "requiredMods": [
-        "forge@[10.12.1.1079,)",
+        "forge@[1.14.4-28.2.0,)",
         "codechickenlib@[3.1.7.340,)"
     ],
     "dependencies": [
@@ -27,7 +27,6 @@
         "appliedenergistics",
         "thermalexpansion",
         "betterstorage",
-        "mcmultipart"
     ],
     "dependants": [],
     "useDependencyInformation": true

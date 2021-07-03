@@ -2,8 +2,8 @@ package logisticspipes.routing.order;
 
 import java.util.List;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import lombok.Getter;
 
@@ -12,7 +12,7 @@ import logisticspipes.utils.item.ItemIdentifierStack;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class ClientSideOrderInfo implements IOrderInfoProvider {
 
 	@Getter

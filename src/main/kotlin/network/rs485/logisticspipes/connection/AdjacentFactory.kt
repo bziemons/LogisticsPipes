@@ -39,7 +39,7 @@ package network.rs485.logisticspipes.connection
 
 import logisticspipes.pipes.basic.CoreRoutedPipe
 import logisticspipes.proxy.SimpleServiceLocator
-import net.minecraft.util.EnumFacing
+import net.minecraft.util.Direction
 import network.rs485.logisticspipes.world.WorldCoordinatesWrapper
 
 object AdjacentFactory {
@@ -54,7 +54,7 @@ object AdjacentFactory {
             connectedTileEntities.isEmpty() -> NoAdjacent
             // FIXME: check when to use FLUID/ITEM/UNDEFINED
             connectedTileEntities.size == 1 -> SingleAdjacent(parent, connectedTileEntities[0].direction, ConnectionType.UNDEFINED)
-            else -> DynamicAdjacent(parent, arrayOfNulls<ConnectionType>(EnumFacing.VALUES.size).also { arr ->
+            else -> DynamicAdjacent(parent, arrayOfNulls<ConnectionType>(Direction.values().size).also { arr ->
                 connectedTileEntities.forEach { neighbor -> arr[neighbor.direction.index] = ConnectionType.UNDEFINED }
             })
         }

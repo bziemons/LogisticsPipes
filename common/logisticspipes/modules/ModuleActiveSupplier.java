@@ -12,10 +12,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
@@ -133,7 +133,7 @@ public class ModuleActiveSupplier extends LogisticsModule
 	}
 
 	@Override
-	public void startWatching(EntityPlayer player) {
+	public void startWatching(PlayerEntity player) {
 		localModeWatchers.add(player);
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(ModuleInventory.class)
 						.setIdentList(ItemIdentifierStack.getListFromInventory(inventory))
@@ -142,7 +142,7 @@ public class ModuleActiveSupplier extends LogisticsModule
 	}
 
 	@Override
-	public void stopWatching(EntityPlayer player) {
+	public void stopWatching(PlayerEntity player) {
 		localModeWatchers.remove(player);
 	}
 
@@ -403,21 +403,6 @@ public class ModuleActiveSupplier extends LogisticsModule
 				setRequestFailed(true);
 			}
 
-		}
-	}
-
-	@Override
-	public void readFromNBT(@Nonnull NBTTagCompound tag) {
-		super.readFromNBT(tag);
-		// deprecated, TODO: remove after 1.12
-		final List<Pair<Integer, String>> slotArrayList = IntStream.range(0, SUPPLIER_SLOTS)
-				.mapToObj((idx) -> new Pair<>(idx, "slotArray_" + idx))
-				.filter((it) -> tag.hasKey(it.getValue2()))
-				.collect(Collectors.toList());
-		if (!slotArrayList.isEmpty()) {
-			final int[] slotArray = new int[SUPPLIER_SLOTS];
-			slotArrayList.forEach((pair) -> slotArray[pair.getValue1()] = tag.getInteger(pair.getValue2()));
-			slotAssignmentPattern.replaceContent(slotArray);
 		}
 	}
 

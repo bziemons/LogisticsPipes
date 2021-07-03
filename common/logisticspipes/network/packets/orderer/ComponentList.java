@@ -3,8 +3,8 @@ package logisticspipes.network.packets.orderer;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.text.StringTextComponent;
 
 import net.minecraftforge.fml.client.FMLClientHandler;
 
@@ -45,7 +45,7 @@ public class ComponentList extends ModernPacket {
 
 	@Override
 	@ClientSideOnlyMethodContent
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		if (Configs.DISPLAY_POPUP && FMLClientHandler.instance().getClient().currentScreen instanceof GuiOrderer) {
 			((GuiOrderer) FMLClientHandler.instance().getClient().currentScreen)
 					.handleSimulateAnswer(used, missing, (GuiOrderer) FMLClientHandler.instance().getClient().currentScreen, player);
@@ -54,10 +54,10 @@ public class ComponentList extends ModernPacket {
 					.handleSimulateAnswer(used, missing, (GuiRequestTable) FMLClientHandler.instance().getClient().currentScreen, player);
 		} else {
 			for (IResource item : used) {
-				player.sendMessage(new TextComponentString("Component: " + item.getDisplayText(ColorCode.SUCCESS)));
+				player.sendMessage(new StringTextComponent("Component: " + item.getDisplayText(ColorCode.SUCCESS)));
 			}
 			for (IResource item : missing) {
-				player.sendMessage(new TextComponentString("Missing: " + item.getDisplayText(ColorCode.MISSING)));
+				player.sendMessage(new StringTextComponent("Missing: " + item.getDisplayText(ColorCode.MISSING)));
 			}
 		}
 	}

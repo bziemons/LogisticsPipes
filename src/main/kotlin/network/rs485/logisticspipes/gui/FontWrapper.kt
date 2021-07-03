@@ -37,9 +37,9 @@
 
 package network.rs485.logisticspipes.gui
 
+import com.mojang.blaze3d.platform.GlStateManager
+import com.mojang.blaze3d.platform.TextureUtil
 import logisticspipes.LogisticsPipes
-import net.minecraft.client.renderer.GlStateManager
-import net.minecraft.client.renderer.texture.TextureUtil
 import org.lwjgl.opengl.GL11
 import java.nio.ByteBuffer
 import java.util.*
@@ -85,8 +85,8 @@ class FontWrapper(private val font: IFont) {
         fun generateTexture(): Int{
             val texId = GL11.glGenTextures()
             GlStateManager.bindTexture(texId)
-            TextureUtil.allocateTexture(texId, maxTexSize, maxTexSize)
-            LogisticsPipes.log.warn("Created new texture: $texId")
+            TextureUtil.prepareImage(texId, maxTexSize, maxTexSize)
+            LogisticsPipes.getLOGGER().warn("Created new texture: $texId")
             return texId
         }
 
@@ -111,7 +111,7 @@ class FontWrapper(private val font: IFont) {
 
         fun addTextureRange(character: Char) {
             textureIndex = textureIndex + (currentTexId to (startingChar..character))
-            LogisticsPipes.log.warn("Finished texture, covering characters ${startingChar.toInt()}..${character.toInt()}")
+            LogisticsPipes.getLOGGER().warn("Finished texture, covering characters ${startingChar.toInt()}..${character.toInt()}")
         }
 
         fun startNewTexture(character: Char) {

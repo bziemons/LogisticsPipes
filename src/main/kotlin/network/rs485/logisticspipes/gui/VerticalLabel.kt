@@ -37,40 +37,47 @@
 
 package network.rs485.logisticspipes.gui
 
+import com.mojang.blaze3d.platform.GlStateManager
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen
+import logisticspipes.utils.string.StringUtils
+import net.minecraftforge.fml.client.config.GuiUtils
 import net.minecraft.client.renderer.GlStateManager
 import network.rs485.logisticspipes.util.TextUtil
 import network.rs485.logisticspipes.util.opaque
 
 class VerticalLabel(fullText: String, x: Int, y: Int, maxLength: Int, textColor: Int, backgroundColor: Int) : Label(fullText, x, y, maxLength, textColor, backgroundColor) {
 
+    init {
+        textUpdated()
+    }
+
     override val overflows: Boolean get() = fullRect.height > maxLength
 
     override fun draw(mouseX: Int, mouseY: Int) {
-        hovered = hovered(mouseX, mouseY)
+        isHovered = isHovered()
+        isHovered = (fullRect.takeIf { isHovered } ?: trimmedRect).contains(mouseX, mouseY)
         GlStateManager.pushMatrix()
-        GlStateManager.translate(fullRect.x1.toDouble(), fullRect.y0.toDouble(), 500.0)
-        GlStateManager.rotate(90f, 0f, 0f, 1f)
-        if (overflows && hovered) {
-            drawGradientRect(0, -1, fullRect.roundedHeight, fullRect.roundedWidth + 1, backgroundColor, backgroundColor)
+        GlStateManager.translated(fullRect.x1.toDouble(), fullRect.y0.toDouble(), 500.0)
+        GlStateManager.rotatef(90f, 0f, 0f, 1f)
+        if (overflows && isHovered) {
+            GuiUtils.drawGradientRect(blitOffset, 0, -1, fullRect.roundedHeight, fullRect.roundedWidth + 1, backgroundColor, backgroundColor)
             // Outlines
             LogisticsBaseGuiScreen.drawHorizontalGradientRect(fullRect.roundedHeight, -2, fullRect.roundedHeight + 1, fullRect.roundedWidth + 1, 0, 0x0, textColor.opaque())
             LogisticsBaseGuiScreen.drawHorizontalGradientRect(0, -2, fullRect.roundedHeight, -1, 0, 0x0, textColor.opaque())
             LogisticsBaseGuiScreen.drawHorizontalGradientRect(0, fullRect.roundedWidth, fullRect.roundedHeight, fullRect.roundedWidth + 1, 0, 0x0, textColor.opaque())
-            fullText
+            message
         } else {
             trimmedText
         }.also {
-            fontRenderer.drawString(it, 0, 0, textColor)
+            fontRenderer.drawString(it, 0f, 0f, textColor)
         }
         GlStateManager.popMatrix()
     }
 
-    override fun setText(newFullText: String) {
-        fullText = newFullText
-        fullRect.setSize(fontRenderer.FONT_HEIGHT, fontRenderer.getStringWidth(fullText))
+    override fun textUpdated() {
+        fullRect.setSize(fontRenderer.FONT_HEIGHT, fontRenderer.getStringWidth(message))
 
-        trimmedText = TextUtil.getTrimmedString(fullText, maxLength, fontRenderer)
+        trimmedText = TextUtil.getTrimmedString(message, maxLength, fontRenderer)
         trimmedRect.setSize(fontRenderer.FONT_HEIGHT, fontRenderer.getStringWidth(trimmedText))
 
         val offset = (maxLength - trimmedRect.roundedHeight) / 2

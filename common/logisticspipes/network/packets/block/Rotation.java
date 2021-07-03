@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.block;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
 
 import logisticspipes.interfaces.IRotationProvider;
@@ -21,7 +21,7 @@ public class Rotation extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		IRotationProvider tile = this.getTileOrPipe(player.world, IRotationProvider.class);
 		if (tile != null) {
 			tile.setRotation(getInteger());

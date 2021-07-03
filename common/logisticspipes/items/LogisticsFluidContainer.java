@@ -1,20 +1,26 @@
 package logisticspipes.items;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.client.util.InputMappings;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.World;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-import org.lwjgl.input.Keyboard;
+import org.lwjgl.glfw.GLFW;
 
 import logisticspipes.interfaces.IItemAdvancedExistance;
 import logisticspipes.proxy.SimpleServiceLocator;
@@ -23,10 +29,8 @@ import logisticspipes.utils.item.ItemIdentifierStack;
 
 public class LogisticsFluidContainer extends LogisticsItem implements IItemAdvancedExistance {
 
-	static int capacity = 8000;
-
 	public LogisticsFluidContainer() {
-		setMaxStackSize(1);
+		super(new Item.Properties().maxStackSize(1));
 	}
 
 	@Override
@@ -39,42 +43,42 @@ public class LogisticsFluidContainer extends LogisticsItem implements IItemAdvan
 		return false;
 	}
 
-	@Override
 	@Nonnull
-	public String getUnlocalizedName(@Nonnull ItemStack stack) {
+	@Override
+	public String getTranslationKey(@Nonnull ItemStack stack) {
 		FluidIdentifierStack fluidStack = SimpleServiceLocator.logisticsFluidManager.getFluidFromContainer(ItemIdentifierStack.getFromStack(stack));
 		if (fluidStack != null) {
-			String s = fluidStack.makeFluidStack().getFluid().getUnlocalizedName();
+			String s = fluidStack.makeFluidStack().getTranslationKey();
 			if (s != null) {
 				return s;
 			}
 		}
-		return super.getUnlocalizedName(stack);
+		return super.getTranslationKey(stack);
 	}
 
 	@Override
 	@Nonnull
 	public String getItemStackDisplayName(@Nonnull ItemStack itemstack) {
-		String unlocalizedName = getUnlocalizedName(itemstack);
-		String unlocalizedNameInefficiently = getUnlocalizedNameInefficiently(itemstack); // Fix for Logistics fluid container naming
-		return I18n.translateToLocal(unlocalizedName + (unlocalizedName.equals(unlocalizedNameInefficiently) ? ".name" : "")).trim();
+		String unlocalizedName = getTranslationKey(itemstack);
+		return I18n.translateToLocal(unlocalizedName + ".name");
 	}
 
 	@Override
-	@SideOnly(Side.CLIENT)
-	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
+	@OnlyIn(Dist.CLIENT)
+	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, @Nonnull List<ITextComponent> tooltip, @Nonnull ITooltipFlag flagIn) {
 		super.addInformation(stack, worldIn, tooltip, flagIn);
-		if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+		if (InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), GLFW.GLFW_KEY_LEFT_SHIFT)) {
 			FluidIdentifierStack fluidStack = SimpleServiceLocator.logisticsFluidManager.getFluidFromContainer(ItemIdentifierStack.getFromStack(stack));
 			if (fluidStack != null) {
-				tooltip.add("Type:  " + fluidStack.makeFluidStack().getFluid().getLocalizedName(fluidStack.makeFluidStack()));
-				tooltip.add("Value: " + fluidStack.getAmount() + "mB");
+				tooltip.add(new StringTextComponent("Type:  " + fluidStack.makeFluidStack().getDisplayName()));
+				tooltip.add(new StringTextComponent("Value: " + fluidStack.getAmount() + "mB"));
 			}
 		}
 	}
 
 	@Override
-	public void getSubItems(@Nonnull CreativeTabs tab, @Nonnull NonNullList<ItemStack> items) {
-		// don't add to creative tabs in any way
+	public Collection<ItemGroup> getCreativeTabs() {
+		return Collections.emptyList();
 	}
+
 }

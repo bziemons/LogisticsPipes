@@ -1,6 +1,6 @@
 package logisticspipes.network.guis.module.inpipe;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.gui.modules.GuiFluidSupplier;
 import logisticspipes.modules.ModuleFluidSupplier;
@@ -17,13 +17,13 @@ public class FluidSupplierSlot extends ModuleCoordinatesGuiProvider {
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		ModuleFluidSupplier module = this.getLogisticsModule(player.getEntityWorld(), ModuleFluidSupplier.class);
 		return new GuiFluidSupplier(player.inventory, module);
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		ModuleFluidSupplier module = this.getLogisticsModule(player.getEntityWorld(), ModuleFluidSupplier.class);
 		DummyContainer dummy = new DummyContainer(player.inventory, module.getFilterInventory());
 		dummy.addNormalSlotsForPlayerInventory(8, 60);

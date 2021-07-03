@@ -48,13 +48,13 @@ interface MouseInteractable {
      * @param mouseY        Y position of the mouse (absolute, screen)
      * @param visibleArea   Desired visible area to check
      */
-    fun isHovering(mouseX: Int, mouseY: Int, visibleArea: Rectangle): Boolean
+    fun isHovering(mouseX: Double, mouseY: Double, visibleArea: Rectangle): Boolean
 
     /**
      * A mouse click event should run this and the implementation checks if
      * any actions on guideActionListener should be run.
      */
-    fun mouseClicked(mouseX: Int, mouseY: Int, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener)
+    fun mouseClicked(mouseX: Double, mouseY: Double, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener)
 
 }
 
@@ -121,8 +121,8 @@ open class Drawable : MouseInteractable {
      * @param mouseY        Y position of the mouse (absolute, screen)
      * @param visibleArea   Desired visible area to check
      */
-    override fun isHovering(mouseX: Int, mouseY: Int, visibleArea: Rectangle): Boolean =
-        visibleArea.contains(mouseX, mouseY) && absoluteBody.contains(mouseX, mouseY)
+    override fun isHovering(mouseX: Double, mouseY: Double, visibleArea: Rectangle): Boolean =
+        visibleArea.containsd(mouseX, mouseY) && absoluteBody.containsd(mouseX, mouseY)
 
     /**
      * This function is responsible to check if the current Drawable is within the vertical constrains of the given area.
@@ -133,6 +133,6 @@ open class Drawable : MouseInteractable {
         return visibleArea.intersects(absoluteBody)
     }
 
-    override fun mouseClicked(mouseX: Int, mouseY: Int, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) {}
+    override fun mouseClicked(mouseX: Double, mouseY: Double, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) {}
 
 }

@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.orderer;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.interfaces.IRequestWatcher;
 import logisticspipes.network.abstractpackets.IntegerCoordinatesPacket;
@@ -16,7 +16,7 @@ public class OrderWatchRemovePacket extends IntegerCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsTileGenericPipe tile = this.getPipe(player.world);
 		if (tile != null && tile.pipe instanceof IRequestWatcher) {
 			((IRequestWatcher) tile.pipe).handleClientSideRemove(getInteger());

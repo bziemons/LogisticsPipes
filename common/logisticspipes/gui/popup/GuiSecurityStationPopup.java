@@ -3,7 +3,7 @@ package logisticspipes.gui.popup;
 import java.io.IOException;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.network.PacketHandler;
@@ -33,19 +33,19 @@ public class GuiSecurityStationPopup extends SubGuiScreen {
 	public void initGui() {
 		super.initGui();
 		buttonList.clear();
-		buttonList.add(new GuiCheckBox(0, guiLeft + 138, guiTop + 26, 16, 16, false));
-		buttonList.add(new GuiCheckBox(1, guiLeft + 138, guiTop + 41, 16, 16, false));
-		buttonList.add(new GuiCheckBox(2, guiLeft + 138, guiTop + 56, 16, 16, false));
-		buttonList.add(new GuiCheckBox(3, guiLeft + 138, guiTop + 71, 16, 16, false));
-		buttonList.add(new GuiCheckBox(4, guiLeft + 138, guiTop + 86, 16, 16, false));
-		buttonList.add(new GuiCheckBox(5, guiLeft + 138, guiTop + 101, 16, 16, false));
+		buttonList.add(new GuiCheckBox(guiLeft + 138, guiTop + 26, 16, 16, "ConfigureSettings", false));
+		buttonList.add(new GuiCheckBox(guiLeft + 138, guiTop + 41, 16, 16, "ActiveRequesting", false));
+		buttonList.add(new GuiCheckBox(guiLeft + 138, guiTop + 56, 16, 16, "UpgradePipes", false));
+		buttonList.add(new GuiCheckBox(guiLeft + 138, guiTop + 71, 16, 16, "CheckNetwork", false));
+		buttonList.add(new GuiCheckBox(guiLeft + 138, guiTop + 86, 16, 16, "RemovePipes", false));
+		buttonList.add(new GuiCheckBox(guiLeft + 138, guiTop + 101, 16, 16, "AccessRoutingChannels", false));
 		buttonList.add(new SmallGuiButton(6, guiLeft + 123, guiTop + 118, 30, 10, TextUtil.translate(GuiSecurityStationPopup.PREFIX + "Close")));
 		refreshCheckBoxes();
 	}
 
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		mc.fontRenderer.drawString(TextUtil.translate(GuiSecurityStationPopup.PREFIX + "Player") + ": " + activeSetting.name, guiLeft + 10, guiTop + 10, 0x404040);
 		mc.fontRenderer.drawString(TextUtil.translate(GuiSecurityStationPopup.PREFIX + "ConfigureSettings") + ": ", guiLeft + 10, guiTop + 30, 0x404040);
 		mc.fontRenderer.drawString(TextUtil.translate(GuiSecurityStationPopup.PREFIX + "ActiveRequesting") + ": ", guiLeft + 10, guiTop + 45, 0x404040);
@@ -60,37 +60,37 @@ public class GuiSecurityStationPopup extends SubGuiScreen {
 		if (button.id == 0) {
 			activeSetting.openGui = !activeSetting.openGui;
 			refreshCheckBoxes();
-			NBTTagCompound nbt = new NBTTagCompound();
+			CompoundNBT nbt = new CompoundNBT();
 			activeSetting.writeToNBT(nbt);
 			MainProxy.sendPacketToServer(PacketHandler.getPacket(SaveSecurityPlayerPacket.class).setTag(nbt).setBlockPos(_tile.getPos()));
 		} else if (button.id == 1) {
 			activeSetting.openRequest = !activeSetting.openRequest;
 			refreshCheckBoxes();
-			NBTTagCompound nbt = new NBTTagCompound();
+			CompoundNBT nbt = new CompoundNBT();
 			activeSetting.writeToNBT(nbt);
 			MainProxy.sendPacketToServer(PacketHandler.getPacket(SaveSecurityPlayerPacket.class).setTag(nbt).setBlockPos(_tile.getPos()));
 		} else if (button.id == 2) {
 			activeSetting.openUpgrades = !activeSetting.openUpgrades;
 			refreshCheckBoxes();
-			NBTTagCompound nbt = new NBTTagCompound();
+			CompoundNBT nbt = new CompoundNBT();
 			activeSetting.writeToNBT(nbt);
 			MainProxy.sendPacketToServer(PacketHandler.getPacket(SaveSecurityPlayerPacket.class).setTag(nbt).setBlockPos(_tile.getPos()));
 		} else if (button.id == 3) {
 			activeSetting.openNetworkMonitor = !activeSetting.openNetworkMonitor;
 			refreshCheckBoxes();
-			NBTTagCompound nbt = new NBTTagCompound();
+			CompoundNBT nbt = new CompoundNBT();
 			activeSetting.writeToNBT(nbt);
 			MainProxy.sendPacketToServer(PacketHandler.getPacket(SaveSecurityPlayerPacket.class).setTag(nbt).setBlockPos(_tile.getPos()));
 		} else if (button.id == 4) {
 			activeSetting.removePipes = !activeSetting.removePipes;
 			refreshCheckBoxes();
-			NBTTagCompound nbt = new NBTTagCompound();
+			CompoundNBT nbt = new CompoundNBT();
 			activeSetting.writeToNBT(nbt);
 			MainProxy.sendPacketToServer(PacketHandler.getPacket(SaveSecurityPlayerPacket.class).setTag(nbt).setBlockPos(_tile.getPos()));
 		} else if (button.id == 5) {
 			activeSetting.accessRoutingChannels = !activeSetting.accessRoutingChannels;
 			refreshCheckBoxes();
-			NBTTagCompound nbt = new NBTTagCompound();
+			CompoundNBT nbt = new CompoundNBT();
 			activeSetting.writeToNBT(nbt);
 			MainProxy.sendPacketToServer(PacketHandler.getPacket(SaveSecurityPlayerPacket.class).setTag(nbt).setBlockPos(_tile.getPos()));
 		} else if (button.id == 6) {

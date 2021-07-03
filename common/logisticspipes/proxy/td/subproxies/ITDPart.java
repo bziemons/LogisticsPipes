@@ -12,7 +12,7 @@ public interface ITDPart {
 
 	void invalidate();
 
-	void onChunkUnload();
+	void onChunkUnloaded();
 
 	void scheduleNeighborChange();
 

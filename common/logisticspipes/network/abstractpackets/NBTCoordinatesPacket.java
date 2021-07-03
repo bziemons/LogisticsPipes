@@ -1,10 +1,11 @@
 package logisticspipes.network.abstractpackets;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import lombok.Getter;
 import lombok.Setter;
 
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 
@@ -12,7 +13,7 @@ public abstract class NBTCoordinatesPacket extends CoordinatesPacket {
 
 	@Getter
 	@Setter
-	private NBTTagCompound tag;
+	private CompoundNBT tag;
 
 	public NBTCoordinatesPacket(int id) {
 		super(id);
@@ -21,12 +22,12 @@ public abstract class NBTCoordinatesPacket extends CoordinatesPacket {
 	@Override
 	public void writeData(LPDataOutput output) {
 		super.writeData(output);
-		output.writeNBTTagCompound(tag);
+		output.writeCompoundNBT(tag);
 	}
 
 	@Override
 	public void readData(LPDataInput input) {
 		super.readData(input);
-		tag = input.readNBTTagCompound();
+		tag = input.readCompoundNBT();
 	}
 }

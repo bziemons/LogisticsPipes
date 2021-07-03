@@ -2,7 +2,7 @@ package logisticspipes.network.guis.module.inpipe;
 
 import java.util.BitSet;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -58,7 +58,7 @@ public class ItemSinkSlot extends ModuleCoordinatesGuiProvider {
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		ModuleItemSink module = this.getLogisticsModule(player.getEntityWorld(), ModuleItemSink.class);
 		if (module == null) {
 			return null;
@@ -70,7 +70,7 @@ public class ItemSinkSlot extends ModuleCoordinatesGuiProvider {
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		return SimpleFilterInventorySlot.getContainerFromFilterModule(this, player);
 	}
 

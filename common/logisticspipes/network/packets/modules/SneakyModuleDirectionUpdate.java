@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.modules;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.network.abstractpackets.DirectionModuleCoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
@@ -20,7 +20,7 @@ public class SneakyModuleDirectionUpdate extends DirectionModuleCoordinatesPacke
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		SneakyDirection sneakyModule = this.getLogisticsModule(player, SneakyDirection.class);
 		if (sneakyModule == null) {
 			return;

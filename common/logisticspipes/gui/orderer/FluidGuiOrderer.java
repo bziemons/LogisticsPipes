@@ -3,7 +3,7 @@ package logisticspipes.gui.orderer;
 import java.io.IOException;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.orderer.RequestFluidOrdererRefreshPacket;
@@ -15,8 +15,8 @@ import logisticspipes.utils.item.ItemIdentifier;
 
 public class FluidGuiOrderer extends GuiOrderer {
 
-	public FluidGuiOrderer(PipeFluidRequestLogistics pipe, EntityPlayer entityPlayer) {
-		super(pipe.getX(), pipe.getY(), pipe.getZ(), pipe.getWorld().provider.getDimension(), entityPlayer);
+	public FluidGuiOrderer(PipeFluidRequestLogistics pipe, PlayerEntity player) {
+		super(pipe.getX(), pipe.getY(), pipe.getZ(), pipe.getWorld().getDimension(), PlayerEntity);
 		_title = "Request Fluid";
 		refreshItems();
 	}

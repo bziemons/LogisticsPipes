@@ -1,6 +1,6 @@
 package logisticspipes.network.guis.block;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Container;
 
 import logisticspipes.LPItems;
@@ -19,12 +19,12 @@ public class ProgramCompilerGui extends CoordinatesGuiProvider {
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		return new GuiProgramCompiler(player, getTileAs(player.world, LogisticsProgramCompilerTileEntity.class));
 	}
 
 	@Override
-	public Container getContainer(EntityPlayer player) {
+	public Container getContainer(PlayerEntity player) {
 		LogisticsProgramCompilerTileEntity compilerBlock = getTileAs(player.world, LogisticsProgramCompilerTileEntity.class);
 		DummyContainer dummy = new DummyContainer(player, null, compilerBlock);
 

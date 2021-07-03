@@ -37,56 +37,65 @@
 
 package network.rs485.logisticspipes.gui
 
+import com.mojang.blaze3d.platform.GlStateManager
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Gui
 import net.minecraft.client.renderer.GlStateManager
 import network.rs485.logisticspipes.util.TextUtil
+import net.minecraft.client.gui.widget.Widget
+import net.minecraftforge.fml.client.config.GuiUtils
 import network.rs485.logisticspipes.util.math.Rectangle
 import network.rs485.logisticspipes.util.opaque
 
-open class Label(fullText: String, internal val x: Int, internal val y: Int, internal val maxLength: Int, internal val textColor: Int, internal val backgroundColor: Int) : Gui() {
+open class Label(fullText: String, internal val x: Int, internal val y: Int, internal val maxLength: Int, internal val textColor: Int, internal val backgroundColor: Int) : Widget(x, y, fullText) {
 
     open val overflows: Boolean get() = fullRect.width > maxLength
 
-    internal val fontRenderer = Minecraft.getMinecraft().fontRenderer
+    internal val fontRenderer = Minecraft.getInstance().fontRenderer
 
     internal val fullRect = Rectangle().setPos(x, y)
     internal val trimmedRect = Rectangle().setPos(x, y)
 
-    internal var fullText: String = ""
     internal var trimmedText: String = ""
-    internal var hovered = false
 
     init {
-        setText(fullText)
+        textUpdatedInternal()
     }
 
     open fun draw(mouseX: Int, mouseY: Int) {
-        hovered = hovered(mouseX, mouseY)
+        isHovered = isHovered()
         GlStateManager.pushMatrix()
-        GlStateManager.translate(fullRect.x0, fullRect.y0, 0.0f)
-        if (overflows && hovered) {
-            drawGradientRect(0, -1, fullRect.roundedWidth, fullRect.roundedHeight + 1, backgroundColor, backgroundColor)
+        GlStateManager.translatef(fullRect.x0, fullRect.y0, 0.0f)
+        if (overflows && isHovered) {
+            GuiUtils.drawGradientRect(blitOffset, 0, -1, fullRect.roundedWidth, fullRect.roundedHeight + 1, backgroundColor, backgroundColor)
             // Outlines
             LogisticsBaseGuiScreen.drawHorizontalGradientRect(fullRect.roundedWidth, -2, fullRect.roundedWidth + 1, fullRect.roundedHeight + 1, 0, textColor.opaque(), textColor.opaque())
             LogisticsBaseGuiScreen.drawHorizontalGradientRect(0, -2, fullRect.roundedWidth, -1, 0, 0x0, textColor.opaque())
             LogisticsBaseGuiScreen.drawHorizontalGradientRect(0, fullRect.roundedHeight, fullRect.roundedWidth, fullRect.roundedHeight + 1, 0, 0x0, textColor.opaque())
-            fullText
+            message
         } else {
             trimmedText
         }.also {
-            fontRenderer.drawString(it, 0, 0, textColor)
+            fontRenderer.drawString(it, 0f, 0f, textColor)
         }
-        GlStateManager.translate(-fullRect.x0, -fullRect.y0, 0.0f)
+        GlStateManager.translatef(-fullRect.x0, -fullRect.y0, 0.0f)
         GlStateManager.popMatrix()
     }
 
-    open fun setText(newFullText: String) {
-        fullText = newFullText
-        fullRect.setSize(fontRenderer.getStringWidth(fullText), fontRenderer.FONT_HEIGHT)
+    fun setText(newFullText: String) {
+        message = newFullText
+        textUpdated()
+    }
 
-        trimmedText = TextUtil.getTrimmedString(fullText, maxLength, fontRenderer)
+    protected open fun textUpdated() {
+        textUpdatedInternal()
+    }
+
+    private fun textUpdatedInternal() {
+        fullRect.setSize(fontRenderer.getStringWidth(message), fontRenderer.FONT_HEIGHT)
+
+        trimmedText = TextUtil.getTrimmedString(message, maxLength, fontRenderer)
         trimmedRect.setSize(fontRenderer.getStringWidth(trimmedText), fontRenderer.FONT_HEIGHT)
 
         val offset = (maxLength - trimmedRect.roundedWidth) / 2
@@ -94,7 +103,6 @@ open class Label(fullText: String, internal val x: Int, internal val y: Int, int
         trimmedRect.setPos(x + offset, y)
     }
 
-    fun isTextEqual(text: String): Boolean = fullText === text
+    fun isTextEqual(text: String): Boolean = message === text
 
-    internal fun hovered(mouseX: Int, mouseY: Int): Boolean = (if (hovered) fullRect else trimmedRect).contains(mouseX, mouseY)
 }

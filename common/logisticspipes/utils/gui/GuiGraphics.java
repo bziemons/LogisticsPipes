@@ -12,25 +12,19 @@ import java.util.List;
 import javax.annotation.Nonnull;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 
-import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-import org.lwjgl.input.Keyboard;
+import com.mojang.blaze3d.platform.GlStateManager;
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.proxy.SimpleServiceLocator;
@@ -39,7 +33,7 @@ import logisticspipes.utils.Color;
 /**
  * Utils class for GUI-related drawing methods.
  */
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public final class GuiGraphics {
 
 	public static final ResourceLocation WIDGETS_TEXTURE = new ResourceLocation("textures/gui/widgets.png");
@@ -108,7 +102,7 @@ public final class GuiGraphics {
 			tooltipLines.addAll(1, (List<String>) tooltip[4]);
 		}
 
-		if ((Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) || Keyboard.isKeyDown(Keyboard.KEY_RCONTROL)) && (tooltip.length < 4 || (Boolean) tooltip[3])) {
+		if ((InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL) || InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_RCONTROL)) && (tooltip.length < 4 || (Boolean) tooltip[3])) {
 			tooltipLines.add(1, "\u00a77" + ((ItemStack) tooltip[2]).getCount());
 		}
 
@@ -145,7 +139,7 @@ public final class GuiGraphics {
 			yHeight += 2 + (msg.size() - 1) * 10;
 		}
 
-		GlStateManager.disableDepth();
+		GlStateManager.disableDepthTest();
 		GlStateManager.disableLighting();
 
 		GuiGraphics.zLevel = 300.0F;
@@ -183,7 +177,7 @@ public final class GuiGraphics {
 
 		GuiGraphics.zLevel = 0.0F;
 
-		GlStateManager.enableDepth();
+		GlStateManager.enableDepthTest();
 	}
 
 	public static void drawPlayerInventoryBackground(Minecraft mc, int xOffset, int yOffset) {
@@ -215,7 +209,7 @@ public final class GuiGraphics {
 
 	private static void doDrawSlotBackground(Minecraft mc, int x, int y, ResourceLocation slotDiskTexture) {
 		GuiGraphics.zLevel = 0;
-		mc.renderEngine.bindTexture(slotDiskTexture);
+		mc.textureManager.bindTexture(slotDiskTexture);
 
 		Tessellator tess = Tessellator.getInstance();
 		BufferBuilder buf = tess.getBuffer();
@@ -229,30 +223,30 @@ public final class GuiGraphics {
 	}
 
 	public static void drawSlotDiskBackground(Minecraft mc, int x, int y) {
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 		doDrawSlotBackground(mc, x, y, GuiGraphics.SLOT_DISK_TEXTURE);
 	}
 
 	public static void drawSlotProgrammerBackground(Minecraft mc, int x, int y) {
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 		doDrawSlotBackground(mc, x, y, GuiGraphics.SLOT_PROGRAMMER_TEXTURE);
 	}
 
 	public static void drawSlotBackground(Minecraft mc, int x, int y) {
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 		doDrawSlotBackground(mc, x, y, GuiGraphics.SLOT_TEXTURE);
 	}
 
 	public static void drawSlotBackground(Minecraft mc, int x, int y, int color) {
-		GlStateManager.color(Color.getRed(color), Color.getGreen(color), Color.getBlue(color), Color.getAlpha(color));
+		GlStateManager.color4f(Color.getRed(color), Color.getGreen(color), Color.getBlue(color), Color.getAlpha(color));
 		doDrawSlotBackground(mc, x, y, GuiGraphics.SLOT_TEXTURE);
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 	}
 
 	public static void drawBigSlotBackground(Minecraft mc, int x, int y) {
 		GuiGraphics.zLevel = 0;
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-		mc.renderEngine.bindTexture(GuiGraphics.BIG_SLOT_TEXTURE);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+		mc.textureManager.bindTexture(GuiGraphics.BIG_SLOT_TEXTURE);
 
 		Tessellator tess = Tessellator.getInstance();
 		BufferBuilder buf = tess.getBuffer();
@@ -266,8 +260,8 @@ public final class GuiGraphics {
 
 	public static void drawSmallSlotBackground(Minecraft mc, int x, int y) {
 		GuiGraphics.zLevel = 0;
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-		mc.renderEngine.bindTexture(GuiGraphics.SMALL_SLOT_TEXTURE);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+		mc.textureManager.bindTexture(GuiGraphics.SMALL_SLOT_TEXTURE);
 
 		Tessellator tess = Tessellator.getInstance();
 		BufferBuilder buf = tess.getBuffer();
@@ -283,8 +277,8 @@ public final class GuiGraphics {
 		if (icon == null) {
 			return;
 		}
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-		mc.renderEngine.bindTexture(new ResourceLocation(icon.getIconName()));
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+		mc.textureManager.bindTexture(new ResourceLocation(icon.getIconName()));
 
 		Tessellator tess = Tessellator.getInstance();
 		BufferBuilder buf = tess.getBuffer();
@@ -298,8 +292,8 @@ public final class GuiGraphics {
 
 	public static void drawLockBackground(Minecraft mc, int x, int y) {
 		GuiGraphics.zLevel = 0;
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-		mc.renderEngine.bindTexture(GuiGraphics.LOCK_ICON);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+		mc.textureManager.bindTexture(GuiGraphics.LOCK_ICON);
 		GlStateManager.enableBlend();
 
 		Tessellator tess = Tessellator.getInstance();
@@ -316,8 +310,8 @@ public final class GuiGraphics {
 
 	private static void drawTexture16by16(Minecraft mc, int x, int y, ResourceLocation tex) {
 		GuiGraphics.zLevel = 0;
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-		mc.renderEngine.bindTexture(tex);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+		mc.textureManager.bindTexture(tex);
 		GlStateManager.enableBlend();
 
 		Tessellator tess = Tessellator.getInstance();
@@ -348,7 +342,7 @@ public final class GuiGraphics {
 		if (resetColor) {
 			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 		}
-		mc.renderEngine.bindTexture(GuiGraphics.BACKGROUND_TEXTURE);
+		mc.textureManager.bindTexture(GuiGraphics.BACKGROUND_TEXTURE);
 
 		Tessellator tess = Tessellator.getInstance();
 		BufferBuilder buf = tess.getBuffer();

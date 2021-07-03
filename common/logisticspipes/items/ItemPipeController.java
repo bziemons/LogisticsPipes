@@ -2,12 +2,12 @@ package logisticspipes.items;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
+import net.minecraft.util.Direction;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -23,26 +23,26 @@ public class ItemPipeController extends LogisticsItem {
 
 	@Nonnull
 	@Override
-	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand handIn) {
+	public ActionResult<ItemStack> onItemRightClick(World world, PlayerEntity player, @Nonnull Hand handIn) {
 		ItemStack stack = player.getHeldItem(handIn);
 		if (MainProxy.isClient(world)) {
-			return new ActionResult<>(EnumActionResult.PASS, stack);
+			return new ActionResult<>(ActionResultType.PASS, stack);
 		}
 		useItem(player, world);
-		return new ActionResult<>(EnumActionResult.SUCCESS, stack);
+		return new ActionResult<>(ActionResultType.SUCCESS, stack);
 	}
 
 	@Nonnull
 	@Override
-	public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+	public ActionResultType onItemUse(PlayerEntity player, World world, BlockPos pos, Hand hand, Direction facing, float hitX, float hitY, float hitZ) {
 		if (MainProxy.isClient(world)) {
-			return EnumActionResult.PASS;
+			return ActionResultType.PASS;
 		}
 		useItem(player, world);
-		return EnumActionResult.SUCCESS;
+		return ActionResultType.SUCCESS;
 	}
 
-	private void useItem(EntityPlayer player, World world) {
+	private void useItem(PlayerEntity player, World world) {
 		NewGuiHandler.getGui(LogisticsPlayerSettingsGuiProvider.class).open(player);
 	}
 }

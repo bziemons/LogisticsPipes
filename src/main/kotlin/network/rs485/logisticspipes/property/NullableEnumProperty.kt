@@ -37,7 +37,7 @@
 
 package network.rs485.logisticspipes.property
 
-import net.minecraft.nbt.NBTTagCompound
+import net.minecraft.nbt.CompoundNBT
 
 class NullableEnumProperty<E : Enum<E>>(
     private val defaultValue: E?,
@@ -45,9 +45,9 @@ class NullableEnumProperty<E : Enum<E>>(
     private val enumValues: Array<E>,
 ) : ValueProperty<E?>(defaultValue) {
 
-    override fun readFromNBT(tag: NBTTagCompound) {
-        if (tag.hasKey(tagKey)) {
-            val ordinalValue = tag.getInteger(tagKey)
+    override fun readFromNBT(tag: CompoundNBT) {
+        if (tag.contains(tagKey)) {
+            val ordinalValue = tag.getInt(tagKey)
             value = if (ordinalValue == -1) {
                 null
             } else {
@@ -56,8 +56,8 @@ class NullableEnumProperty<E : Enum<E>>(
         }
     }
 
-    override fun writeToNBT(tag: NBTTagCompound) =
-        value?.let { tag.setInteger(tagKey, it.ordinal) } ?: tag.setInteger(tagKey, -1)
+    override fun writeToNBT(tag: CompoundNBT) =
+        value?.let { tag.putInt(tagKey, it.ordinal) } ?: tag.putInt(tagKey, -1)
 
     override fun copyValue(): E? = value
 

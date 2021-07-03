@@ -3,7 +3,8 @@ package logisticspipes.gui.orderer;
 import java.io.IOException;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.dimension.Dimension;
 
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.orderer.OrdererRefreshRequestPacket;
@@ -21,8 +22,8 @@ public class NormalGuiOrderer extends GuiOrderer {
 
 	protected DisplayOptions displayOptions = DisplayOptions.Both;
 
-	public NormalGuiOrderer(int x, int y, int z, int dim, EntityPlayer entityPlayer) {
-		super(x, y, z, dim, entityPlayer);
+	public NormalGuiOrderer(int x, int y, int z, Dimension dim, PlayerEntity player) {
+		super(x, y, z, dim, player);
 		refreshItems();
 	}
 

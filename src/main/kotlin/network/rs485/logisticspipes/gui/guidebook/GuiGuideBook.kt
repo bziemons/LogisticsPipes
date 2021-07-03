@@ -37,19 +37,21 @@
 
 package network.rs485.logisticspipes.gui.guidebook
 
+import com.mojang.blaze3d.platform.GlStateManager
 import logisticspipes.LPConstants
 import logisticspipes.LPItems
 import logisticspipes.LogisticsPipes
 import logisticspipes.utils.MinecraftColor
 import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.GuiButton
-import net.minecraft.client.gui.GuiConfirmOpenLink
-import net.minecraft.client.gui.GuiScreen
+import net.minecraft.client.gui.screen.ConfirmOpenLinkScreen
+import net.minecraft.client.gui.screen.Screen
+import net.minecraft.client.gui.widget.button.Button
 import net.minecraft.client.renderer.BufferBuilder
-import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.renderer.Tessellator
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats
 import net.minecraft.util.ResourceLocation
+import net.minecraft.util.Util
+import net.minecraft.util.text.StringTextComponent
 import network.rs485.logisticspipes.gui.LPFontRenderer
 import network.rs485.logisticspipes.guidebook.BookContents
 import network.rs485.logisticspipes.guidebook.BookContents.MAIN_MENU_FILE
@@ -59,7 +61,6 @@ import network.rs485.logisticspipes.util.*
 import network.rs485.logisticspipes.util.math.Rectangle
 import network.rs485.markdown.TextFormat
 import network.rs485.markdown.defaultDrawableState
-import org.lwjgl.input.Mouse
 import org.lwjgl.opengl.GL11
 import java.net.URI
 import java.net.URISyntaxException
@@ -89,7 +90,8 @@ object GuideBookConstants {
     const val DRAW_BODY_WIREFRAME = false
 }
 
-class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen() {
+// FIXME: Title
+class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : Screen(StringTextComponent("GuiGuideBook")) {
 
     /*
     TODO after first deployment:
@@ -154,10 +156,16 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
         fun onPageLinkClick(newPage: String) = changePage(newPage)
         fun onWebLinkClick(webLink: String) {
             try {
-                this@GuiGuideBook.clickedLinkURI = URI(webLink)
-                mc.displayGuiScreen(GuiConfirmOpenLink(this@GuiGuideBook, webLink, 31102009, false))
+                val webLinkUri = URI(webLink)
+                minecraft!!.displayGuiScreen(
+                        ConfirmOpenLinkScreen(
+                                { confirm: Boolean -> if (confirm) Util.getOSType().openURI(webLinkUri) }, // callback
+                                webLinkUri.toString(), // link text
+                                false, // trusted
+                        )
+                )
             } catch (error: URISyntaxException) {
-                LogisticsPipes.log.warn("Could not parse link $webLink in GuiGuideBook", error)
+                LogisticsPipes.getLOGGER().warn("Could not parse link $webLink in GuiGuideBook", error)
             }
         }
     }
@@ -212,7 +220,7 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
 
     private fun isTabAbsent(page: Page): Boolean = state.bookmarks.none { it.pageEquals(page) }
 
-    override fun initGui() {
+    override fun init() {
         calculateGuiConstraints()
         slider = addButton(
             SliderButton(
@@ -221,7 +229,10 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
                 railHeight = innerGui.roundedHeight,
                 width = guiSliderWidth,
                 progress = state.currentPage.progress,
-                setProgressCallback = { progress -> state.currentPage.progress = progress }
+                onPress = Button.IPressable { button ->
+                    button as SliderButton
+                    state.currentPage.progress = button.progress
+                },
             )
         )
         home = addButton(
@@ -239,11 +250,12 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
             BookmarkManagingButton(
                 x = outerGui.roundedRight - 18 - guiTabWidth + 4,
                 y = outerGui.roundedTop - 2,
-                onClickAction = { buttonState ->
-                    when (buttonState) {
+                onPress = { button: Button ->
+                    button as BookmarkManagingButton
+                    when (button.buttonState) {
                         BookmarkManagingButton.ButtonState.ADD -> addBookmark().let { true }
                         BookmarkManagingButton.ButtonState.REMOVE -> removeBookmark(state.currentPage)
-                        BookmarkManagingButton.ButtonState.DISABLED -> false
+                        BookmarkManagingButton.ButtonState.DISABLED -> Unit
                     }
                 },
                 additionStateUpdater = {
@@ -258,54 +270,57 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
         updateButtonVisibility()
     }
 
-    override fun onGuiClosed() {
+    override fun removed() {
         LPItems.itemGuideBook.saveState(state)
         if (LogisticsPipes.isDEBUG()) {
             BookContents.clear()
         }
-        super.onGuiClosed()
+        super.removed()
     }
 
-    override fun onResize(mcIn: Minecraft, w: Int, h: Int) {
+    override fun resize(minecraft: Minecraft, newWidth: Int, newHeight: Int) {
         state.currentPage.progress = 0.0f
-        super.onResize(mcIn, w, h)
+        super.resize(minecraft, newWidth, newHeight)
     }
 
-    override fun drawScreen(mouseX: Int, mouseY: Int, partialTicks: Float) {
-        drawDefaultBackground()
-        buttonList.forEach { it.drawButton(mc, mouseX, mouseY, partialTicks) }
+    override fun render(mouseX: Int, mouseY: Int, partialTicks: Float) {
+        super.render(mouseX, mouseY, partialTicks)
         state.currentPage.updateScrollPosition(visibleArea, currentProgress)
         state.currentPage.draw(visibleArea, mouseX, mouseY, partialTicks)
         drawGui()
-        if (tabButtons.isNotEmpty()) tabButtons.forEach { it.drawButton(mc, mouseX, mouseY, partialTicks) }
+        if (tabButtons.isNotEmpty()) tabButtons.forEach { it.drawButton(minecraft!!, mouseX, mouseY, partialTicks) }
         drawTitle()
     }
 
-    override fun doesGuiPauseGame() = false
+    override fun isPauseScreen(): Boolean = false
 
-    override fun mouseClicked(mouseX: Int, mouseY: Int, mouseButton: Int) {
-        val allButtons = (buttonList + tabButtons).sortedBy { it.zLevel }.filter { it.visible && it.enabled }
-        for (button in allButtons) {
-            if (button.mousePressed(mc, mouseX, mouseY)) {
-                selectedButton = button
-                when (mouseButton) {
-                    0 -> {
-                        actionPerformed(button)
-                        return
-                    }
-                    1 -> {
-                        rightClick(button)
-                        return
+    override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        return if (!super.mouseClicked(mouseX, mouseY, button)) {
+            for (butt in buttons + tabButtons) {
+                if (butt.isMouseOver(mouseX, mouseY) && butt.mouseClicked(mouseX, mouseY, button)) {
+                    // FIXME: selectedButton = butt
+                    when (button) {
+                        0 -> {
+                            //actionPerformed(butt)
+                            return true
+                        }
+                        1 -> {
+                            //rightClick(butt)
+                            return true
+                        }
                     }
                 }
             }
-        }
-        if (visibleArea.contains(mouseX, mouseY)) {
-            state.currentPage.mouseClicked(mouseX, mouseY, visibleArea, actionListener)
-        }
+            if (visibleArea.contains(mouseX, mouseY)) {
+                state.currentPage.mouseClicked(mouseX, mouseY, visibleArea, actionListener)
+                return true
+            }
+            false
+        } else true
     }
 
-    override fun updateScreen() {
+    override fun tick() {
+        super.tick()
         val progressDiff = currentProgress - state.currentPage.progress
         val speedModifier = 0.5f
         if (progressDiff < 0.05f) {
@@ -315,41 +330,47 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
         }
     }
 
-    override fun handleMouseInput() {
-        super.handleMouseInput()
-        if (state.currentPage.getExtraHeight(visibleArea) > 0) {
-            val mouseDWheel = Mouse.getDWheel() / -120
-            if (mouseDWheel != 0) {
-                slider.changeProgress(mouseDWheel * lpFontRenderer.getFontHeight(1.0f))
-            }
-        }
-    }
-
-    override fun actionPerformed(button: GuiButton) {
-        when (button) {
-            home -> if (home.click(0)) {
-                button.playPressSound(mc.soundHandler)
-            }
-            addOrRemoveTabButton -> if (addOrRemoveTabButton.click(0)) {
-                button.playPressSound(mc.soundHandler)
-            }
-            is TabButton -> if (button.onLeftClick()) {
-                button.playPressSound(mc.soundHandler)
-            }
-        }
-        updateButtonVisibility()
-    }
-
-    private fun rightClick(button: GuiButton) {
-        when (button) {
-            is TabButton -> {
-                if (button.onRightClick(shiftClick = isShiftKeyDown(), ctrlClick = isCtrlKeyDown())) {
-                    button.playPressSound(mc.soundHandler)
+    override fun mouseScrolled(mouseX: Double, mouseY: Double, scrollDelta: Double): Boolean {
+        return if (!super.mouseScrolled(mouseX, mouseY, scrollDelta)) {
+            if (state.currentPage.getExtraHeight(visibleArea) > 0) {
+                val mouseDWheel = (scrollDelta / -120).toInt()
+                if (mouseDWheel != 0) {
+                    slider.changeProgress(mouseDWheel * lpFontRenderer.getFontHeight(1.0f))
+                    return true
                 }
             }
-        }
-        updateButtonVisibility()
+            false
+        } else true
     }
+
+    // FIXME
+//    override fun actionPerformed(button: GuiButton) {
+//        when (button) {
+//            home -> if (home.isMouseOver("…", "…")) {
+//                home.onPress()
+//                button.playPressSound(mc.soundHandler)
+//            }
+//            addOrRemoveTabButton -> if (addOrRemoveTabButton.click(0)) {
+//                button.playPressSound(mc.soundHandler)
+//            }
+//            is TabButton -> if (button.onLeftClick()) {
+//                button.playPressSound(mc.soundHandler)
+//            }
+//        }
+//        updateButtonVisibility()
+//    }
+
+    // FIXME
+//    private fun rightClick(button: GuiButton) {
+//        when (button) {
+//            is TabButton -> {
+//                if (button.onRightClick(shiftClick = isShiftKeyDown(), ctrlClick = isCtrlKeyDown())) {
+//                    button.playPressSound(mc.soundHandler)
+//                }
+//            }
+//        }
+//        updateButtonVisibility()
+//    }
 
     private fun addBookmark() = state.currentPage.takeIf { isTabAbsent(it) && tabButtons.size < maxTabs }?.also { state.bookmarks.add(it); tabButtons.add(createGuiTabButton(it)) }
 
@@ -391,10 +412,10 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
     }
 
     private fun drawGui() {
-        Minecraft.getMinecraft().renderEngine.bindTexture(GuideBookConstants.guiBookTexture)
+        minecraft!!.textureManager.bindTexture(GuideBookConstants.guiBookTexture)
         GlStateManager.enableBlend()
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
-        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f)
+        GlStateManager.color4f(1.0f, 1.0f, 1.0f, 1.0f)
         val tessellator = Tessellator.getInstance()
         val bufferBuilder = tessellator.buffer
         bufferBuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR)
@@ -629,7 +650,7 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
          * @param y1            bottom correspondent texture position.
          */
         private fun drawStretchingRectangle(x0: Float, y0: Float, x1: Float, y1: Float, z: Float, u0: Int, v0: Int, u1: Int, v1: Int, blend: Boolean, color: Int) {
-            Minecraft.getMinecraft().renderEngine.bindTexture(GuideBookConstants.guiBookTexture)
+            Minecraft.getInstance().textureManager.bindTexture(GuideBookConstants.guiBookTexture)
             // Four vertices of square following order: TopLeft, TopRight, BottomLeft, BottomRight
             if (blend) GlStateManager.enableBlend()
             if (blend) GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
@@ -712,8 +733,8 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
             val btnBackgroundUv = Rectangle(64, 32, 32, 32)
             val btnBorderUv = Rectangle(0, 64, 16, 16)
             val btnBorderWidth = 2
-            Minecraft.getMinecraft().renderEngine.bindTexture(GuideBookConstants.guiBookTexture)
-            GlStateManager.color(color.redF(), color.greenF(), color.blueF(), 1.0f)
+            Minecraft.getInstance().textureManager.bindTexture(GuideBookConstants.guiBookTexture)
+            GlStateManager.color4f(color.redF(), color.greenF(), color.blueF(), 1.0f)
             val tessellator = Tessellator.getInstance()
             val bufferBuilder = tessellator.buffer
             bufferBuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR)
@@ -836,7 +857,7 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
                 v1 = btnBorderUv.roundedBottom - btnBorderWidth + vOffset
             )
             tessellator.draw()
-            GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f)
+            GlStateManager.color4f(1.0f, 1.0f, 1.0f, 1.0f)
         }
 
         /**
@@ -867,7 +888,7 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
                     VerticalAlignment.TOP -> y
                     VerticalAlignment.BOTTOM -> y - outerArea.roundedHeight
                 })
-            val screen = Rectangle(Minecraft.getMinecraft().currentScreen!!.width, Minecraft.getMinecraft().currentScreen!!.height)
+            val screen = Rectangle(Minecraft.getInstance().currentScreen!!.width, Minecraft.getInstance().currentScreen!!.height)
             if (outerArea.x0 < 0) outerArea.translate(translateX = -outerArea.x0)
             if (outerArea.x1 > screen.roundedWidth) outerArea.translate(translateX = screen.roundedWidth - outerArea.x1)
             if (outerArea.y0 < 0) outerArea.translate(translateY = -outerArea.y0)
@@ -879,7 +900,7 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
             lpFontRenderer.zLevel += z
             lpFontRenderer.drawString(text, innerArea.x0 + horizontalPadding, innerArea.y0 + verticalPadding, defaultDrawableState.color, defaultDrawableState.format, 1.0f)
             lpFontRenderer.zLevel -= z
-            GlStateManager.enableAlpha()
+            GlStateManager.enableAlphaTest()
             val bufferBuilder = startBuffer()
             putTexturedRectangle(bufferBuilder, innerArea, innerAreaTexture, z)
             // Corners: TopLeft, TopRight, BottomLeft & BottomRight
@@ -893,14 +914,14 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
             putTexturedRectangle(bufferBuilder, outerArea.x0, innerArea.y0, innerArea.x0, innerArea.y1, z, outerAreaTexture.roundedLeft, innerAreaTexture.roundedTop, innerAreaTexture.roundedLeft, innerAreaTexture.roundedBottom)
             putTexturedRectangle(bufferBuilder, innerArea.x1, innerArea.y0, outerArea.x1, innerArea.y1, z, innerAreaTexture.roundedRight, innerAreaTexture.roundedTop, outerAreaTexture.roundedRight, innerAreaTexture.roundedBottom)
             drawBuffer()
-            GlStateManager.disableAlpha()
+            GlStateManager.disableAlphaTest()
             GlStateManager.popMatrix()
         }
 
         private fun startBuffer(): BufferBuilder {
-            Minecraft.getMinecraft().renderEngine.bindTexture(GuideBookConstants.guiBookTexture)
+            Minecraft.getInstance().textureManager.bindTexture(GuideBookConstants.guiBookTexture)
             // Four vertices of square following order: TopLeft, TopRight, BottomLeft, BottomRight
-            GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f)
+            GlStateManager.color4f(1.0f, 1.0f, 1.0f, 1.0f)
             val tessellator = Tessellator.getInstance()
             val bufferBuilder = tessellator.buffer
             bufferBuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR)
@@ -956,13 +977,13 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
         private fun drawLine(bufferAction: (BufferBuilder) -> Unit) {
             val tessellator = Tessellator.getInstance()
             val bufferBuilder = tessellator.buffer
-            GlStateManager.disableTexture2D()
+            GlStateManager.disableTexture()
             bufferBuilder.begin(7, DefaultVertexFormats.POSITION_COLOR)
 
             bufferAction(bufferBuilder)
 
             tessellator.draw()
-            GlStateManager.enableTexture2D()
+            GlStateManager.enableTexture()
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
             GlStateManager.disableBlend()
         }
@@ -986,8 +1007,8 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
                 .resetPos()
                 .translate(xOffset, -yOffset)
             GlStateManager.pushMatrix()
-            Minecraft.getMinecraft().textureManager.bindTexture(image)
-            GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f)
+            Minecraft.getInstance().textureManager.bindTexture(image)
+            GlStateManager.color4f(1.0f, 1.0f, 1.0f, 1.0f)
             val tessellator = Tessellator.getInstance()
             val bufferBuilder = tessellator.buffer
             bufferBuilder.begin(7, DefaultVertexFormats.POSITION_TEX)
@@ -1011,13 +1032,13 @@ class GuiGuideBook(private val state: ItemGuideBook.GuideBookState) : GuiScreen(
 
         fun drawRectangleOutline(rect: Rectangle, z: Float, color: Int) {
             GlStateManager.pushMatrix()
-            GlStateManager.disableAlpha()
+            GlStateManager.disableAlphaTest()
             GlStateManager.disableBlend()
             drawHorizontalLine(rect.x0 - 1, rect.x1, rect.y0 - 1, z, 1, color) // TOP
             drawHorizontalLine(rect.x0, rect.x1 + 1, rect.y1, z, 1, color) // BOTTOM
             drawVerticalLine(rect.x0 - 1, rect.y0, rect.y1 + 1, z, 1, color) // LEFT
             drawVerticalLine(rect.x1, rect.y0 - 1, rect.y1, z, 1, color) // RIGHT
-            GlStateManager.enableAlpha()
+            GlStateManager.enableAlphaTest()
             GlStateManager.enableBlend()
             GlStateManager.popMatrix()
         }

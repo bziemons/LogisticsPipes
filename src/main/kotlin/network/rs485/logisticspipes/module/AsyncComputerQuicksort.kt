@@ -47,10 +47,10 @@ import logisticspipes.network.abstractguis.ModuleCoordinatesGuiProvider
 import logisticspipes.network.abstractguis.ModuleInHandGuiProvider
 import logisticspipes.proxy.MainProxy
 import logisticspipes.utils.PlayerCollectionList
-import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NBTTagCompound
 import network.rs485.logisticspipes.property.Property
+import net.minecraft.nbt.CompoundNBT
 
 class AsyncComputerQuicksort : AsyncModule<Pair<Int, ItemStack>?, QuicksortAsyncResult?>(), Gui,
     IClientInformationProvider, IModuleWatchReciver {
@@ -122,14 +122,14 @@ class AsyncComputerQuicksort : AsyncModule<Pair<Int, ItemStack>?, QuicksortAsync
 
     override fun runSyncWork() = quicksort.runSyncWork()
 
-    override fun readFromNBT(nbttagcompound: NBTTagCompound) {
-        quicksort.readFromNBT(nbttagcompound)
-        timeout = nbttagcompound.getInteger("Timeout")
+    override fun readFromNBT(tag: CompoundNBT) {
+        quicksort.readFromNBT(tag)
+        timeout = tag.getInt("Timeout")
     }
 
-    override fun writeToNBT(nbttagcompound: NBTTagCompound) {
-        quicksort.writeToNBT(nbttagcompound)
-        nbttagcompound.setInteger("Timeout", timeout)
+    override fun writeToNBT(tag: CompoundNBT) {
+        quicksort.writeToNBT(tag)
+        tag.putInt("Timeout", timeout)
     }
 
     override fun recievePassive(): Boolean = false
@@ -142,13 +142,13 @@ class AsyncComputerQuicksort : AsyncModule<Pair<Int, ItemStack>?, QuicksortAsync
 
     override fun getClientInformation(): MutableList<String> = mutableListOf("Timeout: $timeout")
 
-    override fun startWatching(player: EntityPlayer?) {
+    override fun startWatching(player: PlayerEntity?) {
         localModeWatchers.add(player)
 //        MainProxy.sendPacketToPlayer(PacketHandler.getPacket(CCBasedQuickSortMode::class.java).setTimeOut(timeout).setModulePos(this), player)
 //        MainProxy.sendPacketToPlayer(PacketHandler.getPacket(CCBasedQuickSortSinkSize::class.java).setSinkSize(sinkSize).setModulePos(this), player)
     }
 
-    override fun stopWatching(player: EntityPlayer?) {
+    override fun stopWatching(player: PlayerEntity?) {
         localModeWatchers.remove(player)
     }
 

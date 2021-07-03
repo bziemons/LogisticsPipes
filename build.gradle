@@ -1,10 +1,8 @@
 buildscript {
     repositories {
-        mavenCentral()
+        maven { url = 'https://maven.removeco.de/' }
         jcenter()
-        maven {
-            url = "https://maven.removeco.de/"
-        }
+        mavenCentral()
     }
     dependencies {
         classpath group: 'network.rs485', name: 'ForgeGradle', version: forgegradle_version
@@ -24,12 +22,11 @@ apply plugin: 'net.minecraftforge.gradle'
 
 archivesBaseName = "logisticspipes"
 group = "network.rs485"
-version = "0.10.4"
-ext.vendor = "unknown"
-ext.target = "Forge $forge_version"
+version = "$mc_version-0.11.0"
+ext.vendor = 'unknown'
+ext.target = "Minecraft $mc_version Forge $forge_version"
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 
 def ENV = System.getenv()
 
@@ -69,25 +66,15 @@ sourceSets {
             srcDirs = ['src/api/java']
         }
     }
-    dummy {
-        java {
-            srcDirs = ['dummy/src/main/java']
-        }
-    }
     main {
-        compileClasspath += dummy.output
         compileClasspath += api.output
         runtimeClasspath += api.output
 
         java {
             srcDirs += 'common'
         }
-        resources {
-            srcDirs += 'resources'
-        }
     }
     test {
-        compileClasspath += dummy.output
         compileClasspath += api.output
         runtimeClasspath += api.output
     }
@@ -107,8 +94,8 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
 }
 
 minecraft {
-    mappings channel: 'snapshot', version: "$mappings_version"
-    accessTransformer = file("$rootDir/resources/META-INF/lp_at.cfg")
+    mappings channel: "$mappings_channel", version: "$mappings_version"
+    accessTransformer = file("$rootDir/src/main/resources/META-INF/lp_at.cfg")
 
     runs {
         client {
@@ -131,7 +118,7 @@ minecraft {
         }
 
         server {
-            workingDirectory project.file('run-server')
+            workingDirectory project.file('run')
 
             // Recommended logging data for a userdev environment
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
@@ -141,6 +128,27 @@ minecraft {
 
             // load LP core mod from classpath
             property 'fml.coreMods.load', 'logisticspipes.asm.LogisticsPipesCoreLoader'
+
+            mods {
+                logisticspipes {
+                    sources = [sourceSets.api, sourceSets.main]
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            // load LP core mod from classpath
+            property 'fml.coreMods.load', 'logisticspipes.asm.LogisticsPipesCoreLoader'
+
+            args '--mod', 'logisticspipes', '--all', '--output', file('src/generated/resources/')
 
             mods {
                 logisticspipes {
@@ -247,21 +255,58 @@ processResources {
 }
 
 repositories {
+    maven { url = 'https://maven.removeco.de/' }
     mavenCentral()
     jcenter()
     maven {
         name = 'JitPack.io'
         url = 'https://jitpack.io'
     }
-    maven {
-        url = "https://maven.removeco.de/"
-    }
+//    maven {
+//        url "http://maven.shadowfacts.net/"
+//    }
+//    maven {
+//        url = 'https://squiddev.cc/maven/'
+//    }
+//    maven {
+//        url = "http://maven.cil.li/"
+//    }
+//    maven {
+//        name = "buildcraft"
+//        url = "https://mod-buildcraft.com/maven/"
+//    }
+//    maven { // JEI Bees & Thaumcraft
+//        name = "CurseForge"
+//        url = "https://minecraft.curseforge.com/api/maven/"
+//    }
+//    maven {
+//        url "http://maven.amadornes.com/"
+//    }
+//    maven {
+//        name = "storagedrawers"
+//        url = "https://dl.bintray.com/jaquadro/dev/"
+//    }
+//    maven {
+//        name = "JEI"
+//        url = "https://dvs1.progwml6.com/files/maven/"
+//    }
+//    maven {
+//        name = 'CC Tweaked'
+//        url = 'https://squiddev.cc/maven/'
+//    }
+//    maven {
+//        name = 'CodeChickenLib'
+//        url = 'https://maven.covers1624.net/'
+//    }
+//    maven {
+//        name = "k-4u fallback"
+//        url = "https://modmaven.k-4u.nl"
+//    }
 }
 
 dependencies {
-    minecraft group: 'net.minecraftforge', name: 'forge', version: forge_version
-    apiImplementation group: 'net.minecraftforge', name: 'forge', version: forge_version
-    dummyImplementation group: 'net.minecraftforge', name: 'forge', version: forge_version
+    minecraft group: 'net.minecraftforge', name: 'forge', version: "$mc_version-$forge_version"
+    apiImplementation group: 'net.minecraftforge', name: 'forge', version: "$mc_version-$forge_version"
 
     compileOnly group: 'org.projectlombok', name: 'lombok', version: lombok_version
     annotationProcessor group: 'org.projectlombok', name: 'lombok', version: lombok_version
@@ -273,25 +318,12 @@ dependencies {
     implementation group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-jdk8', version: kcoroutines_version
     implementation group: 'org.jetbrains.kotlinx', name: 'kotlinx-serialization-json', version: kserialization_version
     implementation group: 'com.charleskorn.kaml', name: 'kaml', version: kaml_version
-    implementation group: 'com.github.RS485', name: 'CodeChickenLib', version: '5901b4c6f4af70e6ef2dbe194bf7e0e097bb375c', classifier: 'deobf'
 
-    compileOnly group: 'mcjty.theoneprobe', name: 'TheOneProbe-1.12', version: '1.12-1.4.28-17', classifier: 'api'
-    compileOnly group: 'mezz.jei', name: 'jei_1.12.2', version: '4.15.0.293'
-    compileOnly group: 'MCMultiPart2', name: 'MCMultiPart', version: '2.5.3', classifier: 'deobf'
-    compileOnly group: 'com.mod-buildcraft', name: 'buildcraft-all', version: '7.99.24.6', transitive: false
-    compileOnly group: 'net.industrial-craft', name: 'industrialcraft-2', version: '2.8.170-ex112', classifier: 'api'
-    compileOnly group: 'codechicken', name: 'NotEnoughItems', version: '1.12.2-2.4.3.245', classifier: 'deobf', transitive: false
-    compileOnly group: 'codechicken', name: 'EnderStorage', version: '1.12.2-2.4.6.137', classifier: 'deobf', transitive: false
-    compileOnly group: 'li.cil.oc', name: 'OpenComputers', version: 'MC1.12.2-1.7.5.205', classifier: 'api'
-    compileOnly files('lib/appliedenergistics2-rv6-stable-7-api.jar')
-    compileOnly group: 'cofh', name: 'CoFHCore', version: '1.12.2-4.6.3.27', classifier: 'deobf', transitive: false
-    compileOnly group: 'cofh', name: 'RedstoneFlux', version: '1.12-2.1.0.7', classifier: 'deobf', transitive: false
-    compileOnly group: 'cofh', name: 'CoFHWorld', version: '1.12.2-1.2.0.5', classifier: 'deobf', transitive: false
-    compileOnly group: 'cofh', name: 'ThermalDynamics', version: '1.12.2-2.5.5.21', classifier: 'deobf', transitive: false
-    compileOnly group: 'cofh', name: 'ThermalFoundation', version: '1.12.2-2.6.3.27', classifier: 'deobf', transitive: false
-    compileOnly group: 'cofh', name: 'ThermalExpansion', version: '1.12.2-5.5.4.43', classifier: 'deobf', transitive: false
-    compileOnly group: 'org.squiddev', name: 'cc-tweaked-1.12.2', version: '1.89.2', transitive: false
-    compileOnly group: 'com.jaquadro.minecraft.storagedrawers', name: 'StorageDrawers', version: '1.12.2-5.4.2', transitive: false
+    implementation fg.deobf(group: 'codechicken', name: 'CodeChickenLib', version: '1.14.4-3.2.8.374', classifier: 'universal', transitive: false)
+    compileOnly fg.deobf(group: 'mezz.jei', name: "jei-${mc_version}", version: "6.0.0.29", transitive: false)
+//    compileOnly group: 'codechicken', name: 'NotEnoughItems', version: '1.12.2-2.4.3.245', classifier: 'deobf', transitive: false
+//    compileOnly group: 'codechicken', name: 'EnderStorage', version: '1.12.2-2.4.6.137', classifier: 'deobf', transitive: false
+    compileOnly fg.deobf(group: 'org.squiddev', name: "cc-tweaked-$mc_version", version: '1.89.2', transitive: false)
 
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
@@ -306,7 +338,7 @@ import java.nio.file.Files
 final nonMinecraftConfigurations = configurations.findAll { conf -> conf != configurations.minecraft }
 if (!nonMinecraftConfigurations.empty) {
     final fgextension = project.getExtensions().findByName("minecraft")
-    final mcrepo = new MinecraftUserRepo(project, 'net.minecraftforge', 'forge', "$forge_version", fgextension.getAccessTransformers(), fgextension.getMappings())
+    final mcrepo = new MinecraftUserRepo(project, 'net.minecraftforge', 'forge', "$mc_version-$forge_version", fgextension.getAccessTransformers(), fgextension.getMappings())
     nonMinecraftConfigurations.each {
         it.resolutionStrategy.dependencySubstitution {
             substitute module('net.minecraftforge:forge') with module(mcrepo.getDependencyString())
@@ -326,16 +358,6 @@ tasks.withType(Test) {
     useJUnitPlatform()
     testLogging {
         events("passed", "skipped", "failed")
-    }
-}
-
-task deobfJar(type: Jar) {
-    from sourceSets.main.output
-    from sourceSets.api.output
-    archiveClassifier.set('deobf')
-
-    manifest = project.manifest {
-        from sharedManifest
     }
 }
 
@@ -364,7 +386,6 @@ curseforge {
 artifacts {
     archives apiJar
     archives shadowJar
-    archives deobfJar
     archives sourceJar
 }
 
@@ -380,7 +401,6 @@ signing {
     useGpgCmd()
     sign apiJar
     sign shadowJar
-    sign deobfJar
     sign sourceJar
 }
 
@@ -539,3 +559,25 @@ task integrationTests(dependsOn: ['prepareRunServerTest'], type: Exec) {
         }
     }
 }
+
+// Example configuration to allow publishing using the maven-publish task
+// we define a custom artifact that is sourced from the reobfJar output task
+// and then declare that to be published
+// Note you'll need to add a repository here
+//def reobfFile = file("$buildDir/reobfJar/output.jar")
+//def reobfArtifact = artifacts.add('default', reobfFile) {
+//    type 'jar'
+//    builtBy 'reobfJar'
+//}
+//publishing {
+//    publications {
+//        mavenJava(MavenPublication) {
+//            artifact reobfArtifact
+//        }
+//    }
+//    repositories {
+//        maven {
+//            url "file:///${project.projectDir}/mcmodsrepo"
+//        }
+//    }
+//}

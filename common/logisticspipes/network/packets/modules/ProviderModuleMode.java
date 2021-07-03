@@ -1,13 +1,13 @@
 package logisticspipes.network.packets.modules;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.modules.ModuleProvider;
 import logisticspipes.network.abstractpackets.ModernPacket;
-import logisticspipes.network.abstractpackets.ModuleCoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.ModuleCoordinatesPacket;
 import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.inventory.ProviderMode;
 import network.rs485.logisticspipes.util.LPDataInput;
@@ -30,7 +30,7 @@ public class ProviderModuleMode extends ModuleCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		final ModuleProvider module = this.getLogisticsModule(player, ModuleProvider.class);
 		if (module == null) {
 			return;

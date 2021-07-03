@@ -58,9 +58,9 @@ import javax.annotation.Nullable;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
 
@@ -71,7 +71,7 @@ import static io.netty.buffer.Unpooled.wrappedBuffer;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.network.IReadListObject;
 import logisticspipes.network.IWriteListObject;
-import logisticspipes.routing.channels.ChannelInformation;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 import logisticspipes.utils.PlayerIdentifier;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -237,7 +237,7 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 	}
 
 	@Override
-	public void writeFacing(@Nullable EnumFacing direction) {
+	public void writeFacing(@Nullable Direction direction) {
 		if (direction == null) {
 			writeByte(Byte.MIN_VALUE);
 		} else {
@@ -276,7 +276,7 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 	}
 
 	@Override
-	public void writeNBTTagCompound(@Nullable NBTTagCompound tag) {
+	public void writeCompoundNBT(@Nullable CompoundNBT tag) {
 		if (tag == null) {
 			writeByte(0);
 		} else {
@@ -339,8 +339,8 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 		} else {
 			writeInt(Item.getIdFromItem(itemstack.getItem()));
 			writeInt(itemstack.getCount());
-			writeInt(itemstack.getItemDamage());
-			writeNBTTagCompound(itemstack.getTagCompound());
+			writeInt(itemstack.getDamage());
+			writeCompoundNBT(itemstack.getTag());
 		}
 	}
 
@@ -351,7 +351,7 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 		} else {
 			writeInt(Item.getIdFromItem(item.item));
 			writeInt(item.itemDamage);
-			writeNBTTagCompound(item.tag);
+			writeCompoundNBT(item.tag);
 		}
 	}
 
@@ -477,15 +477,15 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 
 	@Nullable
 	@Override
-	public EnumFacing readFacing() {
+	public Direction readFacing() {
 		byte b = localBuffer.readByte();
 
 		if (b == Byte.MIN_VALUE) {
 			return null;
-		} else if (b < 0 || b >= EnumFacing.VALUES.length) {
-			throw new IndexOutOfBoundsException("Invalid value for EnumFacing");
+		} else if (b < 0 || b >= Direction.values().length) {
+			throw new IndexOutOfBoundsException("Invalid value for Direction");
 		}
-		return EnumFacing.VALUES[b];
+		return Direction.values()[b];
 	}
 
 	@Nullable
@@ -526,7 +526,7 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 
 	@Nullable
 	@Override
-	public NBTTagCompound readNBTTagCompound() {
+	public CompoundNBT readCompoundNBT() {
 		boolean isEmpty = (readByte() == 0);
 		if (isEmpty) {
 			return null;
@@ -605,7 +605,7 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 		}
 
 		int damage = readInt();
-		NBTTagCompound tag = readNBTTagCompound();
+		CompoundNBT tag = readCompoundNBT();
 		return ItemIdentifier.get(Item.getItemById(itemId), damage, tag);
 	}
 
@@ -619,7 +619,7 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 
 		ItemIdentifier item = readItemIdentifier();
 		if (item == null) {
-			LogisticsPipes.log.error("Read null ItemIdentifier in readItemIdentifierStack");
+			LogisticsPipes.getLOGGER().error("Read null ItemIdentifier in readItemIdentifierStack");
 			return null;
 		}
 		return new ItemIdentifierStack(item, stacksize);
@@ -635,9 +635,9 @@ public final class LPDataIOWrapper implements LPDataInput, LPDataOutput {
 
 		int stackSize = readInt();
 		int damage = readInt();
-		ItemStack stack = new ItemStack(Item.getItemById(itemId), stackSize, damage);
-		// may be null, see code
-		stack.setTagCompound(readNBTTagCompound());
+		ItemStack stack = new ItemStack(Item.getItemById(itemId), stackSize);
+		stack.setDamage(damage);
+		stack.setTag(readCompoundNBT());
 		return stack;
 	}
 

@@ -41,7 +41,7 @@ public abstract class AbstractWrapper {
 		state = WrapperState.Exception;
 		reason = e;
 		String message = "Disabled " + getName() + getTypeName() + (modId != null ? (" for Mod: " + modId) : "") + ". Cause was an Exception";
-		LogisticsPipes.log.fatal(message);
+		LogisticsPipes.getLOGGER().fatal(message);
 		MainProxy.proxy.sendBroadCast(ChatColor.RED + message);
 	}
 

@@ -1,6 +1,7 @@
 package logisticspipes.network;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -8,15 +9,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.inventory.Container;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.inventory.ContainerScreen;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.inventory.container.Container;
 
-import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.network.abstractguis.GuiProvider;
@@ -24,7 +24,6 @@ import logisticspipes.network.abstractguis.PopupGuiProvider;
 import logisticspipes.network.exception.TargetNotFoundException;
 import logisticspipes.network.packets.gui.OpenGUIPacket;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.utils.StaticResolverUtil;
 import logisticspipes.utils.gui.LogisticsBaseGuiScreen;
 import logisticspipes.utils.gui.SubGuiScreen;
 import network.rs485.logisticspipes.util.LPDataIOWrapper;
@@ -42,7 +41,8 @@ public class NewGuiHandler {
 	}
 
 	public static void initialize() {
-		Set<Class<? extends GuiProvider>> classes = StaticResolverUtil.findClassesByType(GuiProvider.class);
+		// FIXME: cannot find GUIs with static resolver anymore
+		Set<Class<? extends GuiProvider>> classes = Collections.emptySet();
 
 		loadGuiProviders(classes);
 
@@ -72,11 +72,11 @@ public class NewGuiHandler {
 		}
 	}
 
-	public static void openGui(GuiProvider guiProvider, EntityPlayer oPlayer) {
-		if (!(oPlayer instanceof EntityPlayerMP)) {
+	public static void openGui(GuiProvider guiProvider, PlayerEntity oPlayer) {
+		if (!(oPlayer instanceof ServerPlayerEntity)) {
 			throw new UnsupportedOperationException("Gui can only be opened on the server side");
 		}
-		EntityPlayerMP player = (EntityPlayerMP) oPlayer;
+		ServerPlayerEntity player = (ServerPlayerEntity) oPlayer;
 		Container container = guiProvider.getContainer(player);
 		if (container == null) {
 			if (guiProvider instanceof PopupGuiProvider) {
@@ -99,28 +99,29 @@ public class NewGuiHandler {
 		MainProxy.sendPacketToPlayer(packet, player);
 
 		player.openContainer = container;
-		player.openContainer.windowId = windowId;
+		// FIXME: windowId cannot be reassigned on Container
+		//player.openContainer.windowId = windowId;
 		player.openContainer.addListener(player);
 		net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.PlayerContainerEvent.Open(player, player.openContainer));
 	}
 
-	@SideOnly(Side.CLIENT)
-	public static void openGui(OpenGUIPacket packet, EntityPlayer player) {
+	@OnlyIn(Dist.CLIENT)
+	public static void openGui(OpenGUIPacket packet, PlayerEntity player) {
 		int guiID = packet.getGuiID();
 		GuiProvider provider = NewGuiHandler.guilist.get(guiID).template();
 		LPDataIOWrapper.provideData(packet.getGuiData(), provider::readData);
 
 		if (provider instanceof PopupGuiProvider && packet.getWindowID() == -2) {
-			if (FMLClientHandler.instance().getClient().currentScreen instanceof LogisticsBaseGuiScreen) {
-				LogisticsBaseGuiScreen baseGUI = (LogisticsBaseGuiScreen) FMLClientHandler.instance().getClient().currentScreen;
+			if (Minecraft.getInstance().currentScreen instanceof LogisticsBaseGuiScreen) {
+				LogisticsBaseGuiScreen<?> baseGUI = (LogisticsBaseGuiScreen<?>) Minecraft.getInstance().currentScreen;
 				SubGuiScreen newSub;
 				try {
 					newSub = (SubGuiScreen) provider.getClientGui(player);
 				} catch (TargetNotFoundException e) {
 					throw e;
 				} catch (Exception e) {
-					LogisticsPipes.log.error(packet.getClass().getName());
-					LogisticsPipes.log.error(packet.toString());
+					LogisticsPipes.getLOGGER().error(packet.getClass().getName());
+					LogisticsPipes.getLOGGER().error(packet.toString());
 					throw new RuntimeException(e);
 				}
 				if (newSub != null) {
@@ -136,18 +137,19 @@ public class NewGuiHandler {
 				}
 			}
 		} else {
-			GuiContainer screen;
+			ContainerScreen<?> screen;
 			try {
-				screen = (GuiContainer) provider.getClientGui(player);
+				screen = (ContainerScreen<?>) provider.getClientGui(player);
 			} catch (TargetNotFoundException e) {
 				throw e;
 			} catch (Exception e) {
-				LogisticsPipes.log.error(packet.getClass().getName());
-				LogisticsPipes.log.error(packet.toString());
+				LogisticsPipes.getLOGGER().error(packet.getClass().getName());
+				LogisticsPipes.getLOGGER().error(packet.toString());
 				throw new RuntimeException(e);
 			}
-			screen.inventorySlots.windowId = packet.getWindowID();
-			FMLCommonHandler.instance().showGuiScreen(screen);
+			// FIXME: windowId cannot be reassigned
+//			screen.getContainer().windowId = packet.getWindowID();
+			Minecraft.getInstance().displayGuiScreen(screen);
 		}
 	}
 }

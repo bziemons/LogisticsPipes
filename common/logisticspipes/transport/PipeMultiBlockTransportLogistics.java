@@ -3,7 +3,7 @@ package logisticspipes.transport;
 import java.util.List;
 
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.world.Explosion;
 
 import logisticspipes.pipes.basic.CoreMultiBlockPipe;
@@ -23,7 +23,7 @@ public class PipeMultiBlockTransportLogistics extends PipeTransportLogistics {
 	}
 
 	@Override
-	public boolean canPipeConnect(TileEntity tile, EnumFacing side) {
+	public boolean canPipeConnect(TileEntity tile, Direction side) {
 		if (tile instanceof LogisticsTileGenericPipe && ((LogisticsTileGenericPipe) tile).pipe != null && ((LogisticsTileGenericPipe) tile).pipe.isHSTube()) {
 			return true;
 		}
@@ -95,8 +95,8 @@ public class PipeMultiBlockTransportLogistics extends PipeTransportLogistics {
 	}
 
 	@Override
-	protected void handleTileReachedServer(LPTravelingItemServer arrivingItem, TileEntity tile, EnumFacing dir) {
-		markChunkModified(tile);
+	protected void handleTileReachedServer(LPTravelingItemServer arrivingItem, TileEntity tile, Direction dir) {
+		tile.markDirty();
 		if (tile instanceof LogisticsTileGenericPipe && ((LogisticsTileGenericPipe) tile).pipe instanceof CoreMultiBlockPipe) {
 			passToNextPipe(arrivingItem, tile);
 			return;
@@ -115,7 +115,7 @@ public class PipeMultiBlockTransportLogistics extends PipeTransportLogistics {
 	}
 
 	@Override
-	protected void handleTileReachedClient(LPTravelingItemClient arrivingItem, TileEntity tile, EnumFacing dir) {
+	protected void handleTileReachedClient(LPTravelingItemClient arrivingItem, TileEntity tile, Direction dir) {
 		if (tile instanceof LogisticsTileGenericPipe && ((LogisticsTileGenericPipe) tile).pipe instanceof CoreMultiBlockPipe) {
 			passToNextPipe(arrivingItem, tile);
 			return;
@@ -139,7 +139,7 @@ public class PipeMultiBlockTransportLogistics extends PipeTransportLogistics {
 	}
 
 	@Override
-	public CoreUnroutedPipe getNextPipe(EnumFacing output) {
+	public CoreUnroutedPipe getNextPipe(Direction output) {
 		TileEntity tile = null;
 		if (getMultiPipe() != null) {
 			tile = getMultiPipe().getConnectedEndTile(output);

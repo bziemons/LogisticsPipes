@@ -42,7 +42,7 @@ import logisticspipes.interfaces.ITankUtil
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe
 import logisticspipes.proxy.SimpleServiceLocator
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.EnumFacing
+import net.minecraft.util.Direction
 import java.util.*
 import javax.annotation.Nonnull
 import javax.annotation.Nullable
@@ -69,7 +69,7 @@ fun <T : TileEntity, C : T> NeighborTileEntity<T>.optionalIs(clazz: Class<C>): O
 
 open class LPNeighborTileEntity<T : TileEntity>(
     tileEntity: T,
-    direction: EnumFacing,
+    direction: Direction,
 ) : NeighborTileEntity<T>(tileEntity, direction) {
 
     override fun isLogisticsPipe(): Boolean = tileEntity is LogisticsTileGenericPipe

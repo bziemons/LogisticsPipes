@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.world.World;
 
 import logisticspipes.interfaces.routing.IFilter;
@@ -32,7 +32,7 @@ public interface IPipeInformationProvider {
 
 	CoreRoutedPipe getRoutingPipe();
 
-	TileEntity getNextConnectedTile(EnumFacing direction);
+	TileEntity getNextConnectedTile(Direction direction);
 
 	boolean isFirewallPipe();
 
@@ -46,9 +46,9 @@ public interface IPipeInformationProvider {
 
 	boolean isOnewayPipe();
 
-	boolean isOutputClosed(EnumFacing direction);
+	boolean isOutputClosed(Direction direction);
 
-	boolean canConnect(TileEntity to, EnumFacing direction, boolean flag);
+	boolean canConnect(TileEntity to, Direction direction, boolean flag);
 
 	double getDistance();
 
@@ -60,11 +60,11 @@ public interface IPipeInformationProvider {
 
 	boolean isPowerPipe();
 
-	double getDistanceTo(int destinationint, EnumFacing ignore, ItemIdentifier ident, boolean isActive, double travled, double max, List<DoubleCoordinates> visited);
+	double getDistanceTo(int destinationint, Direction ignore, ItemIdentifier ident, boolean isActive, double travled, double max, List<DoubleCoordinates> visited);
 
 	boolean acceptItem(LPTravelingItem item, TileEntity from);
 
-	void refreshTileCacheOnSide(EnumFacing side);
+	void refreshTileCacheOnSide(Direction side);
 
 	boolean isMultiBlock();
 

@@ -42,7 +42,7 @@ public class SmallGuiButton extends GuiButton {
 			return;
 		}
 		FontRenderer fontrenderer = minecraft.fontRenderer;
-		minecraft.renderEngine.bindTexture(GuiButton.BUTTON_TEXTURES);
+		minecraft.textureManager.bindTexture(GuiButton.BUTTON_TEXTURES);
 		// GL11.glBindTexture(3553 /*GL_TEXTURE_2D*/, minecraft.renderEngine.getTexture("/gui/gui.png"));
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 		boolean flag = mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;

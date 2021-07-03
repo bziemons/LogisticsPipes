@@ -3,6 +3,10 @@ package logisticspipes.items;
 import javax.annotation.Nonnull;
 
 import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
+
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import logisticspipes.interfaces.IItemAdvancedExistance;
 
@@ -21,7 +25,7 @@ public class LogisticsBrokenItem extends LogisticsItem implements IItemAdvancedE
 	}
 
 //	@Override
-//	@SideOnly(Side.CLIENT)
+//	@OnlyIn(Dist.CLIENT)
 //	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
 //		tooltip.add(" - " + TextUtil.translate(LogisticsBrokenItem.PREFIX + "1"));
 //		tooltip.add(" - " + TextUtil.translate(LogisticsBrokenItem.PREFIX + "2"));

@@ -151,7 +151,7 @@ public class GuiItemSink extends ModuleBaseGui {
 		if (fuzzyPanelSelection != -1) {
 			int posX = 8 + fuzzyPanelSelection * 18;
 			int posY = 18 + 16;
-			GuiGraphics.drawGuiBackGround(mc, posX, posY, posX + 70, posY + 27, zLevel, true, true, true, true, true);
+			GuiGraphics.drawGuiBackGround(mc, posX, posY, posX + 70, posY + 27, blitOffset, true, true, true, true, true);
 
 			mc.fontRenderer.drawString(TextUtil.translate(GuiItemSink.PREFIX + "IgnoreData"),
 					posX + 4, posY + 4, !isIgnoreData(fuzzyPanelSelection) ? 0x404040 : 0xFF4040);
@@ -216,7 +216,7 @@ public class GuiItemSink extends ModuleBaseGui {
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int x, int y) {
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-		mc.renderEngine.bindTexture(GuiItemSink.TEXTURE);
+		mc.textureManager.bindTexture(GuiItemSink.TEXTURE);
 		int j = guiLeft;
 		int k = guiTop;
 		drawTexturedModalRect(j, k, 0, 0, xSize, ySize);

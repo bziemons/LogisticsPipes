@@ -1,12 +1,12 @@
 package logisticspipes.network.packets.block;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Direction;
 
 import lombok.Getter;
 import lombok.Setter;
 
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.utils.StaticResolve;
@@ -18,7 +18,7 @@ public class PowerPacketLaser extends CoordinatesPacket {
 
 	@Getter
 	@Setter
-	private EnumFacing dir;
+	private Direction dir;
 	@Getter
 	@Setter
 	private int color;
@@ -51,7 +51,7 @@ public class PowerPacketLaser extends CoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsTileGenericPipe tile = this.getPipe(player.getEntityWorld());
 		if (remove) {
 			tile.removeLaser(dir, getColor(), isRenderBall());

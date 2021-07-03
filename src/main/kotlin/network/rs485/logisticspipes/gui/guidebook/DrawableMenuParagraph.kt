@@ -37,16 +37,16 @@
 
 package network.rs485.logisticspipes.gui.guidebook
 
+import com.mojang.blaze3d.platform.GlStateManager
 import logisticspipes.LPItems
 import logisticspipes.utils.MinecraftColor
 import logisticspipes.utils.gui.GuiGraphics
 import logisticspipes.utils.item.ItemStackRenderer
 import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.client.renderer.RenderHelper
-import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.util.ResourceLocation
+import net.minecraft.util.registry.Registry
 import network.rs485.logisticspipes.util.math.Rectangle
 import network.rs485.markdown.TextFormat
 import java.util.*
@@ -66,8 +66,8 @@ class DrawableMenuParagraph<T : Drawable>(private val menuTitle: List<DrawableWo
         drawChildren(mouseX, mouseY, delta, visibleArea)
     }
 
-    override fun mouseClicked(mouseX: Int, mouseY: Int, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) =
-        menuGroups.firstOrNull { it.absoluteBody.contains(mouseX, mouseY) }?.mouseClicked(mouseX, mouseY, visibleArea, guideActionListener) ?: Unit
+    override fun mouseClicked(mouseX: Double, mouseY: Double, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) =
+        menuGroups.firstOrNull { it.absoluteBody.containsd(mouseX, mouseY) }?.mouseClicked(mouseX, mouseY, visibleArea, guideActionListener) ?: Unit
 
     override fun setChildrenPos(): Int {
         var currentY = 1
@@ -87,8 +87,8 @@ class DrawableMenuGroup<T : Drawable>(private val groupTitle: List<DrawableWord>
         drawChildren(mouseX, mouseY, delta, visibleArea)
     }
 
-    override fun mouseClicked(mouseX: Int, mouseY: Int, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) =
-        groupTiles.firstOrNull { it.absoluteBody.contains(mouseX, mouseY) }?.mouseClicked(mouseX, mouseY, visibleArea, guideActionListener) ?: Unit
+    override fun mouseClicked(mouseX: Double, mouseY: Double, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) =
+        groupTiles.firstOrNull { it.absoluteBody.containsd(mouseX, mouseY) }?.mouseClicked(mouseX, mouseY, visibleArea, guideActionListener) ?: Unit
 
     override fun setChildrenPos(): Int {
         var currentY = 0
@@ -127,18 +127,19 @@ class DrawableMenuTile(private val linkedPage: String, private val pageName: Str
         iconBody.setPos((tileSize - iconBody.width) / 2, (tileSize - iconBody.height) / 2)
     }
 
-    override fun mouseClicked(mouseX: Int, mouseY: Int, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) =
+    override fun mouseClicked(mouseX: Double, mouseY: Double, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) =
         guideActionListener.onMenuButtonClick(linkedPage)
 
     override fun draw(mouseX: Int, mouseY: Int, delta: Float, visibleArea: Rectangle) {
-        val hovered = isHovering(mouseX, mouseY, visibleArea)
-        GuiGuideBook.drawRectangleTile(absoluteBody, visibleArea, GuideBookConstants.Z_TEXT - 1.0f, true, hovered, MinecraftColor.WHITE.colorCode)
+        // FIXME: weird conversion to double?
+        val isHovered = isHovering(mouseX.toDouble(), mouseY.toDouble(), visibleArea)
+        GuiGuideBook.drawRectangleTile(absoluteBody, visibleArea, GuideBookConstants.Z_TEXT - 1.0f, true, isHovered, MinecraftColor.WHITE.colorCode)
         val itemRect = Rectangle.fromRectangle(iconBody.translated(absoluteBody))
         if (visibleArea.intersects(iconBody.translated(absoluteBody))) {
             val item = Item.REGISTRY.getObject(ResourceLocation(icon)) ?: LPItems.blankModule
             itemStackRenderer.renderItemInGui(itemRect.left, itemRect.top, item, GuideBookConstants.Z_TEXT, iconScale)
         }
-        if (hovered) {
+        if (isHovered) {
             GuiGuideBook.drawLinkIndicator(mouseX, mouseY)
             GuiGuideBook.drawBoxedString(pageName, mid(), minOf(bottom, visibleArea.y1).toInt(), GuideBookConstants.Z_TOOLTIP, GuiGuideBook.HorizontalAlignment.CENTER, GuiGuideBook.VerticalAlignment.TOP)
         }
@@ -169,15 +170,18 @@ class DrawableMenuListEntry(private val linkedPage: String, private val pageName
         itemRect.setSize(iconSize, iconSize)
     }
 
-    override fun mouseClicked(mouseX: Int, mouseY: Int, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) =
+    override fun mouseClicked(mouseX: Double, mouseY: Double, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) =
         guideActionListener.onMenuButtonClick(linkedPage)
 
+    private val itemRegistryId: Int = Registry.REGISTRY.getId(Registry.REGISTRY.getOrDefault(ResourceLocation("item")))
+
     override fun draw(mouseX: Int, mouseY: Int, delta: Float, visibleArea: Rectangle) {
-        val hovered = isHovering(mouseX, mouseY, visibleArea)
-        GuiGuideBook.drawRectangleTile(absoluteBody, visibleArea, GuideBookConstants.Z_TEXT - 1.0f, true, hovered, MinecraftColor.WHITE.colorCode)
+        // FIXME: weird conversion to double?
+        val isHovered = isHovering(mouseX.toDouble(), mouseY.toDouble(), visibleArea)
+        GuiGuideBook.drawRectangleTile(absoluteBody, visibleArea, GuideBookConstants.Z_TEXT - 1.0f, true, isHovered, MinecraftColor.WHITE.colorCode)
         itemRect.setPos(left + itemOffset, top + itemOffset)
         if (itemRect.intersects(visibleArea)) {
-            val textColor: Int = if (!hovered) MinecraftColor.WHITE.colorCode else 0xffffffa0.toInt()
+            val textColor: Int = if (!isHovered) MinecraftColor.WHITE.colorCode else 0xffffffa0.toInt()
             val textVerticalOffset = (height - GuiGuideBook.lpFontRenderer.getFontHeight(1.0f)) / 2
             GuiGuideBook.lpFontRenderer.drawString(
                 string = pageName,
@@ -190,7 +194,7 @@ class DrawableMenuListEntry(private val linkedPage: String, private val pageName
             val item = Item.REGISTRY.getObject(ResourceLocation(icon)) ?: LPItems.blankModule
             DrawableMenuTile.itemStackRenderer.renderItemInGui(itemRect.left, itemRect.top, item, GuideBookConstants.Z_TEXT, iconScale)
         }
-        if (hovered) {
+        if (isHovered) {
             GuiGuideBook.drawLinkIndicator(mouseX, mouseY)
         }
     }

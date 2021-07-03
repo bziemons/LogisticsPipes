@@ -5,8 +5,8 @@ import java.util.Collection;
 import java.util.List;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.text.StringTextComponent;
 
 import logisticspipes.request.resources.IResource;
 import logisticspipes.request.resources.IResource.ColorCode;
@@ -19,9 +19,9 @@ public class GuiRequestPopup extends SubGuiScreen {
 
 	private String[] text;
 	private int mWidth = 0;
-	private EntityPlayer player;
+	private PlayerEntity player;
 
-	public GuiRequestPopup(EntityPlayer player, Object... message) {
+	public GuiRequestPopup(PlayerEntity player, Object... message) {
 		super(200, (message.length * 10) + 40, 0, 0);
 		List<String> textArray = new ArrayList<>();
 		for (Object o : message) {
@@ -66,7 +66,7 @@ public class GuiRequestPopup extends SubGuiScreen {
 			xSize = mWidth = Math.max(Math.min(lWidth + 20, 400), 120);
 			super.initGui();
 		}
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		for (int i = 0; i < text.length; i++) {
 			if (text[i] == null) {
 				continue;
@@ -85,7 +85,7 @@ public class GuiRequestPopup extends SubGuiScreen {
 				break;
 			case 1:
 				for (String msg : text) {
-					player.sendMessage(new TextComponentString(msg));
+					player.sendMessage(new StringTextComponent(msg));
 				}
 				buttonList.get(1).enabled = false;
 				break;

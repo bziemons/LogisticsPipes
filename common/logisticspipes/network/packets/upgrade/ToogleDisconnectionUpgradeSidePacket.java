@@ -2,10 +2,10 @@ package logisticspipes.network.packets.upgrade;
 
 import java.util.Objects;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -23,27 +23,27 @@ public class ToogleDisconnectionUpgradeSidePacket extends SlotPacket {
 
 	@Getter
 	@Setter
-	private EnumFacing side;
+	private Direction side;
 
 	public ToogleDisconnectionUpgradeSidePacket(int id) {
 		super(id);
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		UpgradeSlot slot = getSlot(player, UpgradeSlot.class);
 		ItemStack stack = slot.getStack();
 		if (stack.isEmpty()) return;
 
-		if (!stack.hasTagCompound()) {
-			stack.setTagCompound(new NBTTagCompound());
+		if (!stack.hasTag()) {
+			stack.setTag(new CompoundNBT());
 		}
 
-		NBTTagCompound tag = Objects.requireNonNull(stack.getTagCompound());
+		CompoundNBT tag = Objects.requireNonNull(stack.getTag());
 		String sideName = ConnectionUpgradeConfig.Sides.getNameForDirection(side);
-		tag.setBoolean(sideName, !tag.getBoolean(sideName));
+		tag.putBoolean(sideName, !tag.getBoolean(sideName));
 
-		stack.setTagCompound(tag);
+		stack.setTag(tag);
 
 		slot.putStack(stack);
 	}

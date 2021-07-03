@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.ISlotUpgradeManager;
@@ -19,10 +19,8 @@ import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
 import logisticspipes.network.guis.pipe.ChassisGuiProvider;
 import logisticspipes.pipes.PipeLogisticsChassis;
 import logisticspipes.pipes.PipeLogisticsChassis.ChassiTargetInformation;
-import logisticspipes.proxy.computers.objects.CCSinkResponder;
 import logisticspipes.utils.SinkReply;
 import logisticspipes.utils.item.ItemIdentifier;
-import logisticspipes.utils.item.ItemIdentifierStack;
 import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.module.PipeServiceProviderUtilKt;
 import network.rs485.logisticspipes.property.Property;
@@ -122,16 +120,6 @@ public class ChassisModule extends LogisticsModule implements Gui {
 			return new SinkReply(bestresult, roomForItem);
 		}
 		return new SinkReply(bestresult, Math.min(bestresult.maxNumberOfItems, roomForItem));
-	}
-
-	@Override
-	public void readFromNBT(@Nonnull NBTTagCompound tag) {
-		super.readFromNBT(tag);
-		// FIXME: remove after 1.12
-		modules.stream()
-				.filter(slottedModule -> !slottedModule.isEmpty() && tag.hasKey("slot" + slottedModule.getSlot()))
-				.forEach(slottedModule -> Objects.requireNonNull(slottedModule.getModule())
-						.readFromNBT(tag.getCompoundTag("slot" + slottedModule.getSlot())));
 	}
 
 	@Override

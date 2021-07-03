@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import network.rs485.logisticspipes.connection.ConnectionType;
 
@@ -47,7 +47,7 @@ public class PipeInformationManager {
 		infoProvider.put(source, provider);
 	}
 
-	public boolean canConnect(IPipeInformationProvider startPipe, IPipeInformationProvider provider, EnumFacing direction, boolean flag) {
+	public boolean canConnect(IPipeInformationProvider startPipe, IPipeInformationProvider provider, Direction direction, boolean flag) {
 		return startPipe.canConnect(provider.getTile(), direction, flag) && provider.canConnect(startPipe.getTile(), direction.getOpposite(), flag);
 	}
 

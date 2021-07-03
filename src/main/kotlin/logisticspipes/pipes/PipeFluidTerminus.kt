@@ -43,7 +43,7 @@ import logisticspipes.network.packets.pipe.PipePropertiesUpdate
 import logisticspipes.proxy.MainProxy
 import logisticspipes.textures.Textures
 import logisticspipes.utils.FluidSinkReply.FixedFluidPriority
-import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.Item
 import network.rs485.logisticspipes.FluidSinkPipe
 
@@ -53,10 +53,10 @@ class PipeFluidTerminus(item: Item) : FluidSinkPipe(item, "Fluids to terminate",
 
     override fun getCenterTexture(): Textures.TextureType = Textures.LOGISTICSPIPE_LIQUID_TERMINUS
 
-    override fun onWrenchClicked(entityplayer: EntityPlayer) {
+    override fun onWrenchClicked(player: PlayerEntity) {
         // only run on the server
-        MainProxy.sendPacketToPlayer(PipePropertiesUpdate.fromPropertyHolder(this).setBlockPos(pos), entityplayer)
-        entityplayer.openGui(LogisticsPipes.instance, GuiIDs.GUI_Fluid_Terminus_ID, world, x, y, z)
+        MainProxy.sendPacketToPlayer(PipePropertiesUpdate.fromPropertyHolder(this).setBlockPos(pos), player)
+        player.openGui(LogisticsPipes.instance, GuiIDs.GUI_Fluid_Terminus_ID, world, x, y, z)
     }
 
 }

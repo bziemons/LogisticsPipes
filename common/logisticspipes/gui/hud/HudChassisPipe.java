@@ -3,8 +3,6 @@ package logisticspipes.gui.hud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 
-import net.minecraftforge.fml.client.FMLClientHandler;
-
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.interfaces.IHUDButton;
@@ -235,7 +233,7 @@ public class HudChassisPipe extends BasicHUDGui {
 
 		@Override
 		public void renderButton(boolean hover, boolean clicked, boolean shifted) {
-			Minecraft mc = FMLClientHandler.instance().getClient();
+			final Minecraft mc = Minecraft.getInstance();
 			GL11.glEnable(GL11.GL_BLEND);
 
 			if (shifted || hover || isSlotSelected(position)) {
@@ -275,8 +273,7 @@ public class HudChassisPipe extends BasicHUDGui {
 					GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.3F);
 				}
 				GL11.glScaled(0.5D, 0.5D, 1.0D);
-				Minecraft mc = FMLClientHandler.instance().getClient();
-				GuiGraphics.drawGuiBackGround(mc, posX * 2, posY * 2, (posX + sizeX) * 2, (posY + sizeY) * 2, 0, false);
+				GuiGraphics.drawGuiBackGround(Minecraft.getInstance(), posX * 2, posY * 2, (posX + sizeX) * 2, (posY + sizeY) * 2, 0, false);
 			}
 		}
 

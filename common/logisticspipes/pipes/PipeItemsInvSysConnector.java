@@ -16,12 +16,12 @@ import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import logisticspipes.gui.hud.HUDInvSysConnector;
 import logisticspipes.interfaces.IGuiOpenControler;
@@ -46,7 +46,7 @@ import logisticspipes.pipes.basic.CoreRoutedPipe;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.routing.ItemRoutingInformation;
-import logisticspipes.routing.channels.ChannelInformation;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 import logisticspipes.textures.Textures;
 import logisticspipes.textures.Textures.TextureType;
 import logisticspipes.transport.TransportInvConnection;
@@ -141,7 +141,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 		}
 	}
 
-	private boolean checkOneConnectedInv(@Nonnull IInventoryUtil inv, EnumFacing dir) {
+	private boolean checkOneConnectedInv(@Nonnull IInventoryUtil inv, Direction dir) {
 		boolean contentchanged = false;
 		if (!itemsOnRoute.isEmpty()) { // don't check the inventory if you don't want anything
 			List<ItemIdentifier> items = new ArrayList<>(itemsOnRoute.keySet());
@@ -170,7 +170,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 							if (inv instanceof ITransactor) {
 								((ITransactor) inv).add(toSend, dir.getOpposite(), true);
 							} else {
-								container.getWorld().spawnEntity(ItemIdentifierStack.getFromStack(toSend).makeEntityItem(getWorld(), container.getX(), container.getY(), container.getZ()));
+								container.getWorld().spawnEntity(ItemIdentifierStack.getFromStack(toSend).makeItemEntity(getWorld(), container.getX(), container.getY(), container.getZ()));
 							}
 							new UnsupportedOperationException("The extracted amount didn't match the requested one. (" + inv + ")").printStackTrace();
 							return contentchanged;
@@ -197,7 +197,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 		return contentchanged;
 	}
 
-	public void sendStack(ItemRoutingInformation info, EnumFacing dir) {
+	public void sendStack(ItemRoutingInformation info, Direction dir) {
 		IRoutedItem itemToSend = SimpleServiceLocator.routedItemHelper.createNewTravelItem(info);
 		super.queueRoutedItem(itemToSend, dir);
 		spawnParticle(Particles.OrangeParticle, 4);
@@ -230,8 +230,8 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 	}
 
 	@Override
-	public void onWrenchClicked(EntityPlayer entityplayer) {
-		NewGuiHandler.getGui(InvSysConGuiProvider.class).setTilePos(this.container).open(entityplayer);
+	public void onWrenchClicked(PlayerEntity player) {
+		NewGuiHandler.getGui(InvSysConGuiProvider.class).setTilePos(this.container).open(PlayerEntity);
 	}
 
 	@Override
@@ -257,27 +257,27 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 	}
 
 	@Override
-	public void onChunkUnload() {
+	public void onChunkUnloaded() {
 		removePipeFromChannel();
 		init = false;
-		super.onChunkUnload();
+		super.onChunkUnloaded();
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound nbttagcompound) {
-		super.writeToNBT(nbttagcompound);
-		nbttagcompound.setInteger("resistance", resistance);
+	public void writeToNBT(CompoundNBT tag) {
+		super.writeToNBT(tag);
+		tag.putInt("resistance", resistance);
 		if (connectedChannel != null) {
-			nbttagcompound.setString("connectedChannel", connectedChannel.toString());
+			tag.putString("connectedChannel", connectedChannel.toString());
 		}
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound nbttagcompound) {
-		super.readFromNBT(nbttagcompound);
-		resistance = nbttagcompound.getInteger("resistance");
-		if (nbttagcompound.hasKey("connectedChannel")) {
-			connectedChannel = UUID.fromString(nbttagcompound.getString("connectedChannel"));
+	public void readFromNBT(CompoundNBT tag) {
+		super.readFromNBT(CompoundNBT);
+		resistance = tag.getInt("resistance");
+		if (tag.contains("connectedChannel")) {
+			connectedChannel = UUID.fromString(CompoundNBT.getString("connectedChannel"));
 		} else {
 			connectedChannel = null;
 		}
@@ -396,7 +396,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 	}
 
 	@Override
-	public void playerStartWatching(EntityPlayer player, int mode) {
+	public void playerStartWatching(PlayerEntity player, int mode) {
 		if (mode == 1) {
 			localModeWatchers.add(player);
 			MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OrdererManagerContent.class).setIdentSet(getExpectedItems()).setPosX(getX()).setPosY(getY()).setPosZ(getZ()), player);
@@ -406,7 +406,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 	}
 
 	@Override
-	public void playerStopWatching(EntityPlayer player, int mode) {
+	public void playerStopWatching(PlayerEntity player, int mode) {
 		super.playerStopWatching(player, mode);
 		localModeWatchers.remove(player);
 	}
@@ -423,7 +423,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 	}
 
 	@Override
-	public void guiOpenedByPlayer(EntityPlayer player) {
+	public void guiOpenedByPlayer(PlayerEntity player) {
 		localGuiWatchers.add(player);
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(InvSysConResistance.class).setInteger(this.resistance).setBlockPos(this.getPos()), player);
 
@@ -435,7 +435,7 @@ public class PipeItemsInvSysConnector extends CoreRoutedPipe implements IChannel
 	}
 
 	@Override
-	public void guiClosedByPlayer(EntityPlayer player) {
+	public void guiClosedByPlayer(PlayerEntity player) {
 		localGuiWatchers.remove(player);
 	}
 

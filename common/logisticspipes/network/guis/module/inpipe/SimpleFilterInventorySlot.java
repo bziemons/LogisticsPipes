@@ -2,7 +2,7 @@ package logisticspipes.network.guis.module.inpipe;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.gui.modules.GuiSimpleFilter;
 import logisticspipes.modules.LogisticsModule;
@@ -20,7 +20,7 @@ public class SimpleFilterInventorySlot extends ModuleCoordinatesGuiProvider {
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		LogisticsModule module = this.getLogisticsModule(player.getEntityWorld(), LogisticsModule.class);
 		if (module == null) {
 			return null;
@@ -29,12 +29,12 @@ public class SimpleFilterInventorySlot extends ModuleCoordinatesGuiProvider {
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		return getContainerFromFilterModule(this, player);
 	}
 
 	@Nullable
-	public static DummyContainer getContainerFromFilterModule(ModuleCoordinatesGuiProvider guiProvider, EntityPlayer player) {
+	public static DummyContainer getContainerFromFilterModule(ModuleCoordinatesGuiProvider guiProvider, PlayerEntity player) {
 		SimpleFilter filter = guiProvider.getLogisticsModule(player.getEntityWorld(), SimpleFilter.class);
 		if (filter == null) {
 			return null;

@@ -45,14 +45,14 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 
 import io.netty.buffer.ByteBuf;
 
 import logisticspipes.network.IWriteListObject;
-import logisticspipes.routing.channels.ChannelInformation;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 import logisticspipes.utils.PlayerIdentifier;
 import logisticspipes.utils.item.ItemIdentifier;
 import logisticspipes.utils.item.ItemIdentifierStack;
@@ -117,7 +117,7 @@ public interface LPDataOutput {
 
 	void writeUTFArray(@Nullable String[] arr);
 
-	void writeFacing(@Nullable EnumFacing direction);
+	void writeFacing(@Nullable Direction direction);
 
 	void writeResourceLocation(@Nullable ResourceLocation resource);
 
@@ -125,7 +125,7 @@ public interface LPDataOutput {
 
 	void writeBitSet(@Nonnull BitSet bits);
 
-	void writeNBTTagCompound(@Nullable NBTTagCompound tag);
+	void writeCompoundNBT(@Nullable CompoundNBT tag);
 
 	void writeItemStack(@Nonnull ItemStack itemstack);
 

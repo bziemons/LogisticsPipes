@@ -8,6 +8,7 @@ import net.minecraft.item.ItemStack;
 import lombok.Getter;
 import lombok.Setter;
 
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 
@@ -30,8 +31,8 @@ public abstract class ItemPacket extends CoordinatesPacket {
 		} else {
 			output.writeInt(Item.getIdFromItem(getStack().getItem()));
 			output.writeInt(getStack().getCount());
-			output.writeInt(getStack().getItemDamage());
-			output.writeNBTTagCompound(getStack().getTagCompound());
+			output.writeInt(getStack().getDamage());
+			output.writeCompoundNBT(getStack().getTag());
 		}
 	}
 
@@ -46,7 +47,7 @@ public abstract class ItemPacket extends CoordinatesPacket {
 			int stackSize = input.readInt();
 			int damage = input.readInt();
 			setStack(new ItemStack(Item.getItemById(itemID), stackSize, damage));
-			getStack().setTagCompound(input.readNBTTagCompound());
+			getStack().setTag(input.readCompoundNBT());
 		}
 	}
 }

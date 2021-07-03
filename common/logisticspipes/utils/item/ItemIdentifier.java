@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.Lock;
@@ -24,31 +25,28 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.block.Block;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.init.Blocks;
+import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagByte;
-import net.minecraft.nbt.NBTTagByteArray;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagDouble;
-import net.minecraft.nbt.NBTTagFloat;
-import net.minecraft.nbt.NBTTagInt;
-import net.minecraft.nbt.NBTTagIntArray;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagLong;
-import net.minecraft.nbt.NBTTagShort;
-import net.minecraft.nbt.NBTTagString;
+import net.minecraft.nbt.ByteArrayNBT;
+import net.minecraft.nbt.ByteNBT;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.DoubleNBT;
+import net.minecraft.nbt.FloatNBT;
+import net.minecraft.nbt.INBT;
+import net.minecraft.nbt.IntArrayNBT;
+import net.minecraft.nbt.IntNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.LongNBT;
+import net.minecraft.nbt.ShortNBT;
+import net.minecraft.nbt.StringNBT;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.World;
 
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModContainer;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.ForgeRegistry;
 
 import lombok.AllArgsConstructor;
@@ -57,8 +55,7 @@ import logisticspipes.asm.addinfo.IAddInfo;
 import logisticspipes.asm.addinfo.IAddInfoProvider;
 import logisticspipes.items.LogisticsFluidContainer;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder;
-import logisticspipes.utils.FinalNBTTagCompound;
+import logisticspipes.utils.FinalCompoundNBT;
 import logisticspipes.utils.ReflectionHelper;
 
 /**
@@ -69,16 +66,18 @@ import logisticspipes.utils.ReflectionHelper;
  * "different" item, I made this cache here A ItemIdentifier is
  * immutable, singleton and most importantly UNIQUE!
  */
-public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTypeHolder {
+public final class ItemIdentifier implements Comparable<ItemIdentifier> {
+
+	public static final String UNKNOWN = "UNKNOWN";
 
 	//a key to look up a ItemIdentifier by Item:damage:tag
 	private static class ItemKey {
 
 		public final Item item;
 		public final int itemDamage;
-		public final FinalNBTTagCompound tag;
+		public final FinalCompoundNBT tag;
 
-		public ItemKey(Item i, int d, FinalNBTTagCompound t) {
+		public ItemKey(Item i, int d, FinalCompoundNBT t) {
 			item = i;
 			itemDamage = d;
 			tag = t;
@@ -176,8 +175,6 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 		}
 	}
 
-	private final Object[] ccTypeHolder = new Object[1];
-
 	//array of ItemIdentifiers for damage=0,tag=null items
 	private final static ConcurrentHashMap<Item, ItemIdentifier> simpleIdentifiers = new ConcurrentHashMap<>(4096, 0.5f, 1);
 
@@ -231,7 +228,7 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 	private static final ItemIdentifierCleanupThread cleanupThread = new ItemIdentifierCleanupThread();
 
 	//Hide default constructor
-	private ItemIdentifier(Item item, int itemDamage, FinalNBTTagCompound tag, int uniqueID) {
+	private ItemIdentifier(Item item, int itemDamage, FinalCompoundNBT tag, int uniqueID) {
 		this.item = item;
 		this.itemDamage = itemDamage;
 		this.tag = tag;
@@ -240,7 +237,7 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 
 	public final Item item;
 	public final int itemDamage;
-	public final FinalNBTTagCompound tag;
+	public final FinalCompoundNBT tag;
 	public final int uniqueID;
 
 	private int maxStackSize = 0;
@@ -251,7 +248,6 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 	private DictItemIdentifier _dict;
 	private boolean canHaveDict = true;
 	private String modName;
-	private String creativeTabName;
 
 	private static ItemIdentifier getOrCreateSimple(Item item, ItemIdentifier proposal) {
 		if (proposal != null) {
@@ -296,7 +292,7 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 		return ret;
 	}
 
-	private static ItemIdentifier getOrCreateTag(Item item, int damage, FinalNBTTagCompound tag) {
+	private static ItemIdentifier getOrCreateTag(Item item, int damage, FinalCompoundNBT tag) {
 		ItemKey k = new ItemKey(item, damage, tag);
 		ItemIdentifier.keyRefRlock.lock();
 		IDReference r = ItemIdentifier.keyRefMap.get(k);
@@ -327,7 +323,7 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 		} else {
 			nextUniqueID = r.uniqueID;
 		}
-		FinalNBTTagCompound finaltag = new FinalNBTTagCompound(tag);
+		FinalCompoundNBT finaltag = new FinalCompoundNBT(tag);
 		ItemKey realKey = new ItemKey(item, damage, finaltag);
 		ItemIdentifier ret = new ItemIdentifier(item, damage, finaltag, nextUniqueID);
 		ItemIdentifier.keyRefMap.put(realKey, new IDReference(realKey, nextUniqueID, ret));
@@ -335,11 +331,11 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 		return ret;
 	}
 
-	public static ItemIdentifier get(Item item, int itemUndamagableDamage, NBTTagCompound tag) {
+	public static ItemIdentifier get(Item item, int itemUndamagableDamage, CompoundNBT tag) {
 		return get(item, itemUndamagableDamage, tag, null);
 	}
 
-	private static ItemIdentifier get(Item item, int itemUndamagableDamage, NBTTagCompound tag, ItemIdentifier proposal) {
+	private static ItemIdentifier get(Item item, int itemUndamagableDamage, CompoundNBT tag, ItemIdentifier proposal) {
 		if (itemUndamagableDamage < 0) {
 			throw new IllegalArgumentException("Item Damage out of range");
 		}
@@ -351,7 +347,7 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 			return ItemIdentifier.getOrCreateDamage(item, itemUndamagableDamage, proposal);
 		} else {
 			//tag
-			return ItemIdentifier.getOrCreateTag(item, itemUndamagableDamage, new FinalNBTTagCompound(tag));
+			return ItemIdentifier.getOrCreateTag(item, itemUndamagableDamage, new FinalCompoundNBT(tag));
 		}
 	}
 
@@ -366,15 +362,15 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 	public static ItemIdentifier get(@Nonnull ItemStack itemStack) {
 		ItemIdentifier proposal = null;
 		IAddInfoProvider prov = null;
-		if (((Object) itemStack) instanceof IAddInfoProvider && !itemStack.hasTagCompound()) {
+		if (((Object) itemStack) instanceof IAddInfoProvider && !itemStack.hasTag()) {
 			prov = (IAddInfoProvider) (Object) itemStack;
 			ItemStackAddInfo info = prov.getLogisticsPipesAddInfo(ItemStackAddInfo.class);
 			if (info != null) {
 				proposal = info.ident;
 			}
 		}
-		ItemIdentifier ident = ItemIdentifier.get(itemStack.getItem(), itemStack.getItemDamage(), itemStack.getTagCompound(), proposal);
-		if (ident != proposal && prov != null && !itemStack.hasTagCompound()) {
+		ItemIdentifier ident = ItemIdentifier.get(itemStack.getItem(), itemStack.getDamage(), itemStack.getTag(), proposal);
+		if (ident != proposal && prov != null && !itemStack.hasTag()) {
 			prov.setLogisticsPipesAddInfo(new ItemStackAddInfo(ident));
 		}
 		return ident;
@@ -398,11 +394,11 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 
 	public ItemIdentifier getUndamaged() {
 		if (_IDIgnoringDamage == null) {
-			if (!unsafeMakeNormalStack(1).isItemStackDamageable()) {
+			if (!unsafeMakeNormalStack(1).isDamageable()) {
 				_IDIgnoringDamage = this;
 			} else {
 				ItemStack tstack = makeNormalStack(1);
-				tstack.setItemDamage(0);
+				tstack.setDamage(0);
 				_IDIgnoringDamage = ItemIdentifier.get(tstack);
 			}
 		}
@@ -432,59 +428,43 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 	}
 
 	public String getDebugName() {
-		return item.getUnlocalizedName() + "(ID: " + Item.getIdFromItem(item) + ", Damage: " + itemDamage + ")";
+		return item.getTranslationKey() + "(ID: " + Item.getIdFromItem(item) + ", Damage: " + itemDamage + ")";
 	}
 
 	@Nonnull
-	private String getName(@Nonnull ItemStack stack) {
-		return item.getItemStackDisplayName(stack);
+	private ITextComponent getName(@Nonnull ItemStack stack) {
+		return item.getDisplayName(stack);
 	}
 
 	@Nonnull
-	public String getFriendlyName() {
+	public ITextComponent getFriendlyName() {
 		return getName(unsafeMakeNormalStack(1));
 	}
 
-	public String getFriendlyNameCC() {
-		return MainProxy.proxy.getName(this);
-	}
-
+	@Nonnull
 	public String getModName() {
 		if (modName == null) {
-			ResourceLocation rl = item.getRegistryName();
-			assert rl != null;
-			Map<String, ModContainer> modList = Loader.instance().getIndexedModList();
-			ModContainer mc = modList.get(rl.getResourceDomain());
-			if (mc == null) {
+			final ResourceLocation registryName = item.getRegistryName();
+			if (registryName == null) return UNKNOWN;
+			final Optional<? extends ModContainer> optionalMod = ModList.get().getModContainerById(registryName.getNamespace());
+			if (optionalMod.isPresent()) {
+				modName = optionalMod.get().getModInfo().getDisplayName();
+			} else {
 				// get mod that really registered this item
 				Map<ResourceLocation, String> map = ReflectionHelper.invokePrivateMethod(ForgeRegistry.class, ForgeRegistries.ITEMS, "getOverrideOwners", "getOverrideOwners", new Class[0], new Object[0]);
-
-				final String key = map.get(rl);
-				if (key != null)
-					mc = modList.get(key);
+				final String overrideModId = map.get(registryName);
+				if (overrideModId == null) return UNKNOWN;
+				final Optional<? extends ModContainer> optionalOverrideMod = ModList.get().getModContainerById(overrideModId);
+				if (optionalOverrideMod.isPresent()) {
+					modName = optionalOverrideMod.get().getModInfo().getDisplayName();
+				} else return UNKNOWN;
 			}
-
-			modName = mc != null ? mc.getName() : "UNKNOWN";
 		}
 		return modName;
 	}
 
-	public String getCreativeTabName() {
-		if (creativeTabName == null) {
-			CreativeTabs tab = item.getCreativeTab();
-
-			if (tab == null && item instanceof ItemBlock) {
-				Block block = Block.getBlockFromItem(item);
-				if (block != Blocks.AIR) {
-					tab = block.getCreativeTabToDisplayOn();
-				}
-			}
-
-			if (tab != null) {
-				creativeTabName = tab.tabLabel;
-			}
-		}
-		return creativeTabName;
+	public String getItemGroupName() {
+		return item.getGroup().tabLabel;
 	}
 
 	@Nonnull
@@ -494,30 +474,25 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 
 	@Nonnull
 	public ItemStack unsafeMakeNormalStack(int stackSize) {
-		ItemStack stack = new ItemStack(item, stackSize, itemDamage);
-		stack.setTagCompound(tag);
-		return stack;
+		return new ItemStack(item, stackSize, tag);
 	}
 
 	@Nonnull
 	public ItemStack makeNormalStack(int stackSize) {
-		ItemStack stack = new ItemStack(item, stackSize, itemDamage);
-		if (tag != null) {
-			stack.setTagCompound(tag.copy());
-		}
-		return stack;
+		final CompoundNBT tag = this.tag == null ? null : this.tag.copy();
+		return new ItemStack(item, stackSize, tag);
 	}
 
 	@Nonnull
-	public EntityItem makeEntityItem(int stackSize, World world, double x, double y, double z) {
-		return new EntityItem(world, x, y, z, makeNormalStack(stackSize));
+	public ItemEntity makeItemEntity(int stackSize, World world, double x, double y, double z) {
+		return new ItemEntity(world, x, y, z, makeNormalStack(stackSize));
 	}
 
 	public int getMaxStackSize() {
 		if (maxStackSize == 0) {
 			ItemStack tstack = unsafeMakeNormalStack(1);
 			int tstacksize = tstack.getMaxStackSize();
-			if (tstack.isItemStackDamageable() && tstack.isItemDamaged()) {
+			if (tstack.isDamageable() && tstack.isDamaged()) {
 				tstacksize = 1;
 			}
 			tstacksize = Math.max(1, Math.min(64, tstacksize));
@@ -546,84 +521,84 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 		return map;
 	}
 
-	public static Map<Object, Object> getNBTBaseAsMap(NBTBase nbt) throws SecurityException, IllegalArgumentException {
-		if (nbt == null) return null;
+	public static Map<Object, Object> getINBTAsMap(INBT tag) throws SecurityException, IllegalArgumentException {
+		if (tag == null) return null;
 
-		if (nbt instanceof NBTTagByte) {
+		if (tag instanceof ByteNBT) {
 			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagByte");
-			map.put("value", ((NBTTagByte) nbt).getByte());
+			map.put("type", "ByteNBT");
+			map.put("value", ((ByteNBT) tag).getByte());
 			return map;
-		} else if (nbt instanceof NBTTagByteArray) {
+		} else if (tag instanceof ByteArrayNBT) {
 			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagByteArray");
-			map.put("value", ItemIdentifier.getArrayAsMap(((NBTTagByteArray) nbt).getByteArray()));
+			map.put("type", "ByteArrayNBT");
+			map.put("value", ItemIdentifier.getArrayAsMap(((ByteArrayNBT) tag).getByteArray()));
 			return map;
-		} else if (nbt instanceof NBTTagDouble) {
+		} else if (tag instanceof DoubleNBT) {
 			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagDouble");
-			map.put("value", ((NBTTagDouble) nbt).getDouble());
+			map.put("type", "DoubleNBT");
+			map.put("value", ((DoubleNBT) tag).getDouble());
 			return map;
-		} else if (nbt instanceof NBTTagFloat) {
+		} else if (tag instanceof FloatNBT) {
 			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagFloat");
-			map.put("value", ((NBTTagFloat) nbt).getFloat());
+			map.put("type", "FloatNBT");
+			map.put("value", ((FloatNBT) tag).getFloat());
 			return map;
-		} else if (nbt instanceof NBTTagInt) {
+		} else if (tag instanceof IntNBT) {
 			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagInt");
-			map.put("value", ((NBTTagInt) nbt).getInt());
+			map.put("type", "IntNBT");
+			map.put("value", ((IntNBT) tag).getInt());
 			return map;
-		} else if (nbt instanceof NBTTagIntArray) {
+		} else if (tag instanceof IntArrayNBT) {
 			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagIntArray");
-			map.put("value", ItemIdentifier.getArrayAsMap(((NBTTagIntArray) nbt).getIntArray()));
+			map.put("type", "IntArrayNBT");
+			map.put("value", ItemIdentifier.getArrayAsMap(((IntArrayNBT) tag).getIntArray()));
 			return map;
-		} else if (nbt instanceof NBTTagList) {
+		} else if (tag instanceof ListNBT) {
 			HashMap<Integer, Object> content = new HashMap<>();
 			int i = 1;
-			for (Object object : ((NBTTagList) nbt)) {
-				if (object instanceof NBTBase) {
-					content.put(i, ItemIdentifier.getNBTBaseAsMap((NBTBase) object));
+			for (Object object : ((ListNBT) tag)) {
+				if (object instanceof INBT) {
+					content.put(i, ItemIdentifier.getINBTAsMap((INBT) object));
 				}
 				i++;
 			}
 			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagList");
+			map.put("type", "ListNBT");
 			map.put("value", content);
 			return map;
-		} else if (nbt instanceof NBTTagCompound) {
+		} else if (tag instanceof CompoundNBT) {
 			HashMap<Object, Object> content = new HashMap<>();
 			HashMap<Integer, Object> keys = new HashMap<>();
 			int i = 1;
-			for (String key : ((NBTTagCompound) nbt).getKeySet()) {
-				NBTBase value = ((NBTTagCompound) nbt).getTag(key);
-				content.put(key, ItemIdentifier.getNBTBaseAsMap(value));
+			for (String key : ((CompoundNBT) tag).keySet()) {
+				INBT value = ((CompoundNBT) tag).get(key);
+				content.put(key, ItemIdentifier.getINBTAsMap(value));
 				keys.put(i, key);
 				i++;
 			}
 			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagCompound");
+			map.put("type", "CompoundNBT");
 			map.put("value", content);
 			map.put("keys", keys);
 			return map;
-		} else if (nbt instanceof NBTTagLong) {
+		} else if (tag instanceof LongNBT) {
 			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagLong");
-			map.put("value", ((NBTTagLong) nbt).getLong());
+			map.put("type", "LongNBT");
+			map.put("value", ((LongNBT) tag).getLong());
 			return map;
-		} else if (nbt instanceof NBTTagShort) {
+		} else if (tag instanceof ShortNBT) {
 			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagShort");
-			map.put("value", ((NBTTagShort) nbt).getShort());
+			map.put("type", "ShortNBT");
+			map.put("value", ((ShortNBT) tag).getShort());
 			return map;
-		} else if (nbt instanceof NBTTagString) {
+		} else if (tag instanceof StringNBT) {
 			HashMap<Object, Object> map = new HashMap<>();
-			map.put("type", "NBTTagString");
-			map.put("value", ((NBTTagString) nbt).getString());
+			map.put("type", "StringNBT");
+			map.put("value", ((StringNBT) tag).getString());
 			return map;
 		} else {
-			throw new UnsupportedOperationException("Unsupported NBTBase of type:" + nbt.getClass().getName());
+			throw new UnsupportedOperationException("Unsupported NBT of type:" + tag.getClass().getName());
 		}
 	}
 
@@ -678,7 +653,7 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 	}
 
 	public boolean equalsWithoutNBT(@Nonnull ItemStack stack) {
-		return item == stack.getItem() && itemDamage == stack.getItemDamage();
+		return item == stack.getItem() && itemDamage == stack.getDamage();
 	}
 
 	public boolean equalsWithoutNBT(ItemIdentifier item) {
@@ -686,7 +661,7 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 	}
 
 	public boolean isDamageable() {
-		return unsafeMakeNormalStack(1).isItemStackDamageable();
+		return unsafeMakeNormalStack(1).isDamageable();
 	}
 
 	public boolean isFluidContainer() {
@@ -717,63 +692,63 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 			getUndamaged().debugDumpData(isClient);
 		}
 		System.out.println("Mod: " + getModName());
-		System.out.println("CreativeTab: " + getCreativeTabName());
+		System.out.println("CreativeTab: " + getItemGroupName());
 		if (getDictIdentifiers() != null) {
 			getDictIdentifiers().debugDumpData(isClient);
 		}
 	}
 
-	private void debugDumpTag(NBTBase nbt, StringBuilder sb) {
+	private void debugDumpTag(INBT nbt, StringBuilder sb) {
 		if (nbt == null) {
 			sb.append("null");
 			return;
 		}
-		if (nbt instanceof NBTTagByte) {
-			sb.append("TagByte(data=").append(((NBTTagByte) nbt).getByte()).append(")");
-		} else if (nbt instanceof NBTTagShort) {
-			sb.append("TagShort(data=").append(((NBTTagShort) nbt).getShort()).append(")");
-		} else if (nbt instanceof NBTTagInt) {
-			sb.append("TagInt(data=").append(((NBTTagInt) nbt).getInt()).append(")");
-		} else if (nbt instanceof NBTTagLong) {
-			sb.append("TagLong(data=").append(((NBTTagLong) nbt).getLong()).append(")");
-		} else if (nbt instanceof NBTTagFloat) {
-			sb.append("TagFloat(data=").append(((NBTTagFloat) nbt).getFloat()).append(")");
-		} else if (nbt instanceof NBTTagDouble) {
-			sb.append("TagDouble(data=").append(((NBTTagDouble) nbt).getDouble()).append(")");
-		} else if (nbt instanceof NBTTagString) {
-			sb.append("TagString(data=\"").append(((NBTTagString) nbt).getString()).append("\")");
-		} else if (nbt instanceof NBTTagByteArray) {
+		if (nbt instanceof ByteNBT) {
+			sb.append("TagByte(data=").append(((ByteNBT) nbt).getByte()).append(")");
+		} else if (nbt instanceof ShortNBT) {
+			sb.append("TagShort(data=").append(((ShortNBT) nbt).getShort()).append(")");
+		} else if (nbt instanceof IntNBT) {
+			sb.append("TagInt(data=").append(((IntNBT) nbt).getInt()).append(")");
+		} else if (nbt instanceof LongNBT) {
+			sb.append("TagLong(data=").append(((LongNBT) nbt).getLong()).append(")");
+		} else if (nbt instanceof FloatNBT) {
+			sb.append("TagFloat(data=").append(((FloatNBT) nbt).getFloat()).append(")");
+		} else if (nbt instanceof DoubleNBT) {
+			sb.append("TagDouble(data=").append(((DoubleNBT) nbt).getDouble()).append(")");
+		} else if (nbt instanceof StringNBT) {
+			sb.append("TagString(data=\"").append(((StringNBT) nbt).getString()).append("\")");
+		} else if (nbt instanceof ByteArrayNBT) {
 			sb.append("TagByteArray(data=");
-			for (int i = 0; i < ((NBTTagByteArray) nbt).getByteArray().length; i++) {
-				sb.append(((NBTTagByteArray) nbt).getByteArray()[i]);
-				if (i < ((NBTTagByteArray) nbt).getByteArray().length - 1) {
+			for (int i = 0; i < ((ByteArrayNBT) nbt).getByteArray().length; i++) {
+				sb.append(((ByteArrayNBT) nbt).getByteArray()[i]);
+				if (i < ((ByteArrayNBT) nbt).getByteArray().length - 1) {
 					sb.append(",");
 				}
 			}
 			sb.append(")");
-		} else if (nbt instanceof NBTTagIntArray) {
+		} else if (nbt instanceof IntArrayNBT) {
 			sb.append("TagIntArray(data=");
-			for (int i = 0; i < ((NBTTagIntArray) nbt).getIntArray().length; i++) {
-				sb.append(((NBTTagIntArray) nbt).getIntArray()[i]);
-				if (i < ((NBTTagIntArray) nbt).getIntArray().length - 1) {
+			for (int i = 0; i < ((IntArrayNBT) nbt).getIntArray().length; i++) {
+				sb.append(((IntArrayNBT) nbt).getIntArray()[i]);
+				if (i < ((IntArrayNBT) nbt).getIntArray().length - 1) {
 					sb.append(",");
 				}
 			}
 			sb.append(")");
-		} else if (nbt instanceof NBTTagList) {
+		} else if (nbt instanceof ListNBT) {
 			sb.append("TagList(data=");
-			for (int i = 0; i < ((NBTTagList) nbt).tagCount(); i++) {
-				debugDumpTag((((NBTTagList) nbt).get(i)), sb);
-				if (i < ((NBTTagList) nbt).tagCount() - 1) {
+			for (int i = 0; i < ((ListNBT) nbt).size(); i++) {
+				debugDumpTag((((ListNBT) nbt).get(i)), sb);
+				if (i < ((ListNBT) nbt).size() - 1) {
 					sb.append(",");
 				}
 			}
 			sb.append(")");
-		} else if (nbt instanceof NBTTagCompound) {
+		} else if (nbt instanceof CompoundNBT) {
 			sb.append("TagCompound(data=");
-			for (Iterator<String> iter = ((NBTTagCompound) nbt).getKeySet().iterator(); iter.hasNext(); ) {
+			for (Iterator<String> iter = ((CompoundNBT) nbt).keySet().iterator(); iter.hasNext(); ) {
 				String key = iter.next();
-				NBTBase value = ((NBTTagCompound) nbt).getTag(key);
+				INBT value = ((CompoundNBT) nbt).get(key);
 				sb.append("\"").append(key).append("\"=");
 				debugDumpTag((value), sb);
 				if (iter.hasNext()) {
@@ -786,8 +761,4 @@ public final class ItemIdentifier implements Comparable<ItemIdentifier>, ILPCCTy
 		}
 	}
 
-	@Override
-	public Object[] getTypeHolder() {
-		return ccTypeHolder;
-	}
 }

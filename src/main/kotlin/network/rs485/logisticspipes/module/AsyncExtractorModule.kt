@@ -61,10 +61,12 @@ import logisticspipes.routing.ServerRouter
 import logisticspipes.utils.PlayerCollectionList
 import logisticspipes.utils.SinkReply
 import logisticspipes.utils.item.ItemIdentifier
-import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.client.Minecraft
+import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.ItemStack
-import net.minecraft.util.EnumFacing
 import net.minecraftforge.fml.client.FMLClientHandler
+import net.minecraft.nbt.CompoundNBT
+import net.minecraft.util.Direction
 import network.rs485.grow.ChunkedChannel
 import network.rs485.logisticspipes.logistics.LogisticsManager
 import network.rs485.logisticspipes.property.NullableEnumProperty
@@ -93,12 +95,12 @@ class AsyncExtractorModule(
         val name: String = "extractor"
     }
 
-    private val sneakyDirectionProp = NullableEnumProperty(null, "sneakydirection", EnumFacing.values())
+    private val sneakyDirectionProp = NullableEnumProperty(null, "sneakydirection", Direction.values())
 
     override val properties: List<Property<*>>
         get() = listOf(sneakyDirectionProp)
 
-    override var sneakyDirection: EnumFacing?
+    override var sneakyDirection: Direction?
         get() = sneakyDirectionProp.value
         set(value) {
             sneakyDirectionProp.value = value
@@ -352,7 +354,7 @@ class AsyncExtractorModule(
         )
     }
 
-    override fun startWatching(player: EntityPlayer?) {
+    override fun startWatching(player: PlayerEntity?) {
         Objects.requireNonNull(player, "player must not be null")
         localModeWatchers.add(player)
         MainProxy.sendPacketToPlayer(
@@ -362,19 +364,18 @@ class AsyncExtractorModule(
         )
     }
 
-    override fun stopWatching(player: EntityPlayer?) {
+    override fun stopWatching(player: PlayerEntity?) {
         Objects.requireNonNull(player, "player must not be null")
         if (localModeWatchers.contains(player)) localModeWatchers.remove(player)
     }
 
     class HUDAsyncExtractor(private val module: AsyncExtractorModule) : IHUDModuleRenderer {
         override fun renderContent(shifted: Boolean) {
-            val mc = FMLClientHandler.instance().client
-
-            val d: EnumFacing? = module.sneakyDirection
-            mc.fontRenderer.drawString("Extract", -22, -22, 0)
-            mc.fontRenderer.drawString("from:", -22, -9, 0)
-            mc.fontRenderer.drawString(d?.name ?: "DEFAULT", -22, 18, 0)
+            val fontRenderer = Minecraft.getInstance().fontRenderer
+            val d: Direction? = module.sneakyDirection
+            fontRenderer.drawString("Extract", -22f, -22f, 0)
+            fontRenderer.drawString("from:", -22f, -9f, 0)
+            fontRenderer.drawString(d?.name ?: "DEFAULT", -22f, 18f, 0)
         }
 
         override fun getButtons(): MutableList<IHUDButton>? = null

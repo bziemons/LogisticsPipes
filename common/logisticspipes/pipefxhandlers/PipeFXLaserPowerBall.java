@@ -44,9 +44,9 @@ public class PipeFXLaserPowerBall extends Particle {
 		prevPosX = posX;
 		prevPosY = posY;
 		prevPosZ = posZ;
-		particleMaxAge = 0;
+		maxAge = 0;
 		random = PipeFXLaserPowerBall.RAND.nextFloat() * PipeFXLaserPowerBall.RAND.nextInt(360 / PipeFXLaserPowerBall.ROTATIONSPEED);
-		Entity renderentity = FMLClientHandler.instance().getClient().getRenderViewEntity();
+		Entity renderentity = Minecraft.getInstance().renderViewEntity;
 		int visibleDistance = 50;
 		if (!FMLClientHandler.instance().getClient().gameSettings.fancyGraphics) {
 			visibleDistance = 25;
@@ -58,7 +58,7 @@ public class PipeFXLaserPowerBall extends Particle {
 
 	@Override
 	public void onUpdate() {
-		if (tile.isInvalid()) {
+		if (tile.isRemoved()) {
 			setExpired();
 		}
 	}
@@ -85,7 +85,7 @@ public class PipeFXLaserPowerBall extends Particle {
 		GL11.glRotatef(rot, 0.0F, 0.0F, 1.0F);
 		int repeat = 3;
 		float rotate = 60.0F;
-		Minecraft.getMinecraft().renderEngine.bindTexture(PipeFXLaserPowerBall.ball);
+		Minecraft.getInstance().textureManager.bindTexture(PipeFXLaserPowerBall.ball);
 		for (int t = 0; t < repeat; t++) {
 			GL11.glRotatef(rotate, 0.0F, 0.0F, 1.0F);
 			for (int u = 0; u < repeat; u++) {
@@ -108,7 +108,7 @@ public class PipeFXLaserPowerBall extends Particle {
 		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glPopMatrix();
-		Minecraft.getMinecraft().renderEngine.bindTexture(PipeFXLaserPowerBall.field_110737_b);
+		Minecraft.getInstance().textureManager.bindTexture(PipeFXLaserPowerBall.field_110737_b);
 		BufferBuilder buffer = Tessellator.getInstance().getBuffer();
 		buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
 	}

@@ -1,38 +1,20 @@
 package logisticspipes.utils;
 
+import javax.annotation.Nullable;
+
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-
-import logisticspipes.interfaces.ISpecialTankAccessHandler;
-import logisticspipes.interfaces.ISpecialTankHandler;
+import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.ITankUtil;
-import logisticspipes.proxy.SimpleServiceLocator;
 
 public class TankUtilFactory {
 
-	public ITankUtil getTankUtilForTE(TileEntity tile, EnumFacing dirOnEntity) {
-		if (SimpleServiceLocator.specialTankHandler.hasHandlerFor(tile)) {
-			ISpecialTankHandler handler = SimpleServiceLocator.specialTankHandler.getTankHandlerFor(tile);
-			if (handler instanceof ISpecialTankAccessHandler) {
-				if (tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dirOnEntity)) {
-					IFluidHandler fluidHandler = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dirOnEntity);
-					if (fluidHandler != null) {
-						return new SpecialTankUtil(fluidHandler, tile, (ISpecialTankAccessHandler) handler);
-					}
-				}
-			}
-		}
-
-		if (tile != null && tile.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dirOnEntity)) {
-			IFluidHandler fluidHandler = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dirOnEntity);
-			if (fluidHandler != null) {
-				return new TankUtil(fluidHandler);
-			}
-		}
-
-		return null;
+	@Nullable
+	public ITankUtil getTankUtilForTE(TileEntity tile, Direction direction) {
+		if (tile == null) return null;
+		// TODO: Propagate Optional
+		//noinspection ConstantConditions
+		return tile.getCapability(LogisticsPipes.FLUID_HANDLER_CAPABILITY, direction).map(TankUtil::new).orElse(null);
 	}
 }

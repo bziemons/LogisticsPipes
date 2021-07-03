@@ -7,20 +7,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.Vec3d;
 
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
 
-import codechicken.lib.lighting.LightModel;
 import codechicken.lib.render.CCModel;
 import codechicken.lib.render.CCRenderState;
 import codechicken.lib.render.buffer.BakingVertexBuffer;
+import codechicken.lib.render.lighting.LightModel;
 import codechicken.lib.render.pipeline.IVertexOperation;
 import codechicken.lib.vec.Cuboid6;
 import codechicken.lib.vec.Rotation;
@@ -46,16 +46,11 @@ public class Model3D implements IModel3D {
 	private static final HashMap<Integer, TextureAtlasSprite> emptyHashMap = new HashMap<>();
 
 	static {
-		if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
-			try {
-				spiteMap = BakingVertexBuffer.class.getDeclaredField("spriteMap");
-				spiteMap.setAccessible(true);
-			} catch (NoSuchFieldException e) {
-				throw new RuntimeException(e);
-			}
-		} else {
-			spiteMap = null;
-		}
+		spiteMap = DistExecutor.callWhenOn(Dist.CLIENT, () -> () -> {
+			final Field spriteMapField = BakingVertexBuffer.class.getDeclaredField("spriteMap");
+			spriteMapField.setAccessible(true);
+			return spriteMapField;
+		});
 	}
 
 	private final CCModel model;
@@ -78,7 +73,7 @@ public class Model3D implements IModel3D {
 	}
 
 	@Override
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	@SneakyThrows({ IllegalAccessException.class })
 	public List<BakedQuad> renderToQuads(VertexFormat format, I3DOperation... i3dOperations) {
 		List<IVertexOperation> list = new ArrayList<>();

@@ -37,21 +37,21 @@
 
 package network.rs485.logisticspipes.connection
 
+import net.minecraft.tileentity.HopperTileEntity
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.tileentity.TileEntityHopper
-import net.minecraftforge.fml.common.Loader
+import net.minecraftforge.fml.ModList
 
 class PipeInventoryConnectionChecker {
     private val allowedConnectionClasses = mutableSetOf<Class<*>>()
     private val cachedClasses = mutableMapOf<Class<TileEntity>, Boolean>()
 
     init {
-        allowedConnectionClasses.add(TileEntityHopper::class.java)
+        allowedConnectionClasses.add(HopperTileEntity::class.java)
         checkAndAddClass("gregtech", "gregtech.api.block.BlockStateTileEntity")
     }
 
     private fun checkAndAddClass(modId: String, className: String) {
-        if (Loader.isModLoaded(modId)) {
+        if (ModList.get().isLoaded(modId)) {
             try {
                 val clazz = Class.forName(className)
                 addSupportedClassType(clazz)

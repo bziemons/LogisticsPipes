@@ -6,25 +6,23 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.StringNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
+import net.minecraft.util.Direction;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.registries.IForgeRegistry;
-
-import org.lwjgl.input.Keyboard;
 
 import logisticspipes.LPConstants;
 import logisticspipes.LPItems;
@@ -126,7 +124,7 @@ public class ItemModule extends LogisticsItem {
 	}
 
 	@Nullable
-	public static LogisticsModule getLogisticsModule(@Nonnull EntityPlayer player, int invSlot) {
+	public static LogisticsModule getLogisticsModule(@Nonnull PlayerEntity player, int invSlot) {
 		ItemStack item = player.inventory.mainInventory.get(invSlot);
 		if (item.isEmpty() || !(item.getItem() instanceof ItemModule)) return null;
 		LogisticsModule module = ((ItemModule) item.getItem()).getModuleForItem(
@@ -138,7 +136,7 @@ public class ItemModule extends LogisticsItem {
 		return module;
 	}
 
-	private void openConfigGui(@Nonnull ItemStack stack, EntityPlayer player, World world) {
+	private void openConfigGui(@Nonnull ItemStack stack, PlayerEntity player, World world) {
 		LogisticsModule module = getModuleForItem(stack, null, new DummyWorldProvider(world), null);
 		if (module instanceof Gui && !stack.isEmpty()) {
 			module.registerPosition(ModulePositionType.IN_HAND, player.inventory.currentItem);
@@ -160,8 +158,8 @@ public class ItemModule extends LogisticsItem {
 
 	@Override
 	@Nonnull
-	public ActionResult<ItemStack> onItemRightClick(final World world, final EntityPlayer player,
-			@Nonnull final EnumHand hand) {
+	public ActionResult<ItemStack> onItemRightClick(final World world, final PlayerEntity player,
+			@Nonnull final Hand hand) {
 		if (MainProxy.isServer(player.world)) {
 			openConfigGui(player.getHeldItem(hand), player, world);
 		}
@@ -170,7 +168,7 @@ public class ItemModule extends LogisticsItem {
 
 	@Override
 	@Nonnull
-	public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing,
+	public ActionResultType onItemUse(PlayerEntity player, World world, BlockPos pos, Hand hand, Direction facing,
 			float hitX, float hitY, float hitZ) {
 		if (MainProxy.isServer(player.world)) {
 			TileEntity tile = world.getTileEntity(pos);
@@ -182,11 +180,11 @@ public class ItemModule extends LogisticsItem {
 						pipe.blockActivated(player);
 					}
 				}
-				return EnumActionResult.PASS;
+				return ActionResultType.PASS;
 			}
 			openConfigGui(player.inventory.getCurrentItem(), player, world);
 		}
-		return EnumActionResult.PASS;
+		return ActionResultType.PASS;
 	}
 
 	@Nullable
@@ -234,25 +232,25 @@ public class ItemModule extends LogisticsItem {
 	@SideOnly(Side.CLIENT)
 	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, List<String> tooltip,
 			ITooltipFlag flagIn) {
-		if (stack.hasTagCompound()) {
-			NBTTagCompound nbt = stack.getTagCompound();
+		if (stack.hasTag()) {
+			CompoundNBT nbt = stack.getTag();
 			assert nbt != null;
 
-			if (nbt.hasKey("informationList")) {
-				if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
-					NBTTagList nbttaglist = nbt.getTagList("informationList", 8);
-					for (int i = 0; i < nbttaglist.tagCount(); i++) {
-						Object nbttag = nbttaglist.get(i);
-						String data = ((NBTTagString) nbttag).getString();
-						if (data.equals("<inventory>") && i + 1 < nbttaglist.tagCount()) {
-							nbttag = nbttaglist.get(i + 1);
-							data = ((NBTTagString) nbttag).getString();
+			if (nbt.contains("informationList")) {
+				if (InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LSHIFT) || InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_RSHIFT)) {
+					ListNBT ListNBT = nbt.getList("informationList", 8);
+					for (int i = 0; i < ListNBT.size(); i++) {
+						Object nbttag = ListNBT.get(i);
+						String data = ((StringNBT) nbttag).getString();
+						if (data.equals("<inventory>") && i + 1 < ListNBT.size()) {
+							nbttag = ListNBT.get(i + 1);
+							data = ((StringNBT) nbttag).getString();
 							if (data.startsWith("<that>")) {
 								String prefix = data.substring(6);
-								NBTTagCompound module = nbt.getCompoundTag("moduleInformation");
-								int size = module.getTagList(prefix + "items", module.getId()).tagCount();
-								if (module.hasKey(prefix + "itemsCount")) {
-									size = module.getInteger(prefix + "itemsCount");
+								CompoundNBT module = nbt.getCompound("moduleInformation");
+								int size = module.getList(prefix + "items", module.getId()).size();
+								if (module.contains(prefix + "itemsCount")) {
+									size = module.getInt(prefix + "itemsCount");
 								}
 								ItemIdentifierInventory inv = new ItemIdentifierInventory(size,
 										"InformationTempInventory", Integer.MAX_VALUE);

@@ -1,7 +1,7 @@
 package logisticspipes.network.packets.gui;
 
 import net.minecraft.client.gui.GuiChat;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import net.minecraftforge.fml.client.FMLClientHandler;
 
@@ -23,7 +23,7 @@ public class OpenChatGui extends ModernPacket {
 
 	@Override
 	@ClientSideOnlyMethodContent
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		FMLClientHandler.instance().getClient().displayGuiScreen(new GuiChat());
 	}
 

@@ -2,10 +2,9 @@ package logisticspipes.gui;
 
 import java.util.Arrays;
 
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
+
+import com.mojang.blaze3d.platform.GlStateManager;
 
 import logisticspipes.blocks.crafting.LogisticsCraftingTableTileEntity;
 import logisticspipes.network.PacketHandler;
@@ -29,8 +28,8 @@ public class GuiLogisticsCraftingTable extends LogisticsBaseGuiScreen {
 
 	private GuiButton[] sycleButtons = new GuiButton[2];
 
-	public GuiLogisticsCraftingTable(EntityPlayer player, LogisticsCraftingTableTileEntity crafter) {
-		super(176, 218, 0, 0);
+	public GuiLogisticsCraftingTable(PlayerEntity player, LogisticsCraftingTableTileEntity crafter) {
+		super(inv, titleIn, 176, 218, 0, 0);
 		DummyContainer dummy = new DummyContainer(player.inventory, crafter.matrix);
 		dummy.guiHolderForJEI = this;
 
@@ -71,8 +70,8 @@ public class GuiLogisticsCraftingTable extends LogisticsBaseGuiScreen {
 		for (GuiButton sycleButton : sycleButtons) {
 			sycleButton.visible = _crafter.targetType != null;
 		}
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		for (int x = 0; x < 3; x++) {
 			for (int y = 0; y < 3; y++) {
 				GuiGraphics.drawSlotBackground(mc, guiLeft + 34 + x * 18, guiTop + 9 + y * 18);
@@ -95,11 +94,11 @@ public class GuiLogisticsCraftingTable extends LogisticsBaseGuiScreen {
 
 		ItemStackRenderer.renderItemIdentifierStackListIntoGui(Arrays.asList(items), null, 0, guiLeft + 8, guiTop + 79, 9, 9, 18, 18, 0.0F, DisplayAmount.NEVER);
 
-		GlStateManager.translate(0, 0, 200F);
+		GlStateManager.translatef(0, 0, 200F);
 		for (int a = 0; a < 9; a++) {
 			Gui.drawRect(guiLeft + 8 + (a * 18), guiTop + 80, guiLeft + 24 + (a * 18), guiTop + 96, 0xc08b8b8b);
 		}
-		GlStateManager.translate(0, 0, -200F);
+		GlStateManager.translatef(0, 0, -200F);
 	}
 
 	@Override

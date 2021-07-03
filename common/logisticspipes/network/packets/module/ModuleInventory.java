@@ -1,6 +1,6 @@
 package logisticspipes.network.packets.module;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.interfaces.IModuleInventoryReceive;
 import logisticspipes.network.abstractpackets.InventoryModuleCoordinatesPacket;
@@ -20,7 +20,7 @@ public class ModuleInventory extends InventoryModuleCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		if (getIdentList() == null) return;
 		IModuleInventoryReceive module = this.getLogisticsModule(player, IModuleInventoryReceive.class);
 		if (module == null) {

@@ -37,7 +37,6 @@
 
 package network.rs485.logisticspipes.gui.guidebook
 
-import net.minecraft.client.Minecraft
 import network.rs485.logisticspipes.util.math.Rectangle
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -53,7 +52,7 @@ class SliderButton(x: Int, y: Int, width: Int, railHeight: Int, private var prog
     private var hoveredBar: Boolean = false
 
     init {
-        zLevel = GuideBookConstants.Z_TITLE_BUTTONS
+        blitOffset = GuideBookConstants.Z_TITLE_BUTTONS
     }
 
     override fun drawButton(mc: Minecraft, mouseX: Int, mouseY: Int, partialTicks: Float) {
@@ -66,7 +65,7 @@ class SliderButton(x: Int, y: Int, width: Int, railHeight: Int, private var prog
 
     override fun getHoverState(mouseOver: Boolean): Int = if (dragging) 3 else if (!enabled) 2 else if (hoveredBar) 1 else 0
 
-    override fun mouseReleased(mouseX: Int, mouseY: Int) {
+    override fun mouseReleased(mouseX: Double, mouseY: Double, partialTick: Int): Boolean {
         if (dragging) {
             dragging = false
             setProgressI((mouseY - body.roundedY) - initialMouseYOffset)
@@ -83,8 +82,8 @@ class SliderButton(x: Int, y: Int, width: Int, railHeight: Int, private var prog
         }
     }
 
-    override fun mousePressed(mc: Minecraft, mouseX: Int, mouseY: Int): Boolean {
-        if (visible && enabled) {
+    override fun mouseClicked(mouseX: Double, mouseY: Double, p_mouseClicked_5_: Int): Boolean {
+        if (visible && active) {
             if (hoveredBar) {
                 dragging = true
                 initialMouseYOffset = mouseY - sliderButton.translated(body).y0.toInt()
@@ -94,7 +93,7 @@ class SliderButton(x: Int, y: Int, width: Int, railHeight: Int, private var prog
                 setProgressCallback(progress)
             }
         }
-        return false
+        return super.mouseClicked(mouseX, mouseY, p_mouseClicked_5_)
     }
 
     private fun updateButtonY() {
@@ -104,7 +103,7 @@ class SliderButton(x: Int, y: Int, width: Int, railHeight: Int, private var prog
 
     fun updateSlider(extraHeight: Int, newProgress: Float): SliderButton {
         if (extraHeight > 0) {
-            enabled = true
+            active = true
             sliderButton.setPos(0, calculateProgressI())
             val possibleHeight: Int = body.roundedHeight - extraHeight
             sliderButton.setSize(
@@ -114,7 +113,7 @@ class SliderButton(x: Int, y: Int, width: Int, railHeight: Int, private var prog
             progress = newProgress
             updateButtonY()
         } else {
-            enabled = false
+            active = false
             sliderButton.setPos(0, 0)
             sliderButton.setSize(body.roundedWidth, newHeight = minimumHeight)
             progress = 0.0f

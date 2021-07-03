@@ -11,13 +11,15 @@ package logisticspipes.utils.gui;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.platform.GlStateManager.DestFactor;
+import com.mojang.blaze3d.platform.GlStateManager.SourceFactor;
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.utils.Color;
@@ -26,7 +28,7 @@ import logisticspipes.utils.Color;
  * Utils class for simple drawing methods.
  */
 @SuppressWarnings("JavadocReference")
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public final class SimpleGraphics {
 
 	private SimpleGraphics() {}
@@ -126,7 +128,7 @@ public final class SimpleGraphics {
 		}
 
 		// no blend //GlStateManager.enableBlend();
-		GlStateManager.disableTexture2D();
+		GlStateManager.disableTexture();
 		// no blend //GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
 		GL11.glColor4f(Color.getRed(color), Color.getGreen(color), Color.getBlue(color), Color.getAlpha(color));
 
@@ -139,7 +141,7 @@ public final class SimpleGraphics {
 		buf.pos(x1, y1, zLevel).endVertex();
 		tessellator.draw();
 
-		GlStateManager.enableTexture2D();
+		GlStateManager.enableTexture();
 		// no blend //GlStateManager.disableBlend();
 	}
 
@@ -165,10 +167,10 @@ public final class SimpleGraphics {
 	 * @see net.minecraft.client.gui.Gui#drawGradientRect(int, int, int, int, int, int)
 	 */
 	public static void drawGradientRect(int x1, int y1, int x2, int y2, int colorA, int colorB, double zLevel) { // TODO
-		GlStateManager.disableTexture2D();
+		GlStateManager.disableTexture();
 		GlStateManager.enableBlend();
-		GlStateManager.disableAlpha();
-		GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+		GlStateManager.disableAlphaTest();
+		GlStateManager.blendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
 		GlStateManager.shadeModel(7425);
 
 		Tessellator tessellator = Tessellator.getInstance();
@@ -182,8 +184,8 @@ public final class SimpleGraphics {
 
 		GlStateManager.shadeModel(7424);
 		GlStateManager.disableBlend();
-		GlStateManager.enableAlpha();
-		GlStateManager.enableTexture2D();
+		GlStateManager.enableAlphaTest();
+		GlStateManager.enableTexture();
 	}
 
 	/**

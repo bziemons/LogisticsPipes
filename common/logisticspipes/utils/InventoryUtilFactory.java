@@ -13,7 +13,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.IInventoryUtil;
@@ -28,14 +28,14 @@ public class InventoryUtilFactory {
 	public void registerHandler(@Nonnull SpecialInventoryHandler.Factory handlerFactory) {
 		if (handlerFactory.init()) {
 			handlerFactories.add(handlerFactory);
-			LogisticsPipes.log.info("Loaded SpecialInventoryHandler.Factory: " + handlerFactory.getClass().getCanonicalName());
+			LogisticsPipes.getLOGGER().info("Loaded SpecialInventoryHandler.Factory: " + handlerFactory.getClass().getCanonicalName());
 		} else {
-			LogisticsPipes.log.warn("Could not load SpecialInventoryHandler.Factory: " + handlerFactory.getClass().getCanonicalName());
+			LogisticsPipes.getLOGGER().warn("Could not load SpecialInventoryHandler.Factory: " + handlerFactory.getClass().getCanonicalName());
 		}
 	}
 
 	@Nullable
-	public SpecialInventoryHandler getSpecialHandlerFor(TileEntity tile, EnumFacing direction, ProviderMode mode) {
+	public SpecialInventoryHandler getSpecialHandlerFor(TileEntity tile, Direction direction, ProviderMode mode) {
 		return handlerFactories.stream()
 				.filter(factory -> factory.isType(tile, direction))
 				.map(factory -> factory.getUtilForTile(tile, direction, mode))
@@ -50,18 +50,20 @@ public class InventoryUtilFactory {
 	}
 
 	@Nullable
-	public IInventoryUtil getInventoryUtil(TileEntity inv, EnumFacing dir) {
+	public IInventoryUtil getInventoryUtil(@Nullable TileEntity inv, @Nullable Direction dir) {
 		return getHidingInventoryUtil(inv, dir, ProviderMode.DEFAULT);
 	}
 
 	@Nullable
-	public IInventoryUtil getHidingInventoryUtil(@Nullable TileEntity tile, @Nullable EnumFacing direction, @Nonnull ProviderMode mode) {
+	public IInventoryUtil getHidingInventoryUtil(@Nullable TileEntity tile, @Nullable Direction direction, @Nonnull ProviderMode mode) {
 		if (tile != null) {
 			IInventoryUtil util = getSpecialHandlerFor(tile, direction, mode);
 			if (util != null) {
 				return util;
-			} else if (tile.hasCapability(LogisticsPipes.ITEM_HANDLER_CAPABILITY, direction)) {
-				return new InventoryUtil(tile.getCapability(LogisticsPipes.ITEM_HANDLER_CAPABILITY, direction), mode);
+			} else {
+				return tile.getCapability(LogisticsPipes.ITEM_HANDLER_CAPABILITY, direction)
+						.map(itemHandler -> new InventoryUtil(itemHandler, mode))
+						.orElse(null);
 			}
 		}
 		return null;

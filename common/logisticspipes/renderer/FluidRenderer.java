@@ -47,7 +47,7 @@ public final class FluidRenderer {
 		}
 		TextureAtlasSprite icon = flowing ? fluid.getFlowingIcon() : fluid.getStillIcon();
 		if (icon == null) {
-			icon = ((TextureMap) Minecraft.getMinecraft().getTextureManager().getTexture(TextureMap.LOCATION_BLOCKS_TEXTURE)).getAtlasSprite("missingno");
+			icon = ((TextureMap) Minecraft.getInstance().getTextureManager().getTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE)).getAtlasSprite("missingno");
 		}
 		return icon;
 	}

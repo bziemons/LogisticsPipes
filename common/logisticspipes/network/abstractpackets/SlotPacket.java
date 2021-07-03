@@ -1,6 +1,6 @@
 package logisticspipes.network.abstractpackets;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Slot;
 
 import lombok.AccessLevel;
@@ -22,7 +22,7 @@ public abstract class SlotPacket extends ModernPacket {
 		super(id);
 	}
 
-	public <T extends Slot> T getSlot(EntityPlayer player, Class<T> clazz) {
+	public <T extends Slot> T getSlot(PlayerEntity player, Class<T> clazz) {
 		if (player.openContainer instanceof DummyContainer) {
 			if (getInteger() >= player.openContainer.inventorySlots.size()) {
 				targetNotFound("The requested Slot was out of range");

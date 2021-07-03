@@ -17,7 +17,6 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.ResourceLocation;
 
@@ -136,7 +135,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 	@Override
 	protected void renderToolTips(int mouseX, int mouseY, float par3) {
 		if (tooltip != null) {
-			GuiGraphics.displayItemToolTip(tooltip, zLevel, guiLeft, guiTop, true);
+			GuiGraphics.displayItemToolTip(tooltip, blitOffset, guiLeft, guiTop, true);
 		}
 	}
 
@@ -271,7 +270,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 	}
 
 	private void saveImage(BufferedImage bufferedimage) {
-		File screenShotsFolder = new File(Minecraft.getMinecraft().mcDataDir, "screenshots");
+		File screenShotsFolder = new File(Minecraft.getInstance().mcDataDir, "screenshots");
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
 		String s = dateFormat.format(new Date());
 		int i = 1;
@@ -280,7 +279,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 			if (!canidate.exists()) {
 				try {
 					ImageIO.write(bufferedimage, "png", canidate);
-					Minecraft.getMinecraft().player.sendChatMessage("Saved tree view as " + canidate.getName());
+					Minecraft.getInstance().player.sendChatMessage("Saved tree view as " + canidate.getName());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -301,7 +300,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		for (int yVar = 0; yVar * 16 < height; yVar++) {
 			for (int xVar = 0; xVar * 16 < width; xVar++) {
 				TextureAtlasSprite icon = getTexture(Blocks.STONE);
-				mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+				mc.getTextureManager().bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
 				drawTexturedModalRect(xVar * 16, yVar * 16, icon, 16, 16);
 			}
 		}
@@ -344,7 +343,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		GL11.glEnable(GL11.GL_BLEND);
 
 		GL11.glPopMatrix();
-		zLevel = 0.0F;
+		blitOffset = 0.0F;
 		GL11.glDepthFunc(GL11.GL_LEQUAL);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
@@ -377,7 +376,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 
 		int innerLeftSide = leftSide + 16;
 		int innerTopSide = topSide + 17;
-		zLevel = 0.0F;
+		blitOffset = 0.0F;
 
 		GL11.glDepthFunc(GL11.GL_GEQUAL);
 		GL11.glPushMatrix();
@@ -394,7 +393,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		for (int yVar = 0; yVar * 16 - moveBackgroundY < zoom.bottomRenderBorder; yVar++) {
 			for (int xVar = 0; xVar * 16 - moveBackgroundX < zoom.rightRenderBorder; xVar++) {
 				TextureAtlasSprite icon = getTexture(Blocks.STONE);
-				mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+				mc.getTextureManager().bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
 				drawTexturedModalRect(innerLeftSide + xVar * 16 - moveBackgroundX, innerTopSide + yVar * 16 - moveBackgroundY, icon, 16, 16);
 			}
 		}
@@ -445,7 +444,7 @@ public class RequestMonitorPopup extends SubGuiScreen {
 		mc.getTextureManager().bindTexture(RequestMonitorPopup.achievementTextures);
 		drawTexturedModalRect(leftSide, topSide, 0, 0, xSize, ySize);
 		GL11.glPopMatrix();
-		zLevel = 0.0F;
+		blitOffset = 0.0F;
 		GL11.glDepthFunc(GL11.GL_LEQUAL);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
@@ -575,12 +574,12 @@ public class RequestMonitorPopup extends SubGuiScreen {
 
 	private void renderItemAt(ItemIdentifierStack item, int x, int y) {
 		if (guiLeft < x && x < guiLeft + xSize - 16 && guiTop < y && y < guiTop + ySize - 16) {
-			itemRender.renderItemAndEffectIntoGUI(item.getItem().makeNormalStack(1), x, y);
-			itemRender.renderItemOverlayIntoGUI(fontRenderer, item.getItem().makeNormalStack(1), x, y, "");
+			itemRenderer.renderItemAndEffectIntoGUI(item.getItem().makeNormalStack(1), x, y);
+			itemRenderer.renderItemOverlayIntoGUI(fontRenderer, item.getItem().makeNormalStack(1), x, y, "");
 			String s = TextUtil.getThreeDigitFormattedNumber(item.getStackSize(), false);
 			GL11.glDisable(GL11.GL_LIGHTING);
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
-			itemRender.zLevel = 0.0F;
+			itemRenderer.zLevel = 0.0F;
 			// Draw number
 			mc.fontRenderer.drawStringWithShadow(s, x + 17 - mc.fontRenderer.getStringWidth(s), y + 9, 16777215);
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
@@ -594,6 +593,6 @@ public class RequestMonitorPopup extends SubGuiScreen {
 	}
 
 	private TextureAtlasSprite getTexture(Block blockIn) {
-		return Minecraft.getMinecraft().getBlockRendererDispatcher().getBlockModelShapes().getTexture(blockIn.getDefaultState());
+		return Minecraft.getInstance().getBlockRendererDispatcher().getBlockModelShapes().getTexture(blockIn.getDefaultState());
 	}
 }

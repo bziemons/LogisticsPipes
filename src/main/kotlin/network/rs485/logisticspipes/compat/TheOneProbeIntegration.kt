@@ -50,7 +50,7 @@ import logisticspipes.proxy.MainProxy
 import mcjty.theoneprobe.api.*
 import net.minecraft.block.state.IBlockState
 import net.minecraft.client.Minecraft
-import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.item.ItemStack
 import net.minecraft.util.EnumFacing
 import net.minecraft.util.text.TextFormatting
@@ -109,7 +109,7 @@ class TheOneProbeIntegration : Function<ITheOneProbe, Void?> {
         override fun addProbeInfo(
             mode: ProbeMode,
             probeInfo: IProbeInfo?,
-            player: EntityPlayer?,
+            player: PlayerEntity?,
             world: World,
             blockState: IBlockState?,
             data: IProbeHitData?,

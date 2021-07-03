@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.init.Blocks;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
@@ -51,7 +51,7 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 
 	private final CoreRoutedPipe pipe;
 
-	public GuiPipeController(final EntityPlayer player, final CoreRoutedPipe pipe) {
+	public GuiPipeController(final PlayerEntity player, final CoreRoutedPipe pipe) {
 		super(180, 220);
 		this.pipe = pipe;
 		DummyContainer dummy = new DummyContainer(player, null, pipe.getOriginalUpgradeManager().getGuiController());
@@ -146,10 +146,10 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
 			RenderHelper.enableGUIStandardItemLighting();
 			ItemStack stack = new ItemStack(ItemUpgrade.getAndCheckUpgrade(LPItems.upgrades.get(SneakyUpgradeConfig.getName())));
-			itemRender.renderItemAndEffectIntoGUI(stack, x, y);
+			itemRenderer.renderItemAndEffectIntoGUI(stack, x, y);
 			GL11.glDisable(GL11.GL_LIGHTING);
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
-			itemRender.zLevel = 0.0F;
+			itemRenderer.zLevel = 0.0F;
 		}
 
 		@Override
@@ -193,11 +193,11 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 						if (itemStack.getItem() != LPItems.itemCard) {
 							return false;
 						}
-						if (itemStack.getItemDamage() != LogisticsItemCard.SEC_CARD) {
+						if (itemStack.getDamage() != LogisticsItemCard.SEC_CARD) {
 							return false;
 						}
 						return SimpleServiceLocator.securityStationManager
-								.isAuthorized(UUID.fromString(itemStack.getTagCompound().getString("UUID")));
+								.isAuthorized(UUID.fromString(itemStack.getTag().getString("UUID")));
 					}, 1));
 		}
 
@@ -216,7 +216,7 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 			fontRenderer.drawString(TextUtil.translate(PREFIX + "security"), 10, 28, Color.getValue(Color.DARKER_GREY), false);
 			ItemStack itemStack = pipe.getOriginalUpgradeManager().secInv.getStackInSlot(0);
 			if (!itemStack.isEmpty()) {
-				UUID id = UUID.fromString(itemStack.getTagCompound().getString("UUID"));
+				UUID id = UUID.fromString(itemStack.getTag().getString("UUID"));
 				fontRenderer.drawString("Id: ", 10, 68, Color.getValue(Color.DARKER_GREY), false);
 				GL11.glTranslated(10, 80, 0);
 				GL11.glScaled(0.75D, 0.75D, 1.0D);
@@ -303,10 +303,10 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
 			RenderHelper.enableGUIStandardItemLighting();
 			ItemStack stack2 = new ItemStack(Blocks.REDSTONE_TORCH);
-			itemRender.renderItemAndEffectIntoGUI(stack2, x, y);
+			itemRenderer.renderItemAndEffectIntoGUI(stack2, x, y);
 			GL11.glDisable(GL11.GL_LIGHTING);
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
-			itemRender.zLevel = 0.0F;
+			itemRenderer.zLevel = 0.0F;
 		}
 
 		@Override
@@ -397,7 +397,7 @@ public class GuiPipeController extends LogisticsBaseTabGuiScreen {
 			List<ItemIdentifierStack> _allItems = pipe.getClientSideOrderManager().stream()
 					.map(IOrderInfoProvider::getAsDisplayItem).collect(Collectors.toCollection(LinkedList::new));
 			_itemDisplay_5.setItemList(_allItems);
-			_itemDisplay_5.renderItemArea(zLevel);
+			_itemDisplay_5.renderItemArea(blitOffset);
 			_itemDisplay_5.renderPageNumber(right - guiLeft - 45, 28);
 			int start = _itemDisplay_5.getPage() * 3;
 			int stringPos = 40;

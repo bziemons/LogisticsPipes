@@ -1,7 +1,7 @@
 package logisticspipes.commands.commands;
 
-import net.minecraft.command.ICommandSender;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.command.ICommandSource;
+import net.minecraft.util.text.StringTextComponent;
 
 import logisticspipes.commands.abstracts.ICommandHandler;
 import logisticspipes.utils.string.ChatColor;
@@ -14,7 +14,7 @@ public class ClearCommand implements ICommandHandler {
 	}
 
 	@Override
-	public boolean isCommandUsableBy(ICommandSender sender) {
+	public boolean isCommandUsableBy(ICommandSource sender) {
 		return true;
 	}
 
@@ -24,13 +24,13 @@ public class ClearCommand implements ICommandHandler {
 	}
 
 	@Override
-	public void executeCommand(ICommandSender sender, String[] args) {
+	public void executeCommand(ICommandSource sender, String[] args) {
 		if (args.length <= 0 || !args[0].equalsIgnoreCase("all")) {
-			sender.sendMessage(new TextComponentString("%LPSTORESENDMESSAGE%"));
-			sender.sendMessage(new TextComponentString("%LPCLEARCHAT%"));
-			sender.sendMessage(new TextComponentString("%LPRESTORESENDMESSAGE%"));
+			sender.sendMessage(new StringTextComponent("%LPSTORESENDMESSAGE%"));
+			sender.sendMessage(new StringTextComponent("%LPCLEARCHAT%"));
+			sender.sendMessage(new StringTextComponent("%LPRESTORESENDMESSAGE%"));
 		} else {
-			sender.sendMessage(new TextComponentString("%LPCLEARCHAT%"));
+			sender.sendMessage(new StringTextComponent("%LPCLEARCHAT%"));
 		}
 	}
 }

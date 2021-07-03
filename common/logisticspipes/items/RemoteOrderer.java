@@ -6,14 +6,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumHand;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -50,17 +48,17 @@ public class RemoteOrderer extends LogisticsItem {
 	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
 		super.addInformation(stack, worldIn, tooltip, flagIn);
 
-		if (stack.hasTagCompound() && Objects.requireNonNull(stack.getTagCompound()).hasKey("connectedPipe-x")) {
+		if (stack.hasTag() && Objects.requireNonNull(stack.getTag()).contains("connectedPipe-x")) {
 			tooltip.add("\u00a77Has Remote Pipe");
 		}
 	}
 
 	@Nonnull
 	@Override
-	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand handIn) {
+	public ActionResult<ItemStack> onItemRightClick(World world, PlayerEntity player, @Nonnull Hand handIn) {
 		ItemStack par1ItemStack = player.inventory.getCurrentItem();
-		if (par1ItemStack.isEmpty() || !par1ItemStack.hasTagCompound()) {
-			return ActionResult.newResult(EnumActionResult.FAIL, par1ItemStack);
+		if (par1ItemStack.isEmpty() || !par1ItemStack.hasTag()) {
+			return ActionResult.newResult(ActionResultType.FAIL, par1ItemStack);
 		}
 		PipeItemsRemoteOrdererLogistics pipe = RemoteOrderer.getPipe(par1ItemStack);
 		if (pipe != null) {
@@ -71,20 +69,20 @@ public class RemoteOrderer extends LogisticsItem {
 				}
 				energyUse += Math.sqrt(Math.pow(pipe.getX() - player.posX, 2) + Math.pow(pipe.getY() - player.posY, 2) + Math.pow(pipe.getZ() - player.posZ, 2));
 				if (pipe.useEnergy(energyUse)) {
-					MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RequestPipeDimension.class).setInteger(pipe.getWorld().provider.getDimension()), player);
+					MainProxy.sendPacketToPlayer(PacketHandler.getPacket(RequestPipeDimension.class).setInteger(pipe.getWorld().getDimension()), player);
 					player.openGui(LogisticsPipes.instance, GuiIDs.GUI_Normal_Orderer_ID, pipe.getWorld(), pipe.getX(), pipe.getY(), pipe.getZ());
 				}
 			}
 		}
-		return ActionResult.newResult(EnumActionResult.PASS, par1ItemStack);
+		return ActionResult.newResult(ActionResultType.PASS, par1ItemStack);
 	}
 
 	public static void connectToPipe(@Nonnull ItemStack stack, PipeItemsRemoteOrdererLogistics pipe) {
-		stack.setTagCompound(new NBTTagCompound());
-		final NBTTagCompound tag = Objects.requireNonNull(stack.getTagCompound());
-		tag.setInteger("connectedPipe-x", pipe.getX());
-		tag.setInteger("connectedPipe-y", pipe.getY());
-		tag.setInteger("connectedPipe-z", pipe.getZ());
+		stack.setTag(new CompoundNBT());
+		final CompoundNBT tag = Objects.requireNonNull(stack.getTag());
+		tag.putInt("connectedPipe-x", pipe.getX());
+		tag.putInt("connectedPipe-y", pipe.getY());
+		tag.putInt("connectedPipe-z", pipe.getZ());
 		int dimension = 0;
 		for (Integer dim : DimensionManager.getIDs()) {
 			if (pipe.getWorld().equals(DimensionManager.getWorld(dim))) {
@@ -92,26 +90,26 @@ public class RemoteOrderer extends LogisticsItem {
 				break;
 			}
 		}
-		tag.setInteger("connectedPipe-world-dim", dimension);
+		tag.putInt("connectedPipe-world-dim", dimension);
 	}
 
 	public static PipeItemsRemoteOrdererLogistics getPipe(@Nonnull ItemStack stack) {
-		if (stack.isEmpty() || !stack.hasTagCompound()) {
+		if (stack.isEmpty() || !stack.hasTag()) {
 			return null;
 		}
-		final NBTTagCompound tag = Objects.requireNonNull(stack.getTagCompound());
-		if (!tag.hasKey("connectedPipe-x") || !tag.hasKey("connectedPipe-y") || !tag.hasKey("connectedPipe-z")) {
+		final CompoundNBT tag = Objects.requireNonNull(stack.getTag());
+		if (!tag.contains("connectedPipe-x") || !tag.contains("connectedPipe-y") || !tag.contains("connectedPipe-z")) {
 			return null;
 		}
-		if (!tag.hasKey("connectedPipe-world-dim")) {
+		if (!tag.contains("connectedPipe-world-dim")) {
 			return null;
 		}
-		int dim = tag.getInteger("connectedPipe-world-dim");
+		int dim = tag.getInt("connectedPipe-world-dim");
 		World world = DimensionManager.getWorld(dim);
 		if (world == null) {
 			return null;
 		}
-		TileEntity tile = world.getTileEntity(new BlockPos(tag.getInteger("connectedPipe-x"), tag.getInteger("connectedPipe-y"), tag.getInteger("connectedPipe-z")));
+		TileEntity tile = world.getTileEntity(new BlockPos(tag.getInt("connectedPipe-x"), tag.getInt("connectedPipe-y"), tag.getInt("connectedPipe-z")));
 		if (!(tile instanceof LogisticsTileGenericPipe)) {
 			return null;
 		}
@@ -123,8 +121,8 @@ public class RemoteOrderer extends LogisticsItem {
 	}
 
 	@Override
-	public void getSubItems(@Nonnull CreativeTabs tab, @Nonnull NonNullList<ItemStack> items) {
-		if (isInCreativeTab(tab)) {
+	public void getSubItems(@Nonnull ItemGroup group, @Nonnull NonNullList<ItemStack> items) {
+		if (isInGroup(group)) {
 			for (int meta = 0; meta < 17; meta++) {
 				items.add(new ItemStack(this, 1, meta));
 			}

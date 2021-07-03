@@ -1,6 +1,6 @@
 package logisticspipes.gui;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
@@ -17,8 +17,8 @@ public class GuiPowerProvider extends LogisticsBaseGuiScreen {
 
 	private final LogisticsPowerProviderTileEntity junction;
 
-	public GuiPowerProvider(EntityPlayer player, LogisticsPowerProviderTileEntity junction) {
-		super(176, 166, 0, 0);
+	public GuiPowerProvider(PlayerEntity player, LogisticsPowerProviderTileEntity junction) {
+		super(inv, titleIn, 176, 166, 0, 0);
 		DummyContainer dummy = new DummyContainer(player, null, junction);
 		dummy.addNormalSlotsForPlayerInventory(8, 80);
 		inventorySlots = dummy;
@@ -30,7 +30,7 @@ public class GuiPowerProvider extends LogisticsBaseGuiScreen {
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float var1, int var2, int var3) {
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-		mc.renderEngine.bindTexture(GuiPowerProvider.TEXTURE);
+		mc.textureManager.bindTexture(GuiPowerProvider.TEXTURE);
 		int j = guiLeft;
 		int k = guiTop;
 		drawTexturedModalRect(j, k, 0, 0, xSize, ySize);

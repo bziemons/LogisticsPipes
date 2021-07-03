@@ -20,30 +20,27 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.client.gui.screen.inventory.ContainerScreen;
+import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.inventory.ClickType;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.Slot;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.container.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 
-import codechicken.nei.api.INEIGuiHandler;
-import codechicken.nei.api.TaggedInventoryArea;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.platform.GlStateManager.DestFactor;
+import com.mojang.blaze3d.platform.GlStateManager.SourceFactor;
 import lombok.Getter;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.LPConstants;
 import logisticspipes.LogisticsPipes;
-import logisticspipes.asm.ModDependentInterface;
 import logisticspipes.asm.ModDependentMethod;
 import logisticspipes.interfaces.IChainAddList;
 import logisticspipes.interfaces.IFuzzySlot;
@@ -60,57 +57,128 @@ import network.rs485.logisticspipes.util.FuzzyFlag;
 import network.rs485.logisticspipes.util.FuzzyUtil;
 import network.rs485.logisticspipes.util.TextUtil;
 
-@ModDependentInterface(modId = { LPConstants.neiModID }, interfacePath = { "codechicken.nei.api.INEIGuiHandler" })
-public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISubGuiControler, INEIGuiHandler, IGuiAccess {
+public abstract class LogisticsBaseGuiScreen<T extends Container> extends ContainerScreen<T>
+		implements ISubGuiControler, IGuiAccess {
 
-	protected static final ResourceLocation ITEMSINK = new ResourceLocation("logisticspipes", "textures/gui/itemsink.png");
-	protected static final ResourceLocation SUPPLIER = new ResourceLocation("logisticspipes", "textures/gui/supplier.png");
-	protected static final ResourceLocation CHASSI1 = new ResourceLocation("logisticspipes", "textures/gui/itemsink.png");
+	protected static final ResourceLocation ITEMSINK = new ResourceLocation("logisticspipes",
+			"textures/gui/itemsink.png");
+	protected static final ResourceLocation SUPPLIER = new ResourceLocation("logisticspipes",
+			"textures/gui/supplier.png");
+	protected static final ResourceLocation CHASSI1 = new ResourceLocation("logisticspipes",
+			"textures/gui/itemsink.png");
 
+	protected final int xCenterOffset;
+	protected final int yCenterOffset;
+	public IChainAddList<EventListener> onGuiEvents = new ChainAddArrayList<>();
 	@Getter
 	protected int right;
 	@Getter
 	protected int bottom;
 	protected int xCenter;
 	protected int yCenter;
-	protected final int xCenterOffset;
-	protected final int yCenterOffset;
-
-	private SubGuiScreen subGui;
 	protected List<IRenderSlot> slots = new ArrayList<>();
 	protected GuiExtentionController extentionControllerLeft = new GuiExtentionController(GuiSide.LEFT);
 	protected GuiExtentionController extentionControllerRight = new GuiExtentionController(GuiSide.RIGHT);
-	private GuiButton selectedButton;
-
+	private SubGuiScreen subGui;
+	private Button selectedButton;
 	private int currentDrawScreenMouseX;
 	private int currentDrawScreenMouseY;
-
 	private IFuzzySlot fuzzySlot;
 	private boolean fuzzySlotActiveGui;
 	private int fuzzySlotGuiHoverTime;
 	private Queue<Runnable> renderAtTheEnd = new LinkedList<>();
 
-	public LogisticsBaseGuiScreen(int xSize, int ySize, int xCenterOffset, int yCenterOffset) {
-		this(new DummyContainer(null, null), xSize, ySize, xCenterOffset, yCenterOffset);
+	public LogisticsBaseGuiScreen(PlayerInventory inv, ITextComponent titleIn, int xSize,
+			int ySize,
+			int xCenterOffset, int yCenterOffset) {
+		this(new DummyContainer(null, null), inv, titleIn, xSize, ySize, xCenterOffset, yCenterOffset);
 	}
 
-	public LogisticsBaseGuiScreen(Container container) {
-		super(container);
+	public LogisticsBaseGuiScreen(T container, PlayerInventory inv, ITextComponent titleIn) {
+		super(container, inv, titleIn);
 		xCenterOffset = 0;
 		yCenterOffset = 0;
 	}
 
-	public LogisticsBaseGuiScreen(Container container, int xSize, int ySize, int xCenterOffset, int yCenterOffset) {
-		super(container);
+	public LogisticsBaseGuiScreen(
+			T container,
+			PlayerInventory inv,
+			ITextComponent titleIn,
+			int xSize,
+			int ySize,
+			int xCenterOffset,
+			int yCenterOffset
+	) {
+		super(container, inv, titleIn);
 		this.xSize = xSize;
 		this.ySize = ySize;
 		this.xCenterOffset = xCenterOffset;
 		this.yCenterOffset = yCenterOffset;
 	}
 
+	public static void drawHorizontalGradientRect(int left, int top, int right, int bottom, int z, int colorLeft,
+			int colorRight) {
+		float aL = (float) (colorLeft >> 24 & 255) / 255.0F;
+		float rL = (float) (colorLeft >> 16 & 255) / 255.0F;
+		float gL = (float) (colorLeft >> 8 & 255) / 255.0F;
+		float bL = (float) (colorLeft & 255) / 255.0F;
+		float aR = (float) (colorRight >> 24 & 255) / 255.0F;
+		float rR = (float) (colorRight >> 16 & 255) / 255.0F;
+		float gR = (float) (colorRight >> 8 & 255) / 255.0F;
+		float bR = (float) (colorRight & 255) / 255.0F;
+		GlStateManager.disableTexture();
+		GlStateManager.enableBlend();
+		GlStateManager.disableAlphaTest();
+		GlStateManager.blendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE,
+				DestFactor.ZERO);
+		GlStateManager.shadeModel(7425);
+		Tessellator tessellator = Tessellator.getInstance();
+		BufferBuilder bufferbuilder = tessellator.getBuffer();
+		bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+		bufferbuilder.pos(right, top, z).color(rR, gR, bR, aR).endVertex();
+		bufferbuilder.pos(left, top, z).color(rL, gL, bL, aL).endVertex();
+		bufferbuilder.pos(left, bottom, z).color(rL, gL, bL, aL).endVertex();
+		bufferbuilder.pos(right, bottom, z).color(rR, gR, bR, aR).endVertex();
+		tessellator.draw();
+		GlStateManager.shadeModel(7424);
+		GlStateManager.disableBlend();
+		GlStateManager.enableAlphaTest();
+		GlStateManager.enableTexture();
+	}
+
+	public static void drawVerticalGradientRect(int left, int top, int right, int bottom, int z, int colorTop,
+			int colorBottom) {
+		float aT = (float) (colorTop >> 24 & 255) / 255.0F;
+		float rT = (float) (colorTop >> 16 & 255) / 255.0F;
+		float gT = (float) (colorTop >> 8 & 255) / 255.0F;
+		float bT = (float) (colorTop & 255) / 255.0F;
+		float aB = (float) (colorBottom >> 24 & 255) / 255.0F;
+		float rB = (float) (colorBottom >> 16 & 255) / 255.0F;
+		float gB = (float) (colorBottom >> 8 & 255) / 255.0F;
+		float bB = (float) (colorBottom & 255) / 255.0F;
+		GlStateManager.disableTexture();
+		GlStateManager.enableBlend();
+		GlStateManager.disableAlphaTest();
+		GlStateManager.blendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE,
+				DestFactor.ZERO);
+		GlStateManager.shadeModel(7425);
+		Tessellator tessellator = Tessellator.getInstance();
+		BufferBuilder bufferbuilder = tessellator.getBuffer();
+		bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+		bufferbuilder.pos(right, top, z).color(rT, gT, bT, aT).endVertex();
+		bufferbuilder.pos(left, top, z).color(rT, gT, bT, aT).endVertex();
+		bufferbuilder.pos(left, bottom, z).color(rB, gB, bB, aB).endVertex();
+		bufferbuilder.pos(right, bottom, z).color(rB, gB, bB, aB).endVertex();
+		tessellator.draw();
+		GlStateManager.shadeModel(7424);
+		GlStateManager.disableBlend();
+		GlStateManager.enableAlphaTest();
+		GlStateManager.enableTexture();
+	}
+
 	@Override
-	public void initGui() {
-		super.initGui();
+	protected void init() {
+		super.init();
 		guiLeft = width / 2 - xSize / 2 + xCenterOffset;
 		guiTop = height / 2 - ySize / 2 + yCenterOffset;
 
@@ -217,7 +285,8 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 				int localMouseY = mouseY - guiTop;
 				int mouseXMax = localMouseX - slot.getSize();
 				int mouseYMax = localMouseY - slot.getSize();
-				if (slot.getXPos() < localMouseX && slot.getXPos() > mouseXMax && slot.getYPos() < localMouseY && slot.getYPos() > mouseYMax) {
+				if (slot.getXPos() < localMouseX && slot.getXPos() > mouseXMax && slot.getYPos() < localMouseY
+						&& slot.getYPos() > mouseYMax) {
 					if (slot.displayToolTip()) {
 						if (slot.getToolTipText() != null && !slot.getToolTipText().equals("")) {
 							ArrayList<String> list = new ArrayList<>();
@@ -283,7 +352,7 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 				Gui.drawRect(x1 + 8, y1 + 16, x1 + 17, y1 + 17, 0xFF7F7F40);
 				Gui.drawRect(x1 + 16, y1 + 8, x1 + 17, y1 + 17, 0xFF7F7F40);
 			}
-			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+			GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 			GL11.glEnable(GL11.GL_LIGHTING);
 			final boolean mouseOver = this.isMouseOverSlot(slot, currentDrawScreenMouseX, currentDrawScreenMouseY);
 			if (mouseOver) {
@@ -301,7 +370,8 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 			if (fuzzySlotActiveGui && fuzzySlot == slot) {
 				if (!mouseOver) {
 					//Check within FuzzyGui
-					if (!isPointInRegion(slot.xPos, slot.yPos + 16, 60, 52, currentDrawScreenMouseX, currentDrawScreenMouseY)) {
+					if (!isPointInRegion(slot.xPos, slot.yPos + 16, 60, 52, currentDrawScreenMouseX,
+							currentDrawScreenMouseY)) {
 						fuzzySlotActiveGui = false;
 						fuzzySlot = null;
 					}
@@ -311,8 +381,9 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 				renderAtTheEnd.add(() -> {
 					GL11.glDisable(GL11.GL_DEPTH_TEST);
 					GL11.glDisable(GL11.GL_LIGHTING);
-					GuiGraphics.drawGuiBackGround(mc, posX, posY, posX + 61, posY + 47, zLevel, true, true, true, true, true);
-					GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+					GuiGraphics.drawGuiBackGround(mc, posX, posY, posX + 61, posY + 47, zLevel, true, true, true, true,
+							true);
+					GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 					final String PREFIX = "gui.crafting.";
 					mc.fontRenderer.drawString(TextUtil.translate(PREFIX + "OreDict"), posX + 5, posY + 5,
 							(useOreDict ? 0xFF4040 : 0x404040));
@@ -378,13 +449,17 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 		int y = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
 		int dWheel = Mouse.getEventDWheel();
 		if (dWheel != 0 && !mouseHandled) {
-			Optional<DummySlot> slotOpt = this.inventorySlots.inventorySlots.stream().filter(it -> it instanceof DummySlot).map(it -> (DummySlot) it).filter(it -> isMouseOverSlot(it, x, y)).findFirst();
+			Optional<DummySlot> slotOpt = this.inventorySlots.inventorySlots.stream()
+					.filter(it -> it instanceof DummySlot).map(it -> (DummySlot) it)
+					.filter(it -> isMouseOverSlot(it, x, y)).findFirst();
 			if (slotOpt.isPresent()) {
 				DummySlot slot = slotOpt.get();
 				slot.setRedirectCall(true);
 				if (slot.getSlotStackLimit() > 0 && slot.getHasStack()) {
 					int buttonActionID = dWheel > 0 ? 1000 : 1001;
-					this.mc.playerController.windowClick(this.inventorySlots.windowId, slot.slotNumber, buttonActionID, ClickType.SWAP, this.mc.player);
+					this.mc.playerController
+							.windowClick(this.inventorySlots.windowId, slot.slotNumber, buttonActionID, ClickType.SWAP,
+									this.mc.player);
 				}
 				slot.setRedirectCall(false);
 				mouseHandled = true;
@@ -420,15 +495,18 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 				if (slot.drawSlotBackground()) {
 					GuiGraphics.drawSlotBackground(mc, slot.getXPos(), slot.getYPos());
 				}
-				if (((IItemTextureRenderSlot) slot).drawSlotIcon() && !((IItemTextureRenderSlot) slot).customRender(mc, zLevel)) {
-					GuiGraphics.renderIconAt(mc, slot.getXPos() + 1, slot.getYPos() + 1, zLevel, ((IItemTextureRenderSlot) slot).getTextureIcon());
+				if (((IItemTextureRenderSlot) slot).drawSlotIcon() && !((IItemTextureRenderSlot) slot)
+						.customRender(mc, blitOffset)) {
+					GuiGraphics.renderIconAt(mc, slot.getXPos() + 1, slot.getYPos() + 1, blitOffset,
+							((IItemTextureRenderSlot) slot).getTextureIcon());
 				}
 			} else if (slot instanceof ISmallColorRenderSlot) {
 				if (slot.drawSlotBackground()) {
 					GuiGraphics.drawSmallSlotBackground(mc, slot.getXPos(), slot.getYPos());
 				}
 				if (((ISmallColorRenderSlot) slot).drawColor()) {
-					Gui.drawRect(slot.getXPos() + 1, slot.getYPos() + 1, slot.getXPos() + 7, slot.getYPos() + 7, ((ISmallColorRenderSlot) slot).getColor());
+					Gui.drawRect(slot.getXPos() + 1, slot.getYPos() + 1, slot.getXPos() + 7, slot.getYPos() + 7,
+							((ISmallColorRenderSlot) slot).getColor());
 				}
 			}
 		}
@@ -441,7 +519,8 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 			int mouseY = par2 - guiTop;
 			int mouseXMax = mouseX - slot.getSize();
 			int mouseYMax = mouseY - slot.getSize();
-			if (slot.getXPos() < mouseX && slot.getXPos() > mouseXMax && slot.getYPos() < mouseY && slot.getYPos() > mouseYMax) {
+			if (slot.getXPos() < mouseX && slot.getXPos() > mouseXMax && slot.getYPos() < mouseY
+					&& slot.getYPos() > mouseYMax) {
 				slot.mouseClicked(par3);
 				return;
 			}
@@ -474,8 +553,8 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 			if (flag == null) return;
 			set.flip(flag.getBit());
 			MainProxy.sendPacketToServer(
-					PacketHandler.getPacket(FuzzySlotSettingsPacket.class)
-							.setSlotNumber(fuzzySlot.getSlotId())
+					PacketHandler.getPacket(FuzzySlotSettingsPacket.class).setSlotNumber(fuzzySlot.getSlotId())
+
 							.setFlags(set.copyValue()));
 			return;
 		}
@@ -613,8 +692,11 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 			}
 			if (result != null) {
 				if (result instanceof DummySlot || result instanceof ColorSlot || result instanceof FluidSlot) {
-					((DummyContainer) gui.inventorySlots).handleDummyClick(result, pos, stack, button, ClickType.PICKUP, mc.player);
-					MainProxy.sendPacketToServer(PacketHandler.getPacket(DummyContainerSlotClick.class).setSlotId(pos).setStack(stack).setButton(button));
+					((DummyContainer) gui.inventorySlots)
+							.handleDummyClick(result, pos, stack, button, ClickType.PICKUP, mc.player);
+					MainProxy.sendPacketToServer(
+							PacketHandler.getPacket(DummyContainerSlotClick.class).setSlotId(pos).setStack(stack)
+									.setButton(button));
 					return true;
 				}
 			}
@@ -631,18 +713,9 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 		return false;
 	}
 
-	public IChainAddList<EventListener> onGuiEvents = new ChainAddArrayList<>();
-
 	public List<Rectangle> getGuiExtraAreas() {
-		return Stream.concat(extentionControllerLeft.getGuiExtraAreas().stream(), extentionControllerRight.getGuiExtraAreas().stream()).collect(Collectors.toList());
-	}
-
-	public interface EventListener {
-
-		void onUpdateScreen();
-
-		boolean onKeyboardInput();
-
+		return Stream.concat(extentionControllerLeft.getGuiExtraAreas().stream(),
+				extentionControllerRight.getGuiExtraAreas().stream()).collect(Collectors.toList());
 	}
 
 	public void updateScreen() {
@@ -655,59 +728,11 @@ public abstract class LogisticsBaseGuiScreen extends GuiContainer implements ISu
 		mc.fontRenderer.drawString(text, actualX, y, color);
 	}
 
-	public static void drawHorizontalGradientRect(int left, int top, int right, int bottom, int z, int colorLeft, int colorRight){
-		float aL = (float)(colorLeft >> 24 & 255) / 255.0F;
-		float rL = (float)(colorLeft >> 16 & 255) / 255.0F;
-		float gL = (float)(colorLeft >> 8 & 255) / 255.0F;
-		float bL = (float)(colorLeft & 255) / 255.0F;
-		float aR = (float)(colorRight >> 24 & 255) / 255.0F;
-		float rR = (float)(colorRight >> 16 & 255) / 255.0F;
-		float gR = (float)(colorRight >> 8 & 255) / 255.0F;
-		float bR = (float)(colorRight & 255) / 255.0F;
-		GlStateManager.disableTexture2D();
-		GlStateManager.enableBlend();
-		GlStateManager.disableAlpha();
-		GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-		GlStateManager.shadeModel(7425);
-		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder bufferbuilder = tessellator.getBuffer();
-		bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-		bufferbuilder.pos((double)right, (double)top, (double)z).color(rR, gR, bR, aR).endVertex();
-		bufferbuilder.pos((double)left, (double)top, (double)z).color(rL, gL, bL, aL).endVertex();
-		bufferbuilder.pos((double)left, (double)bottom, (double)z).color(rL, gL, bL, aL).endVertex();
-		bufferbuilder.pos((double)right, (double)bottom, (double)z).color(rR, gR, bR, aR).endVertex();
-		tessellator.draw();
-		GlStateManager.shadeModel(7424);
-		GlStateManager.disableBlend();
-		GlStateManager.enableAlpha();
-		GlStateManager.enableTexture2D();
-	}
+	public interface EventListener {
 
-	public static void drawVerticalGradientRect(int left, int top, int right, int bottom, int z, int colorTop, int colorBottom){
-		float aT = (float)(colorTop >> 24 & 255) / 255.0F;
-		float rT = (float)(colorTop >> 16 & 255) / 255.0F;
-		float gT = (float)(colorTop >> 8 & 255) / 255.0F;
-		float bT = (float)(colorTop & 255) / 255.0F;
-		float aB = (float)(colorBottom >> 24 & 255) / 255.0F;
-		float rB = (float)(colorBottom >> 16 & 255) / 255.0F;
-		float gB = (float)(colorBottom >> 8 & 255) / 255.0F;
-		float bB = (float)(colorBottom & 255) / 255.0F;
-		GlStateManager.disableTexture2D();
-		GlStateManager.enableBlend();
-		GlStateManager.disableAlpha();
-		GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-		GlStateManager.shadeModel(7425);
-		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder bufferbuilder = tessellator.getBuffer();
-		bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-		bufferbuilder.pos((double)right, (double)top, (double)z).color(rT, gT, bT, aT).endVertex();
-		bufferbuilder.pos((double)left, (double)top, (double)z).color(rT, gT, bT, aT).endVertex();
-		bufferbuilder.pos((double)left, (double)bottom, (double)z).color(rB, gB, bB, aB).endVertex();
-		bufferbuilder.pos((double)right, (double)bottom, (double)z).color(rB, gB, bB, aB).endVertex();
-		tessellator.draw();
-		GlStateManager.shadeModel(7424);
-		GlStateManager.disableBlend();
-		GlStateManager.enableAlpha();
-		GlStateManager.enableTexture2D();
+		void onUpdateScreen();
+
+		boolean onKeyboardInput();
+
 	}
 }

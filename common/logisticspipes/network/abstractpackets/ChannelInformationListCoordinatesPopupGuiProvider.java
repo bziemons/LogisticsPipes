@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import logisticspipes.network.abstractguis.CoordinatesPopupGuiProvider;
-import logisticspipes.routing.channels.ChannelInformation;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
 

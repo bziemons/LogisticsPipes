@@ -1,7 +1,7 @@
 package logisticspipes.commands.commands;
 
-import net.minecraft.command.ICommandSender;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.command.ICommandSource;
+import net.minecraft.util.text.StringTextComponent;
 
 import logisticspipes.commands.abstracts.ICommandHandler;
 import logisticspipes.ticks.RoutingTableUpdateThread;
@@ -14,7 +14,7 @@ public class RoutingThreadCommand implements ICommandHandler {
 	}
 
 	@Override
-	public boolean isCommandUsableBy(ICommandSender sender) {
+	public boolean isCommandUsableBy(ICommandSource sender) {
 		return true;
 	}
 
@@ -24,8 +24,8 @@ public class RoutingThreadCommand implements ICommandHandler {
 	}
 
 	@Override
-	public void executeCommand(ICommandSender sender, String[] args) {
-		sender.sendMessage(new TextComponentString("RoutingTableUpdateThread: Queued: " + RoutingTableUpdateThread.size()));
-		sender.sendMessage(new TextComponentString("RoutingTableUpdateThread: Average: " + RoutingTableUpdateThread.getAverage() + "ns"));
+	public void executeCommand(ICommandSource sender, String[] args) {
+		sender.sendMessage(new StringTextComponent("RoutingTableUpdateThread: Queued: " + RoutingTableUpdateThread.size()));
+		sender.sendMessage(new StringTextComponent("RoutingTableUpdateThread: Average: " + RoutingTableUpdateThread.getAverage() + "ns"));
 	}
 }

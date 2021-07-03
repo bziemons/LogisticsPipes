@@ -41,10 +41,10 @@ import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nullable;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.LPItems;
 import logisticspipes.network.abstractpackets.ModernPacket;
@@ -61,7 +61,7 @@ public class SetCurrentPagePacket extends ModernPacket {
 	@Nullable
 	private IPageData currentPage;
 
-	private EntityEquipmentSlot equipmentSlot;
+	private EquipmentSlotType equipmentSlotType;
 
 	private List<? extends IPageData> bookmarks;
 
@@ -70,24 +70,24 @@ public class SetCurrentPagePacket extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		if (currentPage == null) return;
-		ItemStack book = player.getItemStackFromSlot(equipmentSlot);
+		ItemStack book = player.getItemStackFromSlot(equipmentSlotType);
 		if (book.isEmpty() || !(book.getItem() instanceof ItemGuideBook)) return;
-		NBTTagCompound compound;
+		CompoundNBT compound;
 		if (book.hasTagCompound()) {
 			compound = Objects.requireNonNull(book.getTagCompound());
 		} else {
-			compound = new NBTTagCompound();
+			compound = new CompoundNBT();
 		}
-		final NBTTagCompound nbt = LPItems.itemGuideBook.updateNBT(compound, currentPage, bookmarks);
-		book.setTagCompound(nbt);
+		final CompoundNBT tag = LPItems.itemGuideBook.updateNBT(compound, currentPage, bookmarks);
+		book.setTag(tag);
 	}
 
 	@Override
 	public void readData(LPDataInput input) {
 		super.readData(input);
-		equipmentSlot = input.readEnum(EntityEquipmentSlot.class);
+		equipmentSlotType = input.readEnum(EntityEquipmentSlot.class);
 		currentPage = new PageData(input);
 		bookmarks = input.readArrayList(PageData::new);
 	}
@@ -96,7 +96,7 @@ public class SetCurrentPagePacket extends ModernPacket {
 	public void writeData(LPDataOutput output) {
 		super.writeData(output);
 		if (currentPage == null) throw new NullPointerException("Current page may not be null");
-		output.writeEnum(equipmentSlot);
+		output.writeEnum(equipmentSlotType);
 		currentPage.write(output);
 		output.writeCollection(bookmarks);
 	}
@@ -111,8 +111,8 @@ public class SetCurrentPagePacket extends ModernPacket {
 		return this;
 	}
 
-	public SetCurrentPagePacket setEquipmentSlot(EntityEquipmentSlot equipmentSlot) {
-		this.equipmentSlot = equipmentSlot;
+	public SetCurrentPagePacket setEquipmentSlotType(EquipmentSlotType equipmentSlotType) {
+		this.equipmentSlotType = equipmentSlotType;
 		return this;
 	}
 

@@ -97,7 +97,7 @@ public class GuiRecipeImport extends SubGuiScreen {
 
 	@Override
 	protected void renderToolTips(int mouseX, int mouseY, float par3) {
-		GuiGraphics.displayItemToolTip(tooltip, this, zLevel, guiLeft, guiTop);
+		GuiGraphics.displayItemToolTip(tooltip, this, blitOffset, guiLeft, guiTop);
 	}
 
 	@Override
@@ -117,9 +117,9 @@ public class GuiRecipeImport extends SubGuiScreen {
 					font = fontRenderer;
 				}
 
-				itemRender.renderItemAndEffectIntoGUI(itemStack, guiLeft + 45 + x * 18, guiTop + 20 + y * 18);
+				itemRenderer.renderItemAndEffectIntoGUI(itemStack, guiLeft + 45 + x * 18, guiTop + 20 + y * 18);
 				// With empty string, because damage value indicator struggles with the depth
-				itemRender.renderItemOverlayIntoGUI(font, itemStack, guiLeft + 45 + x * 18, guiTop + 20 + y * 18, null);
+				itemRenderer.renderItemOverlayIntoGUI(font, itemStack, guiLeft + 45 + x * 18, guiTop + 20 + y * 18, null);
 
 				if (guiLeft + 45 + x * 18 < mouseX && mouseX < guiLeft + 45 + x * 18 + 16 && guiTop + 20 + y * 18 < mouseY && mouseY < guiTop + 20 + y * 18 + 16 && !hasSubGui()) {
 					SimpleGraphics.drawGradientRect(guiLeft + 45 + x * 18, guiTop + 20 + y * 18, guiLeft + 45 + x * 18 + 16, guiTop + 20 + y * 18 + 16, Color.WHITE_50, Color.WHITE_50, 0.0);
@@ -137,9 +137,9 @@ public class GuiRecipeImport extends SubGuiScreen {
 				font = fontRenderer;
 			}
 
-			itemRender.renderItemAndEffectIntoGUI(itemStack, guiLeft + 20 + x * 40, guiTop + 90 + y * 40);
+			itemRenderer.renderItemAndEffectIntoGUI(itemStack, guiLeft + 20 + x * 40, guiTop + 90 + y * 40);
 			// With empty string, because damage value indicator struggles with the depth
-			itemRender.renderItemOverlayIntoGUI(font, itemStack, guiLeft + 20 + x * 40, guiTop + 90 + y * 40, "");
+			itemRenderer.renderItemOverlayIntoGUI(font, itemStack, guiLeft + 20 + x * 40, guiTop + 90 + y * 40, "");
 
 			if (guiLeft + 20 + x * 40 < mouseX && mouseX < guiLeft + 20 + x * 40 + 16 && guiTop + 90 + y * 40 < mouseY && mouseY < guiTop + 90 + y * 40 + 16 && !hasSubGui()) {
 				SimpleGraphics.drawGradientRect(guiLeft + 20 + x * 40, guiTop + 90 + y * 40, guiLeft + 20 + x * 40 + 16, guiTop + 90 + y * 40 + 16, Color.WHITE_50, Color.WHITE_50, 0.0);
@@ -156,7 +156,7 @@ public class GuiRecipeImport extends SubGuiScreen {
 
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		fontRenderer.drawString(TextUtil.translate("misc.selectOreDict"), guiLeft + 10, guiTop + 6, 0x404040, false);
 		for (int x = 0; x < 3; x++) {
 			for (int y = 0; y < 3; y++) {

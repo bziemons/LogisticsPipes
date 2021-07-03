@@ -45,7 +45,7 @@ import network.rs485.logisticspipes.util.math.Rectangle
 class DrawableHeaderParagraph(private val words: List<DrawableWord>) : DrawableParagraph() {
     private val horizontalLine = createChild { DrawableHorizontalLine(1) }
 
-    override fun mouseClicked(mouseX: Int, mouseY: Int, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) =
+    override fun mouseClicked(mouseX: Double, mouseY: Double, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) =
         words.find { it.isHovering(mouseX, mouseY, visibleArea) }?.mouseClicked(mouseX, mouseY, visibleArea, guideActionListener) ?: Unit
 
     override fun draw(mouseX: Int, mouseY: Int, delta: Float, visibleArea: Rectangle) {

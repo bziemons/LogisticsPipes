@@ -15,6 +15,8 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import lombok.Getter;
 
@@ -57,7 +59,9 @@ public class RequestTreeNode {
 		this(null, requestType, parentNode, requestFlags, info);
 	}
 
-	private RequestTreeNode(ICraftingTemplate template, IResource requestType, RequestTreeNode parentNode, EnumSet<ActiveRequestType> requestFlags, IAdditionalTargetInformation info) {
+	private RequestTreeNode(@Nullable ICraftingTemplate template, IResource requestType,
+			@Nullable RequestTreeNode parentNode, @Nonnull EnumSet<ActiveRequestType> requestFlags,
+			IAdditionalTargetInformation info) {
 		this.info = info;
 		this.parentNode = parentNode;
 		this.requestType = requestType;
@@ -527,7 +531,7 @@ public class RequestTreeNode {
 				//craftersSamePriority.clear(); // we've extracted all we can from these priority crafters, and we still have more to do, back to the top to get the next priority level.
 			}
 		}
-		//LogisticsPipes.log.info("done");
+		//LogisticsPipes.getLOGGER().info("done");
 		return isDone();
 	}
 

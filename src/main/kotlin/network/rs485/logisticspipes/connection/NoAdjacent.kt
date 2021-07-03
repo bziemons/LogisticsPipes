@@ -38,13 +38,13 @@
 package network.rs485.logisticspipes.connection
 
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.EnumFacing
+import net.minecraft.util.Direction
 import net.minecraft.util.math.BlockPos
 import java.util.*
 
 object NoAdjacent : Adjacent {
     override fun connectedPos(): Map<BlockPos, ConnectionType> = emptyMap()
-    override fun optionalGet(direction: EnumFacing): Optional<ConnectionType> = Optional.empty()
+    override fun optionalGet(direction: Direction): Optional<ConnectionType> = Optional.empty()
     override fun neighbors(): Map<NeighborTileEntity<TileEntity>, ConnectionType> = emptyMap()
     override fun inventories(): List<NeighborTileEntity<TileEntity>> = emptyList()
     override fun fluidTanks(): List<NeighborTileEntity<TileEntity>> = emptyList()

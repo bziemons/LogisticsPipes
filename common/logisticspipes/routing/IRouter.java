@@ -10,7 +10,7 @@ package logisticspipes.routing;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import logisticspipes.api.ILogisticsPowerProvider;
 import logisticspipes.interfaces.ISubSystemPowerProvider;
@@ -30,11 +30,11 @@ public interface IRouter extends LPFinalSerializable {
 	void update(boolean doFullRefresh, CoreRoutedPipe pipe);
 
 	// TODO: Check if all usages (non-texture related) are OK.
-	boolean isRoutedExit(EnumFacing connection);
+	boolean isRoutedExit(Direction connection);
 
-	boolean isSubPoweredExit(EnumFacing connection);
+	boolean isSubPoweredExit(Direction connection);
 
-	int getDistanceToNextPowerPipe(EnumFacing dir);
+	int getDistanceToNextPowerPipe(Direction dir);
 
 	boolean hasRoute(int id, boolean active, ItemIdentifier type);
 
@@ -63,7 +63,7 @@ public interface IRouter extends LPFinalSerializable {
 	DoubleCoordinates getLPPosition();
 
 	/* Automated Disconnection */
-	boolean isSideDisconnected(EnumFacing dir);
+	boolean isSideDisconnected(Direction dir);
 
 	List<ExitRoute> getDistanceTo(IRouter r);
 
@@ -78,7 +78,7 @@ public interface IRouter extends LPFinalSerializable {
 	//force-update LSA version in the network
 	void forceLsaUpdate();
 
-	List<ExitRoute> getRoutersOnSide(EnumFacing direction);
+	List<ExitRoute> getRoutersOnSide(Direction direction);
 
 	void queueTask(int i, IRouterQueuedTask callable);
 

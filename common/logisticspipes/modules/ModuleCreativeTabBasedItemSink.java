@@ -5,9 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.gui.hud.modules.HUDStringBasedItemSink;
 import logisticspipes.interfaces.IClientInformationProvider;
@@ -79,25 +79,12 @@ public class ModuleCreativeTabBasedItemSink extends LogisticsModule
 		}
 		final IPipeServiceProvider service = _service;
 		if (service == null) return null;
-		if (tabList.contains(item.getCreativeTabName())) {
+		if (tabList.contains(item.getItemGroupName())) {
 			if (service.canUseEnergy(5)) {
 				return _sinkReply;
 			}
 		}
 		return null;
-	}
-
-	@Override
-	public void readFromNBT(@Nonnull NBTTagCompound tag) {
-		super.readFromNBT(tag);
-		// deprecated, TODO: remove after 1.12
-		for (int i = 0; i < tabList.size(); i++) {
-			final String key = "Mod" + i;
-			if (tag.hasKey(key)) {
-				final String val = tag.getString(key);
-				if (!val.isEmpty()) tabList.set(i, val);
-			}
-		}
 	}
 
 	@Override
@@ -123,16 +110,16 @@ public class ModuleCreativeTabBasedItemSink extends LogisticsModule
 	}
 
 	@Override
-	public void startWatching(EntityPlayer player) {
+	public void startWatching(PlayerEntity player) {
 		localModeWatchers.add(player);
-		NBTTagCompound nbt = new NBTTagCompound();
+		CompoundNBT nbt = new CompoundNBT();
 		writeToNBT(nbt);
 		MainProxy.sendPacketToPlayer(
 				PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this), player);
 	}
 
 	@Override
-	public void stopWatching(EntityPlayer player) {
+	public void stopWatching(PlayerEntity player) {
 		localModeWatchers.remove(player);
 	}
 
@@ -141,13 +128,13 @@ public class ModuleCreativeTabBasedItemSink extends LogisticsModule
 		final IWorldProvider worldProvider = _world;
 		if (worldProvider == null) return;
 		if (MainProxy.isServer(worldProvider.getWorld())) {
-			NBTTagCompound nbt = new NBTTagCompound();
+			CompoundNBT nbt = new CompoundNBT();
 			writeToNBT(nbt);
 			MainProxy.sendToPlayerList(
 					PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this),
 					localModeWatchers);
 		} else {
-			NBTTagCompound nbt = new NBTTagCompound();
+			CompoundNBT nbt = new CompoundNBT();
 			writeToNBT(nbt);
 			MainProxy.sendPacketToServer(
 					PacketHandler.getPacket(ModuleBasedItemSinkList.class).setNbt(nbt).setModulePos(this));
@@ -186,13 +173,13 @@ public class ModuleCreativeTabBasedItemSink extends LogisticsModule
 
 	@Override
 	public String getStringForItem(ItemIdentifier ident) {
-		return ident.getCreativeTabName();
+		return ident.getItemGroupName();
 	}
 
 	@Nonnull
 	@Override
 	public ModuleCoordinatesGuiProvider getPipeGuiProvider() {
-		NBTTagCompound nbt = new NBTTagCompound();
+		CompoundNBT nbt = new CompoundNBT();
 		writeToNBT(nbt);
 		return NewGuiHandler.getGui(StringBasedItemSinkModuleGuiSlot.class).setNbt(nbt);
 	}

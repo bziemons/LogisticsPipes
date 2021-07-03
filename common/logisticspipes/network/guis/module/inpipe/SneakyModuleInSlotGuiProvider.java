@@ -1,7 +1,7 @@
 package logisticspipes.network.guis.module.inpipe;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Direction;
 
 import logisticspipes.gui.modules.GuiSneakyConfigurator;
 import logisticspipes.modules.LogisticsModule;
@@ -17,13 +17,13 @@ import network.rs485.logisticspipes.util.LPDataOutput;
 @StaticResolve
 public class SneakyModuleInSlotGuiProvider extends ModuleCoordinatesGuiProvider {
 
-	private EnumFacing sneakyOrientation;
+	private Direction sneakyOrientation;
 
 	public SneakyModuleInSlotGuiProvider(int id) {
 		super(id);
 	}
 
-	public SneakyModuleInSlotGuiProvider setSneakyOrientation(EnumFacing sneakyOrientation) {
+	public SneakyModuleInSlotGuiProvider setSneakyOrientation(Direction sneakyOrientation) {
 		this.sneakyOrientation = sneakyOrientation;
 		return this;
 	}
@@ -41,7 +41,7 @@ public class SneakyModuleInSlotGuiProvider extends ModuleCoordinatesGuiProvider 
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		LogisticsModule module = this.getLogisticsModule(player.getEntityWorld(), LogisticsModule.class);
 		if (!(module instanceof SneakyDirection && module instanceof Gui)) {
 			return null;
@@ -51,7 +51,7 @@ public class SneakyModuleInSlotGuiProvider extends ModuleCoordinatesGuiProvider 
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		LogisticsModule module = this.getLogisticsModule(player.getEntityWorld(), LogisticsModule.class);
 		if (!(module instanceof SneakyDirection && module instanceof Gui)) {
 			return null;

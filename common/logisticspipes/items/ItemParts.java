@@ -2,7 +2,7 @@ package logisticspipes.items;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 
@@ -24,8 +24,8 @@ public class ItemParts extends LogisticsItem {
 	}
 
 	@Override
-	public void getSubItems(@Nonnull CreativeTabs tab, @Nonnull NonNullList<ItemStack> items) {
-		if (isInCreativeTab(tab)) {
+	public void getSubItems(@Nonnull ItemGroup group, @Nonnull NonNullList<ItemStack> items) {
+		if (isInGroup(group)) {
 			items.add(new ItemStack(this, 1, 0));
 			items.add(new ItemStack(this, 1, 1));
 			items.add(new ItemStack(this, 1, 2));

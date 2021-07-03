@@ -4,7 +4,7 @@ import java.util.List;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -38,8 +38,8 @@ public class MostLikelyRecipeComponentsResponse extends ModernPacket {
 
 	@Override
 	@ClientSideOnlyMethodContent
-	public void processPacket(EntityPlayer player) {
-		GuiScreen firstGui = Minecraft.getMinecraft().currentScreen;
+	public void processPacket(PlayerEntity player) {
+		GuiScreen firstGui = Minecraft.getInstance().currentScreen;
 		LogisticsBaseGuiScreen gui;
 		if (firstGui instanceof GuiLogisticsCraftingTable) {
 			gui = (GuiLogisticsCraftingTable) firstGui;

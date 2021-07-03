@@ -44,7 +44,7 @@ import network.rs485.logisticspipes.util.math.Rectangle
  */
 class DrawableRegularParagraph(private val words: List<DrawableWord>) : DrawableParagraph() {
 
-    override fun mouseClicked(mouseX: Int, mouseY: Int, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) =
+    override fun mouseClicked(mouseX: Double, mouseY: Double, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) =
         words.find { it.isHovering(mouseX, mouseY, visibleArea) }?.mouseClicked(mouseX, mouseY, visibleArea, guideActionListener) ?: Unit
 
     override fun setPos(x: Int, y: Int): Int {

@@ -1,7 +1,7 @@
 package logisticspipes.pipes.unrouted;
 
 import net.minecraft.item.Item;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import logisticspipes.pipes.basic.CoreUnroutedPipe;
 import logisticspipes.renderer.LogisticsRenderPipe;
@@ -24,7 +24,7 @@ public class PipeItemsBasicTransport extends CoreUnroutedPipe {
 	public void readData(LPDataInput input) {}
 
 	@Override
-	public int getIconIndex(EnumFacing direction) {
+	public int getIconIndex(Direction direction) {
 		return Textures.LOGISTICSPIPE_BASIC_TRANSPORT_TEXTURE.normal;
 	}
 

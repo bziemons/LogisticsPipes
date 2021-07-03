@@ -1,9 +1,9 @@
 package logisticspipes.network.packets.pipe;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.StringTextComponent;
 
 import net.minecraftforge.fml.client.FMLClientHandler;
 
@@ -36,7 +36,7 @@ public class PipeDebugAskForTarget extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		RayTraceResult box = FMLClientHandler.instance().getClient().objectMouseOver;
 		if (box != null && box.typeOfHit == RayTraceResult.Type.BLOCK) {
 			if (!isServer) {
@@ -44,9 +44,9 @@ public class PipeDebugAskForTarget extends ModernPacket {
 				if (tile instanceof LogisticsTileGenericPipe) {
 					((LogisticsTileGenericPipe) tile).pipe.debug.debugThisPipe = !((LogisticsTileGenericPipe) tile).pipe.debug.debugThisPipe;
 					if (((LogisticsTileGenericPipe) tile).pipe.debug.debugThisPipe) {
-						player.sendMessage(new TextComponentString("Debug enabled On Client"));
+						player.sendMessage(new StringTextComponent("Debug enabled On Client"));
 					} else {
-						player.sendMessage(new TextComponentString("Debug disabled On Client"));
+						player.sendMessage(new StringTextComponent("Debug disabled On Client"));
 					}
 				}
 			} else {

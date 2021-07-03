@@ -3,12 +3,12 @@ package logisticspipes.network.packets.multiblock;
 import java.util.List;
 import java.util.Set;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
 
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.CoreMultiBlockPipe;
 import logisticspipes.pipes.basic.LogisticsTileGenericSubMultiBlock;
@@ -47,7 +47,7 @@ public class MultiBlockCoordinatesPacket extends CoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsTileGenericSubMultiBlock block = this.getTileAs(player.getEntityWorld(), LogisticsTileGenericSubMultiBlock.class);
 		block.setPosition(targetPos, subTypes);
 	}

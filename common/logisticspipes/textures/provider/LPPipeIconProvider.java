@@ -4,30 +4,30 @@ import java.util.ArrayList;
 
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import logisticspipes.renderer.IIconProvider;
 
 public class LPPipeIconProvider implements IIconProvider {
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	private ArrayList<TextureAtlasSprite> icons;
 
 	public LPPipeIconProvider() {
-		if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
+		if (FMLEnvironment.dist.isClient()) {
 			icons = new ArrayList<>();
 		}
 	}
 
 	@Override
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public TextureAtlasSprite getIcon(int iconIndex) {
 		return icons.get(iconIndex);
 	}
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public void setIcon(int index, TextureAtlasSprite icon) {
 		while (icons.size() < index + 1) {
 			icons.add(null);
@@ -35,7 +35,4 @@ public class LPPipeIconProvider implements IIconProvider {
 		icons.set(index, icon);
 	}
 
-	@Override
-	@SideOnly(Side.CLIENT)
-	public void registerIcons(Object iconRegister) {}
 }

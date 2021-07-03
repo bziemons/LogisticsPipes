@@ -37,14 +37,13 @@
 package network.rs485.logisticspipes.inventory
 
 import logisticspipes.interfaces.IClientInformationProvider
-import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder
 import logisticspipes.utils.ISimpleInventoryEventHandler
 import logisticspipes.utils.item.ItemIdentifier
 import logisticspipes.utils.item.ItemIdentifierStack
 import logisticspipes.utils.tuples.Pair
 import net.minecraft.inventory.IInventory
 
-interface IItemIdentifierInventory : IInventory, ILPCCTypeHolder, IClientInformationProvider {
+interface IItemIdentifierInventory : IInventory, IClientInformationProvider {
     val itemsAndCount: Map<ItemIdentifier, Int>
     val slotAccess: SlotAccess
     fun getIDStackInSlot(i: Int): ItemIdentifierStack?

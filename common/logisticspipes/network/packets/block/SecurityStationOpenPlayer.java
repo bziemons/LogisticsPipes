@@ -1,10 +1,10 @@
 package logisticspipes.network.packets.block;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 import logisticspipes.gui.GuiSecurityStation;
 import logisticspipes.network.abstractpackets.ModernPacket;
@@ -26,7 +26,7 @@ public class SecurityStationOpenPlayer extends NBTCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		if (MainProxy.isClient(player.world)) {
 			handleClientSide(player);
 		} else {
@@ -34,8 +34,8 @@ public class SecurityStationOpenPlayer extends NBTCoordinatesPacket {
 		}
 	}
 
-	@SideOnly(Side.CLIENT)
-	private void handleClientSide(EntityPlayer player) {
+	@OnlyIn(Dist.CLIENT)
+	private void handleClientSide(PlayerEntity player) {
 		if (FMLClientHandler.instance().getClient().currentScreen instanceof GuiSecurityStation) {
 			SecuritySettings setting = new SecuritySettings(null);
 			setting.readFromNBT(getTag());

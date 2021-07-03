@@ -37,10 +37,12 @@
 
 package network.rs485.logisticspipes.gui.guidebook
 
+import com.mojang.blaze3d.platform.GlStateManager
 import logisticspipes.utils.MinecraftColor
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.GlStateManager
 import network.rs485.logisticspipes.util.TextUtil
+import logisticspipes.utils.string.StringUtils
 import network.rs485.logisticspipes.util.math.Rectangle
 
 val additionTexture = Rectangle(192, 0, 16, 16)
@@ -54,13 +56,16 @@ class BookmarkManagingButton(x: Int, y: Int, onClickAction: (ButtonState) -> Boo
     var onClickActionStated: (ButtonState) -> Boolean = onClickAction
 
     init {
-        zLevel = GuideBookConstants.Z_TITLE_BUTTONS
+        blitOffset = GuideBookConstants.Z_TITLE_BUTTONS
     }
 
-    override fun drawButton(mc: Minecraft, mouseX: Int, mouseY: Int, partialTicks: Float) {
-        if(buttonState != ButtonState.DISABLED) {
-            hovered = isHovered(mouseX, mouseY)
-            if (hovered) {
+    var buttonState: ButtonState = ButtonState.ADD
+        private set
+
+    override fun renderButton(mouseX: Int, mouseY: Int, partialTicks: Float) {
+        if (buttonState != ButtonState.DISABLED) {
+            isHovered = isHovered()
+            if (isHovered) {
                 drawTooltip(
                     x = body.roundedLeft + body.roundedHeight / 2,
                     y = body.roundedTop,
@@ -70,27 +75,27 @@ class BookmarkManagingButton(x: Int, y: Int, onClickAction: (ButtonState) -> Boo
             }
             val yOffset = getHoverState(hovered) * additionTexture.roundedHeight
             GlStateManager.enableAlpha()
-            GuiGuideBook.drawStretchingRectangle(body, zLevel, (if (buttonState == ButtonState.ADD) additionTexture else subtractionTexture).translated(0, yOffset), false, MinecraftColor.WHITE.colorCode)
+            GuiGuideBook.drawStretchingRectangle(body, blitOffset, (if (buttonState == ButtonState.ADD) additionTexture else subtractionTexture).translated(0, yOffset), false, MinecraftColor.WHITE.colorCode)
             GlStateManager.disableAlpha()
         }
     }
 
-    fun setX(newX: Int){
+    fun setX(newX: Int) {
         body.setPos(newX.toFloat(), body.y0)
     }
 
-    fun updateState(){
+    fun updateState() {
         buttonState = additionStateUpdater()
     }
 
-    override fun getTooltipText(): String = when(buttonState){
-        ButtonState.ADD, ButtonState.REMOVE -> TextUtil.translate("misc.guide_book.bookmark_button.${buttonState.toString().toLowerCase()}")
+    override fun getTooltipText(): String = when (buttonState) {
+        ButtonState.ADD, ButtonState.REMOVE -> TextUtil.translate(
+            "misc.guide_book.bookmark_button.${
+                buttonState.toString().toLowerCase()
+            }"
+        )
         ButtonState.DISABLED -> ""
     }
-
-    override fun getHoverState(mouseOver: Boolean): Int = if(buttonState == ButtonState.DISABLED) 2 else if (hovered) 1 else 0
-
-    override fun click(mouseButton: Int) = onClickActionStated(buttonState)
 
     enum class ButtonState {
         ADD,

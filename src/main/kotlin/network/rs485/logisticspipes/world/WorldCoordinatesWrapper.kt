@@ -41,30 +41,30 @@ import logisticspipes.LogisticsPipes
 import logisticspipes.proxy.MainProxy
 import logisticspipes.proxy.SimpleServiceLocator
 import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.EnumFacing
+import net.minecraft.util.Direction
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
 import network.rs485.logisticspipes.connection.LPNeighborTileEntity
 
 data class WorldCoordinatesWrapper(private val world: World, private val pos: BlockPos) {
-    constructor(tileEntity: TileEntity) : this(tileEntity.world, tileEntity.pos)
+    constructor(tileEntity: TileEntity) : this(tileEntity.world!!, tileEntity.pos)
 
     val tileEntity: TileEntity?
         get() = world.getTileEntity(pos)
 
     fun allNeighborTileEntities(): List<LPNeighborTileEntity<TileEntity>> =
-        EnumFacing.VALUES.mapNotNull { direction: EnumFacing -> getNeighbor(direction) }
+        Direction.values().mapNotNull { direction: Direction -> getNeighbor(direction) }
 
     fun connectedTileEntities(): List<LPNeighborTileEntity<TileEntity>> {
         val pipe = tileEntity
         if (SimpleServiceLocator.pipeInformationManager.isNotAPipe(pipe)) {
-            LogisticsPipes.log.warn("The coordinates didn't hold a pipe at all", Throwable("Stack trace"))
+            LogisticsPipes.getLOGGER().warn("The coordinates didn't hold a pipe at all", Throwable("Stack trace"))
             return emptyList()
         }
         return allNeighborTileEntities().filter { adjacent -> MainProxy.checkPipesConnections(pipe, adjacent.tileEntity, adjacent.direction) }
     }
 
-    fun getNeighbor(direction: EnumFacing): LPNeighborTileEntity<TileEntity>? {
+    fun getNeighbor(direction: Direction): LPNeighborTileEntity<TileEntity>? {
         val tileEntity = world.getTileEntity(pos.offset(direction)) ?: return null
         return LPNeighborTileEntity(tileEntity, direction)
     }

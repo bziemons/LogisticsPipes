@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeSet;
@@ -34,11 +35,13 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.server.ServerWorld;
 
 import net.minecraftforge.common.DimensionManager;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 import it.unimi.dsi.fastutil.objects.ObjectSets;
 import lombok.Getter;
@@ -131,8 +134,8 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 	public List<Pair<ISubSystemPowerProvider, List<IFilter>>> _SubSystemPowerTable = Collections.unmodifiableList(new ArrayList<>());
 	protected int _LSAVersion = 0;
 	int ticksUntillNextInventoryCheck = 0;
-	private EnumSet<EnumFacing> _routedExits = EnumSet.noneOf(EnumFacing.class);
-	private EnumMap<EnumFacing, Integer> _subPowerExits = new EnumMap<>(EnumFacing.class);
+	private EnumSet<Direction> _routedExits = EnumSet.noneOf(Direction.class);
+	private EnumMap<Direction, Integer> _subPowerExits = new EnumMap<>(Direction.class);
 	private final int _dimension;
 	private WeakReference<CoreRoutedPipe> _myPipeCache = null;
 	private final LinkedList<Pair<Integer, IRouterQueuedTask>> queue = new LinkedList<>();
@@ -152,7 +155,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		}
 
 		@Override
-		public void pipeAdded(DoubleCoordinates pos, EnumFacing side) {
+		public void pipeAdded(DoubleCoordinates pos, Direction side) {
 			if (connectionNeedsChecking == 0) {
 				connectionNeedsChecking = 1;
 			}
@@ -319,7 +322,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		if (crp != null) {
 			return crp;
 		}
-		World world = DimensionManager.getWorld(_dimension);
+		final ServerWorld world = DimensionManager.getWorld(ServerLifecycleHooks.getCurrentServer(), Objects.requireNonNull(DimensionType.getById(_dimension), "Dimension was null"), false, false);
 		if (world == null) {
 			return null;
 		}
@@ -423,7 +426,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		subSystemPower = finder.subPowerProvider;
 		adjacent = finder.result;
 
-		Map<EnumFacing, List<CoreRoutedPipe>> pipeDirections = new HashMap<>();
+		Map<Direction, List<CoreRoutedPipe>> pipeDirections = new HashMap<>();
 
 		for (Entry<CoreRoutedPipe, ExitRoute> entry : adjacent.entrySet()) {
 			List<CoreRoutedPipe> list = pipeDirections.computeIfAbsent(entry.getValue().exitOrientation, k -> new ArrayList<>());
@@ -455,7 +458,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 		if (changed) {
 			CoreRoutedPipe pipe = getPipe();
 			if (pipe != null) {
-				pipe.getWorld().markAndNotifyBlock(pipe.getPos(), pipe.getWorld().getChunkFromBlockCoords(pipe.getPos()), pipe.getWorld().getBlockState(pipe.getPos()), pipe.getWorld().getBlockState(pipe.getPos()), 3);
+				pipe.getWorld().markAndNotifyBlock(pipe.getPos(), pipe.getWorld().getChunkAt(pipe.getPos()), pipe.getWorld().getBlockState(pipe.getPos()), pipe.getWorld().getBlockState(pipe.getPos()), 3);
 				pipe.refreshConnectionAndRender(false);
 			}
 			adjacentChanged = true;
@@ -544,8 +547,8 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 
 		if (adjacentChanged) {
 			HashMap<ServerRouter, ExitRoute> adjacentRouter = new HashMap<>();
-			EnumSet<EnumFacing> routedexits = EnumSet.noneOf(EnumFacing.class);
-			EnumMap<EnumFacing, Integer> subpowerexits = new EnumMap<>(EnumFacing.class);
+			EnumSet<Direction> routedexits = EnumSet.noneOf(Direction.class);
+			EnumMap<Direction, Integer> subpowerexits = new EnumMap<>(Direction.class);
 			for (Entry<CoreRoutedPipe, ExitRoute> pipe : adjacent.entrySet()) {
 				adjacentRouter.put((ServerRouter) pipe.getKey().getRouter(), pipe.getValue());
 				if ((pipe.getValue().connectionDetails.contains(PipeRoutingConnectionType.canRouteTo) || pipe.getValue().connectionDetails.contains(PipeRoutingConnectionType.canRequestFrom) && !routedexits.contains(pipe.getValue().exitOrientation))) {
@@ -1075,17 +1078,17 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 	/************* IROUTER *******************/
 
 	@Override
-	public boolean isRoutedExit(EnumFacing o) {
+	public boolean isRoutedExit(Direction o) {
 		return _routedExits.contains(o);
 	}
 
 	@Override
-	public boolean isSubPoweredExit(EnumFacing o) {
+	public boolean isSubPoweredExit(Direction o) {
 		return _subPowerExits.containsKey(o);
 	}
 
 	@Override
-	public int getDistanceToNextPowerPipe(EnumFacing dir) {
+	public int getDistanceToNextPowerPipe(Direction dir) {
 		return _subPowerExits.get(dir);
 	}
 
@@ -1168,7 +1171,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 	}
 
 	@Override
-	public boolean isSideDisconnected(EnumFacing dir) {
+	public boolean isSideDisconnected(Direction dir) {
 		return null != dir && sideDisconnected[dir.ordinal()];
 	}
 
@@ -1291,7 +1294,7 @@ public class ServerRouter implements IRouter, Comparable<ServerRouter> {
 	}
 
 	@Override
-	public List<ExitRoute> getRoutersOnSide(EnumFacing direction) {
+	public List<ExitRoute> getRoutersOnSide(Direction direction) {
 		return _adjacentRouter.values().stream()
 				.filter(exit -> exit.exitOrientation == direction)
 				.collect(Collectors.toList());

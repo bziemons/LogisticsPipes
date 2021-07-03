@@ -12,17 +12,14 @@ import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.RayTraceResult;
 
 import net.minecraftforge.client.GuiIngameForge;
 import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.api.IHUDArmor;
@@ -101,7 +98,7 @@ public class LogisticsHUDRenderer {
 			if (!(pipe instanceof IHeadUpDisplayRendererProvider)) {
 				continue;
 			}
-			if (pipe.getWorld().provider.getDimension() == FMLClientHandler.instance().getClient().world.provider.getDimension()) {
+			if (pipe.getWorld().getDimension().getType().getId() == FMLClientHandler.instance().getClient().world.getDimension().getType().getId()) {
 				double dis = Math.hypot(pipe.getX() - x + 0.5, Math.hypot(pipe.getY() - y + 0.5, pipe.getZ() - z + 0.5));
 				if (dis < Configs.LOGISTICS_HUD_RENDER_DISTANCE && dis > 0.75) {
 					newList.add(new Pair<>(dis, (IHeadUpDisplayRendererProvider) pipe));
@@ -113,7 +110,7 @@ public class LogisticsHUDRenderer {
 		}
 
 		List<IHeadUpDisplayBlockRendererProvider> remove = new ArrayList<>();
-		providers.stream().filter(provider -> provider.getWorldForHUD().provider.getDimension() == FMLClientHandler.instance().getClient().world.provider.getDimension())
+		providers.stream().filter(provider -> provider.getWorldForHUD().getDimension().getType().getId() == FMLClientHandler.instance().getClient().world.getDimension().getType().getId())
 				.forEach(provider -> {
 					double dis = Math.hypot(provider.getX() - x + 0.5, Math.hypot(provider.getY() - y + 0.5, provider.getZ() - z + 0.5));
 					if (dis < Configs.LOGISTICS_HUD_RENDER_DISTANCE && dis > 0.75 && !provider.isHUDInvalid() && provider.isHUDExistent()) {
@@ -179,7 +176,7 @@ public class LogisticsHUDRenderer {
 			int width = res.getScaledWidth();
 			int height = res.getScaledHeight();
 			if (GuiIngameForge.renderCrosshairs && mc.ingameGUI != null) {
-				mc.renderEngine.bindTexture(LogisticsHUDRenderer.TEXTURE);
+				mc.textureManager.bindTexture(LogisticsHUDRenderer.TEXTURE);
 				GL11.glColor4d(0.0D, 0.0D, 0.0D, 1.0D);
 				GL11.glDisable(GL11.GL_BLEND);
 				mc.ingameGUI.drawTexturedModalRect(width / 2 - 7, height / 2 - 7, 0, 0, 16, 16);
@@ -187,13 +184,13 @@ public class LogisticsHUDRenderer {
 		}
 	}
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public void renderWorldRelative(long renderTicks, float partialTick) {
 		if (!displayRenderer()) {
 			return;
 		}
 		Minecraft mc = FMLClientHandler.instance().getClient();
-		EntityPlayer player = mc.player;
+		PlayerEntity player = mc.player;
 		if (list.size() == 0 || Math.hypot(lastXPos - player.posX, Math.hypot(lastYPos - player.posY, lastZPos - player.posZ)) > 0.5 || (renderTicks % 10 == 0 && (lastXPos != player.posX || lastYPos != player.posY || lastZPos != player.posZ)) || renderTicks % 600 == 0) {
 			refreshList(player.posX, player.posY, player.posZ);
 			lastXPos = player.posX;
@@ -282,7 +279,7 @@ public class LogisticsHUDRenderer {
 					if (pos.length == 2) {
 						if (renderer.getRenderer().cursorOnWindow(pos[0], pos[1])) {
 							renderer.getRenderer().handleCursor(pos[0], pos[1]);
-							if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) { //if(FMLClientHandler.instance().getClient().player.isSneaking()) {
+							if (InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LSHIFT)) { //if(FMLClientHandler.instance().getClient().player.isSneaking()) {
 								thisIsLast = renderer;
 								displayCross = true;
 							}
@@ -311,7 +308,7 @@ public class LogisticsHUDRenderer {
 		GL11.glPushMatrix();
 		RayTraceResult box = mc.objectMouseOver;
 		if (box != null && box.typeOfHit == RayTraceResult.Type.BLOCK) {
-			if (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
+			if (InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL)) {
 				progress = Math.min(progress + (2 * Math.max(1, (int) Math.floor((System.currentTimeMillis() - last) / 50.0D))), 100);
 			} else {
 				progress = Math.max(progress - (2 * Math.max(1, (int) Math.floor((System.currentTimeMillis() - last) / 50.0D))), 0);
@@ -381,7 +378,7 @@ public class LogisticsHUDRenderer {
 					GL11.glEnable(GL11.GL_DEPTH_TEST);
 				}
 			}
-		} else if (!Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) {
+		} else if (!InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL)) {
 			progress = 0;
 		}
 		GL11.glPopMatrix();
@@ -529,7 +526,7 @@ public class LogisticsHUDRenderer {
 
 	private void displayOneView(IHeadUpDisplayRendererProvider renderer, IHUDConfig config, float partialTick, boolean shifted) {
 		Minecraft mc = FMLClientHandler.instance().getClient();
-		EntityPlayer player = mc.player;
+		PlayerEntity player = mc.player;
 		double x = renderer.getX() + 0.5 - player.prevPosX - ((player.posX - player.prevPosX) * partialTick);
 		double y = renderer.getY() + 0.5 - player.prevPosY - ((player.posY - player.prevPosY) * partialTick);
 		double z = renderer.getZ() + 0.5 - player.prevPosZ - ((player.posZ - player.prevPosZ) * partialTick);
@@ -559,7 +556,7 @@ public class LogisticsHUDRenderer {
 
 	private int[] getCursor(IHeadUpDisplayRendererProvider renderer) {
 		Minecraft mc = FMLClientHandler.instance().getClient();
-		EntityPlayer player = mc.player;
+		PlayerEntity player = mc.player;
 
 		Vector3d playerView = Vector3d.getFromAngles((270 - player.rotationYaw) / 360 * -2 * Math.PI, (player.rotationPitch) / 360 * -2 * Math.PI);
 		Vector3d playerPos = new Vector3d();

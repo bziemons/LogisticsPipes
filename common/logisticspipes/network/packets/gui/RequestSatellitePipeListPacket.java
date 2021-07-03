@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.abstractpackets.BooleanCoordinatesPacket;
@@ -28,7 +28,7 @@ public class RequestSatellitePipeListPacket extends BooleanCoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsTileGenericPipe pipe = this.getPipe(player.getEntityWorld(), LTGPCompletionCheck.PIPE);
 		if (pipe == null || !(pipe.pipe instanceof CoreRoutedPipe)) {
 			return;

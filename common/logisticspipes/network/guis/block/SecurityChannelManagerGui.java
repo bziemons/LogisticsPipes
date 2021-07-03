@@ -1,6 +1,6 @@
 package logisticspipes.network.guis.block;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.blocks.LogisticsSecurityTileEntity;
 import logisticspipes.gui.popup.GuiManageChannelPopup;
@@ -16,7 +16,7 @@ public class SecurityChannelManagerGui extends ChannelInformationListCoordinates
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		return new GuiManageChannelPopup(getChannelInformations(), getTileAs(player.world, LogisticsSecurityTileEntity.class).getPos());
 	}
 

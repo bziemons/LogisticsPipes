@@ -2,6 +2,7 @@ package logisticspipes.pipefxhandlers;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
+import net.minecraft.client.settings.ParticleStatus;
 
 import logisticspipes.proxy.MainProxy;
 
@@ -14,18 +15,16 @@ public class PipeFXRenderHandler {
 			return;
 		}
 		try {
-			Minecraft mc = Minecraft.getMinecraft();
-			int var14 = mc.gameSettings.particleSetting;
-			double var15 = mc.getRenderViewEntity().posX - x;
-			double var17 = mc.getRenderViewEntity().posY - y;
-			double var19 = mc.getRenderViewEntity().posZ - z;
+			Minecraft mc = Minecraft.getInstance();
+			if (mc.gameSettings.particles != ParticleStatus.ALL) return;
+			double var15 = mc.renderViewEntity.posX - x;
+			double var17 = mc.renderViewEntity.posY - y;
+			double var19 = mc.renderViewEntity.posZ - z;
 			Particle effect;
 
 			double var22 = 16.0D;
 
 			if (var15 * var15 + var17 * var17 + var19 * var19 > var22 * var22) {
-				return;
-			} else if (var14 > 1) {
 				return;
 			}
 
@@ -37,7 +36,7 @@ public class PipeFXRenderHandler {
 			for (int i = 0; i < Math.sqrt(amount); i++) {
 				effect = provider.createGenericParticle(mc.world, x, y, z, amount);
 				if (effect != null) {
-					mc.effectRenderer.addEffect(effect);
+					mc.particles.addEffect(effect);
 				}
 			}
 

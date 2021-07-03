@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.world.World;
 
 public class ItemDisk extends LogisticsItem {
@@ -19,9 +19,9 @@ public class ItemDisk extends LogisticsItem {
 
 	@Override
 	public void addInformation(@Nonnull ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
-		if (!stack.isEmpty() && stack.hasTagCompound()) {
-			final NBTTagCompound tag = Objects.requireNonNull(stack.getTagCompound());
-			if (tag.hasKey("name")) {
+		if (!stack.isEmpty() && stack.hasTag()) {
+			final CompoundNBT tag = Objects.requireNonNull(stack.getTag());
+			if (tag.contains("name")) {
 				String name = "\u00a78" + tag.getString("name");
 				tooltip.add(name);
 			}

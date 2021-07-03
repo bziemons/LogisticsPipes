@@ -1,10 +1,10 @@
 package logisticspipes.network.packets.routingdebug;
 
 import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.StringTextComponent;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -44,37 +44,37 @@ public class RoutingUpdateTargetResponse extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(final EntityPlayer player) {
+	public void processPacket(final PlayerEntity player) {
 		if (mode == TargetMode.None) {
-			player.sendMessage(new TextComponentString(ChatColor.RED + "No Target Found"));
+			player.sendMessage(new StringTextComponent(ChatColor.RED + "No Target Found"));
 		} else if (mode == TargetMode.Block) {
 			int x = additions[0];
 			int y = additions[1];
 			int z = additions[2];
-			player.sendMessage(new TextComponentString("Checking Block at: x:" + x + " y:" + y + " z:" + z));
+			player.sendMessage(new StringTextComponent("Checking Block at: x:" + x + " y:" + y + " z:" + z));
 			Block id = player.world.getBlockState(new BlockPos(x, y, z)).getBlock();
-			player.sendMessage(new TextComponentString("Found Block with Id: " + Block.getIdFromBlock(id)));
+			player.sendMessage(new StringTextComponent("Found Block with Id: " + Block.getIdFromBlock(id)));
 			final TileEntity tile = player.world.getTileEntity(new BlockPos(x, y, z));
 			if (tile == null) {
-				player.sendMessage(new TextComponentString(ChatColor.RED + "No TileEntity found"));
+				player.sendMessage(new StringTextComponent(ChatColor.RED + "No TileEntity found"));
 			} else if (!(tile instanceof LogisticsTileGenericPipe)) {
-				player.sendMessage(new TextComponentString(ChatColor.RED + "No LogisticsTileGenericPipe found"));
+				player.sendMessage(new StringTextComponent(ChatColor.RED + "No LogisticsTileGenericPipe found"));
 			} else if (!(((LogisticsTileGenericPipe) tile).pipe instanceof CoreRoutedPipe)) {
-				player.sendMessage(new TextComponentString(ChatColor.RED + "No CoreRoutedPipe found"));
+				player.sendMessage(new StringTextComponent(ChatColor.RED + "No CoreRoutedPipe found"));
 			} else {
 				LPChatListener.addTask(() -> {
-					player.sendMessage(new TextComponentString(ChatColor.GREEN + "Starting RoutingTable debug update."));
+					player.sendMessage(new StringTextComponent(ChatColor.GREEN + "Starting RoutingTable debug update."));
 					DebugController.instance(player).debug(((ServerRouter) ((CoreRoutedPipe) ((LogisticsTileGenericPipe) tile).pipe).getRouter()));
 					MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), player);
 					return true;
 				}, player);
-				player.sendMessage(new TextComponentString(
+				player.sendMessage(new StringTextComponent(
 						ChatColor.AQUA + "Start RoutingTable debug update ? " + ChatColor.RESET + "<" + ChatColor.GREEN + "yes" + ChatColor.RESET + "/"
 								+ ChatColor.RED + "no" + ChatColor.RESET + ">"));
 				MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OpenChatGui.class), player);
 			}
 		} else if (mode == TargetMode.Entity) {
-			player.sendMessage(new TextComponentString(ChatColor.RED + "Entity not allowed"));
+			player.sendMessage(new StringTextComponent(ChatColor.RED + "Entity not allowed"));
 		}
 	}
 

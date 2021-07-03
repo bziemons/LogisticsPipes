@@ -9,33 +9,28 @@
 package logisticspipes.utils.item;
 
 import java.util.List;
-import java.util.Objects;
 import javax.annotation.Nonnull;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockPane;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.RenderItem;
-import net.minecraft.client.renderer.block.model.IBakedModel;
-import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
-import net.minecraft.client.renderer.entity.RenderEntityItem;
-import net.minecraft.client.renderer.entity.RenderManager;
+import net.minecraft.client.renderer.model.IBakedModel;
+import net.minecraft.client.renderer.model.ItemCameraTransforms.TransformType;
+import net.minecraft.client.renderer.texture.AtlasTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.entity.item.EntityItem;
+import net.minecraft.client.renderer.tileentity.ItemStackTileEntityRenderer;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -48,14 +43,14 @@ import network.rs485.logisticspipes.util.TextUtil;
 
 @Data
 @Accessors(chain = true)
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class ItemStackRenderer {
 
-	private RenderManager renderManager;
-	private RenderItem renderItem;
+	private GameRenderer gameRenderer;
+	private ItemRenderer itemRenderer;
 	private TextureManager texManager;
 	private FontRenderer fontRenderer;
-	private RenderEntityItem itemEntityRenderer;
+	private ItemStackTileEntityRenderer stackTileRenderer;
 
 	@Nonnull
 	private ItemStack itemstack = ItemStack.EMPTY;
@@ -70,7 +65,6 @@ public class ItemStackRenderer {
 	private boolean renderEffects;
 	private boolean ignoreDepth;
 	private boolean renderInColor;
-	private EntityItem entityitem;
 	private World world;
 	private float partialTickTime;
 
@@ -80,13 +74,12 @@ public class ItemStackRenderer {
 		this.zLevel = zLevel;
 		this.renderEffects = renderEffects;
 		this.ignoreDepth = ignoreDepth;
-		renderManager = Minecraft.getMinecraft().getRenderManager();
-		fontRenderer = renderManager.getFontRenderer();
-		world = renderManager.world;
-		texManager = renderManager.renderEngine;
-		if (texManager == null) texManager = Minecraft.getMinecraft().getTextureManager();
-		renderItem = Minecraft.getMinecraft().getRenderItem();
-		itemEntityRenderer = new RenderEntityItem(renderManager, renderItem);
+		gameRenderer = Minecraft.getInstance().gameRenderer;
+		fontRenderer = Minecraft.getInstance().fontRenderer;
+		world = Minecraft.getInstance().world;
+		texManager = Minecraft.getInstance().textureManager;
+		itemRenderer = Minecraft.getInstance().getItemRenderer();
+		stackTileRenderer = ItemStackTileEntityRenderer.instance;
 		scaleX = 1.0F;
 		scaleY = 1.0F;
 		scaleZ = 1.0F;
@@ -148,7 +141,7 @@ public class ItemStackRenderer {
 
 	public void renderInGui() {
 		assert displayAmount != null;
-		assert renderItem != null;
+		assert itemRenderer != null;
 		assert texManager != null;
 		assert fontRenderer != null;
 		assert scaleX != 0.0F;
@@ -161,18 +154,20 @@ public class ItemStackRenderer {
 		GlStateManager.disableNormalize();
 
 		// set up lightning
-		GlStateManager.scale(1.0F / scaleX, 1.0F / scaleY, 1.0F / scaleZ);
+		GlStateManager.scalef(1.0F / scaleX, 1.0F / scaleY, 1.0F / scaleZ);
 		RenderHelper.enableGUIStandardItemLighting();
-		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
-		GlStateManager.scale(scaleX, scaleY, scaleZ);
+
+		// FIXME: lightmap
+		// OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
+		GlStateManager.scalef(scaleX, scaleY, scaleZ);
 
 		if (ignoreDepth) {
-			GlStateManager.disableDepth();
+			GlStateManager.disableDepthTest();
 		} else {
-			GlStateManager.enableDepth();
+			GlStateManager.enableDepthTest();
 		}
 
-		renderItem.zLevel += zLevel;
+		itemRenderer.zLevel += zLevel;
 
 		if (itemIdentStack != null) {
 			if (itemIdentStack.getStackSize() < 1) {
@@ -182,37 +177,38 @@ public class ItemStackRenderer {
 			}
 		}
 
-		IBakedModel bakedmodel = renderItem.getItemModelWithOverrides(itemstack, null, (renderEffects ? Minecraft.getMinecraft().player : null));
+		IBakedModel bakedmodel = itemRenderer
+				.getItemModelWithOverrides(itemstack, null, (renderEffects ? Minecraft.getInstance().player : null));
 
 		GlStateManager.pushMatrix();
-		this.texManager.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-		this.texManager.getTexture(TextureMap.LOCATION_BLOCKS_TEXTURE).setBlurMipmap(false, false);
+		this.texManager.bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
+		this.texManager.getTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE).setBlurMipmap(false, false);
 		GlStateManager.enableRescaleNormal();
-		GlStateManager.enableAlpha();
+		GlStateManager.enableAlphaTest();
 		GlStateManager.alphaFunc(516, 0.1F);
 		GlStateManager.enableBlend();
 		GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 		this.setupGuiTransform(posX, posY, bakedmodel.isGui3d());
-		bakedmodel = ForgeHooksClient.handleCameraTransforms(bakedmodel, ItemCameraTransforms.TransformType.GUI, false);
-		renderItem.renderItem(itemstack, bakedmodel);
-		GlStateManager.disableAlpha();
+		bakedmodel.handlePerspective(TransformType.GUI);
+		itemRenderer.renderItem(itemstack, bakedmodel);
+		GlStateManager.disableAlphaTest();
 		GlStateManager.disableRescaleNormal();
 		GlStateManager.disableLighting();
 		GlStateManager.popMatrix();
 
-		this.texManager.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-		this.texManager.getTexture(TextureMap.LOCATION_BLOCKS_TEXTURE).restoreLastBlurMipmap();
+		this.texManager.bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
+		this.texManager.getTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE).restoreLastBlurMipmap();
 
-		renderItem.zLevel -= zLevel;
+		itemRenderer.zLevel -= zLevel;
 
 		// disable lightning
 		RenderHelper.disableStandardItemLighting();
 
 		if (ignoreDepth) {
-			GlStateManager.disableDepth();
+			GlStateManager.disableDepthTest();
 		} else {
-			GlStateManager.enableDepth();
+			GlStateManager.enableDepthTest();
 		}
 		// 20 should be about the size of a block
 		GuiGraphics.drawDurabilityBar(itemstack, posX, posY, zLevel + 20.0F);
@@ -220,9 +216,9 @@ public class ItemStackRenderer {
 		// if we want to render the amount, do that
 		if (displayAmount != DisplayAmount.NEVER) {
 			if (ignoreDepth) {
-				GlStateManager.disableDepth();
+				GlStateManager.disableDepthTest();
 			} else {
-				GlStateManager.enableDepth();
+				GlStateManager.enableDepthTest();
 			}
 
 			FontRenderer specialFontRenderer = itemstack.getItem().getFontRenderer(itemstack);
@@ -233,22 +229,22 @@ public class ItemStackRenderer {
 
 			GlStateManager.disableLighting();
 			String amountString = TextUtil.getThreeDigitFormattedNumber(itemIdentStack != null ? itemIdentStack.getStackSize() : itemstack.getCount(), displayAmount == DisplayAmount.ALWAYS);
-			GlStateManager.translate(0.0F, 0.0F, zLevel + 130.0F);
+			GlStateManager.translatef(0.0F, 0.0F, zLevel + 130.0F);
 
 			// using a translated shadow does not hurt and works with the HUD
 			SimpleGraphics.drawStringWithTranslatedShadow(fontRenderer, amountString, posX + 17 - fontRenderer.getStringWidth(amountString), posY + 9, Color.getValue(Color.WHITE));
 
-			GlStateManager.translate(0.0F, 0.0F, -(zLevel + 130.0F));
+			GlStateManager.translatef(0.0F, 0.0F, -(zLevel + 130.0F));
 		}
 
 		GlStateManager.popMatrix();
 	}
 
 	private void setupGuiTransform(int xPosition, int yPosition, boolean isGui3d) {
-		GlStateManager.translate((float) xPosition, (float) yPosition, 100.0F + renderItem.zLevel);
-		GlStateManager.translate(8.0F, 8.0F, 0.0F);
-		GlStateManager.scale(1.0F, -1.0F, 1.0F);
-		GlStateManager.scale(16.0F, 16.0F, 16.0F);
+		GlStateManager.translatef((float) xPosition, (float) yPosition, 100.0F + itemRenderer.zLevel);
+		GlStateManager.translatef(8.0F, 8.0F, 0.0F);
+		GlStateManager.scalef(1.0F, -1.0F, 1.0F);
+		GlStateManager.scalef(16.0F, 16.0F, 16.0F);
 
 		if (isGui3d) {
 			GlStateManager.enableLighting();
@@ -258,34 +254,29 @@ public class ItemStackRenderer {
 	}
 
 	public void renderInWorld() {
-		assert renderManager != null;
-		assert renderItem != null;
+		assert gameRenderer != null;
+		assert itemRenderer != null;
 		assert scaleX != 0.0F;
 		assert scaleY != 0.0F;
 		assert scaleZ != 0.0F;
 
-		if (entityitem == null || !ItemStack.areItemStacksEqual(entityitem.getItem(), itemstack)) {
-			Objects.requireNonNull(world, "World is needed for EntityItem creation");
-			if (itemstack.isEmpty()) {
-				// :itemcard: 🤷
-				itemstack = new ItemStack(LPItems.itemCard);
-			}
-			entityitem = new EntityItem(world, 0.0D, 0.0D, 0.0D, itemstack);
-			entityitem.getItem().setCount(1);
-			entityitem.hoverStart = 0.0F;
+		if (itemstack.isEmpty()) {
+			// :item_card: 🤷
+			itemstack = new ItemStack(LPItems.itemCard);
 		}
 
 		Item item = itemstack.getItem();
-		if (item instanceof ItemBlock) {
-			Block block = ((ItemBlock) item).getBlock();
-			if (block instanceof BlockPane) {
-				GlStateManager.scale(0.5F, 0.5F, 0.5F);
-			}
+		if (item instanceof BlockItem) {
+			Block block = ((BlockItem) item).getBlock();
+			// FIXME: BlockPane
+//			if (block instanceof BlockPane) {
+//				GlStateManager.scalef(0.5F, 0.5F, 0.5F);
+//			}
 		} else if (item == LPItems.requestTable) {
-			GlStateManager.scale(0.5F, 0.5F, 0.5F);
+			GlStateManager.scalef(0.5F, 0.5F, 0.5F);
 		}
 
-		itemEntityRenderer.doRender(entityitem, posX, posY, zLevel, 0.0F, partialTickTime);
+		stackTileRenderer.renderByItem(itemstack);
 	}
 
 	public void renderItemInGui(float x, float y, Item item, float zLevel, float scale) {

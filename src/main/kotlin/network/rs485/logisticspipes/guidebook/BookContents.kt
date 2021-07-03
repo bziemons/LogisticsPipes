@@ -78,7 +78,7 @@ object BookContents {
     fun get(markdownFile: String): PageInfoProvider {
         assert(markdownFile.isNotEmpty()) { "Cannot read an empty file" }
         return specialPages.getOrDefault(markdownFile, cachedLoadedPages.getOrPut(markdownFile) {
-            loadPage(markdownFile, Minecraft.getMinecraft().languageManager.currentLanguage.languageCode)
+            loadPage(markdownFile, Minecraft.getInstance().languageManager.currentLanguage.code)
         })
     }
 
@@ -97,7 +97,7 @@ private val metadataRegex = "^\\s*<!---\\s*\\n(.*?)\\n\\s*--->\\s*(.*)$".toRegex
 fun loadPage(path: String, lang: String): PageInfoProvider {
     val resolvedLocation = resolveAbsoluteLocation(resolvedLocation = Paths.get(path), language = lang).toLocation(false)
     return try {
-        val bookFile = Minecraft.getMinecraft().resourceManager.getResource(ResourceLocation(LPConstants.LP_MOD_ID, resolvedLocation))
+        val bookFile = Minecraft.getInstance().resourceManager.getResource(ResourceLocation(LPConstants.LP_MOD_ID, resolvedLocation))
         LoadedPage(
             fileLocation = path,
             language = lang,
@@ -106,7 +106,7 @@ fun loadPage(path: String, lang: String): PageInfoProvider {
     } catch (error: IOException) {
         if (lang != "en_us") {
             // Didn't find current file, checking for english version.
-            if (LogisticsPipes.isDEBUG()) LogisticsPipes.log.error("Language $lang for the current file ($resolvedLocation) was not found. Defaulting to en_us.")
+            if (LogisticsPipes.isDEBUG()) LogisticsPipes.getLOGGER().error("Language $lang for the current file ($resolvedLocation) was not found. Defaulting to en_us.")
             loadPage(path, "en_us")
         } else {
             // English not found, this may be normal. Maybe the previous language file pointed to a non-existent file.
@@ -141,7 +141,7 @@ private fun parseMetadata(metadataString: String, markdownFile: String): YamlPag
         try {
             Yaml.default.decodeFromString(YamlPageMetadata.serializer(), metadataString)
         } catch (e: YamlException) {
-            LogisticsPipes.log.error("The following Yaml in $markdownFile is malformed! \n$metadataString", e)
+            LogisticsPipes.getLOGGER().error("The following Yaml in $markdownFile is malformed! \n$metadataString", e)
             MISSING_META
         }
     } else MISSING_META

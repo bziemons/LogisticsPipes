@@ -10,11 +10,12 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.registry.Registry;
 
 import logisticspipes.LPItems;
 import logisticspipes.blocks.LogisticsProgramCompilerTileEntity;
@@ -55,15 +56,15 @@ public class ModuleChippedCraftingRecipes extends CraftingPartRecipes {
 
 	private void registerModuleRecipe(CraftingParts parts, RecipeType type, ResourceLocation recipeCategory, @Nonnull String moduleName, @Nullable String baseModuleName) {
 		final ResourceLocation moduleResource = LPItems.modules.get(moduleName);
-		Item module = Item.REGISTRY.getObject(moduleResource);
-		if (module == null) return;
+		Item module = Registry.ITEM.getOrDefault(moduleResource);
+		if (module == Items.AIR) return;
 		Item baseModule;
 		if (baseModuleName == null) {
 			baseModule = LPItems.blankModule;
 		} else {
-			baseModule = Item.REGISTRY.getObject(LPItems.modules.get(baseModuleName));
+			baseModule = Registry.ITEM.getOrDefault(LPItems.modules.get(baseModuleName));
 		}
-		if (baseModule == null) return;
+		if (baseModule == Items.AIR) return;
 
 		Ingredient programmer = programmerIngredient(moduleResource.toString());
 		final Set<ResourceLocation> compilerPrograms = LogisticsProgramCompilerTileEntity.programByCategory.putIfAbsent(recipeCategory, new HashSet<>());

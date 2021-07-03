@@ -12,19 +12,16 @@ import java.util.BitSet;
 import java.util.List;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.ClickType;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.IContainerListener;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.Slot;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import logisticspipes.LogisticsPipes;
 import logisticspipes.interfaces.IFuzzySlot;
@@ -48,7 +45,7 @@ import network.rs485.logisticspipes.property.IBitSet;
 
 public class DummyContainer extends Container {
 
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public LogisticsBaseGuiScreen guiHolderForJEI; // This is not set for every GUI. Only for the one needed by JEI.
 
 	public List<BitSet> slotsFuzzyFlags = new ArrayList<>();
@@ -63,12 +60,14 @@ public class DummyContainer extends Container {
 	private long lastDragnDropLockup;
 
 	public DummyContainer(IInventory playerInventory, IInventory dummyInventory) {
+		super(null, 0);
 		_playerInventory = playerInventory;
 		_dummyInventory = dummyInventory;
 		_controler = null;
 	}
 
-	public DummyContainer(EntityPlayer player, IInventory dummyInventory, IGuiOpenControler... controler) {
+	public DummyContainer(PlayerEntity player, IInventory dummyInventory, IGuiOpenControler... controler) {
+		super(null, 0);
 		_playerInventory = player.inventory;
 		_dummyInventory = dummyInventory;
 		_controler = controler;
@@ -80,7 +79,7 @@ public class DummyContainer extends Container {
 	}
 
 	@Override
-	public boolean canInteractWith(@Nonnull EntityPlayer entityplayer) {
+	public boolean canInteractWith(@Nonnull PlayerEntity player) {
 		return true;
 	}
 
@@ -196,7 +195,7 @@ public class DummyContainer extends Container {
 
 	@Nonnull
 	@Override
-	public ItemStack transferStackInSlot(@Nonnull EntityPlayer player, int i) {
+	public ItemStack transferStackInSlot(PlayerEntity player, int i) {
 		if (transferTop.isEmpty() || transferBottom.isEmpty()) {
 			return ItemStack.EMPTY;
 		}
@@ -214,7 +213,7 @@ public class DummyContainer extends Container {
 		return ItemStack.EMPTY;
 	}
 
-	private void handleShiftClickLists(Slot from, List<Slot> toList, boolean ignoreEmpty, EntityPlayer player) {
+	private void handleShiftClickLists(Slot from, List<Slot> toList, boolean ignoreEmpty, PlayerEntity player) {
 		if (!from.getHasStack()) {
 			return;
 		}
@@ -225,7 +224,7 @@ public class DummyContainer extends Container {
 		}
 	}
 
-	private boolean handleShiftClickForSlots(Slot from, Slot to, boolean ignoreEmpty, EntityPlayer player) {
+	private boolean handleShiftClickForSlots(Slot from, Slot to, boolean ignoreEmpty, PlayerEntity player) {
 		if (!from.getHasStack()) {
 			return true;
 		}
@@ -263,7 +262,7 @@ public class DummyContainer extends Container {
 	}
 
 	@Nonnull
-	public ItemStack superSlotClick(int slotId, int dragType, ClickType clickTypeIn, EntityPlayer player) {
+	public ItemStack superSlotClick(int slotId, int dragType, ClickType clickTypeIn, PlayerEntity player) {
 		ItemStack itemstack = ItemStack.EMPTY;
 		InventoryPlayer inventoryplayer = player.inventory;
 
@@ -335,7 +334,7 @@ public class DummyContainer extends Container {
 					}
 
 					if (dragType == 1) {
-						player.dropItem(inventoryplayer.getItemStack().splitStack(1), true);
+						player.dropItem(inventoryplayer.getItemStack().split(1), true);
 					}
 				}
 			} else if (clickTypeIn == ClickType.QUICK_MOVE) {
@@ -376,7 +375,7 @@ public class DummyContainer extends Container {
 								i3 = slot6.getItemStackLimit(itemstack11);
 							}
 
-							slot6.putStack(itemstack11.splitStack(i3));
+							slot6.putStack(itemstack11.split(i3));
 						}
 					} else if (slot6.canTakeStack(player)) {
 						if (itemstack11.isEmpty()) {
@@ -454,7 +453,7 @@ public class DummyContainer extends Container {
 						int l1 = slot4.getItemStackLimit(itemstack6);
 
 						if (itemstack6.getCount() > l1) {
-							slot4.putStack(itemstack6.splitStack(l1));
+							slot4.putStack(itemstack6.split(l1));
 						} else {
 							slot4.putStack(itemstack6);
 							inventoryplayer.setInventorySlotContents(dragType, ItemStack.EMPTY);
@@ -464,7 +463,7 @@ public class DummyContainer extends Container {
 					int i2 = slot4.getItemStackLimit(itemstack6);
 
 					if (itemstack6.getCount() > i2) {
-						slot4.putStack(itemstack6.splitStack(i2));
+						slot4.putStack(itemstack6.split(i2));
 						slot4.onTake(player, itemstack10);
 
 						if (!inventoryplayer.addItemStackToInventory(itemstack10)) {
@@ -531,7 +530,7 @@ public class DummyContainer extends Container {
 		return itemstack;
 	}
 
-	private void handleSwitch(Slot slot2, @Nonnull ItemStack out, @Nonnull ItemStack in, EntityPlayer player) {
+	private void handleSwitch(Slot slot2, @Nonnull ItemStack out, @Nonnull ItemStack in, PlayerEntity player) {
 		if (slot2 instanceof ModuleSlot) {
 			ChassisModule chassis = (ChassisModule) ((ModuleSlot) slot2).get_pipe().getLogisticsModule();
 			int moduleIndex = ((ModuleSlot) slot2).get_moduleIndex();
@@ -549,7 +548,7 @@ public class DummyContainer extends Container {
 	 */
 	@Nonnull
 	@Override
-	public ItemStack slotClick(int slotId, int mouseButton, @Nonnull ClickType shiftMode, @Nonnull EntityPlayer player) {
+	public ItemStack slotClick(int slotId, int mouseButton, ClickType shiftMode, PlayerEntity player) {
 		lastClicked = System.currentTimeMillis();
 		if (slotId < 0) {
 			return superSlotClick(slotId, mouseButton, shiftMode, player);
@@ -567,8 +566,8 @@ public class DummyContainer extends Container {
 			ItemStack stack1 = superSlotClick(slotId, mouseButton, shiftMode, player);
 			ItemStack stack2 = slot.getStack();
 			if (!stack2.isEmpty() && stack2.getItem() instanceof ItemModule) {
-				if (player instanceof EntityPlayerMP && MainProxy.isServer(player.world)) {
-					((EntityPlayerMP) player).sendSlotContents(this, slotId, stack2);
+				if (player instanceof ServerPlayerEntity && MainProxy.isServer(player.world)) {
+					((ServerPlayerEntity) player).sendSlotContents(this, slotId, stack2);
 				}
 			}
 			return stack1;
@@ -600,7 +599,7 @@ public class DummyContainer extends Container {
 		return currentlyEquippedStack;
 	}
 
-	public void handleDummyClick(Slot slot, int slotId, @Nonnull ItemStack currentlyEquippedStack, int mouseButton, ClickType shiftMode, EntityPlayer entityplayer) {
+	public void handleDummyClick(Slot slot, int slotId, @Nonnull ItemStack currentlyEquippedStack, int mouseButton, ClickType shiftMode, PlayerEntity player) {
 		if (slot instanceof FluidSlot) {
 			if (!currentlyEquippedStack.isEmpty()) {
 				FluidIdentifier ident = FluidIdentifier.get(currentlyEquippedStack);
@@ -618,7 +617,7 @@ public class DummyContainer extends Container {
 				ident = FluidIdentifier.get(ItemIdentifier.get(slot.getStack()));
 			}
 			if (ident == null) {
-				if (MainProxy.isClient(entityplayer.getEntityWorld())) {
+				if (MainProxy.isClient(PlayerEntity.getEntityWorld())) {
 					MainProxy.proxy.openFluidSelectGui(slotId);
 				}
 			}
@@ -645,8 +644,8 @@ public class DummyContainer extends Container {
 					slot.putStack(equipped.getItemStack());
 				}
 			}
-			if (entityplayer instanceof EntityPlayerMP && MainProxy.isServer(entityplayer.world)) {
-				((EntityPlayerMP) entityplayer).sendSlotContents(this, slotId, slot.getStack());
+			if (PlayerEntity instanceof ServerPlayerEntity && MainProxy.isServer(PlayerEntity.world)) {
+				((ServerPlayerEntity) PlayerEntity).sendSlotContents(this, slotId, slot.getStack());
 			}
 			return;
 		}
@@ -741,7 +740,7 @@ public class DummyContainer extends Container {
 	}
 
 	@Override
-	public void onContainerClosed(@Nonnull EntityPlayer player) {
+	public void onContainerClosed(PlayerEntity player) {
 		if (_controler != null) {
 			for (IGuiOpenControler element : _controler) {
 				element.guiClosedByPlayer(player);
@@ -828,7 +827,7 @@ public class DummyContainer extends Container {
 							PacketHandler.getPacket(FuzzySlotSettingsPacket.class)
 									.setSlotNumber(fuzzySlot.getSlotId())
 									.setFlags(slotFlags),
-							listeners.stream().filter(o -> o instanceof EntityPlayer).map(o -> (EntityPlayer) o));
+							listeners.stream().filter(o -> o instanceof PlayerEntity).map(o -> (PlayerEntity) o));
 					slotsFuzzyFlags.set(i, slotFlags);
 				}
 			}
@@ -841,14 +840,13 @@ public class DummyContainer extends Container {
 
 				for (IContainerListener crafter : listeners) {
 					boolean revert = false;
-					if (overrideMCAntiSend && crafter instanceof EntityPlayerMP
-							&& ((EntityPlayerMP) crafter).isChangingQuantityOnly) {
-						((EntityPlayerMP) crafter).isChangingQuantityOnly = false;
+					if (overrideMCAntiSend && crafter instanceof ServerPlayerEntity && ((ServerPlayerEntity) crafter).isChangingQuantityOnly) {
+						((ServerPlayerEntity) crafter).isChangingQuantityOnly = false;
 						revert = true;
 					}
 					crafter.sendSlotContents(this, i, itemstack1);
 					if (revert) {
-						((EntityPlayerMP) crafter).isChangingQuantityOnly = true;
+						((ServerPlayerEntity) crafter).isChangingQuantityOnly = true;
 					}
 				}
 			}

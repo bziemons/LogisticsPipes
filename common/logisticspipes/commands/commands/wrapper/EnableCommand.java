@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import net.minecraft.command.ICommandSender;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.command.ICommandSource;
+import net.minecraft.util.text.StringTextComponent;
 
 import logisticspipes.asm.wrapper.AbstractWrapper;
 import logisticspipes.asm.wrapper.LogisticsWrapperHandler;
@@ -21,7 +21,7 @@ public class EnableCommand implements ICommandHandler {
 	}
 
 	@Override
-	public boolean isCommandUsableBy(ICommandSender sender) {
+	public boolean isCommandUsableBy(ICommandSource sender) {
 		return LogisticsPipesCommand.isOP(sender);
 	}
 
@@ -31,9 +31,9 @@ public class EnableCommand implements ICommandHandler {
 	}
 
 	@Override
-	public void executeCommand(ICommandSender sender, String[] args) {
+	public void executeCommand(ICommandSource sender, String[] args) {
 		if (args.length != 1) {
-			sender.sendMessage(new TextComponentString("Wrong amount of arguments"));
+			sender.sendMessage(new StringTextComponent("Wrong amount of arguments"));
 			return;
 		}
 		String name = args[0];
@@ -53,12 +53,12 @@ public class EnableCommand implements ICommandHandler {
 			}
 		}
 		if (list.size() > 1) {
-			sender.sendMessage(new TextComponentString("Possible: "));
+			sender.sendMessage(new StringTextComponent("Possible: "));
 			for (AbstractWrapper can : list) {
-				sender.sendMessage(new TextComponentString(can.getName() + can.getTypeName()));
+				sender.sendMessage(new StringTextComponent(can.getName() + can.getTypeName()));
 			}
 		} else if (list.isEmpty()) {
-			sender.sendMessage(new TextComponentString("No match found"));
+			sender.sendMessage(new StringTextComponent("No match found"));
 		} else {
 			AbstractWrapper wrapper = list.get(0);
 			wrapper.reEnable();

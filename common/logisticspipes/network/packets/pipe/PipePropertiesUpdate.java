@@ -3,15 +3,14 @@ package logisticspipes.network.packets.pipe;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.network.PacketHandler;
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.pipes.basic.LogisticsTileGenericPipe;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.utils.StaticResolve;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import network.rs485.logisticspipes.property.PropertyHolder;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
@@ -20,7 +19,7 @@ import network.rs485.logisticspipes.util.LPDataOutput;
 public class PipePropertiesUpdate extends CoordinatesPacket {
 
 	@Nonnull
-	public NBTTagCompound tag = new NBTTagCompound();
+	public CompoundNBT tag = new CompoundNBT();
 
 	public PipePropertiesUpdate(int id) {
 		super(id);
@@ -29,13 +28,13 @@ public class PipePropertiesUpdate extends CoordinatesPacket {
 	@Override
 	public void writeData(LPDataOutput output) {
 		super.writeData(output);
-		output.writeNBTTagCompound(tag);
+		output.writeCompoundNBT(tag);
 	}
 
 	@Override
 	public void readData(LPDataInput input) {
 		super.readData(input);
-		tag = Objects.requireNonNull(input.readNBTTagCompound(), "read null NBT in PipePropertiesUpdate");
+		tag = Objects.requireNonNull(input.readCompoundNBT(), "read null NBT in PipePropertiesUpdate");
 	}
 
 	@Override
@@ -44,7 +43,7 @@ public class PipePropertiesUpdate extends CoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		LogisticsTileGenericPipe tile = this.getPipe(player.getEntityWorld(), LTGPCompletionCheck.PIPE);
 		if (!(tile.pipe instanceof PropertyHolder)) {
 			return;

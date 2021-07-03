@@ -1,11 +1,10 @@
 package logisticspipes.network;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.IThreadListener;
 
-import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.FMLLog;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraftforge.fml.network.NetworkRegistry;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -30,7 +29,7 @@ public class PacketInboundHandler extends SimpleChannelInboundHandler<InboundMod
 		}
 	}
 
-	private void inThreadProcessPacket(ModernPacket packet, EntityPlayer player) {
+	private void inThreadProcessPacket(ModernPacket packet, PlayerEntity player) {
 		try {
 			packet.processPacket(player);
 			if (LogisticsPipes.isDEBUG()) {
@@ -40,8 +39,8 @@ public class PacketInboundHandler extends SimpleChannelInboundHandler<InboundMod
 			if (packet.retry() && MainProxy.isClient(player.getEntityWorld())) {
 				SimpleServiceLocator.clientBufferHandler.queuePacket(packet, player);
 			} else if (LogisticsPipes.isDEBUG()) {
-				LogisticsPipes.log.error(packet.getClass().getName());
-				LogisticsPipes.log.error(packet.toString());
+				LogisticsPipes.getLOGGER().error(packet.getClass().getName());
+				LogisticsPipes.getLOGGER().error(packet.toString());
 				e.printStackTrace();
 			}
 		}

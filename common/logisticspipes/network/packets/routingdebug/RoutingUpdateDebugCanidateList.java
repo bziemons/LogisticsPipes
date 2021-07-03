@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -36,12 +36,12 @@ public class RoutingUpdateDebugCanidateList extends ModernPacket {
 			try {
 				return new ExitRoute(objInput);
 			} catch (RuntimeException e) {
-				LogisticsPipes.log.error("Could not read ExitRoute in RoutingUpdateDebugCanidateList", e);
+				LogisticsPipes.getLOGGER().error("Could not read ExitRoute in RoutingUpdateDebugCanidateList", e);
 			}
 			return null;
 		});
 		if (readExitRoutes == null) {
-			LogisticsPipes.log.error("Read a non-existent ExitRoute collection in RoutingUpdateDebugCanidateList");
+			LogisticsPipes.getLOGGER().error("Read a non-existent ExitRoute collection in RoutingUpdateDebugCanidateList");
 			exitRoutes = Collections.emptyList();
 			return;
 		}
@@ -49,7 +49,7 @@ public class RoutingUpdateDebugCanidateList extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		ClientViewController.instance().updateList(this);
 	}
 

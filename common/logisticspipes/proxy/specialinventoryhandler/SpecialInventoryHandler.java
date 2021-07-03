@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.utils.item.ItemIdentifier;
@@ -38,9 +38,10 @@ public abstract class SpecialInventoryHandler implements IInventoryUtil, ITransa
 
 		boolean init();
 
-		boolean isType(@Nonnull TileEntity tile, @Nullable EnumFacing dir);
+		boolean isType(@Nonnull TileEntity tile, @Nullable Direction direction);
 
 		@Nullable
-		SpecialInventoryHandler getUtilForTile(@Nonnull TileEntity tile, @Nullable EnumFacing direction, @Nonnull ProviderMode mode);
+		SpecialInventoryHandler getUtilForTile(@Nonnull TileEntity tile, @Nullable Direction direction, @Nonnull ProviderMode mode);
+
 	}
 }

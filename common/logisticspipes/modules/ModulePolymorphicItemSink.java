@@ -7,6 +7,7 @@ import javax.annotation.Nonnull;
 import net.minecraft.item.ItemStack;
 
 import org.jetbrains.annotations.NotNull;
+import net.minecraft.nbt.CompoundNBT;
 
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.IPipeServiceProvider;

@@ -1,27 +1,24 @@
 package logisticspipes.utils.gui;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
 
 import net.minecraftforge.fml.client.FMLClientHandler;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import lombok.Getter;
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
@@ -243,7 +240,7 @@ public class ItemDisplay {
 
 	public void renderItemArea(double zLevel) {
 		GlStateManager.pushMatrix();
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 
 		screen.drawRect(left, top, left + width, top + height, Color.GREY);
 
@@ -259,11 +256,11 @@ public class ItemDisplay {
 		int mouseX = Mouse.getX() * scaleX / mc.displayWidth - left;
 		int mouseY = scaleY - Mouse.getY() * scaleY / mc.displayHeight - top;
 
-		GlStateManager.translate(left, top, 0.0F);
+		GlStateManager.translatef(left, top, 0.0F);
 
 		if (!listbyserver) {
 			int graphic = ((int) (System.currentTimeMillis() / 250) % 5);
-			screen.getMC().renderEngine.bindTexture(ItemDisplay.TEXTURE);
+			screen.getMC().textureManager.bindTexture(ItemDisplay.TEXTURE);
 			Tessellator tess = Tessellator.getInstance();
 			BufferBuilder buf = tess.getBuffer();
 			buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
@@ -345,8 +342,8 @@ public class ItemDisplay {
 	}
 
 	public void handleMouse() {
-		boolean isShift = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
-		boolean isControl = Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) || Keyboard.isKeyDown(Keyboard.KEY_RCONTROL);
+		boolean isShift = InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LSHIFT) || InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_RSHIFT);
+		boolean isControl = InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL) || InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_RCONTROL);
 		int wheel = Mouse.getEventDWheel() / 120;
 		if (wheel == 0) {
 			return;
@@ -526,10 +523,10 @@ public class ItemDisplay {
 
 	public boolean keyTyped(char c, int i) {
 		if (!requestCountBar.handleKey(c, i)) {
-			if (i == 30 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) { //Ctrl-a
+			if (i == 30 && InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL)) { //Ctrl-a
 				setMaxAmount();
 				return true;
-			} else if (i == 32 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)) { //Ctrl-d
+			} else if (i == 32 && InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL)) { //Ctrl-d
 				resetAmount();
 				return true;
 			} else if (i == 201) { //PgUp

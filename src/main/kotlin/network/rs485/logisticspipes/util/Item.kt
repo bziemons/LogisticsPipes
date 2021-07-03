@@ -45,9 +45,9 @@ import kotlin.math.min
 
 
 fun ItemIdentifier.equalsWithNBT(stack: ItemStack): Boolean = this.item == stack.item &&
-        this.itemDamage == stack.itemDamage &&
-        ((this.tag == null && stack.tagCompound == null) ||
-                (this.tag != null && stack.tagCompound != null && this.tag == stack.tagCompound))
+        this.itemDamage == stack.damage &&
+        ((this.tag == null && stack.tag == null) ||
+                (this.tag != null && stack.tag != null && this.tag == stack.tag))
 
 fun IItemIdentifierInventory.matchingSequence(stack: ItemStack) =
     (0 until sizeInventory).asSequence().map { getIDStackInSlot(it) }

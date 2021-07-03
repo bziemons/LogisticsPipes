@@ -16,10 +16,12 @@ import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.BakedItemModel;
 import net.minecraftforge.client.model.ICustomModelLoader;
 import net.minecraftforge.client.model.IModel;
@@ -30,23 +32,22 @@ import net.minecraftforge.client.model.SimpleModelState;
 import net.minecraftforge.common.model.IModelState;
 import net.minecraftforge.common.model.TRSRTransformation;
 import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
+import logisticspipes.LPConstants;
 import logisticspipes.utils.FluidIdentifier;
 
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class FluidContainerRenderer implements IModel {
 
 	public static class FluidContainerRendererModelLoader implements ICustomModelLoader {
 
 		@Override
 		public boolean accepts(@Nonnull ResourceLocation modelLocation) {
-			return modelLocation.getResourceDomain().equals("logisticspipes") && modelLocation.getResourcePath().equals("models/item/fluid_container");
+			return modelLocation.getNamespace().equals(LPConstants.LP_MOD_ID) && modelLocation.getPath().equals("models/item/fluid_container");
 		}
 
 		@Nonnull
@@ -113,7 +114,7 @@ public class FluidContainerRenderer implements IModel {
 					return cache.get(fluidIdent);
 				}
 
-				Fluid fluid = fluidIdent.getFluid();
+				Fluid fluid = fluidIdent.getFluidResource();
 
 				ResourceLocation fluidSprite = fluid.getStill(fluidIdent.makeFluidStack(1000));
 
@@ -124,11 +125,11 @@ public class FluidContainerRenderer implements IModel {
 				builder.addAll(
 						ItemTextureQuadConverter
 								.convertTexture(format, transform, this.bakedTextureGetter.apply(STENCIL), this.bakedTextureGetter.apply(fluidSprite),
-										NORTH_Z, EnumFacing.NORTH, fluid.getColor()));
+										NORTH_Z, Direction.NORTH, fluid.getColor()));
 				builder.addAll(
 						ItemTextureQuadConverter
 								.convertTexture(format, transform, this.bakedTextureGetter.apply(STENCIL), this.bakedTextureGetter.apply(fluidSprite),
-										SOUTH_Z, EnumFacing.SOUTH, fluid.getColor()));
+										SOUTH_Z, Direction.SOUTH, fluid.getColor()));
 
 				builder.addAll(originalModel.getQuads(null, null, 0));
 

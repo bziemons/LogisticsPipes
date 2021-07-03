@@ -1,6 +1,6 @@
 package logisticspipes.network.guis.block;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.blocks.powertile.LogisticsPowerProviderTileEntity;
 import logisticspipes.gui.GuiPowerProvider;
@@ -17,12 +17,12 @@ public class PowerProviderGui extends CoordinatesGuiProvider {
 	}
 
 	@Override
-	public Object getClientGui(EntityPlayer player) {
+	public Object getClientGui(PlayerEntity player) {
 		return new GuiPowerProvider(player, getTileAs(player.world, LogisticsPowerProviderTileEntity.class));
 	}
 
 	@Override
-	public DummyContainer getContainer(EntityPlayer player) {
+	public DummyContainer getContainer(PlayerEntity player) {
 		DummyContainer dummy = new DummyContainer(player, null, getTileAs(player.world, LogisticsPowerProviderTileEntity.class));
 		dummy.addNormalSlotsForPlayerInventory(8, 80);
 		return dummy;

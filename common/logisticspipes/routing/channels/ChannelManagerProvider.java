@@ -1,18 +1,20 @@
 package logisticspipes.routing.channels;
 
 import java.lang.ref.WeakReference;
-
 import javax.annotation.Nonnull;
 
 import net.minecraft.world.World;
 
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.WorldEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
+import logisticspipes.LPConstants;
 import logisticspipes.interfaces.routing.IChannelManager;
 import logisticspipes.interfaces.routing.IChannelManagerProvider;
 
+@Mod.EventBusSubscriber(modid = LPConstants.LP_MOD_ID)
 public class ChannelManagerProvider implements IChannelManagerProvider {
 
 	private WeakReference<World> worldWeakReference = null;

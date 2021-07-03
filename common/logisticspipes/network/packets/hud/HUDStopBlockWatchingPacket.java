@@ -1,9 +1,9 @@
 package logisticspipes.network.packets.hud;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import logisticspipes.interfaces.IBlockWatchingHandler;
-import logisticspipes.network.abstractpackets.CoordinatesPacket;
+import network.rs485.logisticspipes.network.packets.CoordinatesPacket;
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.utils.StaticResolve;
 
@@ -20,7 +20,7 @@ public class HUDStopBlockWatchingPacket extends CoordinatesPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		IBlockWatchingHandler tile = this.getTileAs(player.world, IBlockWatchingHandler.class);
 		if (tile != null) {
 			tile.playerStopWatching(player);

@@ -7,7 +7,7 @@ import java.util.Map;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
@@ -357,7 +357,7 @@ public abstract class BaseWrapperClass extends AbstractValue {
 	}
 
 	@Override
-	public void load(NBTTagCompound nbt) {
+	public void load(CompoundNBT nbt) {
 		if (object != null) {
 			return;
 		}
@@ -369,11 +369,11 @@ public abstract class BaseWrapperClass extends AbstractValue {
 			object = LogisticsPipes.getComputerLP();
 			checkType();
 		} else if (type.equals("CoreRoutedPipe")) {
-			int x = nbt.getInteger("X");
-			int y = nbt.getInteger("Y");
-			int z = nbt.getInteger("Z");
+			int x = nbt.getInt("X");
+			int y = nbt.getInt("Y");
+			int z = nbt.getInt("Z");
 			final DoubleCoordinates pos = new DoubleCoordinates(x, y, z);
-			final int dim = nbt.getInteger("Dim");
+			final int dim = nbt.getInt("Dim");
 			QueuedTasks.queueTask(() -> {
 				World world = DimensionManager.getWorld(dim);
 				if (world != null) {
@@ -402,16 +402,16 @@ public abstract class BaseWrapperClass extends AbstractValue {
 			if (!stack.isEmpty()) {
 				CCItemIdentifierBuilder builder = new CCItemIdentifierBuilder();
 				builder.setItemID(Double.valueOf(Item.getIdFromItem(stack.getItem())));
-				builder.setItemData((double) stack.getItemDamage());
+				builder.setItemData((double) stack.getDamage());
 				object = builder;
 				checkType();
 			}
 		} else if (type.equals("LogisticsSolidTileEntity")) {
-			int x = nbt.getInteger("X");
-			int y = nbt.getInteger("Y");
-			int z = nbt.getInteger("Z");
+			int x = nbt.getInt("X");
+			int y = nbt.getInt("Y");
+			int z = nbt.getInt("Z");
 			final DoubleCoordinates pos = new DoubleCoordinates(x, y, z);
-			final int dim = nbt.getInteger("Dim");
+			final int dim = nbt.getInt("Dim");
 			QueuedTasks.queueTask(() -> {
 				World world = DimensionManager.getWorld(dim);
 				if (world != null) {
@@ -429,35 +429,35 @@ public abstract class BaseWrapperClass extends AbstractValue {
 	}
 
 	@Override
-	public void save(NBTTagCompound nbt) {
+	public void save(CompoundNBT nbt) {
 		if (object == null) {
 			return;
 		}
 		if (object instanceof LPGlobalCCAccess) {
-			nbt.setString("Type", "LPGlobalCCAccess");
+			nbt.putString("Type", "LPGlobalCCAccess");
 		} else if (object instanceof CoreRoutedPipe) {
 			DoubleCoordinates pos = ((CoreRoutedPipe) object).getLPPosition();
-			nbt.setString("Type", "CoreRoutedPipe");
-			nbt.setInteger("Dim", ((CoreRoutedPipe) object).getWorld().provider.getDimension());
-			nbt.setInteger("X", pos.getXInt());
-			nbt.setInteger("Y", pos.getYInt());
-			nbt.setInteger("Z", pos.getZInt());
+			nbt.putString("Type", "CoreRoutedPipe");
+			nbt.putInt("Dim", ((CoreRoutedPipe) object).getWorld().getDimension());
+			nbt.putInt("X", pos.getXInt());
+			nbt.putInt("Y", pos.getYInt());
+			nbt.putInt("Z", pos.getZInt());
 		} else if (object instanceof CCItemIdentifierImplementation) {
-			nbt.setString("Type", "CCItemIdentifierImplementation");
+			nbt.putString("Type", "CCItemIdentifierImplementation");
 			((CCItemIdentifierImplementation) object).getObject().makeNormalStack(1).writeToNBT(nbt);
 		} else if (object instanceof CCItemIdentifierStackImplementation) {
-			nbt.setString("Type", "CCItemIdentifierStackImplementation");
+			nbt.putString("Type", "CCItemIdentifierStackImplementation");
 			((CCItemIdentifierStackImplementation) object).getObject().makeNormalStack().writeToNBT(nbt);
 		} else if (object instanceof CCItemIdentifierBuilder) {
-			nbt.setString("Type", "CCItemIdentifierBuilder");
+			nbt.putString("Type", "CCItemIdentifierBuilder");
 			((CCItemIdentifierBuilder) object).build().makeNormalStack(1).writeToNBT(nbt);
 		} else if (object instanceof LogisticsSolidTileEntity) {
 			DoubleCoordinates pos = ((LogisticsSolidTileEntity) object).getLPPosition();
-			nbt.setString("Type", "LogisticsSolidTileEntity");
-			nbt.setInteger("Dim", ((LogisticsSolidTileEntity) object).getWorld().provider.getDimension());
-			nbt.setInteger("X", pos.getXInt());
-			nbt.setInteger("Y", pos.getYInt());
-			nbt.setInteger("Z", pos.getZInt());
+			nbt.putString("Type", "LogisticsSolidTileEntity");
+			nbt.putInt("Dim", ((LogisticsSolidTileEntity) object).getWorld().getDimension());
+			nbt.putInt("X", pos.getXInt());
+			nbt.putInt("Y", pos.getYInt());
+			nbt.putInt("Z", pos.getZInt());
 		} else {
 			System.out.println("Couldn't find mapping for: " + object.getClass());
 		}

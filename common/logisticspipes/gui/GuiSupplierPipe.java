@@ -50,7 +50,7 @@ public class GuiSupplierPipe extends LogisticsBaseGuiScreen {
 
 	public GuiSupplierPipe(IInventory playerInventory, IInventory dummyInventory, ModuleActiveSupplier module,
 			Boolean flag, int[] slots) {
-		super(null);
+		super(null, inv, titleIn);
 		hasPatternUpgrade = flag;
 		supplierModule = module;
 
@@ -121,12 +121,12 @@ public class GuiSupplierPipe extends LogisticsBaseGuiScreen {
 	protected void drawGuiContainerBackgroundLayer(float f, int x, int y) {
 		if (!hasPatternUpgrade) {
 			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-			mc.renderEngine.bindTexture(GuiSupplierPipe.TEXTURE);
+			mc.textureManager.bindTexture(GuiSupplierPipe.TEXTURE);
 			int j = guiLeft;
 			int k = guiTop;
 			drawTexturedModalRect(j, k, 0, 0, xSize, ySize);
 		} else {
-			GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+			GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 			GL11.glTranslated(guiLeft, guiTop, 0);
 			for (int i = 0; i < 9; i++) {
 				GuiGraphics.drawSlotBackground(mc, 17 + i * 18, 19);

@@ -11,10 +11,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
+
+import kotlin.properties.Delegates;
+import kotlin.properties.ObservableProperty;
 
 import com.google.common.collect.ImmutableList;
 
@@ -68,6 +72,8 @@ import logisticspipes.utils.tuples.Pair;
 import network.rs485.logisticspipes.connection.NeighborTileEntity;
 import network.rs485.logisticspipes.inventory.IItemIdentifierInventory;
 import network.rs485.logisticspipes.inventory.ProviderMode;
+import network.rs485.logisticspipes.connection.NeighborTileEntity;
+import network.rs485.logisticspipes.inventory.ProviderMode;
 import network.rs485.logisticspipes.module.Gui;
 import network.rs485.logisticspipes.module.SneakyDirection;
 import network.rs485.logisticspipes.property.BooleanProperty;
@@ -87,8 +93,8 @@ public class ModuleProvider extends LogisticsModule implements SneakyDirection, 
 	public final BooleanProperty isExclusionFilter = new BooleanProperty(false, "filterisexclude");
 	public final EnumProperty<ProviderMode> providerMode =
 			new EnumProperty<>(ProviderMode.DEFAULT, "extractionMode", ProviderMode.values());
-	public final NullableEnumProperty<EnumFacing> sneakyDirection =
-			new NullableEnumProperty<>(null, "sneakydirection", EnumFacing.values());
+	public final NullableEnumProperty<Direction> sneakyDirection =
+			new NullableEnumProperty<>(null, "sneakydirection", Direction.values());
 	public final ImmutableList<Property<?>> propertyList = ImmutableList.<Property<?>>builder()
 			.add(filterInventory)
 			.add(isActive)
@@ -100,6 +106,8 @@ public class ModuleProvider extends LogisticsModule implements SneakyDirection, 
 	private final ArrayList<ItemIdentifierStack> oldList = new ArrayList<>();
 	private final PlayerCollectionList localModeWatchers = new PlayerCollectionList();
 	private final IHUDModuleRenderer HUD = new HUDProviderModule(this);
+
+	public final ObservableProperty<Boolean> excludeProperty = new ObservableProperty<Boolean>(false) {};
 
 	public ModuleProvider() {}
 
@@ -123,12 +131,12 @@ public class ModuleProvider extends LogisticsModule implements SneakyDirection, 
 	}
 
 	@Override
-	public EnumFacing getSneakyDirection() {
+	public Direction getSneakyDirection() {
 		return sneakyDirection.getValue();
 	}
 
 	@Override
-	public void setSneakyDirection(EnumFacing direction) {
+	public void setSneakyDirection(Direction direction) {
 		sneakyDirection.setValue(direction);
 		MainProxy.runOnServer(getWorld(), () -> () ->
 				MainProxy.sendToPlayerList(
@@ -297,7 +305,7 @@ public class ModuleProvider extends LogisticsModule implements SneakyDirection, 
 
 		ItemIdentifier item = stack.getItem();
 
-		Iterator<Pair<IInventoryUtil, EnumFacing>> iterator = service.getAvailableAdjacent().inventories().stream()
+		Iterator<Pair<IInventoryUtil, Direction>> iterator = service.getAvailableAdjacent().inventories().stream()
 				.flatMap(neighbor -> {
 					final IInventoryUtil invUtil = getInventoryUtilWithMode(neighbor);
 					if (invUtil == null) return Stream.empty();
@@ -305,7 +313,7 @@ public class ModuleProvider extends LogisticsModule implements SneakyDirection, 
 				}).iterator();
 
 		while (iterator.hasNext()) {
-			final Pair<IInventoryUtil, EnumFacing> current = iterator.next();
+			final Pair<IInventoryUtil, Direction> current = iterator.next();
 			int available = current.getValue1().itemCount(item);
 			if (available == 0) {
 				continue;
@@ -376,7 +384,7 @@ public class ModuleProvider extends LogisticsModule implements SneakyDirection, 
 		return list;
 	}
 
-	private void checkUpdate(EntityPlayer player) {
+	private void checkUpdate(PlayerEntity player) {
 		if (localModeWatchers.size() == 0 && player == null) {
 			return;
 		}
@@ -412,13 +420,13 @@ public class ModuleProvider extends LogisticsModule implements SneakyDirection, 
 	}
 
 	@Override
-	public void startWatching(EntityPlayer player) {
+	public void startWatching(PlayerEntity player) {
 		localModeWatchers.add(player);
 		checkUpdate(player);
 	}
 
 	@Override
-	public void stopWatching(EntityPlayer player) {
+	public void stopWatching(PlayerEntity player) {
 		localModeWatchers.remove(player);
 	}
 

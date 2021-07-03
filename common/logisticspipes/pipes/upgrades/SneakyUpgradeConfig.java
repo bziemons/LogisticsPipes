@@ -6,8 +6,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -33,19 +33,19 @@ public class SneakyUpgradeConfig implements IConfigPipeUpgrade {
 
 	@AllArgsConstructor
 	public enum Sides {
-		UP(EnumFacing.UP, "LPSNEAKY-UP"),
-		DOWN(EnumFacing.DOWN, "LPSNEAKY-DOWN"),
-		NORTH(EnumFacing.NORTH, "LPSNEAKY-NORTH"),
-		SOUTH(EnumFacing.SOUTH, "LPSNEAKY-SOUTH"),
-		EAST(EnumFacing.EAST, "LPSNEAKY-EAST"),
-		WEST(EnumFacing.WEST, "LPSNEAKY-WEST");
+		UP(Direction.UP, "LPSNEAKY-UP"),
+		DOWN(Direction.DOWN, "LPSNEAKY-DOWN"),
+		NORTH(Direction.NORTH, "LPSNEAKY-NORTH"),
+		SOUTH(Direction.SOUTH, "LPSNEAKY-SOUTH"),
+		EAST(Direction.EAST, "LPSNEAKY-EAST"),
+		WEST(Direction.WEST, "LPSNEAKY-WEST");
 
 		@Getter
-		private EnumFacing dir;
+		private Direction dir;
 		@Getter
 		private String lpName;
 
-		public static String getNameForDirection(EnumFacing fd) {
+		public static String getNameForDirection(Direction fd) {
 			return Arrays.stream(values())
 					.filter(side -> side.getDir() == fd)
 					.map(Sides::getLpName)
@@ -86,12 +86,12 @@ public class SneakyUpgradeConfig implements IConfigPipeUpgrade {
 	}
 
 	@Nullable
-	public EnumFacing getSide(@Nonnull ItemStack stack) {
+	public Direction getSide(@Nonnull ItemStack stack) {
 		if (stack.isEmpty()) return null;
-		if (!stack.hasTagCompound()) {
-			stack.setTagCompound(new NBTTagCompound());
+		if (!stack.hasTag()) {
+			stack.setTag(new CompoundNBT());
 		}
-		NBTTagCompound tag = Objects.requireNonNull(stack.getTagCompound());
+		CompoundNBT tag = Objects.requireNonNull(stack.getTag());
 		String sideString = tag.getString(SIDE_KEY);
 		return Arrays.stream(Sides.values())
 				.filter(side -> side.getLpName().equals(sideString))

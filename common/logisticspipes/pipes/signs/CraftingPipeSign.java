@@ -3,15 +3,16 @@ package logisticspipes.pipes.signs;
 import java.util.List;
 
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
+import com.mojang.blaze3d.platform.GlStateManager;
 
 import logisticspipes.modules.LogisticsModule.ModulePositionType;
 import logisticspipes.modules.ModuleCrafter;
@@ -26,7 +27,7 @@ import logisticspipes.utils.item.ItemIdentifierStack;
 public class CraftingPipeSign implements IPipeSign {
 
 	public CoreRoutedPipe pipe;
-	public EnumFacing dir;
+	public Direction dir;
 
 	@Override
 	public boolean isAllowedFor(CoreRoutedPipe pipe) {
@@ -34,15 +35,15 @@ public class CraftingPipeSign implements IPipeSign {
 	}
 
 	@Override
-	public void addSignTo(CoreRoutedPipe pipe, EnumFacing dir, EntityPlayer player) {
+	public void addSignTo(CoreRoutedPipe pipe, Direction dir, PlayerEntity player) {
 		pipe.addPipeSign(dir, new CraftingPipeSign(), player);
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound tag) {}
+	public void readFromNBT(CompoundNBT tag) {}
 
 	@Override
-	public void writeToNBT(NBTTagCompound tag) {}
+	public void writeToNBT(CompoundNBT tag) {}
 
 	@Override
 	public ModernPacket getPacket() {
@@ -59,16 +60,16 @@ public class CraftingPipeSign implements IPipeSign {
 	public void updateServerSide() {}
 
 	@Override
-	public void init(CoreRoutedPipe pipe, EnumFacing dir) {
+	public void init(CoreRoutedPipe pipe, Direction dir) {
 		this.pipe = pipe;
 		this.dir = dir;
 	}
 
 	@Override
-	public void activate(EntityPlayer player) {}
+	public void activate(PlayerEntity player) {}
 
 	@Override
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public void render(CoreRoutedPipe pipe, LogisticsRenderPipe renderer) {
 		PipeItemsCraftingLogistics cpipe = (PipeItemsCraftingLogistics) pipe;
 		FontRenderer var17 = renderer.getFontRenderer();
@@ -83,15 +84,15 @@ public class CraftingPipeSign implements IPipeSign {
 				Item item = itemstack.getItem();
 
 				GlStateManager.depthMask(false);
-				GlStateManager.rotate(-180.0F, 1.0F, 0.0F, 0.0F);
-				GlStateManager.translate(0.5F, +0.08F, 0.0F);
-				GlStateManager.scale(1.0F / 90.0F, 1.0F / 90.0F, 1.0F / 90.0F);
+				GlStateManager.rotatef(-180.0F, 1.0F, 0.0F, 0.0F);
+				GlStateManager.translatef(0.5F, +0.08F, 0.0F);
+				GlStateManager.scalef(1.0F / 90.0F, 1.0F / 90.0F, 1.0F / 90.0F);
 
 				try {
 					name = item.getItemStackDisplayName(itemstack);
 				} catch (Exception e) {
 					try {
-						name = item.getUnlocalizedName();
+						name = item.getTranslationKey();
 					} catch (Exception ignored) {}
 				}
 
@@ -102,9 +103,9 @@ public class CraftingPipeSign implements IPipeSign {
 				}
 				*/
 			} else {
-				GlStateManager.rotate(-180.0F, 1.0F, 0.0F, 0.0F);
-				GlStateManager.translate(0.5F, +0.08F, 0.0F);
-				GlStateManager.scale(1.0F / 90.0F, 1.0F / 90.0F, 1.0F / 90.0F);
+				GlStateManager.rotatef(-180.0F, 1.0F, 0.0F, 0.0F);
+				GlStateManager.translatef(0.5F, +0.08F, 0.0F);
+				GlStateManager.scalef(1.0F / 90.0F, 1.0F / 90.0F, 1.0F / 90.0F);
 				name = "Empty";
 			}
 
@@ -113,7 +114,7 @@ public class CraftingPipeSign implements IPipeSign {
 			var17.drawString(name, -var17.getStringWidth(name) / 2 - 15, 3 * 10 - 4 * 5, 0);
 
 			GlStateManager.depthMask(true);
-			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+			GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 		}
 	}
 

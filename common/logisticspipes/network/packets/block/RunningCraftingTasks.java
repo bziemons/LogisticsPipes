@@ -2,7 +2,7 @@ package logisticspipes.network.packets.block;
 
 import java.util.List;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 
 import net.minecraftforge.fml.client.FMLClientHandler;
 
@@ -28,7 +28,7 @@ public class RunningCraftingTasks extends ModernPacket {
 	}
 
 	@Override
-	public void processPacket(EntityPlayer player) {
+	public void processPacket(PlayerEntity player) {
 		if (FMLClientHandler.instance().getClient().currentScreen instanceof GuiStatistics) {
 			((GuiStatistics) FMLClientHandler.instance().getClient().currentScreen).handlePacket2(getIdentList());
 		}

@@ -8,22 +8,24 @@ import java.util.Map;
 import java.util.Map.Entry;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryCraftResult;
 import net.minecraft.inventory.SlotCrafting;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
-import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.util.text.TranslationTextComponent;
 
 import net.minecraftforge.event.world.WorldEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
+import logisticspipes.LPConstants;
 import logisticspipes.LPItems;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.blocks.crafting.AutoCraftingInventory;
@@ -57,6 +59,7 @@ import logisticspipes.utils.item.ItemIdentifierStack;
 import logisticspipes.utils.item.SimpleStackInventory;
 import logisticspipes.utils.tuples.Pair;
 
+@Mod.EventBusSubscriber(modid = LPConstants.LP_MOD_ID)
 public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements ISimpleInventoryEventHandler, IRequestWatcher, IGuiOpenControler, IRotationProvider {
 
 	public SimpleStackInventory diskInv = new SimpleStackInventory(1, "Disk Slot", 1);
@@ -66,7 +69,7 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	public SimpleStackInventory toSortInv = new SimpleStackInventory(1, "Sorting Slot", 64);
 	private InventoryCraftResult vanillaResult = new InventoryCraftResult();
 	private IRecipe cache;
-	private EntityPlayerMP fake;
+	private ServerPlayerEntity fake;
 	private int delay = 0;
 	private int tick = 0;
 	private int rotation;
@@ -84,16 +87,16 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	}
 
 	@Override
-	public boolean handleClick(EntityPlayer entityplayer, SecuritySettings settings) {
+	public boolean handleClick(PlayerEntity player, SecuritySettings settings) {
 		//allow using upgrade manager
-		if (MainProxy.isPipeControllerEquipped(entityplayer) && !(entityplayer.isSneaking())) {
+		if (MainProxy.isPipeControllerEquipped(PlayerEntity) && !(PlayerEntity.isSneaking())) {
 			return false;
 		}
 		if (MainProxy.isServer(getWorld())) {
 			if (settings == null || settings.openGui) {
-				openGui(entityplayer);
+				openGui(PlayerEntity);
 			} else {
-				entityplayer.sendMessage(new TextComponentTranslation("lp.chat.permissiondenied"));
+				PlayerEntity.sendMessage(new TranslationTextComponent("lp.chat.permissiondenied"));
 			}
 		}
 		return true;
@@ -168,7 +171,7 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 			IRoutedItem itemToSend = SimpleServiceLocator.routedItemHelper.createNewTravelItem(stack);
 			SimpleServiceLocator.logisticsManager.assignDestinationFor(itemToSend, getRouter().getSimpleID(), false);
 			if (itemToSend.getDestinationUUID() != null) {
-				EnumFacing dir = getRouteLayer().getOrientationForItem(itemToSend, null);
+				Direction dir = getRouteLayer().getOrientationForItem(itemToSend, null);
 				super.queueRoutedItem(itemToSend, dir.getOpposite());
 				spawnParticle(Particles.OrangeParticle, 4);
 				toSortInv.clearInventorySlotContents(0);
@@ -181,17 +184,17 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	}
 
 	@Override
-	public void openGui(EntityPlayer entityplayer) {
+	public void openGui(PlayerEntity player) {
 		boolean flag = true;
 		if (!diskInv.getStackInSlot(0).isEmpty()) {
-			if (!entityplayer.getHeldItemMainhand().isEmpty() && entityplayer.getHeldItemMainhand().getItem().equals(LPItems.disk)) {
-				diskInv.setInventorySlotContents(0, entityplayer.getHeldItemMainhand());
-				entityplayer.inventory.setInventorySlotContents(entityplayer.inventory.currentItem, ItemStack.EMPTY);
+			if (!PlayerEntity.getHeldItemMainhand().isEmpty() && PlayerEntity.getHeldItemMainhand().getItem().equals(LPItems.disk)) {
+				diskInv.setInventorySlotContents(0, PlayerEntity.getHeldItemMainhand());
+				PlayerEntity.inventory.setInventorySlotContents(PlayerEntity.inventory.currentItem, ItemStack.EMPTY);
 				flag = false;
 			}
 		}
 		if (flag) {
-			entityplayer.openGui(LogisticsPipes.instance, GuiIDs.GUI_Request_Table_ID, getWorld(), getX(), getY(), getZ());
+			PlayerEntity.openGui(LogisticsPipes.instance, GuiIDs.GUI_Request_Table_ID, getWorld(), getX(), getY(), getZ());
 		}
 	}
 
@@ -201,17 +204,17 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	}
 
 	@Override
-	public TextureType getRoutedTexture(EnumFacing connection) {
+	public TextureType getRoutedTexture(Direction connection) {
 		return Textures.empty_1;
 	}
 
 	@Override
-	public TextureType getNonRoutedTexture(EnumFacing connection) {
+	public TextureType getNonRoutedTexture(Direction connection) {
 		return Textures.empty_2;
 	}
 
 	/*public TextureAtlasSprite getTextureFor(int l) {
-		EnumFacing dir = EnumFacing.getFront(l);
+		Direction dir = Direction.getFront(l);
 		//if (LogisticsPipes.getClientPlayerConfig().isUseNewRenderer()) {
 			switch (dir) {
 				case UP:
@@ -509,25 +512,25 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	}
 
 	@Override
-	public void readFromNBT(NBTTagCompound par1nbtTagCompound) {
-		super.readFromNBT(par1nbtTagCompound);
-		inv.readFromNBT(par1nbtTagCompound, "inv");
-		matrix.readFromNBT(par1nbtTagCompound, "matrix");
-		toSortInv.readFromNBT(par1nbtTagCompound, "toSortInv");
-		diskInv.readFromNBT(par1nbtTagCompound, "diskInv");
-		rotation = par1nbtTagCompound.getInteger("blockRotation");
+	public void readFromNBT(CompoundNBT tag) {
+		super.readFromNBT(tag);
+		inv.readFromNBT(tag, "inv");
+		matrix.readFromNBT(tag, "matrix");
+		toSortInv.readFromNBT(tag, "toSortInv");
+		diskInv.readFromNBT(tag, "diskInv");
+		rotation = tag.getInt("blockRotation");
 		//TODO NPEs on world load
 		//cacheRecipe();
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound par1nbtTagCompound) {
-		super.writeToNBT(par1nbtTagCompound);
-		inv.writeToNBT(par1nbtTagCompound, "inv");
-		matrix.writeToNBT(par1nbtTagCompound, "matrix");
-		toSortInv.writeToNBT(par1nbtTagCompound, "toSortInv");
-		diskInv.writeToNBT(par1nbtTagCompound, "diskInv");
-		par1nbtTagCompound.setInteger("blockRotation", rotation);
+	public void writeToNBT(CompoundNBT tag) {
+		super.writeToNBT(tag);
+		inv.writeToNBT(tag, "inv");
+		matrix.writeToNBT(tag, "matrix");
+		toSortInv.writeToNBT(tag, "toSortInv");
+		diskInv.writeToNBT(tag, "diskInv");
+		tag.putInt("blockRotation", rotation);
 	}
 
 	@Override
@@ -551,7 +554,7 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 				}
 
 				@Override
-				public EnumFacing itemArrived(IRoutedItem item, EnumFacing denyed) {
+				public Direction itemArrived(IRoutedItem item, Direction denyed) {
 					return null;
 				}
 
@@ -575,7 +578,7 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	}
 
 	@Override
-	public void guiOpenedByPlayer(EntityPlayer player) {
+	public void guiOpenedByPlayer(PlayerEntity player) {
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(OrderWatchRemovePacket.class).setInteger(-1).setTilePos(container), player);
 		MainProxy.sendPacketToPlayer(PacketHandler.getPacket(CraftingSetType.class).setTargetType(targetType).setTilePos(container), player);
 		localGuiWatcher.add(player);
@@ -585,7 +588,7 @@ public class PipeBlockRequestTable extends PipeItemsRequestLogistics implements 
 	}
 
 	@Override
-	public void guiClosedByPlayer(EntityPlayer player) {
+	public void guiClosedByPlayer(PlayerEntity player) {
 		localGuiWatcher.remove(player);
 	}
 

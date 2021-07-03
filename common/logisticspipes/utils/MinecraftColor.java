@@ -32,8 +32,8 @@ public enum MinecraftColor {
 
 	public static MinecraftColor getColor(@Nonnull ItemStack item) {
 		if (!item.isEmpty()) {
-			if (item.getItem() == Items.DYE && item.getItemDamage() < 16) {
-				return MinecraftColor.values()[item.getItemDamage()];
+			if (item.getItem() == Items.DYE && item.getDamage() < 16) {
+				return MinecraftColor.values()[item.getDamage()];
 			}
 		}
 		return BLANK;

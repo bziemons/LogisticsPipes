@@ -3,26 +3,28 @@ package logisticspipes.renderer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import javax.annotation.Nonnull;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.model.ModelSign;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.ItemModelMesher;
-import net.minecraft.client.renderer.RenderItem;
-import net.minecraft.client.renderer.block.model.IBakedModel;
-import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
-import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
+import net.minecraft.client.renderer.ItemRenderer;
+import net.minecraft.client.renderer.model.IBakedModel;
+import net.minecraft.client.renderer.model.ItemCameraTransforms;
+import net.minecraft.client.renderer.model.ItemCameraTransforms.TransformType;
+import net.minecraft.client.renderer.texture.AtlasTexture;
+import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
+import net.minecraft.client.renderer.tileentity.model.SignModel;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 
 import net.minecraftforge.client.ForgeHooksClient;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
@@ -43,7 +45,7 @@ import network.rs485.logisticspipes.config.ClientConfiguration;
 import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
-public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTileGenericPipe> {
+public class LogisticsRenderPipe extends TileEntityRenderer<LogisticsTileGenericPipe> {
 
 	private static final int LIQUID_STAGES = 40;
 	private static final int MAX_ITEMS_TO_RENDER = 10;
@@ -51,25 +53,30 @@ public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTile
 	public static LogisticsNewRenderPipe secondRenderer = new LogisticsNewRenderPipe();
 	public static LogisticsNewPipeItemBoxRenderer boxRenderer = new LogisticsNewPipeItemBoxRenderer();
 	public static ClientConfiguration config = LogisticsPipes.getClientPlayerConfig();
-	private static ItemStackRenderer itemRenderer = new ItemStackRenderer(0, 0, 0, false, false);
-	private ModelSign modelSign;
+	private static final ItemStackRenderer itemRenderer = new ItemStackRenderer(0, 0, 0, false, false);
+	private final SignModel signModel;
 
 	public LogisticsRenderPipe() {
 		super();
-		modelSign = new ModelSign();
-		modelSign.signStick.showModel = false;
+		signModel = new SignModel();
+		signModel.getSignStick().showModel = false;
 	}
 
 	@Override
-	public void render(LogisticsTileGenericPipe tileentity, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
+	public void render(LogisticsTileGenericPipe tile,
+			double x,
+			double y,
+			double z,
+			float partialTicks,
+			int destroyStage) {
 		boolean inHand = false;
-		if (tileentity == null && x == 0 && y == 0 && z == 0) {
+		if (tile == null && x == 0 && y == 0 && z == 0) {
 			inHand = true;
-		} else if (tileentity.pipe == null) {
+		} else if (tile == null || tile.pipe == null) {
 			return;
 		}
 
-		GlStateManager.enableDepth();
+		GlStateManager.enableDepthTest();
 		GlStateManager.depthFunc(515);
 		GlStateManager.depthMask(true);
 
@@ -77,7 +84,7 @@ public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTile
 			this.bindTexture(DESTROY_STAGES[destroyStage]);
 			GlStateManager.matrixMode(GL11.GL_TEXTURE);
 			GlStateManager.pushMatrix();
-			GlStateManager.scale(4.0F, 4.0F, 1.0F);
+			GlStateManager.scalef(4.0F, 4.0F, 1.0F);
 			//GlStateManager.translate(0.0625F, 0.0625F, 0.0625F);
 			GlStateManager.matrixMode(GL11.GL_MODELVIEW);
 		}
@@ -86,46 +93,43 @@ public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTile
 		GlStateManager.enableRescaleNormal();
 
 		if (destroyStage < 0) {
-			GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
+			GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 		}
 
 		if (!inHand) {
-			if (tileentity.pipe instanceof CoreRoutedPipe) {
-				renderPipeSigns((CoreRoutedPipe) tileentity.pipe, x, y, z, partialTicks);
+			if (tile.pipe instanceof CoreRoutedPipe) {
+				renderPipeSigns((CoreRoutedPipe) tile.pipe, x, y, z, partialTicks);
 			}
 		}
 
-		double distance = !inHand ? new DoubleCoordinates((TileEntity) tileentity).distanceTo(new DoubleCoordinates(Minecraft.getMinecraft().player)) : 0;
+		double distance = !inHand ? new DoubleCoordinates((TileEntity) tile).distanceTo(new DoubleCoordinates(Minecraft.getInstance().player)) : 0;
 
-		LogisticsRenderPipe.secondRenderer.renderTileEntityAt(tileentity, x, y, z, partialTicks, distance);
+		LogisticsRenderPipe.secondRenderer.renderTileEntityAt(tile, x, y, z, partialTicks, distance);
 
-		if (!inHand && !tileentity.isOpaque()) {
-			if (tileentity.pipe.transport instanceof PipeFluidTransportLogistics) {
+		if (!inHand && !tile.isOpaque()) {
+			if (tile.pipe.transport instanceof PipeFluidTransportLogistics) {
 				//renderFluids(pipe.pipe, x, y, z);
 			}
-			if (tileentity.pipe.transport != null) {
-				renderSolids(tileentity.pipe, x, y, z, partialTicks);
+			if (tile.pipe.transport != null) {
+				renderSolids(tile.pipe, x, y, z, partialTicks);
 			}
 		}
 
 		GlStateManager.disableRescaleNormal();
 		GlStateManager.popMatrix();
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 		if (destroyStage >= 0) {
 			GlStateManager.matrixMode(GL11.GL_TEXTURE);
 			GlStateManager.popMatrix();
 			GlStateManager.matrixMode(GL11.GL_MODELVIEW);
-		}
-
-		if (!inHand) {
-			SimpleServiceLocator.mcmpProxy.renderTileEntitySpecialRenderer(tileentity, x, y, z, partialTicks, destroyStage, alpha);
 		}
 	}
 
 	private void renderSolids(CoreUnroutedPipe pipe, double x, double y, double z, float partialTickTime) {
 		GL11.glPushMatrix();
 
-		float light = pipe.container.getWorld().getLightBrightness(pipe.container.getPos());
+		final World world = Objects.requireNonNull(pipe.container.getWorld(), "world may not be null");
+		float light = world.getBrightness(pipe.container.getPos());
 
 		int count = 0;
 		for (LPTravelingItem item : pipe.transport.items) {
@@ -177,34 +181,34 @@ public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTile
 			double itemYawForPitch = lPipe.getItemRenderYaw(fPos, item);
 
 			ItemStack stack = item.getItemIdentifierStack().makeNormalStack();
-			doRenderItem(stack, pipe.container.getWorld(), lX + pos.getXCoord(), lY + pos.getYCoord(), lZ + pos.getZCoord(), light, 0.75F, boxScale, itemYaw, itemPitch, itemYawForPitch, partialTickTime);
+			doRenderItem(stack, world, lX + pos.getXCoord(), lY + pos.getYCoord(), lZ + pos.getZCoord(), light, 0.75F, boxScale, itemYaw, itemPitch, itemYawForPitch, partialTickTime);
 			count++;
 		}
 
 		count = 0;
 		double dist = 0.135;
 		DoubleCoordinates pos = new DoubleCoordinates(0.5, 0.5, 0.5);
-		CoordinateUtils.add(pos, EnumFacing.SOUTH, dist);
-		CoordinateUtils.add(pos, EnumFacing.EAST, dist);
-		CoordinateUtils.add(pos, EnumFacing.UP, dist);
+		CoordinateUtils.add(pos, Direction.SOUTH, dist);
+		CoordinateUtils.add(pos, Direction.EAST, dist);
+		CoordinateUtils.add(pos, Direction.UP, dist);
 		for (Pair<ItemIdentifierStack, Pair<Integer, Integer>> item : pipe.transport._itemBuffer) {
 			if (item == null || item.getValue1() == null) {
 				continue;
 			}
 			ItemStack stack = item.getValue1().makeNormalStack();
-			doRenderItem(stack, pipe.container.getWorld(), x + pos.getXCoord(), y + pos.getYCoord(), z + pos.getZCoord(), light, 0.25F, 0, 0, 0, 0, partialTickTime);
+			doRenderItem(stack, world, x + pos.getXCoord(), y + pos.getYCoord(), z + pos.getZCoord(), light, 0.25F, 0, 0, 0, 0, partialTickTime);
 			count++;
 			if (count >= 27) {
 				break;
 			} else if (count % 9 == 0) {
-				CoordinateUtils.add(pos, EnumFacing.SOUTH, dist * 2.0);
-				CoordinateUtils.add(pos, EnumFacing.EAST, dist * 2.0);
-				CoordinateUtils.add(pos, EnumFacing.DOWN, dist);
+				CoordinateUtils.add(pos, Direction.SOUTH, dist * 2.0);
+				CoordinateUtils.add(pos, Direction.EAST, dist * 2.0);
+				CoordinateUtils.add(pos, Direction.DOWN, dist);
 			} else if (count % 3 == 0) {
-				CoordinateUtils.add(pos, EnumFacing.SOUTH, dist * 2.0);
-				CoordinateUtils.add(pos, EnumFacing.WEST, dist);
+				CoordinateUtils.add(pos, Direction.SOUTH, dist * 2.0);
+				CoordinateUtils.add(pos, Direction.WEST, dist);
 			} else {
-				CoordinateUtils.add(pos, EnumFacing.NORTH, dist);
+				CoordinateUtils.add(pos, Direction.NORTH, dist);
 			}
 		}
 
@@ -227,25 +231,25 @@ public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTile
 		GL11.glPopMatrix();
 	}
 
-	private boolean needDistance(List<Pair<EnumFacing, IPipeSign>> list) {
-		List<Pair<EnumFacing, IPipeSign>> copy = new ArrayList<>(list);
-		Iterator<Pair<EnumFacing, IPipeSign>> iter = copy.iterator();
+	private boolean needDistance(List<Pair<Direction, IPipeSign>> list) {
+		List<Pair<Direction, IPipeSign>> copy = new ArrayList<>(list);
+		Iterator<Pair<Direction, IPipeSign>> iter = copy.iterator();
 		boolean north = false, south = false, east = false, west = false;
 		while (iter.hasNext()) {
-			Pair<EnumFacing, IPipeSign> pair = iter.next();
-			if (pair.getValue1() == EnumFacing.UP || pair.getValue1() == EnumFacing.DOWN || pair.getValue1() == null) {
+			Pair<Direction, IPipeSign> pair = iter.next();
+			if (pair.getValue1() == Direction.UP || pair.getValue1() == Direction.DOWN || pair.getValue1() == null) {
 				iter.remove();
 			}
-			if (pair.getValue1() == EnumFacing.NORTH) {
+			if (pair.getValue1() == Direction.NORTH) {
 				north = true;
 			}
-			if (pair.getValue1() == EnumFacing.SOUTH) {
+			if (pair.getValue1() == Direction.SOUTH) {
 				south = true;
 			}
-			if (pair.getValue1() == EnumFacing.EAST) {
+			if (pair.getValue1() == Direction.EAST) {
 				east = true;
 			}
-			if (pair.getValue1() == EnumFacing.WEST) {
+			if (pair.getValue1() == Direction.WEST) {
 				west = true;
 			}
 		}
@@ -263,8 +267,8 @@ public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTile
 
 	private void renderPipeSigns(CoreRoutedPipe pipe, double x, double y, double z, float partialTickTime) {
 		if (!pipe.getPipeSigns().isEmpty()) {
-			List<Pair<EnumFacing, IPipeSign>> list = pipe.getPipeSigns();
-			for (Pair<EnumFacing, IPipeSign> pair : list) {
+			List<Pair<Direction, IPipeSign>> list = pipe.getPipeSigns();
+			for (Pair<Direction, IPipeSign> pair : list) {
 				if (pipe.container.renderState.pipeConnectionMatrix.isConnected(pair.getValue1())) {
 					continue;
 				}
@@ -317,11 +321,11 @@ public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTile
 		float signScale = 2 / 3.0F;
 		GL11.glTranslatef(0.0F, -0.3125F, -0.36F);
 		GL11.glRotatef(180, 0.0f, 1.0f, 0.0f);
-		Minecraft.getMinecraft().renderEngine.bindTexture(LogisticsRenderPipe.SIGN);
+		Minecraft.getInstance().textureManager.bindTexture(LogisticsRenderPipe.SIGN);
 
 		GL11.glPushMatrix();
 		GL11.glScalef(signScale, -signScale, -signScale);
-		modelSign.renderSign();
+		signModel.renderSign();
 		GL11.glPopMatrix();
 
 		GL11.glTranslatef(-0.32F, 0.5F * signScale + 0.08F, 0.07F * signScale);
@@ -334,54 +338,56 @@ public class LogisticsRenderPipe extends TileEntitySpecialRenderer<LogisticsTile
 			return; // Only happens on false configuration
 		}
 
-		Minecraft mc = Minecraft.getMinecraft();
-		RenderItem itemRender = mc.getRenderItem();
+		Minecraft mc = Minecraft.getInstance();
+		final ItemRenderer itemRenderer = mc.getItemRenderer();
 
 		GlStateManager.disableLighting();
-		GlStateManager.color(1F, 1F, 1F); //Forge: Reset color in case Items change it.
+		GlStateManager.color3f(1F, 1F, 1F); //Forge: Reset color in case Items change it.
 		GlStateManager.enableBlend(); //Forge: Make sure blend is enabled else tabs show a white border.
-		itemRender.zLevel = 100.0F;
+		itemRenderer.zLevel = 100.0F;
 		GlStateManager.enableRescaleNormal();
 
-		// itemRender.renderItemAndEffectIntoGUI(itemstack, 0, 0);
+		// itemRenderer.renderItemAndEffectIntoGUI(itemstack, 0, 0);
 		// item render code
 		GlStateManager.pushMatrix();
-		mc.renderEngine.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-		mc.renderEngine.getTexture(TextureMap.LOCATION_BLOCKS_TEXTURE).setBlurMipmap(false, false);
+		mc.textureManager.bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
+		mc.textureManager.getTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE).setBlurMipmap(false, false);
 		GlStateManager.enableRescaleNormal();
-		GlStateManager.enableAlpha();
+		GlStateManager.enableAlphaTest();
 		GlStateManager.alphaFunc(516, 0.1F);
 		GlStateManager.enableBlend();
 		GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 
 		// mezz.jei.render.ItemStackFastRenderer#getBakedModel
-		ItemModelMesher itemModelMesher = Minecraft.getMinecraft().getRenderItem().getItemModelMesher();
+		ItemModelMesher itemModelMesher = itemRenderer.getItemModelMesher();
 		IBakedModel bakedModel = itemModelMesher.getItemModel(itemstack);
-		bakedModel = bakedModel.getOverrides().handleItemState(bakedModel, itemstack, null, null);
+		bakedModel = bakedModel.getOverrides().getModelWithOverrides(bakedModel, itemstack, null, null);
 
 		// make item/block flat and position it
-		GlStateManager.translate(0.05F, 0F, 0F);
-		GlStateManager.scale(0.8F, 0.8F, 0.001F);
+		GlStateManager.translatef(0.05F, 0F, 0F);
+		GlStateManager.scalef(0.8F, 0.8F, 0.001F);
 
 		// model rotation
-		bakedModel = ForgeHooksClient.handleCameraTransforms(bakedModel, ItemCameraTransforms.TransformType.GUI, false);
+		if (bakedModel != null) {
+			bakedModel.handlePerspective(TransformType.GUI);
 
-		// model scaling to fit on sign
-		GlStateManager.scale(0.4F, 0.4F, 0.4F);
+			// model scaling to fit on sign
+			GlStateManager.scalef(0.4F, 0.4F, 0.4F);
 
-		itemRender.renderItem(itemstack, bakedModel);
+			itemRenderer.renderItem(itemstack, bakedModel);
+		}
 
 		GlStateManager.disableRescaleNormal();
-		GlStateManager.disableAlpha();
+		GlStateManager.disableAlphaTest();
 		GlStateManager.popMatrix();
-		mc.renderEngine.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-		mc.renderEngine.getTexture(TextureMap.LOCATION_BLOCKS_TEXTURE).restoreLastBlurMipmap();
+		mc.textureManager.bindTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE);
+		mc.textureManager.getTexture(AtlasTexture.LOCATION_BLOCKS_TEXTURE).restoreLastBlurMipmap();
 		// item render code end
 
 		// not needed?
-		//itemRender.renderItemOverlays(mc.fontRenderer, itemstack, 0, 0);
-		itemRender.zLevel = 0.0F;
+		//itemRenderer.renderItemOverlays(mc.fontRenderer, itemstack, 0, 0);
+		itemRenderer.zLevel = 0.0F;
 	}
 
 	public String cut(String name, FontRenderer renderer) {

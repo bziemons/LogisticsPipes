@@ -11,7 +11,7 @@ import java.io.IOException;
 import javax.annotation.Nonnull;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Container;
 import net.minecraft.tileentity.TileEntity;
 
@@ -42,10 +42,10 @@ public class GuiSatellitePipe extends LogisticsBaseGuiScreen {
 		super(new Container() {
 
 			@Override
-			public boolean canInteractWith(@Nonnull EntityPlayer entityplayer) {
+			public boolean canInteractWith(@Nonnull PlayerEntity player) {
 				return true;
 			}
-		});
+		}, inv, titleIn);
 		xSize = 116;
 		ySize = 77;
 		this.satellitePipe = satellitePipe;
@@ -94,7 +94,7 @@ public class GuiSatellitePipe extends LogisticsBaseGuiScreen {
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float f, int x, int y) {
 		super.drawGuiContainerBackgroundLayer(f, x, y);
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		input.drawTextBox();
 	}
 

@@ -9,18 +9,16 @@ import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.BlockRendererDispatcher;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GLAllocation;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexFormat;
@@ -28,21 +26,21 @@ import net.minecraft.client.renderer.vertex.VertexFormatElement;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.BlockRenderLayer;
+import net.minecraft.util.Direction;
 import net.minecraft.util.EnumBlockRenderType;
-import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.MinecraftForgeClient;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
-import org.lwjgl.input.Keyboard;
+import com.mojang.blaze3d.platform.GlStateManager;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
@@ -63,7 +61,7 @@ import network.rs485.logisticspipes.world.CoordinateUtils;
 import network.rs485.logisticspipes.world.DoubleCoordinates;
 
 //Based on: https://github.com/SleepyTrousers/EnderIO/blob/master/src/main/java/crazypants/enderio/machine/gui/GuiOverlayIoConfig.java
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public abstract class SideConfigDisplay {
 
 	private boolean draggingRotate = false;
@@ -73,7 +71,7 @@ public abstract class SideConfigDisplay {
 	private double distance;
 	private long initTime;
 
-	private Minecraft mc = Minecraft.getMinecraft();
+	private Minecraft mc = Minecraft.getInstance();
 	private World world;
 
 	private final Vector3d origin = new Vector3d();
@@ -135,7 +133,7 @@ public abstract class SideConfigDisplay {
 		distance = Math.max(Math.max(size.x, size.y), size.z) + 4;
 
 		for (DoubleCoordinates bc : configurables) {
-			for (EnumFacing dir : EnumFacing.VALUES) {
+			for (Direction dir : Direction.values()) {
 				DoubleCoordinates loc = CoordinateUtils.add(new DoubleCoordinates(bc), dir);
 				if (!configurables.contains(loc)) {
 					neighbours.add(loc);
@@ -168,7 +166,7 @@ public abstract class SideConfigDisplay {
 		if (draggingRotate) {
 			double dx = (Mouse.getEventDX() / (double) mc.displayWidth);
 			double dy = (Mouse.getEventDY() / (double) mc.displayHeight);
-			if (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) || Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+			if (InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LCONTROL) || InputMappings.isKeyDown(Minecraft.getInstance().mainWindow.getHandle(), KEY_LSHIFT)) {
 				distance -= dy * 15;
 			} else {
 				yaw -= 4 * dx * 180;
@@ -219,7 +217,7 @@ public abstract class SideConfigDisplay {
 
 		LogisticsBlockGenericPipe.ignoreSideRayTrace = true;
 		for (DoubleCoordinates bc : configurables) {
-			IBlockState bs = bc.getBlockState(world);
+			BlockState bs = bc.getBlockState(world);
 			Block block = bs.getBlock();
 			if (block != null) {
 				LogisticsBlockGenericPipe.InternalRayTraceResult cachedLPBlockTrace;
@@ -282,12 +280,12 @@ public abstract class SideConfigDisplay {
 		TextureAtlasSprite icon = (TextureAtlasSprite) Textures.LOGISTICS_SIDE_SELECTION;
 		List<Vertex> corners = bb.getCornersWithUvForFace(selection.face, icon.getMinU(), icon.getMaxU(), icon.getMinV(), icon.getMaxV());
 
-		GlStateManager.disableDepth();
+		GlStateManager.disableDepthTest();
 		GlStateManager.disableLighting();
 
 		RenderUtil.bindBlockTexture();
 		BufferBuilder tes = Tessellator.getInstance().getBuffer();
-		GlStateManager.color(1, 1, 1);
+		GlStateManager.color3f(1f, 1f, 1f);
 		Vector3d trans = new Vector3d((-origin.x) + eye.x, (-origin.y) + eye.y, (-origin.z) + eye.z);
 		tes.setTranslation(trans.x, trans.y, trans.z);
 		RenderUtil.addVerticesToTessellator(corners, DefaultVertexFormats.POSITION_TEX, true);
@@ -325,8 +323,8 @@ public abstract class SideConfigDisplay {
 		RenderUtil.bindBlockTexture();
 
 		GlStateManager.disableLighting();
-		GlStateManager.enableTexture2D();
-		GlStateManager.enableAlpha();
+		GlStateManager.enableTexture();
+		GlStateManager.enableAlphaTest();
 
 		Vector3d trans = new Vector3d((-origin.x) + eye.x, (-origin.y) + eye.y, (-origin.z) + eye.z);
 
@@ -405,7 +403,7 @@ public abstract class SideConfigDisplay {
 
 		for (DoubleCoordinates bc : blocks) {
 
-			IBlockState bs = world.getBlockState(bc.getBlockPos());
+			BlockState bs = world.getBlockState(bc.getBlockPos());
 			Block block = bs.getBlock();
 			bs = bs.getActualState(world, bc.getBlockPos());
 			if (block.canRenderInLayer(bs, layer)) {
@@ -417,7 +415,7 @@ public abstract class SideConfigDisplay {
 		Tessellator.getInstance().getBuffer().setTranslation(0, 0, 0);
 	}
 
-	public void renderBlock(IBlockState state, BlockPos pos, IBlockAccess blockAccess, BufferBuilder worldRendererIn) {
+	public void renderBlock(BlockState state, BlockPos pos, IWorld blockAccess, BufferBuilder worldRendererIn) {
 
 		try {
 			BlockRendererDispatcher blockrendererdispatcher = mc.getBlockRendererDispatcher();
@@ -442,10 +440,10 @@ public abstract class SideConfigDisplay {
 
 	private void setGlStateForPass(int layer, boolean isNeighbour) {
 
-		GlStateManager.color(1, 1, 1);
+		GlStateManager.color3f(1, 1, 1);
 		if (isNeighbour) {
 
-			GlStateManager.enableDepth();
+			GlStateManager.enableDepthTest();
 			GlStateManager.enableBlend();
 			float alpha = 1f;
 			float col = 1f;
@@ -456,7 +454,7 @@ public abstract class SideConfigDisplay {
 		}
 
 		if (layer == 0) {
-			GlStateManager.enableDepth();
+			GlStateManager.enableDepthTest();
 			GlStateManager.disableBlend();
 			GlStateManager.depthMask(true);
 		} else {
@@ -498,10 +496,10 @@ public abstract class SideConfigDisplay {
 	public static class SelectedFace {
 
 		public TileEntity config;
-		public EnumFacing face;
+		public Direction face;
 		public RayTraceResult hit;
 
-		public SelectedFace(TileEntity config, EnumFacing face, RayTraceResult hit) {
+		public SelectedFace(TileEntity config, Direction face, RayTraceResult hit) {
 			super();
 			this.config = config;
 			this.face = face;
@@ -520,7 +518,7 @@ public abstract class SideConfigDisplay {
 				worldRenderPass = ForgeHooksClient.class.getDeclaredField("worldRenderPass");
 				worldRenderPass.setAccessible(true);
 			} catch (Exception e) {
-				LogisticsPipes.log.warn("Failed to access ForgeHooksClient.worldRenderPass because of: " + e);
+				LogisticsPipes.getLOGGER().warn("Failed to access ForgeHooksClient.worldRenderPass because of: " + e);
 				e.printStackTrace();
 			}
 		}
@@ -537,7 +535,7 @@ public abstract class SideConfigDisplay {
 				try {
 					worldRenderPass.setInt(null, pass);
 				} catch (Exception e) {
-					LogisticsPipes.log.warn("Failed to access ForgeHooksClient.worldRenderPass because of: " + e);
+					LogisticsPipes.getLOGGER().warn("Failed to access ForgeHooksClient.worldRenderPass because of: " + e);
 					e.printStackTrace();
 					worldRenderPass = null;
 				}
@@ -563,7 +561,7 @@ public abstract class SideConfigDisplay {
 		public static final Vector3d UP_V = new Vector3d(0, 1, 0);
 		public static final Vector3d ZERO_V = new Vector3d(0, 0, 0);
 		private static final FloatBuffer MATRIX_BUFFER = GLAllocation.createDirectFloatBuffer(16);
-		public static final ResourceLocation BLOCK_TEX = TextureMap.LOCATION_BLOCKS_TEXTURE;
+		public static final ResourceLocation BLOCK_TEX = AtlasTexture.LOCATION_BLOCKS_TEXTURE;
 
 		public static void loadMatrix(Matrix4d mat) {
 			MATRIX_BUFFER.rewind();
@@ -588,7 +586,7 @@ public abstract class SideConfigDisplay {
 		}
 
 		public static void bindBlockTexture() {
-			Minecraft.getMinecraft().renderEngine.bindTexture(BLOCK_TEX);
+			Minecraft.getInstance().textureManager.bindTexture(BLOCK_TEX);
 		}
 
 		public static void addVerticesToTessellator(List<Vertex> vertices, VertexFormat format, boolean doBegin) {

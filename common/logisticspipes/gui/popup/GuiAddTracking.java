@@ -78,18 +78,18 @@ public class GuiAddTracking extends SubGuiScreen implements IItemSearch {
 	@Override
 	protected void renderToolTips(int mouseX, int mouseY, float par3) {
 		if (!super.hasSubGui()) {
-			GuiGraphics.displayItemToolTip(itemDisplay.getToolTip(), this, zLevel, 0, 0);
+			GuiGraphics.displayItemToolTip(itemDisplay.getToolTip(), this, blitOffset, 0, 0);
 		}
 	}
 
 	@Override
 	protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
-		itemDisplay.renderItemArea(zLevel);
+		itemDisplay.renderItemArea(blitOffset);
 	}
 
 	@Override
 	protected void renderGuiBackground(int mouseX, int mouseY) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 		//mc.fontRenderer.drawString(StringUtil.translate(PREFIX + "title"), guiLeft + 5, guiTop + 6, 0x404040);
 		itemDisplay.renderPageNumber(right - 47, guiTop + 6);
 

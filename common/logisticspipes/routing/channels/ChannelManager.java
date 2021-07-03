@@ -9,8 +9,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.WorldSavedData;
 
@@ -23,6 +23,7 @@ import logisticspipes.proxy.MainProxy;
 import logisticspipes.proxy.SimpleServiceLocator;
 import logisticspipes.security.SecuritySettings;
 import logisticspipes.utils.PlayerIdentifier;
+import network.rs485.logisticspipes.routing.ChannelInformation;
 
 public class ChannelManager implements IChannelManager {
 
@@ -42,7 +43,7 @@ public class ChannelManager implements IChannelManager {
 		return Collections.unmodifiableList(savedData.channels);
 	}
 
-	private boolean isChannelAllowedFor(ChannelInformation channel, EntityPlayer player) {
+	private boolean isChannelAllowedFor(ChannelInformation channel, PlayerEntity player) {
 		switch (channel.getRights()) {
 			case PUBLIC:
 				return true;
@@ -62,7 +63,7 @@ public class ChannelManager implements IChannelManager {
 	}
 
 	@Override
-	public List<ChannelInformation> getAllowedChannels(EntityPlayer player) {
+	public List<ChannelInformation> getAllowedChannels(PlayerEntity player) {
 		return Collections.unmodifiableList(savedData.channels.stream().filter(channel -> isChannelAllowedFor(channel, player)).collect(Collectors.toList()));
 	}
 
@@ -124,20 +125,20 @@ public class ChannelManager implements IChannelManager {
 		}
 
 		@Override
-		public void readFromNBT(NBTTagCompound nbt) {
+		public void readFromNBT(CompoundNBT nbt) {
 			channels = new ArrayList<>();
-			for (int i = 0; i < nbt.getInteger("dataSize"); i++) {
-				channels.add(i, new ChannelInformation(nbt.getCompoundTag("data" + i)));
+			for (int i = 0; i < nbt.getInt("dataSize"); i++) {
+				channels.add(i, new ChannelInformation(nbt.getCompound("data" + i)));
 			}
 		}
 
 		@Nonnull
 		@Override
-		public NBTTagCompound writeToNBT(NBTTagCompound compound) {
-			compound.setInteger("dataSize", channels.size());
+		public CompoundNBT writeToNBT(CompoundNBT compound) {
+			compound.putInt("dataSize", channels.size());
 			for (int i = 0; i < channels.size(); i++) {
 				ChannelInformation channel = channels.get(i);
-				NBTTagCompound nbt = new NBTTagCompound();
+				CompoundNBT nbt = new CompoundNBT();
 				channel.writeToNBT(nbt);
 				compound.setTag("data" + i, nbt);
 			}

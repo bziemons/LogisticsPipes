@@ -19,8 +19,9 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ChatAllowedCharacters;
+import net.minecraft.world.dimension.Dimension;
 
 import org.lwjgl.input.Keyboard;
 
@@ -47,7 +48,7 @@ import logisticspipes.utils.item.ItemIdentifierStack;
 
 public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItemSearch, ISpecialItemRenderer {
 
-	public final EntityPlayer _entityPlayer;
+	public final PlayerEntity _PlayerEntity;
 	public ItemDisplay itemDisplay;
 	private InputBar search;
 
@@ -61,18 +62,18 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 	public static int dimensioncache;
 	public static long cachetime;
 
-	public GuiOrderer(int x, int y, int z, int dim, EntityPlayer entityPlayer) {
-		super(220, 240, 0, 0);
+	public GuiOrderer(int x, int y, int z, Dimension dim, PlayerEntity player) {
+		super(inv, titleIn, 220, 240, 0, 0);
 		xCoord = x;
 		yCoord = y;
 		zCoord = z;
 		if (GuiOrderer.cachetime + 100 < System.currentTimeMillis()) {
-			dimension = dim;
+			dimension = dim.hashCode();
 		} else {
 			dimension = GuiOrderer.dimensioncache;
 		}
-		_entityPlayer = entityPlayer;
-		inventorySlots = new DummyContainer(entityPlayer.inventory, null);
+		_PlayerEntity = PlayerEntity;
+		inventorySlots = new DummyContainer(PlayerEntity.inventory, null);
 	}
 
 	public abstract void refreshItems();
@@ -97,7 +98,7 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 		buttonList.add(new SmallGuiButton(6, xCenter + 26, bottom - 26, 10, 10, "+")); // +1
 		buttonList.add(new SmallGuiButton(7, xCenter + 38, bottom - 26, 15, 10, "++")); // +10
 		buttonList.add(new SmallGuiButton(11, xCenter + 26, bottom - 15, 26, 10, "+++")); // +64
-		buttonList.add(new GuiCheckBox(8, guiLeft + 9, bottom - 60, 14, 14, Configs.DISPLAY_POPUP)); // Popup
+		buttonList.add(new GuiCheckBox(guiLeft + 9, bottom - 60, 14, 14, "displayPopup", Configs.DISPLAY_POPUP)); // Popup
 
 		buttonList.add(new SmallGuiButton(20, xCenter - 13, bottom - 41, 26, 10, "Sort")); // Sort
 
@@ -125,7 +126,7 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 
 	@Override
 	public void drawGuiContainerBackgroundLayer(float f, int i, int j) {
-		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, zLevel, true);
+		GuiGraphics.drawGuiBackGround(mc, guiLeft, guiTop, right, bottom, blitOffset, true);
 
 		mc.fontRenderer.drawString(_title, guiLeft + mc.fontRenderer.getStringWidth(_title) / 2, guiTop + 6, 0x404040);
 		itemDisplay.renderPageNumber(right - 47, guiTop + 6);
@@ -141,7 +142,7 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 		search.drawTextBox();
 
 		itemDisplay.renderSortMode(xCenter, bottom - 52);
-		itemDisplay.renderItemArea(zLevel);
+		itemDisplay.renderItemArea(blitOffset);
 	}
 
 	@Override
@@ -149,7 +150,7 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 		if (super.hasSubGui()) {
 			return;
 		}
-		GuiGraphics.displayItemToolTip(itemDisplay.getToolTip(), this, zLevel, guiLeft, guiTop);
+		GuiGraphics.displayItemToolTip(itemDisplay.getToolTip(), this, blitOffset, guiLeft, guiTop);
 	}
 
 	@Override
@@ -198,22 +199,22 @@ public abstract class GuiOrderer extends LogisticsBaseGuiScreen implements IItem
 		super.handleMouseInputSub();
 	}
 
-	public void handleRequestAnswer(Collection<IResource> items, boolean error, ISubGuiControler control, EntityPlayer player) {
+	public void handleRequestAnswer(Collection<IResource> items, boolean error, ISubGuiControler control, PlayerEntity player) {
 		while (control.hasSubGui()) {
 			control = control.getSubGui();
 		}
 		if (error) {
-			control.setSubGui(new GuiRequestPopup(_entityPlayer, "You are missing:", items));
+			control.setSubGui(new GuiRequestPopup(_PlayerEntity, "You are missing:", items));
 		} else {
-			control.setSubGui(new GuiRequestPopup(_entityPlayer, "Request successful!", items));
+			control.setSubGui(new GuiRequestPopup(_PlayerEntity, "Request successful!", items));
 		}
 	}
 
-	public void handleSimulateAnswer(Collection<IResource> used, Collection<IResource> missing, ISubGuiControler control, EntityPlayer player) {
+	public void handleSimulateAnswer(Collection<IResource> used, Collection<IResource> missing, ISubGuiControler control, PlayerEntity player) {
 		while (control.hasSubGui()) {
 			control = control.getSubGui();
 		}
-		control.setSubGui(new GuiRequestPopup(_entityPlayer, "Components: ", used, "Missing: ", missing));
+		control.setSubGui(new GuiRequestPopup(_PlayerEntity, "Components: ", used, "Missing: ", missing));
 	}
 
 	@Override
